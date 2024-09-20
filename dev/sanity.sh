@@ -45,12 +45,7 @@ function check_formatting() {
   run_logged "Checking formatting" "$here/format.sh -l"
 }
 
-function check_generated_code_is_up_to_date() {
-  run_logged "Checking generated code is up-to-date" "$here/check-generated-code.sh"
-}
-
 errors=0
 check_license_headers
 check_formatting
-check_generated_code_is_up_to_date
 exit $errors

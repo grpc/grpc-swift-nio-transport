@@ -105,13 +105,6 @@ check_copyright_headers() {
   done < <(find . -name '*.swift' \
     ! -name '*.pb.swift' \
     ! -name '*.grpc.swift' \
-    ! -name 'LinuxMain.swift' \
-    ! -name 'XCTestManifests.swift' \
-    ! -path './Sources/GRPCCore/Documentation.docc/*' \
-    ! -path './FuzzTesting/.build/*' \
-    ! -path './Performance/QPSBenchmark/.build/*' \
-    ! -path './Performance/Benchmarks/.build/*' \
-    ! -path './scripts/.swift-format-source/*' \
     ! -path './.build/*')
 }
 
