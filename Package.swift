@@ -69,7 +69,10 @@ let targets: [Target] = [
   // C-module for z-lib shims
   .target(
     name: "CGRPCZlib",
-    dependencies: []
+    dependencies: [],
+    linkerSettings: [
+      .linkedLibrary("z")
+    ]
   ),
 
   // Core module containing shared compionents for the NIOPosix and NIOTS variants.
