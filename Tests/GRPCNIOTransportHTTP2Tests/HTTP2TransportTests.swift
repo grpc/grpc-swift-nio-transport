@@ -18,7 +18,6 @@ import GRPCCore
 import GRPCNIOTransportCore
 import GRPCNIOTransportHTTP2Posix
 import GRPCNIOTransportHTTP2TransportServices
-import GRPCProtobuf
 import XCTest
 
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
@@ -234,7 +233,7 @@ final class HTTP2TransportTests: XCTestCase {
         $0.echoMetadataInHeaders = true
         $0.echoMetadataInTrailers = true
         $0.numberOfMessages = 1
-        $0.messageParams = .with {
+        $0.payloadParameters = .with {
           $0.content = 0
           $0.size = 1024
         }
@@ -263,7 +262,7 @@ final class HTTP2TransportTests: XCTestCase {
       let input = ControlInput.with {
         $0.echoMetadataInTrailers = true
         $0.numberOfMessages = 1
-        $0.messageParams = .with {
+        $0.payloadParameters = .with {
           $0.content = 0
           $0.size = 1024
         }
@@ -427,7 +426,7 @@ final class HTTP2TransportTests: XCTestCase {
         $0.echoMetadataInHeaders = true
         $0.echoMetadataInTrailers = true
         $0.numberOfMessages = 5
-        $0.messageParams = .with {
+        $0.payloadParameters = .with {
           $0.content = 42
           $0.size = 1024
         }
@@ -497,7 +496,7 @@ final class HTTP2TransportTests: XCTestCase {
         $0.echoMetadataInHeaders = true
         $0.echoMetadataInTrailers = true
         $0.numberOfMessages = 5
-        $0.messageParams = .with {
+        $0.payloadParameters = .with {
           $0.content = 42
           $0.size = 1024
         }
@@ -794,7 +793,7 @@ final class HTTP2TransportTests: XCTestCase {
     let message = ControlInput.with {
       $0.echoMetadataInHeaders = true
       $0.numberOfMessages = 1
-      $0.messageParams = .with {
+      $0.payloadParameters = .with {
         $0.content = 42
         $0.size = 1024
       }
@@ -889,7 +888,7 @@ final class HTTP2TransportTests: XCTestCase {
     let message = ControlInput.with {
       $0.echoMetadataInHeaders = true
       $0.numberOfMessages = 5
-      $0.messageParams = .with {
+      $0.payloadParameters = .with {
         $0.content = 42
         $0.size = 1024
       }
@@ -1104,7 +1103,7 @@ final class HTTP2TransportTests: XCTestCase {
     ) { control, pair in
       let message = ControlInput.with {
         $0.numberOfMessages = 1
-        $0.messageParams = .with {
+        $0.payloadParameters = .with {
           $0.content = 42
           $0.size = 1024
         }
@@ -1159,7 +1158,7 @@ final class HTTP2TransportTests: XCTestCase {
     ) { control, pair in
       let message = ControlInput.with {
         $0.numberOfMessages = 1
-        $0.messageParams = .with {
+        $0.payloadParameters = .with {
           $0.content = 42
           $0.size = 1024
         }
@@ -1453,30 +1452,30 @@ extension ControlInput {
     count: Int
   ) -> Self {
     return Self.with {
-      $0.numberOfMessages = Int32(numberOfMessages)
-      $0.messageParams = .with {
-        $0.content = UInt32(repeating)
-        $0.size = Int32(count)
+      $0.numberOfMessages = numberOfMessages
+      $0.payloadParameters = .with {
+        $0.content = repeating
+        $0.size = count
       }
     }
   }
 
   fileprivate static func status(
-    code: Status.Code,
+    code: GRPCCore.Status.Code,
     message: String,
     echoMetadata: Bool
   ) -> Self {
     return Self.with {
       $0.echoMetadataInTrailers = echoMetadata
       $0.status = .with {
-        $0.code = StatusCode(rawValue: code.rawValue)!
+        $0.code = code
         $0.message = message
       }
     }
   }
 
   fileprivate static func trailersOnly(
-    code: Status.Code,
+    code: GRPCCore.Status.Code,
     message: String,
     echoMetadata: Bool
   ) -> Self {
@@ -1484,7 +1483,7 @@ extension ControlInput {
       $0.echoMetadataInTrailers = echoMetadata
       $0.isTrailersOnly = true
       $0.status = .with {
-        $0.code = StatusCode(rawValue: code.rawValue)!
+        $0.code = code
         $0.message = message
       }
     }

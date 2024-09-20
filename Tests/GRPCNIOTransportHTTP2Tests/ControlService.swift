@@ -14,38 +14,44 @@
  * limitations under the License.
  */
 
+import Foundation
 import GRPCCore
 
-import struct Foundation.Data
-
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
-struct ControlService: ControlStreamingServiceProtocol {
-  func unary(
-    request: ServerRequest.Stream<Control.Method.Unary.Input>,
-    context: ServerContext
-  ) async throws -> ServerResponse.Stream<Control.Method.Unary.Output> {
-    try await self.handle(request: request)
-  }
-
-  func serverStream(
-    request: ServerRequest.Stream<Control.Method.ServerStream.Input>,
-    context: ServerContext
-  ) async throws -> ServerResponse.Stream<Control.Method.ServerStream.Output> {
-    try await self.handle(request: request)
-  }
-
-  func clientStream(
-    request: ServerRequest.Stream<Control.Method.ClientStream.Input>,
-    context: ServerContext
-  ) async throws -> ServerResponse.Stream<Control.Method.ClientStream.Output> {
-    try await self.handle(request: request)
-  }
-
-  func bidiStream(
-    request: ServerRequest.Stream<Control.Method.BidiStream.Input>,
-    context: ServerContext
-  ) async throws -> ServerResponse.Stream<Control.Method.BidiStream.Output> {
-    try await self.handle(request: request)
+struct ControlService: RegistrableRPCService {
+  func registerMethods(with router: inout RPCRouter) {
+    router.registerHandler(
+      forMethod: MethodDescriptor(service: "Control", method: "Unary"),
+      deserializer: JSONDeserializer<ControlInput>(),
+      serializer: JSONSerializer<ControlOutput>(),
+      handler: { request, context in
+        return try await self.handle(request: request)
+      }
+    )
+    router.registerHandler(
+      forMethod: MethodDescriptor(service: "Control", method: "ServerStream"),
+      deserializer: JSONDeserializer<ControlInput>(),
+      serializer: JSONSerializer<ControlOutput>(),
+      handler: { request, context in
+        return try await self.handle(request: request)
+      }
+    )
+    router.registerHandler(
+      forMethod: MethodDescriptor(service: "Control", method: "ClientStream"),
+      deserializer: JSONDeserializer<ControlInput>(),
+      serializer: JSONSerializer<ControlOutput>(),
+      handler: { request, context in
+        return try await self.handle(request: request)
+      }
+    )
+    router.registerHandler(
+      forMethod: MethodDescriptor(service: "Control", method: "BidiStream"),
+      deserializer: JSONDeserializer<ControlInput>(),
+      serializer: JSONSerializer<ControlOutput>(),
+      handler: { request, context in
+        return try await self.handle(request: request)
+      }
+    )
   }
 }
 
@@ -62,12 +68,12 @@ extension ControlService {
     }
 
     // Check if the request is for a trailers-only response.
-    if message.hasStatus, message.isTrailersOnly {
+    if let status = message.status, message.isTrailersOnly {
       let trailers = message.echoMetadataInTrailers ? request.metadata.echo() : [:]
-      let code = Status.Code(rawValue: message.status.code.rawValue).flatMap { RPCError.Code($0) }
+      let code = Status.Code(rawValue: status.code.rawValue).flatMap { RPCError.Code($0) }
 
       if let code = code {
-        throw RPCError(code: code, message: message.status.message, metadata: trailers)
+        throw RPCError(code: code, message: status.message, metadata: trailers)
       } else {
         // Invalid code, the request is invalid, so throw an appropriate error.
         throw RPCError(
@@ -121,12 +127,12 @@ extension ControlService {
   ) async throws -> NextProcessingStep {
     // If messages were requested, build a response and send them back.
     if input.numberOfMessages > 0 {
-      let output = ControlOutput.with {
-        $0.payload = Data(
-          repeating: UInt8(truncatingIfNeeded: input.messageParams.content),
-          count: Int(input.messageParams.size)
+      let output = ControlOutput(
+        payload: Data(
+          repeating: input.payloadParameters.content,
+          count: input.payloadParameters.size
         )
-      }
+      )
 
       for _ in 0 ..< input.numberOfMessages {
         try await writer.write(output)
@@ -134,7 +140,7 @@ extension ControlService {
     }
 
     // Check whether the RPC should be finished (i.e. the input `hasStatus`).
-    guard input.hasStatus else {
+    guard let status = input.status else {
       if input.echoMetadataInTrailers {
         // There was no status in the input, but echo metadata in trailers was set. This is an
         // implicit 'ok' status.
@@ -149,21 +155,21 @@ extension ControlService {
     // Build the trailers.
     let trailers = input.echoMetadataInTrailers ? metadata.echo() : [:]
 
-    if input.status.code == .ok {
+    if status.code == .ok {
       return .return(trailers)
     }
 
     // Non-OK status code, throw an error.
-    let code = Status.Code(rawValue: input.status.code.rawValue).flatMap { RPCError.Code($0) }
+    let code = RPCError.Code(status.code)
 
     if let code = code {
       // Valid error code, throw it.
-      throw RPCError(code: code, message: input.status.message, metadata: trailers)
+      throw RPCError(code: code, message: status.message, metadata: trailers)
     } else {
       // Invalid error code, throw an appropriate error.
       throw RPCError(
         code: .invalidArgument,
-        message: "Invalid error code '\(input.status.code)'"
+        message: "Invalid error code '\(status.code)'"
       )
     }
   }

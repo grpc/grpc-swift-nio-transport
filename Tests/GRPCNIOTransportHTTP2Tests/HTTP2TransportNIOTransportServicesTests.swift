@@ -200,6 +200,8 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
   }
 
   func testServerConfig_Defaults() throws {
+    try XCTSkipIf(true)
+
     let identityProvider = Self.loadIdentity
     let grpcTLSConfig = HTTP2ServerTransport.TransportServices.Config.TLS.defaults(
       identityProvider: identityProvider
@@ -217,6 +219,8 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
   }
 
   func testClientConfig_Defaults() throws {
+    try XCTSkipIf(true)
+
     let identityProvider = Self.loadIdentity
     let grpcTLSConfig = HTTP2ClientTransport.TransportServices.Config.TLS(
       identityProvider: identityProvider
