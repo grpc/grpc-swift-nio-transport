@@ -105,7 +105,7 @@ check_copyright_headers() {
   done < <(find . -name '*.swift' \
     ! -name '*.pb.swift' \
     ! -name '*.grpc.swift' \
-    ! -path './.build/*')
+    ! -path '*/.build/*')
 }
 
 errors=0

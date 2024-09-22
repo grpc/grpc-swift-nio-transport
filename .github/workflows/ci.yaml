@@ -35,3 +35,20 @@ jobs:
     - name: 🧪 Test
       run: swift test ${{ matrix.swift-test-flags }}
       timeout-minutes: 20
+  integration-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: swiftlang/swift:nightly-jammy
+          - image: swift:6.0-jammy
+    name: Run integration tests using ${{ matrix.image }}
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ matrix.image }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build performance tests
+      run: ./dev/build-performance-tests.sh
+    - name: Run interop tests
+      run: ./dev/run-interop-tests.sh
