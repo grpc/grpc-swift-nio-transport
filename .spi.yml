@@ -1,0 +1,7 @@
+version: 1
+builder:
+  configs:
+    - documentation_targets: [GRPCNIOTransportHTTP2, GRPCNIOTransportHTTP2Posix, GRPCNIOTransportHTTP2TransportServices]
+      swift_version: 6.0
+      # Don't include @_exported types from GRPCCore
+      custom_documentation_parameters: [--exclude-extended-types]

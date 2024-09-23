@@ -75,7 +75,7 @@ let targets: [Target] = [
     ]
   ),
 
-  // Core module containing shared compionents for the NIOPosix and NIOTS variants.
+  // Core module containing shared components for the NIOPosix and NIOTS variants.
   .target(
     name: "GRPCNIOTransportCore",
     dependencies: [
