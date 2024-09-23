@@ -40,6 +40,7 @@
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 public struct NameResolverRegistry {
   private enum Factory {
+    case dns(NameResolvers.DNS)
     case ipv4(NameResolvers.IPv4)
     case ipv6(NameResolvers.IPv6)
     case unix(NameResolvers.UnixDomainSocket)
@@ -47,7 +48,9 @@ public struct NameResolverRegistry {
     case other(any NameResolverFactory)
 
     init(_ factory: some NameResolverFactory) {
-      if let ipv4 = factory as? NameResolvers.IPv4 {
+      if let dns = factory as? NameResolvers.DNS {
+        self = .dns(dns)
+      } else if let ipv4 = factory as? NameResolvers.IPv4 {
         self = .ipv4(ipv4)
       } else if let ipv6 = factory as? NameResolvers.IPv6 {
         self = .ipv6(ipv6)
@@ -62,6 +65,8 @@ public struct NameResolverRegistry {
 
     func makeResolverIfCompatible<Target: ResolvableTarget>(_ target: Target) -> NameResolver? {
       switch self {
+      case .dns(let factory):
+        return factory.makeResolverIfCompatible(target)
       case .ipv4(let factory):
         return factory.makeResolverIfCompatible(target)
       case .ipv6(let factory):
@@ -77,6 +82,8 @@ public struct NameResolverRegistry {
 
     func hasTarget<Target: ResolvableTarget>(_ target: Target) -> Bool {
       switch self {
+      case .dns(let factory):
+        return factory.isCompatible(withTarget: target)
       case .ipv4(let factory):
         return factory.isCompatible(withTarget: target)
       case .ipv6(let factory):
@@ -92,6 +99,8 @@ public struct NameResolverRegistry {
 
     func `is`<Factory: NameResolverFactory>(ofType factoryType: Factory.Type) -> Bool {
       switch self {
+      case .dns:
+        return NameResolvers.DNS.self == factoryType
       case .ipv4:
         return NameResolvers.IPv4.self == factoryType
       case .ipv6:
@@ -116,12 +125,14 @@ public struct NameResolverRegistry {
   /// Returns a new name resolver registry with the default factories registered.
   ///
   /// The default resolvers include:
+  /// - ``NameResolvers/DNS``,
   /// - ``NameResolvers/IPv4``,
   /// - ``NameResolvers/IPv6``,
   /// - ``NameResolvers/UnixDomainSocket``,
   /// - ``NameResolvers/VirtualSocket``.
   public static var defaults: Self {
     var resolvers = NameResolverRegistry()
+    resolvers.registerFactory(NameResolvers.DNS())
     resolvers.registerFactory(NameResolvers.IPv4())
     resolvers.registerFactory(NameResolvers.IPv6())
     resolvers.registerFactory(NameResolvers.UnixDomainSocket())

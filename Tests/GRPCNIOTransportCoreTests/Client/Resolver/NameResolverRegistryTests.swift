@@ -132,11 +132,12 @@ final class NameResolverRegistryTests: XCTestCase {
 
   func testDefaultResolvers() {
     let resolvers = NameResolverRegistry.defaults
+    XCTAssert(resolvers.containsFactory(ofType: NameResolvers.DNS.self))
     XCTAssert(resolvers.containsFactory(ofType: NameResolvers.IPv4.self))
     XCTAssert(resolvers.containsFactory(ofType: NameResolvers.IPv6.self))
     XCTAssert(resolvers.containsFactory(ofType: NameResolvers.UnixDomainSocket.self))
     XCTAssert(resolvers.containsFactory(ofType: NameResolvers.VirtualSocket.self))
-    XCTAssertEqual(resolvers.count, 4)
+    XCTAssertEqual(resolvers.count, 5)
   }
 
   func testMakeResolver() {
@@ -165,6 +166,28 @@ final class NameResolverRegistryTests: XCTestCase {
     for try await _ in resolver.names {
       XCTFail("Expected an empty sequence")
     }
+  }
+
+  func testDNSResolverForIPv4() async throws {
+    let factory = NameResolvers.DNS()
+    let resolver = factory.resolver(for: .dns(host: "127.0.0.1", port: 1234))
+    XCTAssertEqual(resolver.updateMode, .pull)
+
+    var iterator = resolver.names.makeAsyncIterator()
+    let result = try await XCTUnwrapAsync { try await iterator.next() }
+    XCTAssertEqual(result.endpoints, [Endpoint(.ipv4(host: "127.0.0.1", port: 1234))])
+    XCTAssertNil(result.serviceConfig)
+  }
+
+  func testDNSResolverForIPv6() async throws {
+    let factory = NameResolvers.DNS()
+    let resolver = factory.resolver(for: .dns(host: "::1", port: 1234))
+    XCTAssertEqual(resolver.updateMode, .pull)
+
+    var iterator = resolver.names.makeAsyncIterator()
+    let result = try await XCTUnwrapAsync { try await iterator.next() }
+    XCTAssertEqual(result.endpoints, [Endpoint(.ipv6(host: "::1", port: 1234))])
+    XCTAssertNil(result.serviceConfig)
   }
 
   func testIPv4ResolverForSingleHost() async throws {
