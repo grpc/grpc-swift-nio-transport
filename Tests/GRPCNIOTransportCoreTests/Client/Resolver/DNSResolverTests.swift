@@ -33,7 +33,6 @@ struct DNSResolverTests {
 
     let result = try await DNSResolver.resolve(host: host, port: 80)
 
-    #expect(result.count == 1)
-    #expect(result[0] == expected)
+    #expect(result == [expected])
   }
 }
