@@ -19,19 +19,21 @@ import Testing
 
 @Suite("DNSResolver")
 struct DNSResolverTests {
-  @Test("Resolve hostname")
-  func resolve() async throws {
+  @Test(
+    "Resolve hostname",
+    arguments: [
+      ("127.0.0.1", .ipv4(host: "127.0.0.1", port: 80)),
+      ("::1", .ipv6(host: "::1", port: 80)),
+    ] as [(String, SocketAddress)]
+  )
+  func resolve(host: String, expected: SocketAddress) async throws {
     // Note: This test checks the IPv4 and IPv6 addresses separately (instead of
     // `DNSResolver.resolve(host: "localhost", port: 80)`) because the ordering of the resulting
     // list containing both IP address versions can be different.
 
-    let expectedIPv4Result: [SocketAddress] = [.ipv4(host: "127.0.0.1", port: 80)]
-    let expectedIPv6Result: [SocketAddress] = [.ipv6(host: "::1", port: 80)]
+    let result = try await DNSResolver.resolve(host: host, port: 80)
 
-    let ipv4Result = try await DNSResolver.resolve(host: "127.0.0.1", port: 80)
-    let ipv6Result = try await DNSResolver.resolve(host: "::1", port: 80)
-
-    #expect(ipv4Result == expectedIPv4Result)
-    #expect(ipv6Result == expectedIPv6Result)
+    #expect(result.count == 1)
+    #expect(result[0] == expected)
   }
 }

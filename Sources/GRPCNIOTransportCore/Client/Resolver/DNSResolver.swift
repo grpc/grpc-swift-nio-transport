@@ -17,11 +17,11 @@
 private import Dispatch
 
 #if canImport(Darwin)
-package import Darwin
+private import Darwin
 #elseif canImport(Glibc)
-package import Glibc
+private import Glibc
 #elseif canImport(Musl)
-package import Musl
+private import Musl
 #else
 #error("The GRPCNIOTransportCore module was unable to identify your C library.")
 #endif
@@ -62,8 +62,12 @@ package enum DNSResolver {
     }
 
     var hints = addrinfo()
+    #if os(Linux)
+    hints.ai_socktype = CInt(SOCK_STREAM.rawValue)
+    #else
     hints.ai_socktype = SOCK_STREAM
-    hints.ai_protocol = IPPROTO_TCP
+    #endif
+    hints.ai_protocol = CInt(IPPROTO_TCP)
 
     let errorCode = getaddrinfo(host, String(port), &hints, &result)
 
@@ -124,7 +128,7 @@ package enum DNSResolver {
       if let presentationAddressStringPtr {
         return String(cString: presentationAddressStringPtr)
       } else {
-        throw Self.InetNetworkToPresentationError.systemError(errno: errno)
+        throw Self.InetNetworkToPresentationError(errno: errno)
       }
     }
   }
@@ -133,84 +137,14 @@ package enum DNSResolver {
 @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 extension DNSResolver {
   /// `Error` that may be thrown based on the error code returned by `getaddrinfo`.
-  package enum GetAddrInfoError: Error, Hashable {
-    /// Address family for nodename not supported.
-    case addressFamilyForNodenameNotSupported
-
-    /// Temporary failure in name resolution.
-    case temporaryFailure
-
-    /// Invalid value for `ai_flags`.
-    case invalidAIFlags
-
-    /// Invalid value for `hints`.
-    case invalidHints
-
-    /// Non-recoverable failure in name resolution.
-    case nonRecoverableFailure
-
-    /// `ai_family` not supported.
-    case aiFamilyNotSupported
-
-    /// Memory allocation failure.
-    case memoryAllocationFailure
-
-    /// No address associated with nodename.
-    case noAddressAssociatedWithNodename
-
-    /// `hostname` or `servname` not provided, or not known.
-    case hostnameOrServnameNotProvidedOrNotKnown
-
-    /// Argument buffer overflow.
-    case argumentBufferOverflow
-
-    /// Resolved protocol is unknown.
-    case resolvedProtocolIsUnknown
-
-    /// `servname` not supported for `ai_socktype`.
-    case servnameNotSupportedForSocktype
-
-    /// `ai_socktype` not supported.
-    case socktypeNotSupported
-
-    /// System error returned in `errno`.
-    case systemError
-
-    /// Unknown error.
-    case unknown
+  package struct GetAddrInfoError: Error, Hashable, CustomStringConvertible {
+    package let description: String
 
     package init(code: CInt) {
-      switch code {
-      case EAI_ADDRFAMILY:
-        self = .addressFamilyForNodenameNotSupported
-      case EAI_AGAIN:
-        self = .temporaryFailure
-      case EAI_BADFLAGS:
-        self = .invalidAIFlags
-      case EAI_BADHINTS:
-        self = .invalidHints
-      case EAI_FAIL:
-        self = .nonRecoverableFailure
-      case EAI_FAMILY:
-        self = .aiFamilyNotSupported
-      case EAI_MEMORY:
-        self = .memoryAllocationFailure
-      case EAI_NODATA:
-        self = .noAddressAssociatedWithNodename
-      case EAI_NONAME:
-        self = .hostnameOrServnameNotProvidedOrNotKnown
-      case EAI_OVERFLOW:
-        self = .argumentBufferOverflow
-      case EAI_PROTOCOL:
-        self = .resolvedProtocolIsUnknown
-      case EAI_SERVICE:
-        self = .servnameNotSupportedForSocktype
-      case EAI_SOCKTYPE:
-        self = .socktypeNotSupported
-      case EAI_SYSTEM:
-        self = .systemError
-      default:
-        self = .unknown
+      if let errorMessage = gai_strerror(code) {
+        self.description = String(cString: errorMessage)
+      } else {
+        self.description = "Unknown error: \(code)"
       }
     }
   }
@@ -219,8 +153,12 @@ extension DNSResolver {
 @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 extension DNSResolver {
   /// `Error` that may be thrown based on the system error encountered by `inet_ntop`.
-  package enum InetNetworkToPresentationError: Error, Hashable {
-    case systemError(errno: errno_t)
+  package struct InetNetworkToPresentationError: Error, Hashable {
+    package let errno: CInt
+
+    package init(errno: CInt) {
+      self.errno = errno
+    }
   }
 }
 
