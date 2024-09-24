@@ -75,7 +75,9 @@ extension NameResolvers.DNS {
       self.target = target
     }
 
-    func resolve() async throws -> NameResolutionResult {
+    func resolve(
+      isolation actor: isolated (any Actor)? = nil
+    ) async throws -> NameResolutionResult {
       let addresses: [SocketAddress]
 
       do {
@@ -119,7 +121,7 @@ extension NameResolvers.DNS.Resolver: AsyncSequence {
     func next(
       isolation actor: isolated (any Actor)?
     ) async throws(any Error) -> NameResolutionResult? {
-      return try await self.resolver.resolve()
+      return try await self.resolver.resolve(isolation: actor)
     }
   }
 }
