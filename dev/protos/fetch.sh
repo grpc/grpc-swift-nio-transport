@@ -28,7 +28,7 @@ git clone --depth 1 https://github.com/grpc/grpc-proto "$checkouts/grpc-proto"
 # Remove the old protos.
 rm -rf "$upstream"
 
-# Create new directories to poulate. These are based on proto package name
+# Create new directories to populate. These are based on proto package name
 # rather than source repository name.
 mkdir -p "$upstream/grpc/testing"
 mkdir -p "$upstream/grpc/core"
