@@ -269,7 +269,7 @@ extension GRPCChannel {
     descriptor: MethodDescriptor,
     options: CallOptions
   ) async -> MakeStreamResult {
-    let waitForReady = options.waitForReady ?? true
+    let waitForReady = options.waitForReady ?? false
     switch self.state.withLock({ $0.makeStream(waitForReady: waitForReady) }) {
     case .useLoadBalancer(let loadBalancer):
       return await self.makeStream(
