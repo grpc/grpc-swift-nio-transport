@@ -68,7 +68,7 @@ package final class Connection: Sendable {
     /// Closed because the remote peer initiate shutdown (i.e. sent a GOAWAY frame).
     case remote
     /// Closed because the connection encountered an unexpected error.
-    case error(any Error, wasIdle: Bool)
+    case error(RPCError, wasIdle: Bool)
   }
 
   /// Inputs to the 'run' method.
@@ -236,6 +236,7 @@ package final class Connection: Sendable {
     // This state is tracked here so that if the connection events sequence finishes and the
     // connection never became ready then the connection can report that the connect failed.
     var isReady = false
+    var unexpectedCloseError: (any Error)?
 
     func makeNeverReadyError(cause: (any Error)?) -> RPCError {
       return RPCError(
@@ -265,10 +266,15 @@ package final class Connection: Sendable {
             // The connection will close at some point soon, yield a notification for this
             // because the close might not be imminent and this could result in address resolution.
             self.event.continuation.yield(.goingAway(errorCode, reason))
-          case .idle, .keepaliveExpired, .initiatedLocally, .unexpected:
+          case .idle, .keepaliveExpired, .initiatedLocally:
             // The connection will be closed imminently in these cases there's no need to do
             // anything.
             ()
+          case .unexpected(let error, _):
+            // The connection will be closed imminently in this case.
+            // We'll store the error that caused the unexpected closure so we
+            // can surface it.
+            unexpectedCloseError = error
           }
 
           // Take the reason with the highest precedence. A GOAWAY may be superseded by user
@@ -318,7 +324,7 @@ package final class Connection: Sendable {
         finalEvent = .closed(connectionCloseReason)
       } else {
         // The connection never became ready, this therefore counts as a failed connect attempt.
-        finalEvent = .connectFailed(makeNeverReadyError(cause: nil))
+        finalEvent = .connectFailed(makeNeverReadyError(cause: unexpectedCloseError))
       }
 
       // The connection events sequence has finished: the connection is now closed.

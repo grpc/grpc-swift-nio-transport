@@ -256,8 +256,8 @@ extension Subchannel {
     switch event {
     case .connectSucceeded:
       self.handleConnectSucceededEvent()
-    case .connectFailed:
-      self.handleConnectFailedEvent(in: &group)
+    case .connectFailed(let cause):
+      self.handleConnectFailedEvent(in: &group, error: cause)
     case .goingAway:
       self.handleGoingAwayEvent()
     case .closed(let reason):
@@ -282,7 +282,7 @@ extension Subchannel {
     }
   }
 
-  private func handleConnectFailedEvent(in group: inout DiscardingTaskGroup) {
+  private func handleConnectFailedEvent(in group: inout DiscardingTaskGroup, error: any Error) {
     let onConnectFailed = self.state.withLock { $0.connectFailed(connector: self.connector) }
     switch onConnectFailed {
     case .connect(let connection):
@@ -290,8 +290,17 @@ extension Subchannel {
       self.runConnection(connection, in: &group)
 
     case .backoff(let duration):
+      let transientFailureCause = (error as? RPCError) ?? RPCError(
+        code: .unavailable,
+        message: "All addresses have been tried: backing off.",
+        cause: error
+      )
       // All addresses have been tried, backoff for some time.
-      self.event.continuation.yield(.connectivityStateChanged(.transientFailure))
+      self.event.continuation.yield(
+        .connectivityStateChanged(
+          .transientFailure(cause: transientFailureCause)
+        )
+      )
       group.addTask {
         do {
           try await Task.sleep(for: duration)
@@ -334,9 +343,9 @@ extension Subchannel {
     case .emitIdle:
       self.event.continuation.yield(.connectivityStateChanged(.idle))
 
-    case .emitTransientFailureAndReconnect:
+    case .emitTransientFailureAndReconnect(let cause):
       // Unclean closes trigger a transient failure state change and a name resolution.
-      self.event.continuation.yield(.connectivityStateChanged(.transientFailure))
+      self.event.continuation.yield(.connectivityStateChanged(.transientFailure(cause: cause)))
       self.event.continuation.yield(.requiresNameResolution)
       // Attempt to reconnect.
       self.handleConnectInput(in: &group)
@@ -632,7 +641,7 @@ extension Subchannel {
     enum OnClosed {
       case nothing
       case emitIdle
-      case emitTransientFailureAndReconnect
+      case emitTransientFailureAndReconnect(cause: RPCError)
       case finish(emitShutdown: Bool)
     }
 
@@ -646,9 +655,15 @@ extension Subchannel {
           self = .notConnected(NotConnected(from: state))
           onClosed = .emitIdle
 
-        case .keepaliveTimeout, .error(_, wasIdle: false):
+        case .keepaliveTimeout:
           self = .notConnected(NotConnected(from: state))
-          onClosed = .emitTransientFailureAndReconnect
+          onClosed = .emitTransientFailureAndReconnect(
+            cause: RPCError(code: .unavailable, message: "The keepalive timed out.")
+          )
+
+        case .error(let error, wasIdle: false):
+          self = .notConnected(NotConnected(from: state))
+          onClosed = .emitTransientFailureAndReconnect(cause: error)
 
         case .initiatedLocally:
           // Should be in the 'shuttingDown' state.

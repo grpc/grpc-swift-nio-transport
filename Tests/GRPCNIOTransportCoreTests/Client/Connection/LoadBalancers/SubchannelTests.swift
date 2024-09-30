@@ -161,7 +161,10 @@ final class SubchannelTests: XCTestCase {
         [
           .connectivityStateChanged(.idle),
           .connectivityStateChanged(.connecting),
-          .connectivityStateChanged(.transientFailure),
+          .connectivityStateChanged(.transientFailure(cause: RPCError(
+            code: .unavailable,
+            message: "All addresses have been tried: backing off."
+          ))),
           .connectivityStateChanged(.connecting),
         ]
       )
@@ -440,7 +443,9 @@ final class SubchannelTests: XCTestCase {
         .connectivityStateChanged(.idle),
         .connectivityStateChanged(.connecting),
         .connectivityStateChanged(.ready),
-        .connectivityStateChanged(.transientFailure),
+        .connectivityStateChanged(.transientFailure(cause: RPCError(
+          code: .unavailable, message: "The TCP connection was dropped unexpectedly."
+        ))),
         .requiresNameResolution,
         .connectivityStateChanged(.connecting),
         .connectivityStateChanged(.ready),

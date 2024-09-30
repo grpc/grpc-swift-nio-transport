@@ -290,7 +290,7 @@ extension GRPCChannel {
       }
 
     case .failRPC:
-      return .stopTrying(RPCError(code: .unavailable, message: "channel isn't ready"))
+      return .stopTrying(RPCError(code: .unavailable, message: "Channel isn't ready."))
     }
   }
 
@@ -300,7 +300,7 @@ extension GRPCChannel {
     loadBalancer: LoadBalancer
   ) async -> MakeStreamResult {
     guard let subchannel = loadBalancer.pickSubchannel() else {
-      return .tryAgain(RPCError(code: .unavailable, message: "channel isn't ready"))
+      return .tryAgain(RPCError(code: .unavailable, message: "Channel isn't ready."))
     }
 
     let methodConfig = self.config(forMethod: descriptor)
@@ -758,14 +758,30 @@ extension GRPCChannel.StateMachine {
             result: .success(state.current)
           )
 
-        case .transientFailure, .shutdown:  // shutdown includes shutting down
+        case .transientFailure(let cause):
           // Current load-balancer failed. Remove all the 'fast-failing' continuations in the
           // queue, these are RPCs which set the 'wait for ready' option to false. The rest of
           // the entries in the queue will wait for a load-balancer to become ready.
           let continuations = state.queue.removeFastFailingEntries()
           actions.resumeContinuations = ConnectivityStateChangeActions.ResumableContinuations(
             continuations: continuations,
-            result: .failure(RPCError(code: .unavailable, message: "channel isn't ready"))
+            result: .failure(
+              RPCError(
+                code: .unavailable,
+                message: "Channel isn't ready.",
+                cause: cause
+              )
+            )
+          )
+
+        case .shutdown:  // shutdown includes shutting down
+          // Current load-balancer failed. Remove all the 'fast-failing' continuations in the
+          // queue, these are RPCs which set the 'wait for ready' option to false. The rest of
+          // the entries in the queue will wait for a load-balancer to become ready.
+          let continuations = state.queue.removeFastFailingEntries()
+          actions.resumeContinuations = ConnectivityStateChangeActions.ResumableContinuations(
+            continuations: continuations,
+            result: .failure(RPCError(code: .unavailable, message: "Channel isn't ready."))
           )
 
         case .idle, .connecting:
