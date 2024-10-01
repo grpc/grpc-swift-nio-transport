@@ -58,13 +58,13 @@ struct ControlService: RegistrableRPCService {
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension ControlService {
   private func handle(
-    request: ServerRequest.Stream<ControlInput>
-  ) async throws -> ServerResponse.Stream<ControlOutput> {
+    request: StreamingServerRequest<ControlInput>
+  ) async throws -> StreamingServerResponse<ControlOutput> {
     var iterator = request.messages.makeAsyncIterator()
 
     guard let message = try await iterator.next() else {
       // Empty input stream, empty output stream.
-      return ServerResponse.Stream { _ in [:] }
+      return StreamingServerResponse { _ in [:] }
     }
 
     // Check if the request is for a trailers-only response.
@@ -90,7 +90,7 @@ extension ControlService {
     // iterator again from the current concurrency domain.
     let transfer = UnsafeTransfer(iterator)
 
-    return ServerResponse.Stream(metadata: metadata) { writer in
+    return StreamingServerResponse(metadata: metadata) { writer in
       // Finish dealing with the first message.
       switch try await self.processMessage(message, metadata: request.metadata, writer: writer) {
       case .return(let metadata):

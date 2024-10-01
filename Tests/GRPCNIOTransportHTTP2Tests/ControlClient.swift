@@ -25,9 +25,9 @@ internal struct ControlClient {
   }
 
   internal func unary<R>(
-    request: GRPCCore.ClientRequest.Single<ControlInput>,
+    request: GRPCCore.ClientRequest<ControlInput>,
     options: GRPCCore.CallOptions = .defaults,
-    _ body: @Sendable @escaping (GRPCCore.ClientResponse.Single<ControlOutput>) async throws -> R =
+    _ body: @Sendable @escaping (GRPCCore.ClientResponse<ControlOutput>) async throws -> R =
       {
         try $0.message
       }
@@ -43,9 +43,9 @@ internal struct ControlClient {
   }
 
   internal func serverStream<R>(
-    request: GRPCCore.ClientRequest.Single<ControlInput>,
+    request: GRPCCore.ClientRequest<ControlInput>,
     options: GRPCCore.CallOptions = .defaults,
-    _ body: @Sendable @escaping (GRPCCore.ClientResponse.Stream<ControlOutput>) async throws -> R
+    _ body: @Sendable @escaping (GRPCCore.StreamingClientResponse<ControlOutput>) async throws -> R
   ) async throws -> R where R: Sendable {
     try await self.client.serverStreaming(
       request: request,
@@ -58,9 +58,9 @@ internal struct ControlClient {
   }
 
   internal func clientStream<R>(
-    request: GRPCCore.ClientRequest.Stream<ControlInput>,
+    request: GRPCCore.StreamingClientRequest<ControlInput>,
     options: GRPCCore.CallOptions = .defaults,
-    _ body: @Sendable @escaping (GRPCCore.ClientResponse.Single<ControlOutput>) async throws -> R =
+    _ body: @Sendable @escaping (GRPCCore.ClientResponse<ControlOutput>) async throws -> R =
       {
         try $0.message
       }
@@ -76,9 +76,9 @@ internal struct ControlClient {
   }
 
   internal func bidiStream<R>(
-    request: GRPCCore.ClientRequest.Stream<ControlInput>,
+    request: GRPCCore.StreamingClientRequest<ControlInput>,
     options: GRPCCore.CallOptions = .defaults,
-    _ body: @Sendable @escaping (GRPCCore.ClientResponse.Stream<ControlOutput>) async throws -> R
+    _ body: @Sendable @escaping (GRPCCore.StreamingClientResponse<ControlOutput>) async throws -> R
   ) async throws -> R where R: Sendable {
     try await self.client.bidirectionalStreaming(
       request: request,

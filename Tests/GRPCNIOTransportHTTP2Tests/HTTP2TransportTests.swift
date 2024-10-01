@@ -240,7 +240,7 @@ final class HTTP2TransportTests: XCTestCase {
       }
 
       let metadata: Metadata = ["test-key": "test-value"]
-      let request = ClientRequest.Single(message: input, metadata: metadata)
+      let request = ClientRequest(message: input, metadata: metadata)
 
       try await control.unary(request: request) { response in
         let message = try response.message
@@ -273,7 +273,7 @@ final class HTTP2TransportTests: XCTestCase {
       }
 
       let metadata: Metadata = ["test-key": "test-value"]
-      let request = ClientRequest.Single(message: input, metadata: metadata)
+      let request = ClientRequest(message: input, metadata: metadata)
 
       try await control.unary(request: request) { response in
         XCTAssertThrowsError(ofType: RPCError.self, try response.message) { error in
@@ -294,7 +294,7 @@ final class HTTP2TransportTests: XCTestCase {
     // Client sends one message, server sends non-ok status with trailing metadata.
     try await self.forEachTransportPair { control, pair in
       let metadata: Metadata = ["test-key": "test-value"]
-      let request = ClientRequest.Single<ControlInput>(
+      let request = ClientRequest<ControlInput>(
         message: .trailersOnly(code: .aborted, message: "\(#function)", echoMetadata: true),
         metadata: metadata
       )
@@ -320,7 +320,7 @@ final class HTTP2TransportTests: XCTestCase {
   func testClientStreamingOK() async throws {
     try await self.forEachTransportPair { control, pair in
       let metadata: Metadata = ["test-key": "test-value"]
-      let request = ClientRequest.Stream(
+      let request = StreamingClientRequest(
         of: ControlInput.self,
         metadata: metadata
       ) { writer in
@@ -351,7 +351,7 @@ final class HTTP2TransportTests: XCTestCase {
   func testClientStreamingNotOK() async throws {
     try await self.forEachTransportPair { control, pair in
       let metadata: Metadata = ["test-key": "test-value"]
-      let request = ClientRequest.Stream(
+      let request = StreamingClientRequest(
         of: ControlInput.self,
         metadata: metadata
       ) { writer in
@@ -388,7 +388,7 @@ final class HTTP2TransportTests: XCTestCase {
     // Client sends one message, server sends non-ok status with trailing metadata.
     try await self.forEachTransportPair { control, pair in
       let metadata: Metadata = ["test-key": "test-value"]
-      let request = ClientRequest.Stream(
+      let request = StreamingClientRequest(
         of: ControlInput.self,
         metadata: metadata
       ) { writer in
@@ -432,7 +432,7 @@ final class HTTP2TransportTests: XCTestCase {
         }
       }
 
-      let request = ClientRequest.Single(message: input, metadata: metadata)
+      let request = ClientRequest(message: input, metadata: metadata)
       try await control.serverStream(request: request) { response in
         switch response.accepted {
         case .success(let contents):
@@ -467,7 +467,7 @@ final class HTTP2TransportTests: XCTestCase {
         $0.echoMetadataInTrailers = true
       }
 
-      let request = ClientRequest.Single(message: input, metadata: metadata)
+      let request = ClientRequest(message: input, metadata: metadata)
       try await control.serverStream(request: request) { response in
         switch response.accepted {
         case .success(let contents):
@@ -506,7 +506,7 @@ final class HTTP2TransportTests: XCTestCase {
         }
       }
 
-      let request = ClientRequest.Single(message: input, metadata: metadata)
+      let request = ClientRequest(message: input, metadata: metadata)
       try await control.serverStream(request: request) { response in
         switch response.accepted {
         case .success(let contents):
@@ -551,7 +551,7 @@ final class HTTP2TransportTests: XCTestCase {
         }
       }
 
-      let request = ClientRequest.Single(message: input, metadata: metadata)
+      let request = ClientRequest(message: input, metadata: metadata)
       try await control.serverStream(request: request) { response in
         switch response.accepted {
         case .success(let contents):
@@ -578,7 +578,7 @@ final class HTTP2TransportTests: XCTestCase {
   func testServerStreamingRejected() async throws {
     try await self.forEachTransportPair { control, pair in
       let metadata: Metadata = ["test-key": "test-value"]
-      let request = ClientRequest.Single<ControlInput>(
+      let request = ClientRequest<ControlInput>(
         message: .trailersOnly(code: .aborted, message: "\(#function)", echoMetadata: true),
         metadata: metadata
       )
@@ -599,7 +599,7 @@ final class HTTP2TransportTests: XCTestCase {
   func testBidiStreamingOK() async throws {
     try await self.forEachTransportPair { control, pair in
       let metadata: Metadata = ["test-key": "test-value"]
-      let request = ClientRequest.Stream(
+      let request = StreamingClientRequest(
         of: ControlInput.self,
         metadata: metadata
       ) { writer in
@@ -638,7 +638,7 @@ final class HTTP2TransportTests: XCTestCase {
 
   func testBidiStreamingEmptyOK() async throws {
     try await self.forEachTransportPair { control, pair in
-      let request = ClientRequest.Stream(of: ControlInput.self) { _ in }
+      let request = StreamingClientRequest(of: ControlInput.self) { _ in }
       try await control.bidiStream(request: request) { response in
         switch response.accepted {
         case .success(let contents):
@@ -662,7 +662,7 @@ final class HTTP2TransportTests: XCTestCase {
   func testBidiStreamingNotOK() async throws {
     try await self.forEachTransportPair { control, pair in
       let metadata: Metadata = ["test-key": "test-value"]
-      let request = ClientRequest.Stream(
+      let request = StreamingClientRequest(
         of: ControlInput.self,
         metadata: metadata
       ) { writer in
@@ -710,7 +710,7 @@ final class HTTP2TransportTests: XCTestCase {
   func testBidiStreamingRejected() async throws {
     try await self.forEachTransportPair { control, pair in
       let metadata: Metadata = ["test-key": "test-value"]
-      let request = ClientRequest.Stream(
+      let request = StreamingClientRequest(
         of: ControlInput.self,
         metadata: metadata
       ) { writer in
@@ -740,7 +740,7 @@ final class HTTP2TransportTests: XCTestCase {
 
   func testUnaryNotImplemented() async throws {
     try await self.forEachTransportPair(enableControlService: false) { control, pair in
-      let request = ClientRequest.Single(message: ControlInput())
+      let request = ClientRequest(message: ControlInput())
       try await control.unary(request: request) { response in
         XCTAssertThrowsError(ofType: RPCError.self, try response.message) { error in
           XCTAssertEqual(error.code, .unimplemented)
@@ -751,7 +751,7 @@ final class HTTP2TransportTests: XCTestCase {
 
   func testClientStreamingNotImplemented() async throws {
     try await self.forEachTransportPair(enableControlService: false) { control, pair in
-      let request = ClientRequest.Stream(of: ControlInput.self) { _ in }
+      let request = StreamingClientRequest(of: ControlInput.self) { _ in }
       try await control.clientStream(request: request) { response in
         XCTAssertThrowsError(ofType: RPCError.self, try response.message) { error in
           XCTAssertEqual(error.code, .unimplemented)
@@ -762,7 +762,7 @@ final class HTTP2TransportTests: XCTestCase {
 
   func testServerStreamingNotImplemented() async throws {
     try await self.forEachTransportPair(enableControlService: false) { control, pair in
-      let request = ClientRequest.Single(message: ControlInput())
+      let request = ClientRequest(message: ControlInput())
       try await control.serverStream(request: request) { response in
         XCTAssertThrowsError(ofType: RPCError.self, try response.accepted.get()) { error in
           XCTAssertEqual(error.code, .unimplemented)
@@ -773,7 +773,7 @@ final class HTTP2TransportTests: XCTestCase {
 
   func testBidiStreamingNotImplemented() async throws {
     try await self.forEachTransportPair(enableControlService: false) { control, pair in
-      let request = ClientRequest.Stream(of: ControlInput.self) { _ in }
+      let request = StreamingClientRequest(of: ControlInput.self) { _ in }
       try await control.bidiStream(request: request) { response in
         XCTAssertThrowsError(ofType: RPCError.self, try response.accepted.get()) { error in
           XCTAssertEqual(error.code, .unimplemented)
@@ -803,7 +803,7 @@ final class HTTP2TransportTests: XCTestCase {
     options.compression = client
 
     try await control.unary(
-      request: ClientRequest.Single(message: message),
+      request: ClientRequest(message: message),
       options: options
     ) { response in
       // Check the client algorithm.
@@ -840,7 +840,7 @@ final class HTTP2TransportTests: XCTestCase {
     control: ControlClient,
     pair: Transport
   ) async throws {
-    let request = ClientRequest.Stream(of: ControlInput.self) { writer in
+    let request = StreamingClientRequest(of: ControlInput.self) { writer in
       try await writer.write(.echoMetadata)
       try await writer.write(.noOp)
       try await writer.write(.noOp)
@@ -898,7 +898,7 @@ final class HTTP2TransportTests: XCTestCase {
     options.compression = client
 
     try await control.serverStream(
-      request: ClientRequest.Single(message: message),
+      request: ClientRequest(message: message),
       options: options
     ) { response in
       // Check the client algorithm.
@@ -936,7 +936,7 @@ final class HTTP2TransportTests: XCTestCase {
     control: ControlClient,
     pair: Transport
   ) async throws {
-    let request = ClientRequest.Stream(of: ControlInput.self) { writer in
+    let request = StreamingClientRequest(of: ControlInput.self) { writer in
       try await writer.write(.echoMetadata)
       try await writer.write(.messages(1, repeating: 42, count: 1024))
       try await writer.write(.messages(1, repeating: 42, count: 1024))
@@ -1108,7 +1108,7 @@ final class HTTP2TransportTests: XCTestCase {
           $0.size = 1024
         }
       }
-      let request = ClientRequest.Single(message: message)
+      let request = ClientRequest(message: message)
 
       var options = CallOptions.defaults
       options.compression = .deflate
@@ -1131,7 +1131,7 @@ final class HTTP2TransportTests: XCTestCase {
       clientEnabledCompression: .all,
       serverCompression: .gzip
     ) { control, pair in
-      let request = ClientRequest.Stream(of: ControlInput.self) { writer in
+      let request = StreamingClientRequest(of: ControlInput.self) { writer in
         try await writer.write(.noOp)
       }
 
@@ -1163,7 +1163,7 @@ final class HTTP2TransportTests: XCTestCase {
           $0.size = 1024
         }
       }
-      let request = ClientRequest.Single(message: message)
+      let request = ClientRequest(message: message)
 
       var options = CallOptions.defaults
       options.compression = .deflate
@@ -1186,7 +1186,7 @@ final class HTTP2TransportTests: XCTestCase {
       clientEnabledCompression: .all,
       serverCompression: .gzip
     ) { control, pair in
-      let request = ClientRequest.Stream(of: ControlInput.self) { writer in
+      let request = StreamingClientRequest(of: ControlInput.self) { writer in
         try await writer.write(.noOp)
       }
 
@@ -1213,7 +1213,7 @@ final class HTTP2TransportTests: XCTestCase {
         $0.numberOfMessages = 1
       }
 
-      let request = ClientRequest.Single(message: message)
+      let request = ClientRequest(message: message)
       var options = CallOptions.defaults
       options.timeout = .seconds(10)
       try await control.unary(request: request, options: options) { response in
@@ -1225,7 +1225,7 @@ final class HTTP2TransportTests: XCTestCase {
 
   func testClientStreamingTimeoutPropagatedToServer() async throws {
     try await self.forEachTransportPair { control, pair in
-      let request = ClientRequest.Stream(of: ControlInput.self) { writer in
+      let request = StreamingClientRequest(of: ControlInput.self) { writer in
         let message = ControlInput.with {
           $0.echoMetadataInHeaders = true
           $0.numberOfMessages = 1
@@ -1249,7 +1249,7 @@ final class HTTP2TransportTests: XCTestCase {
         $0.numberOfMessages = 1
       }
 
-      let request = ClientRequest.Single(message: message)
+      let request = ClientRequest(message: message)
       var options = CallOptions.defaults
       options.timeout = .seconds(10)
       try await control.serverStream(request: request, options: options) { response in
@@ -1261,7 +1261,7 @@ final class HTTP2TransportTests: XCTestCase {
 
   func testBidiStreamingTimeoutPropagatedToServer() async throws {
     try await self.forEachTransportPair { control, pair in
-      let request = ClientRequest.Stream(of: ControlInput.self) { writer in
+      let request = StreamingClientRequest(of: ControlInput.self) { writer in
         try await writer.write(.echoMetadata)
       }
 
@@ -1295,7 +1295,7 @@ final class HTTP2TransportTests: XCTestCase {
         let metadata: Metadata = ["response-status": "\(httpCode)"]
 
         try await control.unary(
-          request: ClientRequest.Single(message: .noOp, metadata: metadata)
+          request: ClientRequest(message: .noOp, metadata: metadata)
         ) { response in
           switch response.accepted {
           case .success:
@@ -1312,7 +1312,7 @@ final class HTTP2TransportTests: XCTestCase {
     try await self.forEachClientAndHTTPStatusCodeServer { control, kind in
       for (httpCode, expectedStatus) in Self.httpToStatusCodePairs {
         // Tell the server what to respond with.
-        let request = ClientRequest.Stream(
+        let request = StreamingClientRequest(
           of: ControlInput.self,
           metadata: ["response-status": "\(httpCode)"]
         ) { _ in
@@ -1337,7 +1337,7 @@ final class HTTP2TransportTests: XCTestCase {
         let metadata: Metadata = ["response-status": "\(httpCode)"]
 
         try await control.serverStream(
-          request: ClientRequest.Single(message: .noOp, metadata: metadata)
+          request: ClientRequest(message: .noOp, metadata: metadata)
         ) { response in
           switch response.accepted {
           case .success:
@@ -1354,7 +1354,7 @@ final class HTTP2TransportTests: XCTestCase {
     try await self.forEachClientAndHTTPStatusCodeServer { control, kind in
       for (httpCode, expectedStatus) in Self.httpToStatusCodePairs {
         // Tell the server what to respond with.
-        let request = ClientRequest.Stream(
+        let request = StreamingClientRequest(
           of: ControlInput.self,
           metadata: ["response-status": "\(httpCode)"]
         ) { _ in
@@ -1378,7 +1378,7 @@ final class HTTP2TransportTests: XCTestCase {
         $0.echoMetadataInHeaders = true
         $0.numberOfMessages = 1
       }
-      let request = ClientRequest.Single(message: input)
+      let request = ClientRequest(message: input)
       try await control.unary(request: request) { response in
         XCTAssertEqual(Array(response.metadata["echo-scheme"]), ["http"])
       }
@@ -1391,7 +1391,7 @@ final class HTTP2TransportTests: XCTestCase {
         $0.echoMetadataInHeaders = true
         $0.numberOfMessages = 1
       }
-      let request = ClientRequest.Single(message: input)
+      let request = ClientRequest(message: input)
       try await control.serverStream(request: request) { response in
         XCTAssertEqual(Array(response.metadata["echo-scheme"]), ["http"])
       }
@@ -1400,7 +1400,7 @@ final class HTTP2TransportTests: XCTestCase {
 
   func testClientStreamingScheme() async throws {
     try await self.forEachTransportPair { control, pair in
-      let request = ClientRequest.Stream(of: ControlInput.self) { writer in
+      let request = StreamingClientRequest(of: ControlInput.self) { writer in
         let input = ControlInput.with {
           $0.echoMetadataInHeaders = true
           $0.numberOfMessages = 1
@@ -1415,7 +1415,7 @@ final class HTTP2TransportTests: XCTestCase {
 
   func testBidiStreamingScheme() async throws {
     try await self.forEachTransportPair { control, pair in
-      let request = ClientRequest.Stream(of: ControlInput.self) { writer in
+      let request = StreamingClientRequest(of: ControlInput.self) { writer in
         let input = ControlInput.with {
           $0.echoMetadataInHeaders = true
           $0.numberOfMessages = 1
