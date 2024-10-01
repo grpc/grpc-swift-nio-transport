@@ -26,16 +26,16 @@ final class BenchmarkService: Grpc_Testing_BenchmarkService.ServiceProtocol {
   /// One request followed by one response.
   /// The server returns a client payload with the size requested by the client.
   func unaryCall(
-    request: ServerRequest.Single<Grpc_Testing_SimpleRequest>,
+    request: ServerRequest<Grpc_Testing_SimpleRequest>,
     context: ServerContext
-  ) async throws -> ServerResponse.Single<Grpc_Testing_SimpleResponse> {
+  ) async throws -> ServerResponse<Grpc_Testing_SimpleResponse> {
     // Throw an error if the status is not `ok`. Otherwise, an `ok` status is automatically sent
     // if the request is successful.
     if request.message.responseStatus.isInitialized {
       try self.checkOkStatus(request.message.responseStatus)
     }
 
-    return ServerResponse.Single(
+    return ServerResponse(
       message: .with {
         $0.payload = Grpc_Testing_Payload.with {
           $0.body = Data(count: Int(request.message.responseSize))
@@ -47,10 +47,10 @@ final class BenchmarkService: Grpc_Testing_BenchmarkService.ServiceProtocol {
   /// Repeated sequence of one request followed by one response.
   /// The server returns a payload with the size requested by the client for each received message.
   func streamingCall(
-    request: ServerRequest.Stream<Grpc_Testing_SimpleRequest>,
+    request: StreamingServerRequest<Grpc_Testing_SimpleRequest>,
     context: ServerContext
-  ) async throws -> ServerResponse.Stream<Grpc_Testing_SimpleResponse> {
-    return ServerResponse.Stream { writer in
+  ) async throws -> StreamingServerResponse<Grpc_Testing_SimpleResponse> {
+    return StreamingServerResponse { writer in
       for try await message in request.messages {
         if message.responseStatus.isInitialized {
           try self.checkOkStatus(message.responseStatus)
@@ -72,9 +72,9 @@ final class BenchmarkService: Grpc_Testing_BenchmarkService.ServiceProtocol {
   /// Single-sided unbounded streaming from client to server.
   /// The server returns a payload with the size requested by the client once the client does WritesDone.
   func streamingFromClient(
-    request: ServerRequest.Stream<Grpc_Testing_SimpleRequest>,
+    request: StreamingServerRequest<Grpc_Testing_SimpleRequest>,
     context: ServerContext
-  ) async throws -> ServerResponse.Single<Grpc_Testing_SimpleResponse> {
+  ) async throws -> ServerResponse<Grpc_Testing_SimpleResponse> {
     var responseSize = 0
     for try await message in request.messages {
       if message.responseStatus.isInitialized {
@@ -83,7 +83,7 @@ final class BenchmarkService: Grpc_Testing_BenchmarkService.ServiceProtocol {
       responseSize = Int(message.responseSize)
     }
 
-    return ServerResponse.Single(
+    return ServerResponse(
       message: .with {
         $0.payload = .with {
           $0.body = Data(count: responseSize)
@@ -95,9 +95,9 @@ final class BenchmarkService: Grpc_Testing_BenchmarkService.ServiceProtocol {
   /// Single-sided unbounded streaming from server to client.
   /// The server repeatedly returns a payload with the size requested by the client.
   func streamingFromServer(
-    request: ServerRequest.Single<Grpc_Testing_SimpleRequest>,
+    request: ServerRequest<Grpc_Testing_SimpleRequest>,
     context: ServerContext
-  ) async throws -> ServerResponse.Stream<Grpc_Testing_SimpleResponse> {
+  ) async throws -> StreamingServerResponse<Grpc_Testing_SimpleResponse> {
     if request.message.responseStatus.isInitialized {
       try self.checkOkStatus(request.message.responseStatus)
     }
@@ -108,7 +108,7 @@ final class BenchmarkService: Grpc_Testing_BenchmarkService.ServiceProtocol {
       }
     }
 
-    return ServerResponse.Stream { writer in
+    return StreamingServerResponse { writer in
       while self.working.load(ordering: .relaxed) {
         try await writer.write(response)
       }
@@ -119,9 +119,9 @@ final class BenchmarkService: Grpc_Testing_BenchmarkService.ServiceProtocol {
   /// Two-sided unbounded streaming between server to client.
   /// Both sides send the content of their own choice to the other.
   func streamingBothWays(
-    request: ServerRequest.Stream<Grpc_Testing_SimpleRequest>,
+    request: StreamingServerRequest<Grpc_Testing_SimpleRequest>,
     context: ServerContext
-  ) async throws -> ServerResponse.Stream<Grpc_Testing_SimpleResponse> {
+  ) async throws -> StreamingServerResponse<Grpc_Testing_SimpleResponse> {
     // The 100 size is used by the other implementations as well.
     // We are using the same canned response size for all responses
     // as it is allowed by the spec.
@@ -150,7 +150,7 @@ final class BenchmarkService: Grpc_Testing_BenchmarkService.ServiceProtocol {
     // Marks if the inbound streaming is ongoing or finished.
     let inbound = InboundStreamingSignal()
 
-    return ServerResponse.Stream { writer in
+    return StreamingServerResponse { writer in
       try await withThrowingTaskGroup(of: Void.self) { group in
         group.addTask {
           for try await message in request.messages {

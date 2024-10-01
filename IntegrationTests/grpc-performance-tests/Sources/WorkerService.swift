@@ -222,9 +222,9 @@ final class WorkerService: Sendable {
 
 extension WorkerService: Grpc_Testing_WorkerService.ServiceProtocol {
   func quitWorker(
-    request: ServerRequest.Single<Grpc_Testing_Void>,
+    request: ServerRequest<Grpc_Testing_Void>,
     context: ServerContext
-  ) async throws -> ServerResponse.Single<Grpc_Testing_Void> {
+  ) async throws -> ServerResponse<Grpc_Testing_Void> {
     let onQuit = self.state.withLockedValue { $0.quit() }
 
     switch onQuit {
@@ -240,15 +240,15 @@ extension WorkerService: Grpc_Testing_WorkerService.ServiceProtocol {
       server.beginGracefulShutdown()
     }
 
-    return ServerResponse.Single(message: Grpc_Testing_Void())
+    return ServerResponse(message: Grpc_Testing_Void())
   }
 
   func coreCount(
-    request: ServerRequest.Single<Grpc_Testing_CoreRequest>,
+    request: ServerRequest<Grpc_Testing_CoreRequest>,
     context: ServerContext
-  ) async throws -> ServerResponse.Single<Grpc_Testing_CoreResponse> {
+  ) async throws -> ServerResponse<Grpc_Testing_CoreResponse> {
     let coreCount = System.coreCount
-    return ServerResponse.Single(
+    return ServerResponse(
       message: Grpc_Testing_WorkerService.Method.CoreCount.Output.with {
         $0.cores = Int32(coreCount)
       }
@@ -256,10 +256,10 @@ extension WorkerService: Grpc_Testing_WorkerService.ServiceProtocol {
   }
 
   func runServer(
-    request: ServerRequest.Stream<Grpc_Testing_ServerArgs>,
+    request: StreamingServerRequest<Grpc_Testing_ServerArgs>,
     context: ServerContext
-  ) async throws -> ServerResponse.Stream<Grpc_Testing_ServerStatus> {
-    return ServerResponse.Stream { writer in
+  ) async throws -> StreamingServerResponse<Grpc_Testing_ServerStatus> {
+    return StreamingServerResponse { writer in
       try await withThrowingTaskGroup(of: Void.self) { group in
         for try await message in request.messages {
           switch message.argtype {
@@ -328,10 +328,10 @@ extension WorkerService: Grpc_Testing_WorkerService.ServiceProtocol {
   }
 
   func runClient(
-    request: ServerRequest.Stream<Grpc_Testing_ClientArgs>,
+    request: StreamingServerRequest<Grpc_Testing_ClientArgs>,
     context: ServerContext
-  ) async throws -> ServerResponse.Stream<Grpc_Testing_ClientStatus> {
-    return ServerResponse.Stream { writer in
+  ) async throws -> StreamingServerResponse<Grpc_Testing_ClientStatus> {
+    return StreamingServerResponse { writer in
       try await withThrowingTaskGroup(of: Void.self) { group in
         for try await message in request.messages {
           switch message.argtype {

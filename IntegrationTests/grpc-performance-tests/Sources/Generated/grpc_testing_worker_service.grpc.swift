@@ -70,9 +70,9 @@ internal enum Grpc_Testing_WorkerService {
         ]
     }
     @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
-    internal typealias StreamingServiceProtocol = Grpc_Testing_WorkerServiceStreamingServiceProtocol
+    internal typealias StreamingServiceProtocol = Grpc_Testing_WorkerService_StreamingServiceProtocol
     @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
-    internal typealias ServiceProtocol = Grpc_Testing_WorkerServiceServiceProtocol
+    internal typealias ServiceProtocol = Grpc_Testing_WorkerService_ServiceProtocol
 }
 
 extension GRPCCore.ServiceDescriptor {
@@ -83,7 +83,7 @@ extension GRPCCore.ServiceDescriptor {
 }
 
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
-internal protocol Grpc_Testing_WorkerServiceStreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+internal protocol Grpc_Testing_WorkerService_StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
     /// Start server with specified workload.
     /// First request sent specifies the ServerConfig followed by ServerStatus
     /// response. After that, a "Mark" can be sent anytime to request the latest
@@ -91,9 +91,9 @@ internal protocol Grpc_Testing_WorkerServiceStreamingServiceProtocol: GRPCCore.R
     /// and once the shutdown has finished, the OK status is sent to terminate
     /// this RPC.
     func runServer(
-        request: GRPCCore.ServerRequest.Stream<Grpc_Testing_ServerArgs>,
+        request: GRPCCore.StreamingServerRequest<Grpc_Testing_ServerArgs>,
         context: GRPCCore.ServerContext
-    ) async throws -> GRPCCore.ServerResponse.Stream<Grpc_Testing_ServerStatus>
+    ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_ServerStatus>
     
     /// Start client with specified workload.
     /// First request sent specifies the ClientConfig followed by ClientStatus
@@ -102,21 +102,21 @@ internal protocol Grpc_Testing_WorkerServiceStreamingServiceProtocol: GRPCCore.R
     /// and once the shutdown has finished, the OK status is sent to terminate
     /// this RPC.
     func runClient(
-        request: GRPCCore.ServerRequest.Stream<Grpc_Testing_ClientArgs>,
+        request: GRPCCore.StreamingServerRequest<Grpc_Testing_ClientArgs>,
         context: GRPCCore.ServerContext
-    ) async throws -> GRPCCore.ServerResponse.Stream<Grpc_Testing_ClientStatus>
+    ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_ClientStatus>
     
     /// Just return the core count - unary call
     func coreCount(
-        request: GRPCCore.ServerRequest.Stream<Grpc_Testing_CoreRequest>,
+        request: GRPCCore.StreamingServerRequest<Grpc_Testing_CoreRequest>,
         context: GRPCCore.ServerContext
-    ) async throws -> GRPCCore.ServerResponse.Stream<Grpc_Testing_CoreResponse>
+    ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_CoreResponse>
     
     /// Quit this worker
     func quitWorker(
-        request: GRPCCore.ServerRequest.Stream<Grpc_Testing_Void>,
+        request: GRPCCore.StreamingServerRequest<Grpc_Testing_Void>,
         context: GRPCCore.ServerContext
-    ) async throws -> GRPCCore.ServerResponse.Stream<Grpc_Testing_Void>
+    ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_Void>
 }
 
 /// Conformance to `GRPCCore.RegistrableRPCService`.
@@ -172,7 +172,7 @@ extension Grpc_Testing_WorkerService.StreamingServiceProtocol {
 }
 
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
-internal protocol Grpc_Testing_WorkerServiceServiceProtocol: Grpc_Testing_WorkerService.StreamingServiceProtocol {
+internal protocol Grpc_Testing_WorkerService_ServiceProtocol: Grpc_Testing_WorkerService.StreamingServiceProtocol {
     /// Start server with specified workload.
     /// First request sent specifies the ServerConfig followed by ServerStatus
     /// response. After that, a "Mark" can be sent anytime to request the latest
@@ -180,9 +180,9 @@ internal protocol Grpc_Testing_WorkerServiceServiceProtocol: Grpc_Testing_Worker
     /// and once the shutdown has finished, the OK status is sent to terminate
     /// this RPC.
     func runServer(
-        request: GRPCCore.ServerRequest.Stream<Grpc_Testing_ServerArgs>,
+        request: GRPCCore.StreamingServerRequest<Grpc_Testing_ServerArgs>,
         context: GRPCCore.ServerContext
-    ) async throws -> GRPCCore.ServerResponse.Stream<Grpc_Testing_ServerStatus>
+    ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_ServerStatus>
     
     /// Start client with specified workload.
     /// First request sent specifies the ClientConfig followed by ClientStatus
@@ -191,45 +191,45 @@ internal protocol Grpc_Testing_WorkerServiceServiceProtocol: Grpc_Testing_Worker
     /// and once the shutdown has finished, the OK status is sent to terminate
     /// this RPC.
     func runClient(
-        request: GRPCCore.ServerRequest.Stream<Grpc_Testing_ClientArgs>,
+        request: GRPCCore.StreamingServerRequest<Grpc_Testing_ClientArgs>,
         context: GRPCCore.ServerContext
-    ) async throws -> GRPCCore.ServerResponse.Stream<Grpc_Testing_ClientStatus>
+    ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_ClientStatus>
     
     /// Just return the core count - unary call
     func coreCount(
-        request: GRPCCore.ServerRequest.Single<Grpc_Testing_CoreRequest>,
+        request: GRPCCore.ServerRequest<Grpc_Testing_CoreRequest>,
         context: GRPCCore.ServerContext
-    ) async throws -> GRPCCore.ServerResponse.Single<Grpc_Testing_CoreResponse>
+    ) async throws -> GRPCCore.ServerResponse<Grpc_Testing_CoreResponse>
     
     /// Quit this worker
     func quitWorker(
-        request: GRPCCore.ServerRequest.Single<Grpc_Testing_Void>,
+        request: GRPCCore.ServerRequest<Grpc_Testing_Void>,
         context: GRPCCore.ServerContext
-    ) async throws -> GRPCCore.ServerResponse.Single<Grpc_Testing_Void>
+    ) async throws -> GRPCCore.ServerResponse<Grpc_Testing_Void>
 }
 
-/// Partial conformance to `Grpc_Testing_WorkerServiceStreamingServiceProtocol`.
+/// Partial conformance to `Grpc_Testing_WorkerService_StreamingServiceProtocol`.
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension Grpc_Testing_WorkerService.ServiceProtocol {
     internal func coreCount(
-        request: GRPCCore.ServerRequest.Stream<Grpc_Testing_CoreRequest>,
+        request: GRPCCore.StreamingServerRequest<Grpc_Testing_CoreRequest>,
         context: GRPCCore.ServerContext
-    ) async throws -> GRPCCore.ServerResponse.Stream<Grpc_Testing_CoreResponse> {
+    ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_CoreResponse> {
         let response = try await self.coreCount(
-            request: GRPCCore.ServerRequest.Single(stream: request),
+            request: GRPCCore.ServerRequest(stream: request),
             context: context
         )
-        return GRPCCore.ServerResponse.Stream(single: response)
+        return GRPCCore.StreamingServerResponse(single: response)
     }
     
     internal func quitWorker(
-        request: GRPCCore.ServerRequest.Stream<Grpc_Testing_Void>,
+        request: GRPCCore.StreamingServerRequest<Grpc_Testing_Void>,
         context: GRPCCore.ServerContext
-    ) async throws -> GRPCCore.ServerResponse.Stream<Grpc_Testing_Void> {
+    ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_Void> {
         let response = try await self.quitWorker(
-            request: GRPCCore.ServerRequest.Single(stream: request),
+            request: GRPCCore.ServerRequest(stream: request),
             context: context
         )
-        return GRPCCore.ServerResponse.Stream(single: response)
+        return GRPCCore.StreamingServerResponse(single: response)
     }
 }
