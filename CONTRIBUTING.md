@@ -1,19 +1,4 @@
-# How to contribute
+# Contributing
 
-We definitely welcome patches and contributions to grpc-swift! Please read the gRPC
-organization's [governance rules](https://github.com/grpc/grpc-community/blob/main/governance.md)
-and [contribution guidelines](https://github.com/grpc/grpc-community/blob/main/CONTRIBUTING.md) before proceeding.
-
-Here are some guidelines and information about how to participate.
-
-## Getting started
-
-### Legal requirements
-
-In order to protect both you and ourselves, you will need to sign the
-[Contributor License Agreement](https://identity.linuxfoundation.org/projects/cncf).
-
-### Technical requirements
-
-Please see the [main gRPC repository](https://github.com/grpc/grpc) for
-more information about gRPC.
+Please refer to the contributing guide in the
+[`grpc/grpc-swift`](https://github.com/grpc/grpc-swift) repository.
