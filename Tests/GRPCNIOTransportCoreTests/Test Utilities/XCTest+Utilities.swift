@@ -40,13 +40,11 @@ func XCTAssertDescription(
   XCTAssertEqual(String(describing: subject), expected, file: file, line: line)
 }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 func XCTUnwrapAsync<T>(_ expression: () async throws -> T?) async throws -> T {
   let value = try await expression()
   return try XCTUnwrap(value)
 }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 func XCTAssertThrowsErrorAsync<T, E: Error>(
   ofType: E.Type = E.self,
   _ expression: () async throws -> T,
@@ -70,7 +68,6 @@ func XCTAssert<T>(_ value: Any, as type: T.Type, _ verify: (T) throws -> Void) r
   }
 }
 
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 func XCTPoll(
   every interval: Duration,
   timeLimit: Duration = .seconds(5),

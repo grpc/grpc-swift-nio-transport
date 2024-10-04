@@ -50,7 +50,6 @@ extension HTTP2ClientTransport.Config {
     }
   }
 
-  @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
   public struct Keepalive: Sendable, Hashable {
     /// The amount of time to wait after reading data before sending a keepalive ping.
     ///
@@ -72,7 +71,6 @@ extension HTTP2ClientTransport.Config {
     }
   }
 
-  @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
   public struct Connection: Sendable, Hashable {
     /// The maximum amount of time a connection may be idle before it's closed.
     ///
@@ -102,7 +100,6 @@ extension HTTP2ClientTransport.Config {
     }
   }
 
-  @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
   public struct Backoff: Sendable, Hashable {
     /// The initial duration to wait before reattempting to establish a connection.
     public var initial: Duration

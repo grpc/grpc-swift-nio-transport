@@ -28,7 +28,6 @@ private import Synchronization
 
 extension HTTP2ServerTransport {
   /// A NIO Transport Services-backed implementation of a server transport.
-  @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
   public struct TransportServices: ServerTransport, ListeningServerTransport {
     private struct ListenerFactory: HTTP2ListenerFactory {
       let config: Config
@@ -131,7 +130,6 @@ extension HTTP2ServerTransport {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension HTTP2ServerTransport.TransportServices {
   /// Configuration for the `TransportServices` transport.
   public struct Config: Sendable {
@@ -193,7 +191,6 @@ extension HTTP2ServerTransport.TransportServices {
   }
 }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension NIOTSListenerBootstrap {
   fileprivate func bind<Output: Sendable>(
     to address: GRPCNIOTransportCore.SocketAddress,
@@ -216,7 +213,6 @@ extension NIOTSListenerBootstrap {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension ServerTransport where Self == HTTP2ServerTransport.TransportServices {
   /// Create a new `TransportServices` based HTTP/2 server transport.
   ///
@@ -238,7 +234,6 @@ extension ServerTransport where Self == HTTP2ServerTransport.TransportServices {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension NWProtocolTLS.Options {
   convenience init(_ tlsConfig: HTTP2ServerTransport.TransportServices.Config.TLS) throws {
     self.init()

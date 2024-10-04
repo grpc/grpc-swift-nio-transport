@@ -54,7 +54,6 @@ extension HTTP2ServerTransport {
   ///   // ...
   /// }
   /// ```
-  @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
   public struct Posix: ServerTransport, ListeningServerTransport {
     private struct ListenerFactory: HTTP2ListenerFactory {
       let config: Config
@@ -177,7 +176,6 @@ extension HTTP2ServerTransport {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension HTTP2ServerTransport.Posix {
   /// Config for the `Posix` transport.
   public struct Config: Sendable {
@@ -243,7 +241,6 @@ extension HTTP2ServerTransport.Posix {
 }
 
 extension ServerBootstrap {
-  @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
   fileprivate func bind<Output: Sendable>(
     to address: GRPCNIOTransportCore.SocketAddress,
     childChannelInitializer: @escaping @Sendable (any Channel) -> EventLoopFuture<Output>
@@ -262,7 +259,6 @@ extension ServerBootstrap {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension ServerTransport where Self == HTTP2ServerTransport.Posix {
   /// Create a new `Posix` based HTTP/2 server transport.
   ///

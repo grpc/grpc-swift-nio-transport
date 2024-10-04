@@ -20,7 +20,6 @@ internal import NIOCore
 internal import NIOPosix
 
 extension ClientBootstrap {
-  @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
   func connect<Result: Sendable>(
     to address: GRPCNIOTransportCore.SocketAddress,
     _ configure: @Sendable @escaping (any Channel) -> EventLoopFuture<Result>

@@ -58,7 +58,6 @@ private import NIOConcurrencyHelpers
 ///   }
 /// }
 /// ```
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 package final class RoundRobinLoadBalancer: Sendable {
   enum Input: Sendable, Hashable {
     /// Update the addresses used by the load balancer to the following endpoints.
@@ -198,7 +197,6 @@ package final class RoundRobinLoadBalancer: Sendable {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension RoundRobinLoadBalancer {
   /// Handles an update in endpoints.
   ///
@@ -340,7 +338,6 @@ extension RoundRobinLoadBalancer {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension RoundRobinLoadBalancer {
   private enum State {
     case active(Active)

@@ -20,7 +20,6 @@ import GRPCNIOTransportCore
 import GRPCNIOTransportHTTP2TransportServices
 import XCTest
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
   private static let p12bundleURL = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent()  // (this file)

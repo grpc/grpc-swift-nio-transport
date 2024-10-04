@@ -18,13 +18,11 @@ public import GRPCCore
 
 /// A transport which refines `ServerTransport` to provide the socket address of a listening
 /// server.
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 public protocol ListeningServerTransport: ServerTransport {
   /// Returns the listening address of the server transport once it has started.
   var listeningAddress: SocketAddress { get async throws }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension GRPCServer {
   /// Returns the listening address of the server transport once it has started.
   ///

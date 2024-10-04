@@ -19,7 +19,6 @@ package import NIOCore
 internal import NIOHPACK
 package import NIOHTTP2
 
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 extension ChannelPipeline.SynchronousOperations {
   package typealias HTTP2ConnectionChannel = NIOAsyncChannel<HTTP2Frame, HTTP2Frame>
   package typealias HTTP2StreamMultiplexer = NIOHTTP2Handler.AsyncStreamMultiplexer<
@@ -108,7 +107,6 @@ extension ChannelPipeline.SynchronousOperations {
 }
 
 extension ChannelPipeline.SynchronousOperations {
-  @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
   package func configureGRPCClientPipeline(
     channel: any Channel,
     config: GRPCChannel.Config

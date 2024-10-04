@@ -21,7 +21,6 @@ import NIOCore
 import NIOHTTP2
 import NIOPosix
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 enum ConnectionTest {
   struct Context {
     var server: Server
@@ -61,7 +60,6 @@ enum ConnectionTest {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension ConnectionTest {
   /// A server which only expected to accept a single connection.
   final class Server {
@@ -142,7 +140,6 @@ extension ConnectionTest {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension ConnectionTest {
   /// Succeeds a promise when a SETTINGS frame ack has been read.
   private final class SucceedOnSettingsAck: ChannelInboundHandler {

@@ -23,7 +23,6 @@ import XCTest
 import NIOSSL
 #endif
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 final class HTTP2TransportNIOPosixTests: XCTestCase {
   func testGetListeningAddress_IPv4() async throws {
     let transport = GRPCNIOTransportCore.HTTP2ServerTransport.Posix(

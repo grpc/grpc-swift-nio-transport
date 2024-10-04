@@ -43,7 +43,6 @@ private import Synchronization
 ///   }
 /// }
 /// ```
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 package final class Subchannel: Sendable {
   package enum Event: Sendable, Hashable {
     /// The connection received a GOAWAY and will close soon. No new streams
@@ -117,7 +116,6 @@ package final class Subchannel: Sendable {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension Subchannel {
   /// A stream of events which can happen to the subchannel.
   package var events: AsyncStream<Event> {
@@ -190,7 +188,6 @@ extension Subchannel {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension Subchannel {
   private func handleConnectInput(in group: inout DiscardingTaskGroup) {
     let connection = self.state.withLock { state in
@@ -368,7 +365,6 @@ extension Subchannel {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension Subchannel {
   ///            ┌───────────────┐
   ///   ┌───────▶│ NOT CONNECTED │───────────shutDown─────────────┐

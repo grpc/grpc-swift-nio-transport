@@ -23,7 +23,6 @@ private import Synchronization
 /// Provides the common functionality for a `NIO`-based server transport.
 ///
 /// - SeeAlso: ``HTTP2ListenerFactory``.
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 package final class CommonHTTP2ServerTransport<
   ListenerFactory: HTTP2ListenerFactory
 >: ServerTransport, ListeningServerTransport {

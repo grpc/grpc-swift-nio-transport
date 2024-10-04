@@ -17,7 +17,6 @@
 public import GRPCCore
 
 /// A name resolver can provide resolved addresses and service configuration values over time.
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 public struct NameResolver: Sendable {
   /// A sequence of name resolution results.
   ///
@@ -60,7 +59,6 @@ public struct NameResolver: Sendable {
 
 /// The result of name resolution, a list of endpoints to connect to and the service
 /// configuration reported by the resolver.
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 public struct NameResolutionResult: Hashable, Sendable {
   /// A list of endpoints to connect to.
   public var endpoints: [Endpoint]
@@ -94,7 +92,6 @@ public struct Endpoint: Hashable, Sendable {
 }
 
 /// A resolver capable of resolving targets of type ``Target``.
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 public protocol NameResolverFactory<Target> {
   /// The type of ``ResolvableTarget`` this factory makes resolvers for.
   associatedtype Target: ResolvableTarget
@@ -106,7 +103,6 @@ public protocol NameResolverFactory<Target> {
   func resolver(for target: Target) -> NameResolver
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension NameResolverFactory {
   /// Returns whether the given target is compatible with this factory.
   ///

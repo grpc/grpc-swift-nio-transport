@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-@available(macOS 14.0, iOS 17.0, watchOS 10.0, tvOS 17.0, *)
 extension DiscardingTaskGroup {
   /// Adds a child task to the group which is individually cancellable.
   ///
@@ -62,7 +61,6 @@ extension DiscardingTaskGroup {
 }
 
 @usableFromInline
-@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 struct CancellableTaskHandle: Sendable {
   @usableFromInline
   private(set) var continuation: AsyncStream<Void>.Continuation

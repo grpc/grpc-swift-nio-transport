@@ -26,7 +26,6 @@ extension MethodDescriptor {
   }
 }
 
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 extension MethodConfig.Name {
   init(_ descriptor: MethodDescriptor) {
     self = MethodConfig.Name(service: descriptor.service, method: descriptor.method)

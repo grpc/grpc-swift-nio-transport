@@ -390,7 +390,6 @@ private enum GRPCStreamStateMachineState {
   }
 }
 
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 struct GRPCStreamStateMachine {
   private var state: GRPCStreamStateMachineState
   private var configuration: GRPCStreamStateMachineConfiguration
@@ -627,7 +626,6 @@ struct GRPCStreamStateMachine {
 
 // - MARK: Client
 
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 extension GRPCStreamStateMachine {
   private func makeClientHeaders(
     methodDescriptor: MethodDescriptor,
@@ -1229,7 +1227,6 @@ extension GRPCStreamStateMachine {
 
 // - MARK: Server
 
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 extension GRPCStreamStateMachine {
   private func formResponseHeaders(
     in headers: inout HPACKHeaders,
@@ -1897,7 +1894,6 @@ extension MethodDescriptor {
 }
 
 extension RPCError {
-  @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
   fileprivate init(_ reason: GRPCStreamStateMachine.UnexpectedInboundCloseReason) {
     switch reason {
     case .streamReset:
@@ -1914,14 +1910,12 @@ extension RPCError {
 }
 
 extension Status {
-  @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
   fileprivate init(_ error: RPCError) {
     self = Status(code: Status.Code(error.code), message: error.message)
   }
 }
 
 extension RPCError {
-  @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
   init(_ invalidState: GRPCStreamStateMachine.InvalidState) {
     self = RPCError(code: .internalError, message: "Invalid state", cause: invalidState)
   }
