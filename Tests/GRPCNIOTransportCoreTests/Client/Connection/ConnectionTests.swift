@@ -23,7 +23,6 @@ import NIOHTTP2
 import NIOPosix
 import XCTest
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 final class ConnectionTests: XCTestCase {
   func testConnectThenClose() async throws {
     try await ConnectionTest.run(connector: .posix()) { context, event in
@@ -202,7 +201,6 @@ final class ConnectionTests: XCTestCase {
 }
 
 extension ClientBootstrap {
-  @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
   func connect<T: Sendable>(
     to address: GRPCNIOTransportCore.SocketAddress,
     _ configure: @Sendable @escaping (any Channel) -> EventLoopFuture<T>

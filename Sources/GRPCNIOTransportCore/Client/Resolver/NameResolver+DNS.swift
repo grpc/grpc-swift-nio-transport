@@ -50,7 +50,6 @@ extension ResolvableTarget where Self == ResolvableTargets.DNS {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension NameResolvers {
   /// A ``NameResolverFactory`` for ``ResolvableTargets/DNS`` targets.
   public struct DNS: NameResolverFactory {
@@ -66,7 +65,6 @@ extension NameResolvers {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension NameResolvers.DNS {
   struct Resolver: Sendable {
     var target: ResolvableTargets.DNS
@@ -97,7 +95,6 @@ extension NameResolvers.DNS {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension NameResolvers.DNS.Resolver: AsyncSequence {
   typealias Element = NameResolutionResult
 

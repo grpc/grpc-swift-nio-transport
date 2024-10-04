@@ -56,7 +56,6 @@ private import Synchronization
 ///   }
 /// }
 /// ```
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 package final class PickFirstLoadBalancer: Sendable {
   enum Input: Sendable, Hashable {
     /// Update the addresses used by the load balancer to the following endpoints.
@@ -165,7 +164,6 @@ package final class PickFirstLoadBalancer: Sendable {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension PickFirstLoadBalancer {
   private func handleUpdateEndpoint(_ endpoint: Endpoint, in group: inout DiscardingTaskGroup) {
     if endpoint.addresses.isEmpty { return }
@@ -266,7 +264,6 @@ extension PickFirstLoadBalancer {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension PickFirstLoadBalancer {
   enum State: Sendable {
     case active(Active)
@@ -279,7 +276,6 @@ extension PickFirstLoadBalancer {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension PickFirstLoadBalancer.State {
   struct Active: Sendable {
     var endpoint: Endpoint?
@@ -308,7 +304,6 @@ extension PickFirstLoadBalancer.State {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension PickFirstLoadBalancer.State.Active {
   mutating func updateEndpoint(
     _ endpoint: Endpoint,
@@ -471,7 +466,6 @@ extension PickFirstLoadBalancer.State.Active {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension PickFirstLoadBalancer.State.Closing {
   mutating func updateSubchannelConnectivityState(
     _ connectivityState: ConnectivityState,
@@ -512,7 +506,6 @@ extension PickFirstLoadBalancer.State.Closing {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension PickFirstLoadBalancer.State {
   enum OnUpdateEndpoint {
     case connect(Subchannel, close: Subchannel?)

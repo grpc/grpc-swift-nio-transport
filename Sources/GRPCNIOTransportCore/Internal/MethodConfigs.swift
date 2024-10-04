@@ -24,7 +24,6 @@ package import GRPCCore
 /// service, or set a default configuration for all methods by calling ``setDefaultConfig(_:)``.
 ///
 /// Use the subscript to get and set configurations for specific methods.
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 package struct MethodConfigs: Sendable, Hashable {
   private var elements: [MethodConfig.Name: MethodConfig]
 

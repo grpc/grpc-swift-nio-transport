@@ -20,7 +20,6 @@ package import NIOExtras
 /// A factory to produce `NIOAsyncChannel`s to listen for new HTTP/2 connections.
 ///
 /// - SeeAlso: ``CommonHTTP2ServerTransport``
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 package protocol HTTP2ListenerFactory: Sendable {
   typealias AcceptedChannel = (
     ChannelPipeline.SynchronousOperations.HTTP2ConnectionChannel,

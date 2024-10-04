@@ -133,7 +133,6 @@ public enum TLSConfig: Sendable {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension HTTP2ServerTransport.Posix.Config {
   /// The security configuration for this connection.
   public struct TransportSecurity: Sendable {
@@ -220,7 +219,6 @@ extension HTTP2ServerTransport.Posix.Config {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension HTTP2ClientTransport.Posix.Config {
   /// The security configuration for this connection.
   public struct TransportSecurity: Sendable {

@@ -18,7 +18,6 @@ private import DequeModule
 package import GRPCCore
 private import Synchronization
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 package final class GRPCChannel: ClientTransport {
   private enum Input: Sendable {
     /// Close the channel, if possible.
@@ -225,7 +224,6 @@ package final class GRPCChannel: ClientTransport {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension GRPCChannel {
   package struct Config: Sendable {
     /// Configuration for HTTP/2 connections.
@@ -254,7 +252,6 @@ extension GRPCChannel {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension GRPCChannel {
   enum MakeStreamResult {
     /// A stream was created, use it.
@@ -347,7 +344,6 @@ extension GRPCChannel {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension GRPCChannel {
   private func handleClose(in group: inout DiscardingTaskGroup) {
     switch self.state.withLock({ $0.close() }) {
@@ -574,7 +570,6 @@ extension GRPCChannel {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension GRPCChannel {
   struct StateMachine {
     enum State {
@@ -649,7 +644,6 @@ extension GRPCChannel {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension GRPCChannel.StateMachine {
   mutating func start() {
     precondition(!self.running, "channel must only be started once")

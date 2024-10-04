@@ -17,7 +17,6 @@
 import GRPCCore
 import GRPCNIOTransportCore
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension NameResolver {
   static func `static`(
     endpoints: [Endpoint],
@@ -43,7 +42,6 @@ extension NameResolver {
   }
 }
 
-@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 struct ConstantAsyncSequence<Element: Sendable>: AsyncSequence, Sendable {
   private let result: Result<Element, any Error>
 

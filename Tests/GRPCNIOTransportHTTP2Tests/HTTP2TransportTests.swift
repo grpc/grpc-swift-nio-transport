@@ -20,7 +20,6 @@ import GRPCNIOTransportHTTP2Posix
 import GRPCNIOTransportHTTP2TransportServices
 import XCTest
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 final class HTTP2TransportTests: XCTestCase {
   // A combination of client and server transport kinds.
   struct Transport: Sendable, CustomStringConvertible {
@@ -1429,7 +1428,6 @@ final class HTTP2TransportTests: XCTestCase {
   }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension [HTTP2TransportTests.Transport] {
   static let supported = [
     HTTP2TransportTests.Transport(server: .posix, client: .posix),

@@ -24,7 +24,6 @@ import XCTest
 
 @testable import GRPCNIOTransportCore
 
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 final class GRPCClientStreamHandlerTests: XCTestCase {
   func testH2FramesAreIgnored() throws {
     let handler = GRPCClientStreamHandler(
