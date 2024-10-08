@@ -290,11 +290,13 @@ extension Subchannel {
       self.runConnection(connection, in: &group)
 
     case .backoff(let duration):
-      let transientFailureCause = (error as? RPCError) ?? RPCError(
-        code: .unavailable,
-        message: "All addresses have been tried: backing off.",
-        cause: error
-      )
+      let transientFailureCause =
+        (error as? RPCError)
+        ?? RPCError(
+          code: .unavailable,
+          message: "All addresses have been tried: backing off.",
+          cause: error
+        )
       // All addresses have been tried, backoff for some time.
       self.event.continuation.yield(
         .connectivityStateChanged(
