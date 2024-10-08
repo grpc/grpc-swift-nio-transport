@@ -120,6 +120,14 @@ struct ControlOutput: Codable {
   var payload: Data
 }
 
+enum CancellationKind: Codable {
+  case awaitCancelled
+  case withCancellationHandler
+}
+
+struct Empty: Codable {
+}
+
 struct JSONSerializer<Message: Encodable>: MessageSerializer {
   private let encoder = JSONEncoder()
 

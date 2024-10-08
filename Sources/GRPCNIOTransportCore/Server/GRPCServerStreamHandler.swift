@@ -26,9 +26,11 @@ package final class GRPCServerStreamHandler: ChannelDuplexHandler, RemovableChan
   package typealias OutboundOut = HTTP2Frame.FramePayload
 
   private var stateMachine: GRPCStreamStateMachine
+  private let eventLoop: any EventLoop
 
   private var isReading = false
   private var flushPending = false
+  private var isCancelled = false
 
   // We buffer the final status + trailers to avoid reordering issues (i.e.,
   // if there are messages still not written into the channel because flush has
@@ -37,6 +39,8 @@ package final class GRPCServerStreamHandler: ChannelDuplexHandler, RemovableChan
     (trailers: HTTP2Frame.FramePayload, promise: EventLoopPromise<Void>?)?
 
   private let methodDescriptorPromise: EventLoopPromise<MethodDescriptor>
+
+  private var cancellationHandle: Optional<ServerContext.RPCCancellationHandle>
 
   // Existential errors unconditionally allocate, avoid this per-use allocation by doing it
   // statically.
@@ -50,6 +54,8 @@ package final class GRPCServerStreamHandler: ChannelDuplexHandler, RemovableChan
     acceptedEncodings: CompressionAlgorithmSet,
     maxPayloadSize: Int,
     methodDescriptorPromise: EventLoopPromise<MethodDescriptor>,
+    eventLoop: any EventLoop,
+    cancellationHandler: ServerContext.RPCCancellationHandle? = nil,
     skipStateMachineAssertions: Bool = false
   ) {
     self.stateMachine = .init(
@@ -58,12 +64,54 @@ package final class GRPCServerStreamHandler: ChannelDuplexHandler, RemovableChan
       skipAssertions: skipStateMachineAssertions
     )
     self.methodDescriptorPromise = methodDescriptorPromise
+    self.cancellationHandle = cancellationHandler
+    self.eventLoop = eventLoop
+  }
+
+  package func setCancellationHandle(_ handle: ServerContext.RPCCancellationHandle) {
+    if self.eventLoop.inEventLoop {
+      self.syncSetCancellationHandle(handle)
+    } else {
+      let loopBoundSelf = NIOLoopBound(self, eventLoop: self.eventLoop)
+      self.eventLoop.execute {
+        loopBoundSelf.value.syncSetCancellationHandle(handle)
+      }
+    }
+  }
+
+  private func syncSetCancellationHandle(_ handle: ServerContext.RPCCancellationHandle) {
+    assert(self.cancellationHandle == nil, "\(#function) must only be called once")
+
+    if self.isCancelled {
+      handle.cancel()
+    } else {
+      self.cancellationHandle = handle
+    }
+  }
+
+  private func cancelRPC() {
+    if let handle = self.cancellationHandle.take() {
+      handle.cancel()
+    } else {
+      self.isCancelled = true
+    }
   }
 }
 
 // - MARK: ChannelInboundHandler
 
 extension GRPCServerStreamHandler {
+  package func userInboundEventTriggered(context: ChannelHandlerContext, event: Any) {
+    switch event {
+    case is ChannelShouldQuiesceEvent:
+      self.cancelRPC()
+    default:
+      ()
+    }
+
+    context.fireUserInboundEventTriggered(event)
+  }
+
   package func channelRead(context: ChannelHandlerContext, data: NIOAny) {
     self.isReading = true
     let frame = self.unwrapInboundIn(data)
@@ -186,6 +234,7 @@ extension GRPCServerStreamHandler {
   ) {
     switch self.stateMachine.unexpectedInboundClose(reason: reason) {
     case .fireError_serverOnly(let wrappedError):
+      self.cancelRPC()
       context.fireErrorCaught(wrappedError)
     case .doNothing:
       ()
