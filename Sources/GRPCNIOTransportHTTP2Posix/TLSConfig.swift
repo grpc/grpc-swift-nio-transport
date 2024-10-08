@@ -171,7 +171,7 @@ extension HTTP2ServerTransport.Posix.Config {
     ///
     /// If this is set to `true` but the client does not support ALPN, then the connection will be rejected.
     public var requireALPN: Bool
-    
+
     /// Create a new HTTP2 NIO Posix server transport TLS config.
     /// - Parameters:
     ///   - certificateChain: The certificates the server will offer during negotiation.
@@ -284,7 +284,7 @@ extension HTTP2ClientTransport.Posix.Config {
 
     /// An optional server hostname to use when verifying certificates.
     public var serverHostname: String?
-    
+
     /// Create a new HTTP2 NIO Posix client transport TLS config.
     /// - Parameters:
     ///   - certificateChain: The certificates the client will offer during negotiation.
