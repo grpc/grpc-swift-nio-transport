@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
+import Crypto
+import Foundation
 import GRPCNIOTransportHTTP2Posix
+import NIOSSL
+import SwiftASN1
 import Testing
 import X509
-import Crypto
-import SwiftASN1
-import Foundation
-import NIOSSL
 
 @Suite("HTTP/2 transport E2E tests with TLS enabled")
 struct HTTP2TransportTLSEnabledTests {
@@ -163,14 +163,22 @@ struct HTTP2TransportTLSEnabledTests {
     try await self.executeUnaryRPCForEachTransportPair { security in
       [
         HTTP2TransportTLSEnabledTests.Transport(
-          server: .posix(.tls(.defaults(
-            certificateChain: [.bytes(security.server.certificate, format: .der)],
-            privateKey: .bytes(security.server.key, format: .der)
-          ))),
-          client: .posix(.tls(.defaults {
-            $0.trustRoots = .certificates([.bytes(security.server.certificate, format: .der)])
-            $0.serverHostname = "localhost"
-          }))
+          server: .posix(
+            .tls(
+              .defaults(
+                certificateChain: [.bytes(security.server.certificate, format: .der)],
+                privateKey: .bytes(security.server.key, format: .der)
+              )
+            )
+          ),
+          client: .posix(
+            .tls(
+              .defaults {
+                $0.trustRoots = .certificates([.bytes(security.server.certificate, format: .der)])
+                $0.serverHostname = "localhost"
+              }
+            )
+          )
         )
       ]
     }
@@ -181,17 +189,27 @@ struct HTTP2TransportTLSEnabledTests {
     try await self.executeUnaryRPCForEachTransportPair { security in
       [
         HTTP2TransportTLSEnabledTests.Transport(
-          server: .posix(.tls(.mTLS(
-            certificateChain: [.bytes(security.server.certificate, format: .der)],
-            privateKey: .bytes(security.server.key, format: .der)) {
-              $0.trustRoots = .certificates([.bytes(security.client.certificate, format: .der)])
-            })),
-          client: .posix(.tls(.mTLS(
-            certificateChain: [.bytes(security.client.certificate, format: .der)],
-            privateKey: .bytes(security.client.key, format: .der)) {
-              $0.trustRoots = .certificates([.bytes(security.server.certificate, format: .der)])
-              $0.serverHostname = "localhost"
-            }))
+          server: .posix(
+            .tls(
+              .mTLS(
+                certificateChain: [.bytes(security.server.certificate, format: .der)],
+                privateKey: .bytes(security.server.key, format: .der)
+              ) {
+                $0.trustRoots = .certificates([.bytes(security.client.certificate, format: .der)])
+              }
+            )
+          ),
+          client: .posix(
+            .tls(
+              .mTLS(
+                certificateChain: [.bytes(security.client.certificate, format: .der)],
+                privateKey: .bytes(security.client.key, format: .der)
+              ) {
+                $0.trustRoots = .certificates([.bytes(security.server.certificate, format: .der)])
+                $0.serverHostname = "localhost"
+              }
+            )
+          )
         )
       ]
     }
@@ -200,81 +218,122 @@ struct HTTP2TransportTLSEnabledTests {
   @Test("Error is surfaced when client fails server verification")
   // Verification should fail because the custom hostname is missing on the client.
   func testClientFailsServerValidation() async throws {
-    await #expect(performing: {
-      try await self.executeUnaryRPCForEachTransportPair { security in
-        [
-          HTTP2TransportTLSEnabledTests.Transport(
-            server: .posix(.tls(.mTLS(
-              certificateChain: [.bytes(security.server.certificate, format: .der)],
-              privateKey: .bytes(security.server.key, format: .der)) {
-                $0.trustRoots = .certificates([.bytes(security.client.certificate, format: .der)])
-              })),
-            client: .posix(.tls(.mTLS(
-              certificateChain: [.bytes(security.client.certificate, format: .der)],
-              privateKey: .bytes(security.client.key, format: .der)) {
-                $0.trustRoots = .certificates([.bytes(security.server.certificate, format: .der)])
-              }))
+    await #expect(
+      performing: {
+        try await self.executeUnaryRPCForEachTransportPair { security in
+          [
+            HTTP2TransportTLSEnabledTests.Transport(
+              server: .posix(
+                .tls(
+                  .mTLS(
+                    certificateChain: [.bytes(security.server.certificate, format: .der)],
+                    privateKey: .bytes(security.server.key, format: .der)
+                  ) {
+                    $0.trustRoots = .certificates([
+                      .bytes(security.client.certificate, format: .der)
+                    ])
+                  }
+                )
+              ),
+              client: .posix(
+                .tls(
+                  .mTLS(
+                    certificateChain: [.bytes(security.client.certificate, format: .der)],
+                    privateKey: .bytes(security.client.key, format: .der)
+                  ) {
+                    $0.trustRoots = .certificates([
+                      .bytes(security.server.certificate, format: .der)
+                    ])
+                  }
+                )
+              )
+            )
+          ]
+        }
+      },
+      throws: { error in
+        guard let rootError = error as? RPCError else {
+          Issue.record("Should be an RPC error")
+          return false
+        }
+        #expect(rootError.code == .unavailable)
+        #expect(
+          rootError.message
+            == "Channel isn't ready. The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
+        )
+
+        guard
+          let sslError = rootError.cause as? NIOSSLExtraError,
+          case .failedToValidateHostname = sslError
+        else {
+          Issue.record(
+            "Should be a NIOSSLExtraError.failedToValidateHostname error, but was: \(String(describing: rootError.cause))"
           )
-        ]
-      }
-    }, throws: { error in
-      guard let rootError = error as? RPCError else {
-        Issue.record("Should be an RPC error")
-        return false
-      }
-      #expect(rootError.code == .unavailable)
-      #expect(rootError.message == "Channel isn't ready. The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface.")
+          return false
+        }
 
-      guard
-        let sslError = rootError.cause as? NIOSSLExtraError,
-        case .failedToValidateHostname = sslError
-      else {
-        Issue.record("Should be a NIOSSLExtraError.failedToValidateHostname error, but was: \(String(describing: rootError.cause))")
-        return false
+        return true
       }
-
-      return true
-    })
+    )
   }
 
   @Test("Error is surfaced when server fails client verification")
   // Verification should fail because the server does not have trust roots containing the client cert.
   func testServerFailsClientValidation() async throws {
-    await #expect(performing: {
-      try await self.executeUnaryRPCForEachTransportPair { security in
-        [
-          HTTP2TransportTLSEnabledTests.Transport(
-            server: .posix(.tls(.mTLS(
-              certificateChain: [.bytes(security.server.certificate, format: .der)],
-              privateKey: .bytes(security.server.key, format: .der)
-            ))),
-            client: .posix(.tls(.mTLS(
-              certificateChain: [.bytes(security.client.certificate, format: .der)],
-              privateKey: .bytes(security.client.key, format: .der)) {
-                $0.trustRoots = .certificates([.bytes(security.server.certificate, format: .der)])
-                $0.serverHostname = "localhost"
-              }))
+    await #expect(
+      performing: {
+        try await self.executeUnaryRPCForEachTransportPair { security in
+          [
+            HTTP2TransportTLSEnabledTests.Transport(
+              server: .posix(
+                .tls(
+                  .mTLS(
+                    certificateChain: [.bytes(security.server.certificate, format: .der)],
+                    privateKey: .bytes(security.server.key, format: .der)
+                  )
+                )
+              ),
+              client: .posix(
+                .tls(
+                  .mTLS(
+                    certificateChain: [.bytes(security.client.certificate, format: .der)],
+                    privateKey: .bytes(security.client.key, format: .der)
+                  ) {
+                    $0.trustRoots = .certificates([
+                      .bytes(security.server.certificate, format: .der)
+                    ])
+                    $0.serverHostname = "localhost"
+                  }
+                )
+              )
+            )
+          ]
+        }
+      },
+      throws: { error in
+        guard let rootError = error as? RPCError else {
+          Issue.record("Should be an RPC error")
+          return false
+        }
+        #expect(rootError.code == .unavailable)
+        #expect(
+          rootError.message
+            == "Channel isn't ready. The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
+        )
+
+        guard
+          let sslError = rootError.cause as? NIOSSL.BoringSSLError,
+          case .sslError = sslError
+        else {
+          Issue.record(
+            "Should be a NIOSSL.sslError error, but was: \(String(describing: rootError.cause))"
           )
-        ]
-      }
-    }, throws: { error in
-      guard let rootError = error as? RPCError else {
-        Issue.record("Should be an RPC error")
-        return false
-      }
-      #expect(rootError.code == .unavailable)
-      #expect(rootError.message == "Channel isn't ready. The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface.")
+          return false
+        }
 
-      guard
-        let sslError = rootError.cause as? NIOSSL.BoringSSLError,
-        case .sslError = sslError
-      else {
-        Issue.record("Should be a NIOSSL.sslError error, but was: \(String(describing: rootError.cause))")
-        return false
+        return true
       }
-
-      return true
-    })
+    )
   }
 }
 
