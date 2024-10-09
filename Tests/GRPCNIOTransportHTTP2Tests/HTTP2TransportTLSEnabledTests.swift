@@ -259,7 +259,7 @@ struct HTTP2TransportTLSEnabledTests {
         #expect(rootError.code == .unavailable)
         #expect(
           rootError.message
-            == "Channel isn't ready. The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
+            == "The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
         )
 
         guard
@@ -318,7 +318,7 @@ struct HTTP2TransportTLSEnabledTests {
         #expect(rootError.code == .unavailable)
         #expect(
           rootError.message
-            == "Channel isn't ready. The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
+            == "The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
         )
 
         guard
