@@ -130,13 +130,14 @@ package final class Connection: Sendable {
     func establishConnectionOrThrow() async throws(RPCError) -> HTTP2Connection {
       do {
         return try await self.http2Connector.establishConnection(to: self.address)
+      } catch let error as RPCError {
+        throw error
       } catch {
-        throw (error as? RPCError)
-          ?? RPCError(
-            code: .unavailable,
-            message: "Could not establish a connection to \(self.address).",
-            cause: error
-          )
+        throw RPCError(
+          code: .unavailable,
+          message: "Could not establish a connection to \(self.address).",
+          cause: error
+        )
       }
     }
     let connectResult = await Result(catching: establishConnectionOrThrow)
