@@ -165,7 +165,8 @@ final class SubchannelTests: XCTestCase {
             .transientFailure(
               cause: RPCError(
                 code: .unavailable,
-                message: "All addresses have been tried: backing off."
+                message:
+                  "Could not establish a connection to [unix]test-connect-eventually-succeeds."
               )
             )
           ),
