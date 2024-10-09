@@ -735,10 +735,6 @@ extension ConnectivityState {
   static func aggregate(_ states: some Collection<ConnectivityState>) -> ConnectivityState {
     // See https://github.com/grpc/grpc/blob/master/doc/load-balancing.md
 
-    if states.isEmpty {
-      return .shutdown
-    }
-
     // If any one subchannel is in READY state, the channel's state is READY.
     if states.contains(where: { $0 == .ready }) {
       return .ready
@@ -755,15 +751,25 @@ extension ConnectivityState {
     }
 
     // Otherwise, if all subchannels are in state TRANSIENT_FAILURE, the channel's state is TRANSIENT_FAILURE.
-    // Pick one of the errors to surface, as we can't surface all of them.
-    var cause: RPCError!
+    var cause: RPCError?
     for state in states {
-      guard case .transientFailure(let error) = state else {
+      switch state {
+      case .transientFailure(let error):
+        // Pick one of the errors to surface, as we can't surface all of them.
+        cause = error
+      case .shutdown:
         return .shutdown
+      case .idle, .connecting, .ready:
+        fatalError("Unreachable state: these should have been handled above.")
       }
-      cause = error
     }
 
-    return .transientFailure(cause: cause)
+    if let cause {
+      return .transientFailure(cause: cause)
+    } else {
+      // We can only reach this point without a `cause` if `states` was empty.
+      // Fall back to shutdown: we have nothing better to do.
+      return .shutdown
+    }
   }
 }

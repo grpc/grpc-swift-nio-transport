@@ -765,13 +765,7 @@ extension GRPCChannel.StateMachine {
           let continuations = state.queue.removeFastFailingEntries()
           actions.resumeContinuations = ConnectivityStateChangeActions.ResumableContinuations(
             continuations: continuations,
-            result: .failure(
-              RPCError(
-                code: .unavailable,
-                message: "Channel isn't ready.",
-                cause: cause
-              )
-            )
+            result: .failure(cause)
           )
 
         case .shutdown:  // shutdown includes shutting down

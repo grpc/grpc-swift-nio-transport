@@ -282,7 +282,7 @@ extension Subchannel {
     }
   }
 
-  private func handleConnectFailedEvent(in group: inout DiscardingTaskGroup, error: any Error) {
+  private func handleConnectFailedEvent(in group: inout DiscardingTaskGroup, error: RPCError) {
     let onConnectFailed = self.state.withLock { $0.connectFailed(connector: self.connector) }
     switch onConnectFailed {
     case .connect(let connection):
@@ -290,17 +290,10 @@ extension Subchannel {
       self.runConnection(connection, in: &group)
 
     case .backoff(let duration):
-      let transientFailureCause =
-        (error as? RPCError)
-        ?? RPCError(
-          code: .unavailable,
-          message: "All addresses have been tried: backing off.",
-          cause: error
-        )
       // All addresses have been tried, backoff for some time.
       self.event.continuation.yield(
         .connectivityStateChanged(
-          .transientFailure(cause: transientFailureCause)
+          .transientFailure(cause: error)
         )
       )
       group.addTask {
@@ -660,7 +653,13 @@ extension Subchannel {
         case .keepaliveTimeout:
           self = .notConnected(NotConnected(from: state))
           onClosed = .emitTransientFailureAndReconnect(
-            cause: RPCError(code: .unavailable, message: "The keepalive timed out.")
+            cause: RPCError(
+              code: .unavailable,
+              message: """
+                The connection became unresponsive and was closed because the \
+                keepalive timeout fired.
+                """
+            )
           )
 
         case .error(let error, wasIdle: false):

@@ -53,8 +53,8 @@ extension Connection.CloseReason {
       (.remote, .remote):
       return true
 
-    case (.error(_, let lhsStreams), .error(_, let rhsStreams)):
-      return lhs == rhs && lhsStreams == rhsStreams
+    case (.error(let lhsError, let lhsStreams), .error(let rhsError, let rhsStreams)):
+      return lhsError == rhsError && lhsStreams == rhsStreams
 
     default:
       return false

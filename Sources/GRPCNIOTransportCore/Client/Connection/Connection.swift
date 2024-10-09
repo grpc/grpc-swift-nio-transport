@@ -49,7 +49,7 @@ package final class Connection: Sendable {
     /// The connect attempt succeeded and the connection is ready to use.
     case connectSucceeded
     /// The connect attempt failed.
-    case connectFailed(any Error)
+    case connectFailed(RPCError)
     /// The connection received a GOAWAY and will close soon. No new streams
     /// should be opened on this connection.
     case goingAway(HTTP2ErrorCode, String)
@@ -127,9 +127,19 @@ package final class Connection: Sendable {
   /// This function returns when the connection has closed. You can observe connection events
   /// by consuming the ``events`` sequence.
   package func run() async {
-    let connectResult = await Result {
-      try await self.http2Connector.establishConnection(to: self.address)
+    func establishConnectionOrThrow() async throws(RPCError) -> HTTP2Connection {
+      do {
+        return try await self.http2Connector.establishConnection(to: self.address)
+      } catch {
+        throw (error as? RPCError)
+          ?? RPCError(
+            code: .unavailable,
+            message: "Could not establish a connection to \(self.address).",
+            cause: error
+          )
+      }
     }
+    let connectResult = await Result(catching: establishConnectionOrThrow)
 
     switch connectResult {
     case .success(let connected):
