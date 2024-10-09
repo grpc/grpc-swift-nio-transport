@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+package import GRPCCore
+
 package enum ConnectivityState: Sendable, Hashable {
   /// This channel isn't trying to create a connection because of a lack of new or pending RPCs.
   ///
@@ -34,7 +36,7 @@ package enum ConnectivityState: Sendable, Hashable {
   /// establish a connection again. Since retries are done with exponential backoff, channels that
   /// fail to connect will start out spending very little time in this state but as the attempts
   /// fail repeatedly, the channel will spend increasingly large amounts of time in this state.
-  case transientFailure
+  case transientFailure(cause: RPCError)
 
   /// This channel has started shutting down. Any new RPCs should fail immediately. Pending RPCs
   /// may continue running until the application cancels them. Channels may enter this state either

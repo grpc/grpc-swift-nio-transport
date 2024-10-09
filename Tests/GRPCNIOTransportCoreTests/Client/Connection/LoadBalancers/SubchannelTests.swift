@@ -161,7 +161,15 @@ final class SubchannelTests: XCTestCase {
         [
           .connectivityStateChanged(.idle),
           .connectivityStateChanged(.connecting),
-          .connectivityStateChanged(.transientFailure),
+          .connectivityStateChanged(
+            .transientFailure(
+              cause: RPCError(
+                code: .unavailable,
+                message:
+                  "Could not establish a connection to [unix]test-connect-eventually-succeeds."
+              )
+            )
+          ),
           .connectivityStateChanged(.connecting),
         ]
       )
@@ -440,7 +448,14 @@ final class SubchannelTests: XCTestCase {
         .connectivityStateChanged(.idle),
         .connectivityStateChanged(.connecting),
         .connectivityStateChanged(.ready),
-        .connectivityStateChanged(.transientFailure),
+        .connectivityStateChanged(
+          .transientFailure(
+            cause: RPCError(
+              code: .unavailable,
+              message: "The TCP connection was dropped unexpectedly."
+            )
+          )
+        ),
         .requiresNameResolution,
         .connectivityStateChanged(.connecting),
         .connectivityStateChanged(.ready),

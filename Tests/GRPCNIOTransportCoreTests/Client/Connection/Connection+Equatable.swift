@@ -54,11 +54,7 @@ extension Connection.CloseReason {
       return true
 
     case (.error(let lhsError, let lhsStreams), .error(let rhsError, let rhsStreams)):
-      if let lhs = lhsError as? RPCError, let rhs = rhsError as? RPCError {
-        return lhs == rhs && lhsStreams == rhsStreams
-      } else {
-        return lhsStreams == rhsStreams
-      }
+      return lhsError == rhsError && lhsStreams == rhsStreams
 
     default:
       return false

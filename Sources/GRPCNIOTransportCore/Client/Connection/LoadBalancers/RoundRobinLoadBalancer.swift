@@ -530,7 +530,7 @@ extension RoundRobinLoadBalancer {
         // The transition from transient failure to connecting is ignored.
         //
         // See: https://github.com/grpc/grpc/blob/master/doc/load-balancing.md
-        if self.state == .transientFailure, newState == .connecting {
+        if case .transientFailure = self.state, newState == .connecting {
           return false
         }
 
@@ -750,12 +750,26 @@ extension ConnectivityState {
       return .idle
     }
 
-    // Otherwise, if all subchannels are in state TRANSIENT_FAILURE, the channel's state
-    //   is TRANSIENT_FAILURE.
-    if states.allSatisfy({ $0 == .transientFailure }) {
-      return .transientFailure
+    // Otherwise, if all subchannels are in state TRANSIENT_FAILURE, the channel's state is TRANSIENT_FAILURE.
+    var cause: RPCError?
+    for state in states {
+      switch state {
+      case .transientFailure(let error):
+        // Pick one of the errors to surface, as we can't surface all of them.
+        cause = error
+      case .shutdown:
+        return .shutdown
+      case .idle, .connecting, .ready:
+        fatalError("Unreachable state: these should have been handled above.")
+      }
     }
 
-    return .shutdown
+    if let cause {
+      return .transientFailure(cause: cause)
+    } else {
+      // We can only reach this point without a `cause` if `states` was empty.
+      // Fall back to shutdown: we have nothing better to do.
+      return .shutdown
+    }
   }
 }
