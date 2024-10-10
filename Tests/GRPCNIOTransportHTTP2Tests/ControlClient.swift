@@ -17,7 +17,7 @@
 import GRPCCore
 
 internal struct ControlClient {
-  private let client: GRPCCore.GRPCClient
+  internal let client: GRPCCore.GRPCClient
 
   internal init(wrapping client: GRPCCore.GRPCClient) {
     self.client = client
@@ -82,6 +82,23 @@ internal struct ControlClient {
     try await self.client.bidirectionalStreaming(
       request: request,
       descriptor: MethodDescriptor(service: "Control", method: "BidiStream"),
+      serializer: JSONSerializer(),
+      deserializer: JSONDeserializer(),
+      options: options,
+      handler: body
+    )
+  }
+
+  internal func waitForCancellation<R>(
+    request: GRPCCore.ClientRequest<CancellationKind>,
+    options: GRPCCore.CallOptions = .defaults,
+    _ body: @Sendable @escaping (
+      _ response: GRPCCore.StreamingClientResponse<CancellationKind>
+    ) async throws -> R
+  ) async throws -> R where R: Sendable {
+    try await self.client.serverStreaming(
+      request: request,
+      descriptor: MethodDescriptor(service: "Control", method: "WaitForCancellation"),
       serializer: JSONSerializer(),
       deserializer: JSONDeserializer(),
       options: options,

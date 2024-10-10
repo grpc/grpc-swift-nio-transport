@@ -51,10 +51,45 @@ struct ControlService: RegistrableRPCService {
         return try await self.handle(request: request)
       }
     )
+    router.registerHandler(
+      forMethod: MethodDescriptor(service: "Control", method: "WaitForCancellation"),
+      deserializer: JSONDeserializer<CancellationKind>(),
+      serializer: JSONSerializer<Empty>(),
+      handler: { request, context in
+        return try await self.waitForCancellation(
+          request: ServerRequest(stream: request),
+          context: context
+        )
+      }
+    )
   }
 }
 
 extension ControlService {
+  private func waitForCancellation(
+    request: ServerRequest<CancellationKind>,
+    context: ServerContext
+  ) async throws -> StreamingServerResponse<Empty> {
+    switch request.message {
+    case .awaitCancelled:
+      return StreamingServerResponse { _ in
+        try await context.cancellation.cancelled
+        return [:]
+      }
+
+    case .withCancellationHandler:
+      let signal = AsyncStream.makeStream(of: Void.self)
+      return StreamingServerResponse { _ in
+        await withRPCCancellationHandler {
+          for await _ in signal.stream {}
+          return [:]
+        } onCancelRPC: {
+          signal.continuation.finish()
+        }
+      }
+    }
+  }
+
   private func handle(
     request: StreamingServerRequest<ControlInput>
   ) async throws -> StreamingServerResponse<ControlOutput> {

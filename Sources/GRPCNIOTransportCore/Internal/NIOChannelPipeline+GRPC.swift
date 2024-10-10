@@ -85,7 +85,8 @@ extension ChannelPipeline.SynchronousOperations {
           scheme: scheme,
           acceptedEncodings: compressionConfig.enabledAlgorithms,
           maxPayloadSize: rpcConfig.maxRequestPayloadSize,
-          methodDescriptorPromise: methodDescriptorPromise
+          methodDescriptorPromise: methodDescriptorPromise,
+          eventLoop: streamChannel.eventLoop
         )
         try streamChannel.pipeline.syncOperations.addHandler(streamHandler)
 
