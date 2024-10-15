@@ -331,7 +331,7 @@ package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
       // This should be resolved in NIOHTTP2: https://github.com/apple/swift-nio-http2/issues/466
       //
       // Only close the connection if it's not already closing (as this is the state in which the
-      // error can be safely.
+      // error can be safely ignored).
       return !self.state.isClosing
 
     case is NIOHTTP2Errors.StreamError:
