@@ -172,6 +172,27 @@ extension HTTP2ServerTransport.Posix.Config {
     /// If this is set to `true` but the client does not support ALPN, then the connection will be rejected.
     public var requireALPN: Bool
 
+    /// Create a new HTTP2 NIO Posix server transport TLS config.
+    /// - Parameters:
+    ///   - certificateChain: The certificates the server will offer during negotiation.
+    ///   - privateKey: The private key associated with the leaf certificate.
+    ///   - clientCertificateVerification: How to verify the client certificate, if one is presented.
+    ///   - trustRoots: The trust roots to be used when verifying client certificates.
+    ///   - requireALPN: Whether ALPN is required.
+    public init(
+      certificateChain: [TLSConfig.CertificateSource],
+      privateKey: TLSConfig.PrivateKeySource,
+      clientCertificateVerification: TLSConfig.CertificateVerification,
+      trustRoots: TLSConfig.TrustRootsSource,
+      requireALPN: Bool
+    ) {
+      self.certificateChain = certificateChain
+      self.privateKey = privateKey
+      self.clientCertificateVerification = clientCertificateVerification
+      self.trustRoots = trustRoots
+      self.requireALPN = requireALPN
+    }
+
     /// Create a new HTTP2 NIO Posix transport TLS config, with some values defaulted:
     /// - `clientCertificateVerificationMode` equals `doNotVerify`
     /// - `trustRoots` equals `systemDefault`
@@ -180,18 +201,22 @@ extension HTTP2ServerTransport.Posix.Config {
     /// - Parameters:
     ///   - certificateChain: The certificates the server will offer during negotiation.
     ///   - privateKey: The private key associated with the leaf certificate.
+    ///   - configure: A closure which allows you to modify the defaults before returning them.
     /// - Returns: A new HTTP2 NIO Posix transport TLS config.
     public static func defaults(
       certificateChain: [TLSConfig.CertificateSource],
-      privateKey: TLSConfig.PrivateKeySource
+      privateKey: TLSConfig.PrivateKeySource,
+      configure: (_ config: inout Self) -> Void = { _ in }
     ) -> Self {
-      Self(
+      var config = Self(
         certificateChain: certificateChain,
         privateKey: privateKey,
         clientCertificateVerification: .noVerification,
         trustRoots: .systemDefault,
         requireALPN: false
       )
+      configure(&config)
+      return config
     }
 
     /// Create a new HTTP2 NIO Posix transport TLS config, with some values defaulted to match
@@ -203,18 +228,22 @@ extension HTTP2ServerTransport.Posix.Config {
     /// - Parameters:
     ///   - certificateChain: The certificates the server will offer during negotiation.
     ///   - privateKey: The private key associated with the leaf certificate.
+    ///   - configure: A closure which allows you to modify the defaults before returning them.
     /// - Returns: A new HTTP2 NIO Posix transport TLS config.
     public static func mTLS(
       certificateChain: [TLSConfig.CertificateSource],
-      privateKey: TLSConfig.PrivateKeySource
+      privateKey: TLSConfig.PrivateKeySource,
+      configure: (_ config: inout Self) -> Void = { _ in }
     ) -> Self {
-      Self(
+      var config = Self(
         certificateChain: certificateChain,
         privateKey: privateKey,
         clientCertificateVerification: .noHostnameVerification,
         trustRoots: .systemDefault,
         requireALPN: false
       )
+      configure(&config)
+      return config
     }
   }
 }
@@ -256,6 +285,27 @@ extension HTTP2ClientTransport.Posix.Config {
     /// An optional server hostname to use when verifying certificates.
     public var serverHostname: String?
 
+    /// Create a new HTTP2 NIO Posix client transport TLS config.
+    /// - Parameters:
+    ///   - certificateChain: The certificates the client will offer during negotiation.
+    ///   - privateKey: The private key associated with the leaf certificate.
+    ///   - serverCertificateVerification: How to verify the server certificate, if one is presented.
+    ///   - trustRoots: The trust roots to be used when verifying server certificates.
+    ///   - serverHostname: An optional server hostname to use when verifying certificates.
+    public init(
+      certificateChain: [TLSConfig.CertificateSource],
+      privateKey: TLSConfig.PrivateKeySource?,
+      serverCertificateVerification: TLSConfig.CertificateVerification,
+      trustRoots: TLSConfig.TrustRootsSource,
+      serverHostname: String?
+    ) {
+      self.certificateChain = certificateChain
+      self.privateKey = privateKey
+      self.serverCertificateVerification = serverCertificateVerification
+      self.trustRoots = trustRoots
+      self.serverHostname = serverHostname
+    }
+
     /// Create a new HTTP2 NIO Posix transport TLS config, with some values defaulted:
     /// - `certificateChain` equals `[]`
     /// - `privateKey` equals `nil`
@@ -263,35 +313,57 @@ extension HTTP2ClientTransport.Posix.Config {
     /// - `trustRoots` equals `systemDefault`
     /// - `serverHostname` equals `nil`
     ///
+    /// - Parameters:
+    ///   - configure: A closure which allows you to modify the defaults before returning them.
     /// - Returns: A new HTTP2 NIO Posix transport TLS config.
-    public static var defaults: Self {
-      Self(
+    public static func defaults(
+      configure: (_ config: inout Self) -> Void = { _ in }
+    ) -> Self {
+      var config = Self(
         certificateChain: [],
         privateKey: nil,
         serverCertificateVerification: .fullVerification,
         trustRoots: .systemDefault,
         serverHostname: nil
       )
+      configure(&config)
+      return config
+    }
+
+    /// Create a new HTTP2 NIO Posix transport TLS config, with some values defaulted:
+    /// - `certificateChain` equals `[]`
+    /// - `privateKey` equals `nil`
+    /// - `serverCertificateVerification` equals `fullVerification`
+    /// - `trustRoots` equals `systemDefault`
+    /// - `serverHostname` equals `nil`
+    public static var defaults: Self {
+      Self.defaults()
     }
 
     /// Create a new HTTP2 NIO Posix transport TLS config, with some values defaulted to match
     /// the requirements of mTLS:
     /// - `trustRoots` equals `systemDefault`
+    /// - `serverCertificateVerification` equals `fullVerification`
     ///
     /// - Parameters:
     ///   - certificateChain: The certificates the client will offer during negotiation.
     ///   - privateKey: The private key associated with the leaf certificate.
+    ///   - configure: A closure which allows you to modify the defaults before returning them.
     /// - Returns: A new HTTP2 NIO Posix transport TLS config.
     public static func mTLS(
       certificateChain: [TLSConfig.CertificateSource],
-      privateKey: TLSConfig.PrivateKeySource
+      privateKey: TLSConfig.PrivateKeySource,
+      configure: (_ config: inout Self) -> Void = { _ in }
     ) -> Self {
-      Self(
+      var config = Self(
         certificateChain: certificateChain,
         privateKey: privateKey,
         serverCertificateVerification: .fullVerification,
-        trustRoots: .systemDefault
+        trustRoots: .systemDefault,
+        serverHostname: nil
       )
+      configure(&config)
+      return config
     }
   }
 }

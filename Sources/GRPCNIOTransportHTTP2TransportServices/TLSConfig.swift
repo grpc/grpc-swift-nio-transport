@@ -45,6 +45,18 @@ extension HTTP2ServerTransport.TransportServices.Config {
     /// If this is set to `true` but the client does not support ALPN, then the connection will be rejected.
     public var requireALPN: Bool
 
+    /// Create a new HTTP2 NIO Transport Services transport TLS config.
+    /// - Parameters:
+    ///   - requireALPN: Whether ALPN is required.
+    ///   - identityProvider: A provider for the `SecIdentity` to be used when setting up TLS.
+    public init(
+      requireALPN: Bool,
+      identityProvider: @Sendable @escaping () throws -> SecIdentity
+    ) {
+      self.requireALPN = requireALPN
+      self.identityProvider = identityProvider
+    }
+
     /// Create a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted:
     /// - `requireALPN` equals `false`
     ///
@@ -52,10 +64,7 @@ extension HTTP2ServerTransport.TransportServices.Config {
     public static func defaults(
       identityProvider: @Sendable @escaping () throws -> SecIdentity
     ) -> Self {
-      Self(
-        identityProvider: identityProvider,
-        requireALPN: false
-      )
+      Self(requireALPN: false, identityProvider: identityProvider)
     }
   }
 }
