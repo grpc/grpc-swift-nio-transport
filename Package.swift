@@ -35,7 +35,7 @@ let products: [Product] = [
 let dependencies: [Package.Dependency] = [
   .package(
     url: "https://github.com/grpc/grpc-swift.git",
-    exact: "2.0.0-alpha.1"
+    branch: "main"
   ),
   .package(
     url: "https://github.com/apple/swift-nio.git",
@@ -43,7 +43,7 @@ let dependencies: [Package.Dependency] = [
   ),
   .package(
     url: "https://github.com/apple/swift-nio-http2.git",
-    from: "1.32.0"
+    from: "1.34.1"
   ),
   .package(
     url: "https://github.com/apple/swift-nio-transport-services.git",

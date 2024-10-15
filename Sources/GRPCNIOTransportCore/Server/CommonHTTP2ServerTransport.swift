@@ -241,19 +241,35 @@ package final class CommonHTTP2ServerTransport<
         return
       }
 
-      let rpcStream = RPCStream(
-        descriptor: descriptor,
-        inbound: RPCAsyncSequence(wrapping: inbound),
-        outbound: RPCWriter.Closable(
-          wrapping: ServerConnection.Stream.Outbound(
-            responseWriter: outbound,
-            http2Stream: stream
+      await withServerContextRPCCancellationHandle { handle in
+        stream.channel.eventLoop.execute {
+          // Sync is safe: this is on the right event loop.
+          let sync = stream.channel.pipeline.syncOperations
+
+          do {
+            let handler = try sync.handler(type: GRPCServerStreamHandler.self)
+            handler.setCancellationHandle(handle)
+          } catch {
+            // Looking up the handler can fail if the channel is already closed, in which case
+            // don't execute the RPC, just return early.
+            return
+          }
+        }
+
+        let rpcStream = RPCStream(
+          descriptor: descriptor,
+          inbound: RPCAsyncSequence(wrapping: inbound),
+          outbound: RPCWriter.Closable(
+            wrapping: ServerConnection.Stream.Outbound(
+              responseWriter: outbound,
+              http2Stream: stream
+            )
           )
         )
-      )
 
-      let context = ServerContext(descriptor: descriptor)
-      await streamHandler(rpcStream, context)
+        let context = ServerContext(descriptor: descriptor, cancellation: handle)
+        await streamHandler(rpcStream, context)
+      }
     }
   }
 
