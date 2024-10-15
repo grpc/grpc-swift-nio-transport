@@ -19,16 +19,17 @@ import GRPCNIOTransportCore
 import NIOCore
 import NIOEmbedded
 import NIOHTTP2
-import XCTest
+import Testing
 
-final class ClientConnectionHandlerTests: XCTestCase {
-  func testMaxIdleTime() throws {
+struct ClientConnectionHandlerTests {
+  @Test("Connection closed after max idle time")
+  func maxIdleTime() throws {
     let connection = try Connection(maxIdleTime: .minutes(5))
     try connection.activate()
 
     // Write the initial settings to ready the connection.
     try connection.settings([])
-    XCTAssertEqual(try connection.readEvent(), .ready)
+    #expect(try connection.readEvent() == .ready)
 
     // Idle with no streams open we should:
     // - read out a closing event,
@@ -36,20 +37,20 @@ final class ClientConnectionHandlerTests: XCTestCase {
     // - close.
     connection.loop.advanceTime(by: .minutes(5))
 
-    XCTAssertEqual(try connection.readEvent(), .closing(.idle))
+    #expect(try connection.readEvent() == .closing(.idle))
 
-    let frame = try XCTUnwrap(try connection.readFrame())
-    XCTAssertEqual(frame.streamID, .rootStream)
-    XCTAssertGoAway(frame.payload) { lastStreamID, error, data in
-      XCTAssertEqual(lastStreamID, .rootStream)
-      XCTAssertEqual(error, .noError)
-      XCTAssertEqual(data, ByteBuffer(string: "idle"))
-    }
+    let frame = try #require(try connection.readFrame())
+    #expect(frame.streamID == .rootStream)
+    let (lastStreamID, error, data) = try #require(frame.payload.goAway)
+    #expect(lastStreamID == .rootStream)
+    #expect(error == .noError)
+    #expect(data == ByteBuffer(string: "idle"))
 
     try connection.waitUntilClosed()
   }
 
-  func testMaxIdleTimeWhenOpenStreams() throws {
+  @Test("Connection closed after max idle time with open streams")
+  func maxIdleTimeWhenOpenStreams() throws {
     let connection = try Connection(maxIdleTime: .minutes(5))
     try connection.activate()
 
@@ -58,29 +59,29 @@ final class ClientConnectionHandlerTests: XCTestCase {
 
     // Advance by the idle time, nothing should happen.
     connection.loop.advanceTime(by: .minutes(5))
-    XCTAssertNil(try connection.readEvent())
-    XCTAssertNil(try connection.readFrame())
+    #expect(try connection.readEvent() == nil)
+    #expect(try connection.readFrame() == nil)
 
     // Close the stream, the idle timer should begin again.
     connection.streamClosed(1)
     connection.loop.advanceTime(by: .minutes(5))
-    let frame = try XCTUnwrap(try connection.readFrame())
-    XCTAssertGoAway(frame.payload) { lastStreamID, error, data in
-      XCTAssertEqual(lastStreamID, .rootStream)
-      XCTAssertEqual(error, .noError)
-      XCTAssertEqual(data, ByteBuffer(string: "idle"))
-    }
+    let frame = try #require(try connection.readFrame())
+    let (lastStreamID, error, data) = try #require(frame.payload.goAway)
+    #expect(lastStreamID == .rootStream)
+    #expect(error == .noError)
+    #expect(data == ByteBuffer(string: "idle"))
 
     try connection.waitUntilClosed()
   }
 
-  func testKeepaliveWithOpenStreams() throws {
+  @Test("Connection closed after keepalive with open streams")
+  func keepaliveWithOpenStreams() throws {
     let connection = try Connection(keepaliveTime: .minutes(1), keepaliveTimeout: .seconds(10))
     try connection.activate()
 
     // Write the initial settings to ready the connection.
     try connection.settings([])
-    XCTAssertEqual(try connection.readEvent(), .ready)
+    #expect(try connection.readEvent() == .ready)
 
     // Open a stream so keep-alive starts.
     connection.streamOpened(1)
@@ -88,62 +89,61 @@ final class ClientConnectionHandlerTests: XCTestCase {
     for _ in 0 ..< 10 {
       // Advance time, a PING should be sent, ACK it.
       connection.loop.advanceTime(by: .minutes(1))
-      let frame1 = try XCTUnwrap(connection.readFrame())
-      XCTAssertEqual(frame1.streamID, .rootStream)
-      try XCTAssertPing(frame1.payload) { data, ack in
-        XCTAssertFalse(ack)
-        try connection.ping(data: data, ack: true)
-      }
+      let frame1 = try #require(try connection.readFrame())
+      #expect(frame1.streamID == .rootStream)
+      let (data, ack) = try #require(frame1.payload.ping)
+      #expect(!ack)
+      try connection.ping(data: data, ack: true)
 
-      XCTAssertNil(try connection.readFrame())
+      #expect(try connection.readFrame() == nil)
     }
 
     // Close the stream, keep-alive pings should stop.
     connection.streamClosed(1)
     connection.loop.advanceTime(by: .minutes(1))
-    XCTAssertNil(try connection.readFrame())
+    #expect(try connection.readFrame() == nil)
   }
 
-  func testKeepaliveWithNoOpenStreams() throws {
+  @Test("Connection closed after keepalive with no open streams")
+  func keepaliveWithNoOpenStreams() throws {
     let connection = try Connection(keepaliveTime: .minutes(1), allowKeepaliveWithoutCalls: true)
     try connection.activate()
 
     // Write the initial settings to ready the connection.
     try connection.settings([])
-    XCTAssertEqual(try connection.readEvent(), .ready)
+    #expect(try connection.readEvent() == .ready)
 
     for _ in 0 ..< 10 {
       // Advance time, a PING should be sent, ACK it.
       connection.loop.advanceTime(by: .minutes(1))
-      let frame1 = try XCTUnwrap(connection.readFrame())
-      XCTAssertEqual(frame1.streamID, .rootStream)
-      try XCTAssertPing(frame1.payload) { data, ack in
-        XCTAssertFalse(ack)
-        try connection.ping(data: data, ack: true)
-      }
+      let frame1 = try #require(try connection.readFrame())
+      #expect(frame1.streamID == .rootStream)
+      let (data, ack) = try #require(frame1.payload.ping)
+      #expect(!ack)
+      try connection.ping(data: data, ack: true)
 
-      XCTAssertNil(try connection.readFrame())
+      #expect(try connection.readFrame() == nil)
     }
   }
 
-  func testKeepaliveWithOpenStreamsTimingOut() throws {
+  @Test("Connection closed after keepalive with open streams and timeout")
+  func keepaliveWithOpenStreamsTimingOut() throws {
     let connection = try Connection(keepaliveTime: .minutes(1), keepaliveTimeout: .seconds(10))
     try connection.activate()
 
     // Write the initial settings to ready the connection.
     try connection.settings([])
-    XCTAssertEqual(try connection.readEvent(), .ready)
+    #expect(try connection.readEvent() == .ready)
 
     // Open a stream so keep-alive starts.
     connection.streamOpened(1)
 
     // Advance time, a PING should be sent, don't ACK it.
     connection.loop.advanceTime(by: .minutes(1))
-    let frame1 = try XCTUnwrap(connection.readFrame())
-    XCTAssertEqual(frame1.streamID, .rootStream)
-    XCTAssertPing(frame1.payload) { _, ack in
-      XCTAssertFalse(ack)
-    }
+    let frame1 = try #require(try connection.readFrame())
+    #expect(frame1.streamID == .rootStream)
+    let (_, ack) = try #require(frame1.payload.ping)
+    #expect(!ack)
 
     // Advance time by the keep alive timeout. We should:
     // - read a connection event
@@ -151,30 +151,31 @@ final class ClientConnectionHandlerTests: XCTestCase {
     // - be closed
     connection.loop.advanceTime(by: .seconds(10))
 
-    XCTAssertEqual(try connection.readEvent(), .closing(.keepaliveExpired))
+    #expect(try connection.readEvent() == .closing(.keepaliveExpired))
 
-    let frame2 = try XCTUnwrap(connection.readFrame())
-    XCTAssertEqual(frame2.streamID, .rootStream)
-    XCTAssertGoAway(frame2.payload) { lastStreamID, error, data in
-      XCTAssertEqual(lastStreamID, .rootStream)
-      XCTAssertEqual(error, .noError)
-      XCTAssertEqual(data, ByteBuffer(string: "keepalive_expired"))
-    }
+    let frame2 = try #require(try connection.readFrame())
+    #expect(frame2.streamID == .rootStream)
+    let (lastStreamID, error, data) = try #require(frame2.payload.goAway)
+    #expect(lastStreamID == .rootStream)
+    #expect(error == .noError)
+    #expect(data == ByteBuffer(string: "keepalive_expired"))
 
     // Doesn't wait for streams to close: the connection is bad.
     try connection.waitUntilClosed()
   }
 
-  func testPingsAreIgnored() throws {
+  @Test("Received PING frames are ignored")
+  func pingsAreIgnored() throws {
     let connection = try Connection()
     try connection.activate()
 
     // PING frames without ack set should be ignored, we rely on the HTTP/2 handler replying to them.
     try connection.ping(data: HTTP2PingData(), ack: false)
-    XCTAssertNil(try connection.readFrame())
+    #expect(try connection.readFrame() == nil)
   }
 
-  func testReceiveGoAway() throws {
+  @Test("Receiving GOAWAY results in close event")
+  func receiveGoAway() throws {
     let connection = try Connection()
     try connection.activate()
 
@@ -185,14 +186,12 @@ final class ClientConnectionHandlerTests: XCTestCase {
     )
 
     // Should read out an event and close (because there are no open streams).
-    XCTAssertEqual(
-      try connection.readEvent(),
-      .closing(.goAway(.enhanceYourCalm, "too_many_pings"))
-    )
+    #expect(try connection.readEvent() == .closing(.goAway(.enhanceYourCalm, "too_many_pings")))
     try connection.waitUntilClosed()
   }
 
-  func testReceiveGoAwayWithOpenStreams() throws {
+  @Test("Receiving GOAWAY with no open streams")
+  func receiveGoAwayWithOpenStreams() throws {
     let connection = try Connection()
     try connection.activate()
 
@@ -203,7 +202,7 @@ final class ClientConnectionHandlerTests: XCTestCase {
     try connection.goAway(lastStreamID: .maxID, errorCode: .noError)
 
     // Should read out an event.
-    XCTAssertEqual(try connection.readEvent(), .closing(.goAway(.noError, "")))
+    #expect(try connection.readEvent() == .closing(.goAway(.noError, "")))
 
     // Close streams so the connection can close.
     connection.streamClosed(1)
@@ -212,7 +211,8 @@ final class ClientConnectionHandlerTests: XCTestCase {
     try connection.waitUntilClosed()
   }
 
-  func testGoAwayWithNoErrorThenGoAwayWithProtocolError() throws {
+  @Test("Receiving GOAWAY with no error and then GOAWAY with protoco error")
+  func goAwayWithNoErrorThenGoAwayWithProtocolError() throws {
     let connection = try Connection()
     try connection.activate()
 
@@ -222,66 +222,70 @@ final class ClientConnectionHandlerTests: XCTestCase {
 
     try connection.goAway(lastStreamID: .maxID, errorCode: .noError)
     // Should read out an event.
-    XCTAssertEqual(try connection.readEvent(), .closing(.goAway(.noError, "")))
+    #expect(try connection.readEvent() == .closing(.goAway(.noError, "")))
 
     // Upgrade the close from graceful to 'error'.
     try connection.goAway(lastStreamID: .maxID, errorCode: .protocolError)
     // Should read out an event and the connection will be closed without waiting for notification
     // from existing streams.
-    XCTAssertEqual(try connection.readEvent(), .closing(.goAway(.protocolError, "")))
+    #expect(try connection.readEvent() == .closing(.goAway(.protocolError, "")))
     try connection.waitUntilClosed()
   }
 
-  func testOutboundGracefulClose() throws {
+  @Test("Outbound graceful close")
+  func outboundGracefulClose() throws {
     let connection = try Connection()
     try connection.activate()
 
     connection.streamOpened(1)
     let closed = connection.closeGracefully()
-    XCTAssertEqual(try connection.readEvent(), .closing(.initiatedLocally))
+    #expect(try connection.readEvent() == .closing(.initiatedLocally))
     connection.streamClosed(1)
     try closed.wait()
   }
 
-  func testReceiveInitialSettings() throws {
+  @Test("Receive initial SETTINGS")
+  func receiveInitialSettings() throws {
     let connection = try Connection()
     try connection.activate()
 
     // Nothing yet.
-    XCTAssertNil(try connection.readEvent())
+    #expect(try connection.readEvent() == nil)
 
     // Write the initial settings.
     try connection.settings([])
-    XCTAssertEqual(try connection.readEvent(), .ready)
+    #expect(try connection.readEvent() == .ready)
 
     // Receiving another settings frame should be a no-op.
     try connection.settings([])
-    XCTAssertNil(try connection.readEvent())
+    #expect(try connection.readEvent() == nil)
   }
 
-  func testReceiveErrorWhenIdle() throws {
+  @Test("Receive error when idle")
+  func receiveErrorWhenIdle() throws {
     let connection = try Connection()
     try connection.activate()
 
     // Write the initial settings.
     try connection.settings([])
-    XCTAssertEqual(try connection.readEvent(), .ready)
+    #expect(try connection.readEvent() == .ready)
 
     // Write an error and close.
     let error = RPCError(code: .aborted, message: "")
     connection.channel.pipeline.fireErrorCaught(error)
     connection.channel.close(mode: .all, promise: nil)
 
-    XCTAssertEqual(try connection.readEvent(), .closing(.unexpected(error, isIdle: true)))
+    #expect(try connection.readEvent() == .closing(.unexpected(error, isIdle: true)))
   }
 
-  func testReceiveErrorWhenStreamsAreOpen() throws {
+  @Test("Receive error when streams are open")
+  func receiveErrorWhenStreamsAreOpen() throws {
     let connection = try Connection()
     try connection.activate()
 
     // Write the initial settings.
     try connection.settings([])
-    XCTAssertEqual(try connection.readEvent(), .ready)
+    #expect(try connection.readEvent() == .ready)
 
     // Open a stream.
     connection.streamOpened(1)
@@ -291,32 +295,34 @@ final class ClientConnectionHandlerTests: XCTestCase {
     connection.channel.pipeline.fireErrorCaught(error)
     connection.channel.close(mode: .all, promise: nil)
 
-    XCTAssertEqual(try connection.readEvent(), .closing(.unexpected(error, isIdle: false)))
+    #expect(try connection.readEvent() == .closing(.unexpected(error, isIdle: false)))
   }
 
-  func testUnexpectedCloseWhenIdle() throws {
+  @Test("Unexpected close while idle")
+  func unexpectedCloseWhenIdle() throws {
     let connection = try Connection()
     try connection.activate()
 
     // Write the initial settings.
     try connection.settings([])
-    XCTAssertEqual(try connection.readEvent(), .ready)
+    #expect(try connection.readEvent() == .ready)
 
     connection.channel.close(mode: .all, promise: nil)
-    XCTAssertEqual(try connection.readEvent(), .closing(.unexpected(nil, isIdle: true)))
+    #expect(try connection.readEvent() == .closing(.unexpected(nil, isIdle: true)))
   }
 
-  func testUnexpectedCloseWhenStreamsAreOpen() throws {
+  @Test("Unexpected close when streams are open")
+  func unexpectedCloseWhenStreamsAreOpen() throws {
     let connection = try Connection()
     try connection.activate()
 
     // Write the initial settings.
     try connection.settings([])
-    XCTAssertEqual(try connection.readEvent(), .ready)
+    #expect(try connection.readEvent() == .ready)
 
     connection.streamOpened(1)
     connection.channel.close(mode: .all, promise: nil)
-    XCTAssertEqual(try connection.readEvent(), .closing(.unexpected(nil, isIdle: false)))
+    #expect(try connection.readEvent() == .closing(.unexpected(nil, isIdle: false)))
   }
 }
 
