@@ -28,12 +28,12 @@ struct HTTP2TransportTLSEnabledTests {
 
   @Test(
     "When using defaults, server does not perform client verification",
-    arguments: [TransportSecurity.posix],
-    [TransportSecurity.posix]
+    arguments: [TransportKind.posix],
+    [TransportKind.posix]
   )
   func testRPC_Defaults_OK(
-    clientTransport: TransportSecurity,
-    serverTransport: TransportSecurity
+    clientTransport: TransportKind,
+    serverTransport: TransportKind
   ) async throws {
     let certificateKeyPairs = try SelfSignedCertificateKeyPairs()
     let clientTransportConfig = self.makeDefaultClientTLSConfig(
@@ -46,26 +46,23 @@ struct HTTP2TransportTLSEnabledTests {
     )
 
     try await self.withClientAndServer(
-      clientTransportSecurity: clientTransportConfig,
-      serverTransportSecurity: serverTransportConfig
+      clientTLSConfig: clientTransportConfig,
+      serverTLSConfig: serverTransportConfig
     ) { control in
-      await #expect(
-        throws: Never.self,
-        performing: {
-          try await self.executeUnaryRPC(control: control)
-        }
-      )
+      await #expect(throws: Never.self) {
+        try await self.executeUnaryRPC(control: control)
+      }
     }
   }
 
   @Test(
     "When using mTLS defaults, both client and server verify each others' certificates",
-    arguments: [TransportSecurity.posix],
-    [TransportSecurity.posix]
+    arguments: [TransportKind.posix],
+    [TransportKind.posix]
   )
   func testRPC_mTLS_OK(
-    clientTransport: TransportSecurity,
-    serverTransport: TransportSecurity
+    clientTransport: TransportKind,
+    serverTransport: TransportKind
   ) async throws {
     let certificateKeyPairs = try SelfSignedCertificateKeyPairs()
     let clientTransportConfig = self.makeMTLSClientTLSConfig(
@@ -80,27 +77,24 @@ struct HTTP2TransportTLSEnabledTests {
     )
 
     try await self.withClientAndServer(
-      clientTransportSecurity: clientTransportConfig,
-      serverTransportSecurity: serverTransportConfig
+      clientTLSConfig: clientTransportConfig,
+      serverTLSConfig: serverTransportConfig
     ) { control in
-      await #expect(
-        throws: Never.self,
-        performing: {
-          try await self.executeUnaryRPC(control: control)
-        }
-      )
+      await #expect(throws: Never.self) {
+        try await self.executeUnaryRPC(control: control)
+      }
     }
   }
 
   @Test(
     "Error is surfaced when client fails server verification",
-    arguments: [TransportSecurity.posix],
-    [TransportSecurity.posix]
+    arguments: [TransportKind.posix],
+    [TransportKind.posix]
   )
   // Verification should fail because the custom hostname is missing on the client.
   func testClientFailsServerValidation(
-    clientTransport: TransportSecurity,
-    serverTransport: TransportSecurity
+    clientTransport: TransportKind,
+    serverTransport: TransportKind
   ) async throws {
     let certificateKeyPairs = try SelfSignedCertificateKeyPairs()
     let clientTransportConfig = self.makeMTLSClientTLSConfig(
@@ -115,49 +109,46 @@ struct HTTP2TransportTLSEnabledTests {
     )
 
     try await self.withClientAndServer(
-      clientTransportSecurity: clientTransportConfig,
-      serverTransportSecurity: serverTransportConfig
+      clientTLSConfig: clientTransportConfig,
+      serverTLSConfig: serverTransportConfig
     ) { control in
-      await #expect(
-        performing: {
-          try await self.executeUnaryRPC(control: control)
-        },
-        throws: { error in
-          guard let rootError = error as? RPCError else {
-            Issue.record("Should be an RPC error")
-            return false
-          }
-          #expect(rootError.code == .unavailable)
-          #expect(
-            rootError.message
-              == "The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
-          )
-
-          guard
-            let sslError = rootError.cause as? NIOSSLExtraError,
-            case .failedToValidateHostname = sslError
-          else {
-            Issue.record(
-              "Should be a NIOSSLExtraError.failedToValidateHostname error, but was: \(String(describing: rootError.cause))"
-            )
-            return false
-          }
-
-          return true
+      await #expect {
+        try await self.executeUnaryRPC(control: control)
+      } throws: { error in
+        guard let rootError = error as? RPCError else {
+          Issue.record("Should be an RPC error")
+          return false
         }
-      )
+        #expect(rootError.code == .unavailable)
+        #expect(
+          rootError.message
+            == "The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
+        )
+
+        guard
+          let sslError = rootError.cause as? NIOSSLExtraError,
+          case .failedToValidateHostname = sslError
+        else {
+          Issue.record(
+            "Should be a NIOSSLExtraError.failedToValidateHostname error, but was: \(String(describing: rootError.cause))"
+          )
+          return false
+        }
+
+        return true
+      }
     }
   }
 
   @Test(
     "Error is surfaced when server fails client verification",
-    arguments: [TransportSecurity.posix],
-    [TransportSecurity.posix]
+    arguments: [TransportKind.posix],
+    [TransportKind.posix]
   )
   // Verification should fail because the server does not have trust roots containing the client cert.
   func testServerFailsClientValidation(
-    clientTransport: TransportSecurity,
-    serverTransport: TransportSecurity
+    clientTransport: TransportKind,
+    serverTransport: TransportKind
   ) async throws {
     let certificateKeyPairs = try SelfSignedCertificateKeyPairs()
     let clientTransportConfig = self.makeMTLSClientTLSConfig(
@@ -172,43 +163,40 @@ struct HTTP2TransportTLSEnabledTests {
     )
 
     try await self.withClientAndServer(
-      clientTransportSecurity: clientTransportConfig,
-      serverTransportSecurity: serverTransportConfig
+      clientTLSConfig: clientTransportConfig,
+      serverTLSConfig: serverTransportConfig
     ) { control in
-      await #expect(
-        performing: {
-          try await self.executeUnaryRPC(control: control)
-        },
-        throws: { error in
-          guard let rootError = error as? RPCError else {
-            Issue.record("Should be an RPC error")
-            return false
-          }
-          #expect(rootError.code == .unavailable)
-          #expect(
-            rootError.message
-              == "The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
-          )
-
-          guard
-            let sslError = rootError.cause as? NIOSSL.BoringSSLError,
-            case .sslError = sslError
-          else {
-            Issue.record(
-              "Should be a NIOSSL.sslError error, but was: \(String(describing: rootError.cause))"
-            )
-            return false
-          }
-
-          return true
+      await #expect {
+        try await self.executeUnaryRPC(control: control)
+      } throws: { error in
+        guard let rootError = error as? RPCError else {
+          Issue.record("Should be an RPC error")
+          return false
         }
-      )
+        #expect(rootError.code == .unavailable)
+        #expect(
+          rootError.message
+            == "The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
+        )
+
+        guard
+          let sslError = rootError.cause as? NIOSSL.BoringSSLError,
+          case .sslError = sslError
+        else {
+          Issue.record(
+            "Should be a NIOSSL.sslError error, but was: \(String(describing: rootError.cause))"
+          )
+          return false
+        }
+
+        return true
+      }
     }
   }
 
   // - MARK: Test Utilities
 
-  enum TransportSecurity: Sendable {
+  enum TransportKind: Sendable {
     case posix
   }
 
@@ -223,7 +211,7 @@ struct HTTP2TransportTLSEnabledTests {
   }
 
   func makeDefaultClientTLSConfig(
-    for transportSecurity: TransportSecurity,
+    for transportSecurity: TransportKind,
     certificateKeyPairs: SelfSignedCertificateKeyPairs
   ) -> TLSConfig.Client {
     switch transportSecurity {
@@ -242,11 +230,11 @@ struct HTTP2TransportTLSEnabledTests {
   }
 
   func makeMTLSClientTLSConfig(
-    for transportSecurity: TransportSecurity,
+    for transportKind: TransportKind,
     certificateKeyPairs: SelfSignedCertificateKeyPairs,
     serverHostname: String?
   ) -> TLSConfig.Client {
-    switch transportSecurity {
+    switch transportKind {
     case .posix:
       return .posix(
         .tls(
@@ -265,10 +253,10 @@ struct HTTP2TransportTLSEnabledTests {
   }
 
   func makeDefaultServerTLSConfig(
-    for transportSecurity: TransportSecurity,
+    for transportKind: TransportKind,
     certificateKeyPairs: SelfSignedCertificateKeyPairs
   ) -> TLSConfig.Server {
-    switch transportSecurity {
+    switch transportKind {
     case .posix:
       return .posix(
         .tls(
@@ -282,11 +270,11 @@ struct HTTP2TransportTLSEnabledTests {
   }
 
   func makeMTLSServerTLSConfig(
-    for transportSecurity: TransportSecurity,
+    for transportKind: TransportKind,
     certificateKeyPairs: SelfSignedCertificateKeyPairs,
     includeClientCertificateInTrustRoots: Bool
   ) -> TLSConfig.Server {
-    switch transportSecurity {
+    switch transportKind {
     case .posix:
       return .posix(
         .tls(
@@ -306,12 +294,12 @@ struct HTTP2TransportTLSEnabledTests {
   }
 
   func withClientAndServer(
-    clientTransportSecurity: TLSConfig.Client,
-    serverTransportSecurity: TLSConfig.Server,
+    clientTLSConfig: TLSConfig.Client,
+    serverTLSConfig: TLSConfig.Server,
     _ test: (ControlClient) async throws -> Void
   ) async throws {
     try await withThrowingDiscardingTaskGroup { group in
-      let server = self.makeServer(kind: serverTransportSecurity)
+      let server = self.makeServer(tlsConfig: serverTLSConfig)
 
       group.addTask {
         try await server.serve()
@@ -322,7 +310,7 @@ struct HTTP2TransportTLSEnabledTests {
         return
       }
       let target: any ResolvableTarget = .ipv4(host: address.host, port: address.port)
-      let client = try self.makeClient(kind: clientTransportSecurity, target: target)
+      let client = try self.makeClient(tlsConfig: clientTLSConfig, target: target)
 
       group.addTask {
         try await client.run()
@@ -336,10 +324,10 @@ struct HTTP2TransportTLSEnabledTests {
     }
   }
 
-  private func makeServer(kind: TLSConfig.Server) -> GRPCServer {
+  private func makeServer(tlsConfig: TLSConfig.Server) -> GRPCServer {
     let services = [ControlService()]
 
-    switch kind {
+    switch tlsConfig {
     case .posix(let transportSecurity):
       let server = GRPCServer(
         transport: .http2NIOPosix(
@@ -354,12 +342,12 @@ struct HTTP2TransportTLSEnabledTests {
   }
 
   private func makeClient(
-    kind: TLSConfig.Client,
+    tlsConfig: TLSConfig.Client,
     target: any ResolvableTarget
   ) throws -> GRPCClient {
     let transport: any ClientTransport
 
-    switch kind {
+    switch tlsConfig {
     case .posix(let transportSecurity):
       transport = try HTTP2ClientTransport.Posix(
         target: target,
