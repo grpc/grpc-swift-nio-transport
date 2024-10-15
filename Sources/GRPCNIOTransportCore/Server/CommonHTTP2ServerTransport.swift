@@ -246,13 +246,13 @@ package final class CommonHTTP2ServerTransport<
           // Sync is safe: this is on the right event loop.
           let sync = stream.channel.pipeline.syncOperations
 
-          // Looking up the handler can fail if the channel is already closed, in which case
-          // cancel the handle directly.
           do {
             let handler = try sync.handler(type: GRPCServerStreamHandler.self)
             handler.setCancellationHandle(handle)
           } catch {
-            handle.cancel()
+            // Looking up the handler can fail if the channel is already closed, in which case
+            // don't execute the RPC, just return early.
+            return
           }
         }
 
