@@ -163,11 +163,25 @@ package final class ClientConnectionHandler: ChannelInboundHandler, ChannelOutbo
   }
 
   package func errorCaught(context: ChannelHandlerContext, error: any Error) {
-    // Store the error and close, this will result in the final close event being fired down
-    // the pipeline with an appropriate close reason and appropriate error. (This avoids
-    // the async channel just throwing the error.)
-    self.state.receivedError(error)
-    context.close(mode: .all, promise: nil)
+    if self.closeConnectionOnError(error) {
+      // Store the error and close, this will result in the final close event being fired down
+      // the pipeline with an appropriate close reason and appropriate error. (This avoids
+      // the async channel just throwing the error.)
+      self.state.receivedError(error)
+      context.close(mode: .all, promise: nil)
+    }
+  }
+
+  private func closeConnectionOnError(_ error: any Error) -> Bool {
+    switch error {
+    case is NIOHTTP2Errors.StreamError:
+      // Stream errors occur in streams, they are only propagated down the connection channel
+      // pipeline for vestigial reasons.
+      return false
+    default:
+      // Everything else is considered terminal for the connection until we know better.
+      return true
+    }
   }
 
   package func channelRead(context: ChannelHandlerContext, data: NIOAny) {

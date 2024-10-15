@@ -16,31 +16,6 @@
 
 import NIOCore
 import NIOHTTP2
-import XCTest
-
-func XCTAssertGoAway(
-  _ payload: HTTP2Frame.FramePayload,
-  verify: (HTTP2StreamID, HTTP2ErrorCode, ByteBuffer?) throws -> Void = { _, _, _ in }
-) rethrows {
-  switch payload {
-  case .goAway(let lastStreamID, let errorCode, let opaqueData):
-    try verify(lastStreamID, errorCode, opaqueData)
-  default:
-    XCTFail("Expected '.goAway' got '\(payload)'")
-  }
-}
-
-func XCTAssertPing(
-  _ payload: HTTP2Frame.FramePayload,
-  verify: (HTTP2PingData, Bool) throws -> Void = { _, _ in }
-) rethrows {
-  switch payload {
-  case .ping(let data, ack: let ack):
-    try verify(data, ack)
-  default:
-    XCTFail("Expected '.ping' got '\(payload)'")
-  }
-}
 
 extension HTTP2Frame.FramePayload {
   var goAway: (lastStreamID: HTTP2StreamID, errorCode: HTTP2ErrorCode, opaqueData: ByteBuffer?)? {
