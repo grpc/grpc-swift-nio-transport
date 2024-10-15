@@ -292,6 +292,40 @@ struct ServerConnectionManagementHandlerTests {
     // The server should close the connection.
     try connection.waitUntilClosed()
   }
+
+  @Test("Closes on error")
+  func closesOnError() throws {
+    let connection = try Connection()
+    try connection.activate()
+
+    let streamError = NIOHTTP2Errors.noSuchStream(streamID: 42)
+    connection.channel.pipeline.fireErrorCaught(streamError)
+
+    // Closing is completed on the next loop tick, so run the loop.
+    connection.channel.embeddedEventLoop.run()
+    try connection.channel.closeFuture.wait()
+  }
+
+  @Test("Doesn't close on stream error")
+  func doesNotCloseOnStreamError() throws {
+    let connection = try Connection(maxIdleTime: .minutes(1))
+    try connection.activate()
+
+    let streamError = NIOHTTP2Errors.streamError(
+      streamID: 42,
+      baseError: NIOHTTP2Errors.streamIDTooSmall()
+    )
+    connection.channel.pipeline.fireErrorCaught(streamError)
+
+    // Follow a normal flow to check the connection wasn't closed.
+    //
+    // Hit the max idle time.
+    connection.advanceTime(by: .minutes(1))
+    // Follow the graceful shutdown flow.
+    try self.testGracefulShutdown(connection: connection, lastStreamID: 0)
+    // Closed because no streams were open.
+    try connection.waitUntilClosed()
+  }
 }
 
 extension ServerConnectionManagementHandlerTests {

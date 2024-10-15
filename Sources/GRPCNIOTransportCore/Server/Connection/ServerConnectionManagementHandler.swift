@@ -314,6 +314,37 @@ package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
     context.fireUserInboundEventTriggered(event)
   }
 
+  package func errorCaught(context: ChannelHandlerContext, error: any Error) {
+    if self.closeConnectionOnError(error) {
+      context.close(mode: .all, promise: nil)
+    }
+  }
+
+  private func closeConnectionOnError(_ error: any Error) -> Bool {
+    switch error {
+    case is NIOHTTP2Errors.NoSuchStream:
+      // In most cases this represents incorrect client behaviour. However, NIOHTTP2 currently
+      // emits this error if a server receives a HEADERS frame for a new stream after having sent
+      // a GOAWAY frame. This can happen when a client opening a stream races with a server
+      // shutting down.
+      //
+      // This should be resolved in NIOHTTP2: https://github.com/apple/swift-nio-http2/issues/466
+      //
+      // Only close the connection if it's not already closing (as this is the state in which the
+      // error can be safely ignored).
+      return !self.state.isClosing
+
+    case is NIOHTTP2Errors.StreamError:
+      // Stream errors occur in streams, they are only propagated down the connection channel
+      // pipeline for vestigial reasons.
+      return false
+
+    default:
+      // Everything else is considered terminal for the connection until we know better.
+      return true
+    }
+  }
+
   package func channelRead(context: ChannelHandlerContext, data: NIOAny) {
     self.inReadLoop = true
 

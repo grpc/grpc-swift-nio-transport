@@ -324,6 +324,54 @@ struct ClientConnectionHandlerTests {
     connection.channel.close(mode: .all, promise: nil)
     #expect(try connection.readEvent() == .closing(.unexpected(nil, isIdle: false)))
   }
+
+  @Test("Closes on error")
+  func closesOnError() throws {
+    let connection = try Connection()
+    try connection.activate()
+
+    let streamError = NIOHTTP2Errors.noSuchStream(streamID: 42)
+    connection.channel.pipeline.fireErrorCaught(streamError)
+
+    // Closing is completed on the next loop tick, so run the loop.
+    connection.channel.embeddedEventLoop.run()
+    try connection.channel.closeFuture.wait()
+  }
+
+  @Test("Doesn't close on stream error")
+  func doesNotCloseOnStreamError() throws {
+    let connection = try Connection(maxIdleTime: .minutes(1))
+    try connection.activate()
+
+    let streamError = NIOHTTP2Errors.streamError(
+      streamID: 42,
+      baseError: NIOHTTP2Errors.streamIDTooSmall()
+    )
+    connection.channel.pipeline.fireErrorCaught(streamError)
+
+    // Now do a normal shutdown to make sure the connection is still working as normal.
+    //
+    // Write the initial settings to ready the connection.
+    try connection.settings([])
+    #expect(try connection.readEvent() == .ready)
+
+    // Idle with no streams open we should:
+    // - read out a closing event,
+    // - write a GOAWAY frame,
+    // - close.
+    connection.loop.advanceTime(by: .minutes(5))
+
+    #expect(try connection.readEvent() == .closing(.idle))
+
+    let frame = try #require(try connection.readFrame())
+    #expect(frame.streamID == .rootStream)
+    let (lastStreamID, error, data) = try #require(frame.payload.goAway)
+    #expect(lastStreamID == .rootStream)
+    #expect(error == .noError)
+    #expect(data == ByteBuffer(string: "idle"))
+
+    try connection.waitUntilClosed()
+  }
 }
 
 extension ClientConnectionHandlerTests {
