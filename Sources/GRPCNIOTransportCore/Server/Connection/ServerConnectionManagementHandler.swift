@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-internal import GRPCCore
-internal import NIOCore
-internal import NIOHTTP2
-internal import NIOTLS
+private import GRPCCore
+package import NIOCore
+package import NIOHTTP2
+private import NIOTLS
 
 /// A `ChannelHandler` which manages the lifecycle of a gRPC connection over HTTP/2.
 ///
@@ -39,11 +39,11 @@ internal import NIOTLS
 /// Some of the behaviours are described in:
 /// - [gRFC A8](https://github.com/grpc/proposal/blob/master/A8-client-side-keepalive.md), and
 /// - [gRFC A9](https://github.com/grpc/proposal/blob/master/A9-server-side-conn-mgt.md).
-final class ServerConnectionManagementHandler: ChannelDuplexHandler {
-  typealias InboundIn = HTTP2Frame
-  typealias InboundOut = HTTP2Frame
-  typealias OutboundIn = HTTP2Frame
-  typealias OutboundOut = HTTP2Frame
+package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
+  package typealias InboundIn = HTTP2Frame
+  package typealias InboundOut = HTTP2Frame
+  package typealias OutboundIn = HTTP2Frame
+  package typealias OutboundOut = HTTP2Frame
 
   /// The `EventLoop` of the `Channel` this handler exists in.
   private let eventLoop: any EventLoop
@@ -98,7 +98,7 @@ final class ServerConnectionManagementHandler: ChannelDuplexHandler {
   /// While NIO's `EmbeddedEventLoop` provides control over its view of time (and therefore any
   /// events scheduled on it) it doesn't offer a way to get the current time. This is usually done
   /// via `NIODeadline`.
-  enum Clock {
+  package enum Clock {
     case nio
     case manual(Manual)
 
@@ -111,14 +111,14 @@ final class ServerConnectionManagementHandler: ChannelDuplexHandler {
       }
     }
 
-    final class Manual {
+    package final class Manual {
       private(set) var time: NIODeadline
 
-      init() {
+      package init() {
         self.time = .uptimeNanoseconds(0)
       }
 
-      func advance(by amount: TimeAmount) {
+      package func advance(by amount: TimeAmount) {
         self.time = self.time + amount
       }
     }
@@ -147,7 +147,7 @@ final class ServerConnectionManagementHandler: ChannelDuplexHandler {
   }
 
   /// A synchronous view over this handler.
-  var syncView: SyncView {
+  package var syncView: SyncView {
     return SyncView(self)
   }
 
@@ -155,7 +155,7 @@ final class ServerConnectionManagementHandler: ChannelDuplexHandler {
   ///
   /// Methods on this view *must* be called from the same `EventLoop` as the `Channel` in which
   /// this handler exists.
-  struct SyncView {
+  package struct SyncView {
     private let handler: ServerConnectionManagementHandler
 
     fileprivate init(_ handler: ServerConnectionManagementHandler) {
@@ -163,7 +163,7 @@ final class ServerConnectionManagementHandler: ChannelDuplexHandler {
     }
 
     /// Notify the handler that the connection has received a flush event.
-    func connectionWillFlush() {
+    package func connectionWillFlush() {
       // The handler can't rely on `flush(context:)` due to its expected position in the pipeline.
       // It's expected to be placed after the HTTP/2 handler (i.e. closer to the application) as
       // it needs to receive HTTP/2 frames. However, flushes from stream channels aren't sent down
@@ -178,13 +178,13 @@ final class ServerConnectionManagementHandler: ChannelDuplexHandler {
     }
 
     /// Notify the handler that a HEADERS frame was written in the last write loop.
-    func wroteHeadersFrame() {
+    package func wroteHeadersFrame() {
       self.handler.eventLoop.assertInEventLoop()
       self.handler.frameStats.wroteHeaders()
     }
 
     /// Notify the handler that a DATA frame was written in the last write loop.
-    func wroteDataFrame() {
+    package func wroteDataFrame() {
       self.handler.eventLoop.assertInEventLoop()
       self.handler.frameStats.wroteData()
     }
@@ -208,7 +208,7 @@ final class ServerConnectionManagementHandler: ChannelDuplexHandler {
   ///       keep-alive pings. Pings more frequent than this interval count as 'strikes' and the
   ///       connection is closed if there are too many strikes.
   ///   - clock: A clock providing the current time.
-  init(
+  package init(
     eventLoop: any EventLoop,
     maxIdleTime: TimeAmount?,
     maxAge: TimeAmount?,
@@ -248,16 +248,16 @@ final class ServerConnectionManagementHandler: ChannelDuplexHandler {
     self.requireALPN = requireALPN
   }
 
-  func handlerAdded(context: ChannelHandlerContext) {
+  package func handlerAdded(context: ChannelHandlerContext) {
     assert(context.eventLoop === self.eventLoop)
     self.context = context
   }
 
-  func handlerRemoved(context: ChannelHandlerContext) {
+  package func handlerRemoved(context: ChannelHandlerContext) {
     self.context = nil
   }
 
-  func channelActive(context: ChannelHandlerContext) {
+  package func channelActive(context: ChannelHandlerContext) {
     let view = LoopBoundView(handler: self, context: context)
 
     self.maxAgeTimer?.schedule(on: context.eventLoop) {
@@ -275,7 +275,7 @@ final class ServerConnectionManagementHandler: ChannelDuplexHandler {
     context.fireChannelActive()
   }
 
-  func channelInactive(context: ChannelHandlerContext) {
+  package func channelInactive(context: ChannelHandlerContext) {
     self.maxIdleTimer?.cancel()
     self.maxAgeTimer?.cancel()
     self.maxGraceTimer?.cancel()
@@ -284,7 +284,7 @@ final class ServerConnectionManagementHandler: ChannelDuplexHandler {
     context.fireChannelInactive()
   }
 
-  func userInboundEventTriggered(context: ChannelHandlerContext, event: Any) {
+  package func userInboundEventTriggered(context: ChannelHandlerContext, event: Any) {
     switch event {
     case let event as NIOHTTP2StreamCreatedEvent:
       self._streamCreated(event.streamID, channel: context.channel)
@@ -314,7 +314,7 @@ final class ServerConnectionManagementHandler: ChannelDuplexHandler {
     context.fireUserInboundEventTriggered(event)
   }
 
-  func channelRead(context: ChannelHandlerContext, data: NIOAny) {
+  package func channelRead(context: ChannelHandlerContext, data: NIOAny) {
     self.inReadLoop = true
 
     // Any read data indicates that the connection is alive so cancel the keep-alive timers.
@@ -337,7 +337,7 @@ final class ServerConnectionManagementHandler: ChannelDuplexHandler {
     context.fireChannelRead(data)
   }
 
-  func channelReadComplete(context: ChannelHandlerContext) {
+  package func channelReadComplete(context: ChannelHandlerContext) {
     while self.flushPending {
       self.flushPending = false
       context.flush()
@@ -354,7 +354,7 @@ final class ServerConnectionManagementHandler: ChannelDuplexHandler {
     context.fireChannelReadComplete()
   }
 
-  func flush(context: ChannelHandlerContext) {
+  package func flush(context: ChannelHandlerContext) {
     self.maybeFlush(context: context)
   }
 }
@@ -383,7 +383,7 @@ extension ServerConnectionManagementHandler {
 }
 
 extension ServerConnectionManagementHandler {
-  struct HTTP2StreamDelegate: @unchecked Sendable, NIOHTTP2StreamDelegate {
+  package struct HTTP2StreamDelegate: @unchecked Sendable, NIOHTTP2StreamDelegate {
     // @unchecked is okay: the only methods do the appropriate event-loop dance.
 
     private let handler: ServerConnectionManagementHandler
@@ -392,7 +392,7 @@ extension ServerConnectionManagementHandler {
       self.handler = handler
     }
 
-    func streamCreated(_ id: HTTP2StreamID, channel: any Channel) {
+    package func streamCreated(_ id: HTTP2StreamID, channel: any Channel) {
       if self.handler.eventLoop.inEventLoop {
         self.handler._streamCreated(id, channel: channel)
       } else {
@@ -402,7 +402,7 @@ extension ServerConnectionManagementHandler {
       }
     }
 
-    func streamClosed(_ id: HTTP2StreamID, channel: any Channel) {
+    package func streamClosed(_ id: HTTP2StreamID, channel: any Channel) {
       if self.handler.eventLoop.inEventLoop {
         self.handler._streamClosed(id, channel: channel)
       } else {
@@ -413,7 +413,7 @@ extension ServerConnectionManagementHandler {
     }
   }
 
-  var http2StreamDelegate: HTTP2StreamDelegate {
+  package var http2StreamDelegate: HTTP2StreamDelegate {
     return HTTP2StreamDelegate(self)
   }
 
