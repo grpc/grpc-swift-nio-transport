@@ -131,6 +131,16 @@ extension ChannelPipeline.SynchronousOperations {
       HTTP2Setting(parameter: .maxHeaderListSize, value: HPACKDecoder.defaultMaxHeaderListSize),
     ]
 
+    // These rates inform NIO's DoS detection heuristics which typically apply to a server. The
+    // rate at which RST_STREAM frames are permitted is increased for the client as clients are
+    // likely to receive 'RST_STREAM' frames if the server rejects RPCs (i.e. the server sends a
+    // trailers-only response).
+    //
+    // The default values are 200 in a 30 second period. Allow the same number of failures in a
+    // shorter period.
+    http2.stream.streamResetFrameRateLimit.maximumCount = 200
+    http2.stream.streamResetFrameRateLimit.windowLength = .seconds(10)
+
     let connectionHandler = ClientConnectionHandler(
       eventLoop: self.eventLoop,
       maxIdleTime: config.connection.maxIdleTime.map { TimeAmount($0) },
