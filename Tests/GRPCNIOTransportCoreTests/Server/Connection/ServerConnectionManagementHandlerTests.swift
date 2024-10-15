@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
+import GRPCNIOTransportCore
 import NIOCore
 import NIOEmbedded
 import NIOHTTP2
-import XCTest
+import Testing
 
-@testable import GRPCNIOTransportCore
-
-final class ServerConnectionManagementHandlerTests: XCTestCase {
-  func testIdleTimeoutOnNewConnection() throws {
+struct ServerConnectionManagementHandlerTests {
+  @Test("Idle timeout on new connection")
+  func idleTimeoutOnNewConnection() throws {
     let connection = try Connection(maxIdleTime: .minutes(1))
     try connection.activate()
     // Hit the max idle time.
@@ -35,7 +35,8 @@ final class ServerConnectionManagementHandlerTests: XCTestCase {
     try connection.waitUntilClosed()
   }
 
-  func testIdleTimerIsCancelledWhenStreamIsOpened() throws {
+  @Test("Idle timeout is cancelled when stream is opened")
+  func idleTimerIsCancelledWhenStreamIsOpened() throws {
     let connection = try Connection(maxIdleTime: .minutes(1))
     try connection.activate()
 
@@ -44,17 +45,18 @@ final class ServerConnectionManagementHandlerTests: XCTestCase {
     connection.advanceTime(by: .minutes(1))
 
     // No GOAWAY frame means the timer was cancelled.
-    XCTAssertNil(try connection.readFrame())
+    #expect(try connection.readFrame() == nil)
   }
 
-  func testIdleTimerStartsWhenAllStreamsAreClosed() throws {
+  @Test("Idle timer starts when all streams are closed")
+  func idleTimerStartsWhenAllStreamsAreClosed() throws {
     let connection = try Connection(maxIdleTime: .minutes(1))
     try connection.activate()
 
     // Open a stream to cancel the idle timer and run through the max idle time.
     connection.streamOpened(1)
     connection.advanceTime(by: .minutes(1))
-    XCTAssertNil(try connection.readFrame())
+    #expect(try connection.readFrame() == nil)
 
     // Close the stream to start the timer again.
     connection.streamClosed(1)
@@ -67,7 +69,8 @@ final class ServerConnectionManagementHandlerTests: XCTestCase {
     try connection.waitUntilClosed()
   }
 
-  func testMaxAge() throws {
+  @Test("Connection shutdown after max age is reached")
+  func maxAge() throws {
     let connection = try Connection(maxAge: .minutes(1))
     try connection.activate()
 
@@ -87,7 +90,8 @@ final class ServerConnectionManagementHandlerTests: XCTestCase {
     try connection.waitUntilClosed()
   }
 
-  func testGracefulShutdownRatchetsDownStreamID() throws {
+  @Test("Graceful shutdown ratchets down last stream ID")
+  func gracefulShutdownRatchetsDownStreamID() throws {
     // This test uses the idle timeout to trigger graceful shutdown. The mechanism is the same
     // regardless of how it's triggered.
     let connection = try Connection(maxIdleTime: .minutes(1))
@@ -106,7 +110,8 @@ final class ServerConnectionManagementHandlerTests: XCTestCase {
     try connection.waitUntilClosed()
   }
 
-  func testGracefulShutdownGracePeriod() throws {
+  @Test("Graceful shutdown promoted to close after grace period")
+  func gracefulShutdownGracePeriod() throws {
     // This test uses the idle timeout to trigger graceful shutdown. The mechanism is the same
     // regardless of how it's triggered.
     let connection = try Connection(
@@ -128,7 +133,8 @@ final class ServerConnectionManagementHandlerTests: XCTestCase {
     try connection.waitUntilClosed()
   }
 
-  func testKeepaliveOnNewConnection() throws {
+  @Test("Keepalive works on new connection")
+  func keepaliveOnNewConnection() throws {
     let connection = try Connection(
       keepaliveTime: .minutes(5),
       keepaliveTimeout: .seconds(5)
@@ -138,20 +144,20 @@ final class ServerConnectionManagementHandlerTests: XCTestCase {
     // Wait for the keep alive timer to fire which should cause the server to send a keep
     // alive PING.
     connection.advanceTime(by: .minutes(5))
-    let frame1 = try XCTUnwrap(connection.readFrame())
-    XCTAssertEqual(frame1.streamID, .rootStream)
-    try XCTAssertPing(frame1.payload) { data, ack in
-      XCTAssertFalse(ack)
-      // Data is opaque, send it back.
-      try connection.ping(data: data, ack: true)
-    }
+    let frame1 = try #require(try connection.readFrame())
+    #expect(frame1.streamID == .rootStream)
+    let (data, ack) = try #require(frame1.payload.ping)
+    #expect(!ack)
+    // Data is opaque, send it back.
+    try connection.ping(data: data, ack: true)
 
     // Run past the timeout, nothing should happen.
     connection.advanceTime(by: .seconds(5))
-    XCTAssertNil(try connection.readFrame())
+    #expect(try connection.readFrame() == nil)
   }
 
-  func testKeepaliveStartsAfterReadLoop() throws {
+  @Test("Keepalive starts after read loop")
+  func keepaliveStartsAfterReadLoop() throws {
     let connection = try Connection(
       keepaliveTime: .minutes(5),
       keepaliveTimeout: .seconds(5)
@@ -165,21 +171,21 @@ final class ServerConnectionManagementHandlerTests: XCTestCase {
 
     // Run out the keep alive timer, it shouldn't fire.
     connection.advanceTime(by: .minutes(5))
-    XCTAssertNil(try connection.readFrame())
+    #expect(try connection.readFrame() == nil)
 
     // Fire channel read complete to start the keep alive timer again.
     connection.channel.pipeline.fireChannelReadComplete()
 
     // Now expire the keep alive timer again, we should read out a PING frame.
     connection.advanceTime(by: .minutes(5))
-    let frame1 = try XCTUnwrap(connection.readFrame())
-    XCTAssertEqual(frame1.streamID, .rootStream)
-    XCTAssertPing(frame1.payload) { data, ack in
-      XCTAssertFalse(ack)
-    }
+    let frame1 = try #require(try connection.readFrame())
+    #expect(frame1.streamID == .rootStream)
+    let (_, ack) = try #require(frame1.payload.ping)
+    #expect(!ack)
   }
 
-  func testKeepaliveOnNewConnectionWithoutResponse() throws {
+  @Test("Keepalive works on new connection without response")
+  func keepaliveOnNewConnectionWithoutResponse() throws {
     let connection = try Connection(
       keepaliveTime: .minutes(5),
       keepaliveTimeout: .seconds(5)
@@ -189,11 +195,10 @@ final class ServerConnectionManagementHandlerTests: XCTestCase {
     // Wait for the keep alive timer to fire which should cause the server to send a keep
     // alive PING.
     connection.advanceTime(by: .minutes(5))
-    let frame1 = try XCTUnwrap(connection.readFrame())
-    XCTAssertEqual(frame1.streamID, .rootStream)
-    XCTAssertPing(frame1.payload) { data, ack in
-      XCTAssertFalse(ack)
-    }
+    let frame1 = try #require(try connection.readFrame())
+    #expect(frame1.streamID == .rootStream)
+    let (_, ack) = try #require(frame1.payload.ping)
+    #expect(!ack)
 
     // We didn't ack the PING, the connection should shutdown after the timeout.
     connection.advanceTime(by: .seconds(5))
@@ -203,7 +208,8 @@ final class ServerConnectionManagementHandlerTests: XCTestCase {
     try connection.waitUntilClosed()
   }
 
-  func testClientKeepalivePolicing() throws {
+  @Test("Keepalive sent by client is policed")
+  func clientKeepalivePolicing() throws {
     let connection = try Connection(
       allowKeepaliveWithoutCalls: true,
       minPingIntervalWithoutCalls: .minutes(1)
@@ -213,24 +219,25 @@ final class ServerConnectionManagementHandlerTests: XCTestCase {
     // The first ping is valid, the second and third are strikes.
     for _ in 1 ... 3 {
       try connection.ping(data: HTTP2PingData(), ack: false)
-      XCTAssertNil(try connection.readFrame())
+      #expect(try connection.readFrame() == nil)
     }
 
     // The fourth ping is the third strike and triggers a GOAWAY.
     try connection.ping(data: HTTP2PingData(), ack: false)
-    let frame = try XCTUnwrap(connection.readFrame())
-    XCTAssertEqual(frame.streamID, .rootStream)
-    XCTAssertGoAway(frame.payload) { streamID, error, data in
-      XCTAssertEqual(streamID, .rootStream)
-      XCTAssertEqual(error, .enhanceYourCalm)
-      XCTAssertEqual(data, ByteBuffer(string: "too_many_pings"))
-    }
+    let frame = try #require(try connection.readFrame())
+    #expect(frame.streamID == .rootStream)
+    let (streamID, error, data) = try #require(frame.payload.goAway)
+
+    #expect(streamID == .rootStream)
+    #expect(error == .enhanceYourCalm)
+    #expect(data == ByteBuffer(string: "too_many_pings"))
 
     // The server should close the connection.
     try connection.waitUntilClosed()
   }
 
-  func testClientKeepaliveWithPermissibleIntervals() throws {
+  @Test("Client keepalive works with permissible intervals")
+  func clientKeepaliveWithPermissibleIntervals() throws {
     let connection = try Connection(
       allowKeepaliveWithoutCalls: true,
       minPingIntervalWithoutCalls: .minutes(1),
@@ -240,14 +247,15 @@ final class ServerConnectionManagementHandlerTests: XCTestCase {
 
     for _ in 1 ... 100 {
       try connection.ping(data: HTTP2PingData(), ack: false)
-      XCTAssertNil(try connection.readFrame())
+      #expect(try connection.readFrame() == nil)
 
       // Advance by the ping interval.
       connection.advanceTime(by: .minutes(1))
     }
   }
 
-  func testClientKeepaliveResetState() throws {
+  @Test("Client keepalive works after reset state")
+  func clientKeepaliveResetState() throws {
     let connection = try Connection(
       allowKeepaliveWithoutCalls: true,
       minPingIntervalWithoutCalls: .minutes(1)
@@ -258,7 +266,7 @@ final class ServerConnectionManagementHandlerTests: XCTestCase {
       // The first ping is valid, the second and third are strikes.
       for _ in 1 ... 3 {
         try connection.ping(data: HTTP2PingData(), ack: false)
-        XCTAssertNil(try connection.readFrame())
+        #expect(try connection.readFrame() == nil)
       }
     }
 
@@ -273,13 +281,13 @@ final class ServerConnectionManagementHandlerTests: XCTestCase {
 
     // The next ping is the third strike and triggers a GOAWAY.
     try connection.ping(data: HTTP2PingData(), ack: false)
-    let frame = try XCTUnwrap(connection.readFrame())
-    XCTAssertEqual(frame.streamID, .rootStream)
-    XCTAssertGoAway(frame.payload) { streamID, error, data in
-      XCTAssertEqual(streamID, .rootStream)
-      XCTAssertEqual(error, .enhanceYourCalm)
-      XCTAssertEqual(data, ByteBuffer(string: "too_many_pings"))
-    }
+    let frame = try #require(try connection.readFrame())
+    #expect(frame.streamID == .rootStream)
+    let (streamID, error, data) = try #require(frame.payload.goAway)
+
+    #expect(streamID == .rootStream)
+    #expect(error == .enhanceYourCalm)
+    #expect(data == ByteBuffer(string: "too_many_pings"))
 
     // The server should close the connection.
     try connection.waitUntilClosed()
@@ -292,18 +300,22 @@ extension ServerConnectionManagementHandlerTests {
     lastStreamID: HTTP2StreamID,
     streamToOpenBeforePingAck: HTTP2StreamID? = nil
   ) throws {
-    let frame1 = try XCTUnwrap(connection.readFrame())
-    XCTAssertEqual(frame1.streamID, .rootStream)
-    XCTAssertGoAway(frame1.payload) { streamID, errorCode, _ in
-      XCTAssertEqual(streamID, .maxID)
-      XCTAssertEqual(errorCode, .noError)
+    do {
+      let frame = try #require(try connection.readFrame())
+      #expect(frame.streamID == .rootStream)
+
+      let (streamID, errorCode, _) = try #require(frame.payload.goAway)
+      #expect(streamID == .maxID)
+      #expect(errorCode == .noError)
     }
 
     // Followed by a PING
-    let frame2 = try XCTUnwrap(connection.readFrame())
-    XCTAssertEqual(frame2.streamID, .rootStream)
-    try XCTAssertPing(frame2.payload) { data, ack in
-      XCTAssertFalse(ack)
+    do {
+      let frame = try #require(try connection.readFrame())
+      #expect(frame.streamID == .rootStream)
+
+      let (data, ack) = try #require(frame.payload.ping)
+      #expect(!ack)
 
       if let id = streamToOpenBeforePingAck {
         connection.streamOpened(id)
@@ -314,11 +326,13 @@ extension ServerConnectionManagementHandlerTests {
     }
 
     // PING ACK triggers another GOAWAY.
-    let frame3 = try XCTUnwrap(connection.readFrame())
-    XCTAssertEqual(frame3.streamID, .rootStream)
-    XCTAssertGoAway(frame3.payload) { streamID, errorCode, _ in
-      XCTAssertEqual(streamID, lastStreamID)
-      XCTAssertEqual(errorCode, .noError)
+    do {
+      let frame = try #require(try connection.readFrame())
+      #expect(frame.streamID == .rootStream)
+
+      let (streamID, errorCode, _) = try #require(frame.payload.goAway)
+      #expect(streamID == lastStreamID)
+      #expect(errorCode == .noError)
     }
   }
 }

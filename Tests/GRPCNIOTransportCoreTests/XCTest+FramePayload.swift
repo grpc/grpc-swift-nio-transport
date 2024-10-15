@@ -41,3 +41,23 @@ func XCTAssertPing(
     XCTFail("Expected '.ping' got '\(payload)'")
   }
 }
+
+extension HTTP2Frame.FramePayload {
+  var goAway: (lastStreamID: HTTP2StreamID, errorCode: HTTP2ErrorCode, opaqueData: ByteBuffer?)? {
+    switch self {
+    case .goAway(let lastStreamID, let errorCode, let opaqueData):
+      return (lastStreamID, errorCode, opaqueData)
+    default:
+      return nil
+    }
+  }
+
+  var ping: (data: HTTP2PingData, ack: Bool)? {
+    switch self {
+    case .ping(let data, ack: let ack):
+      return (data, ack)
+    default:
+      return nil
+    }
+  }
+}
