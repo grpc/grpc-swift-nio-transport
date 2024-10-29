@@ -29,6 +29,7 @@ final class GRPCClientStreamHandler: ChannelDuplexHandler {
 
   private var isReading = false
   private var flushPending = false
+  private var requestFinished = false
 
   init(
     methodDescriptor: MethodDescriptor,
@@ -250,6 +251,10 @@ extension GRPCClientStreamHandler {
   }
 
   private func _flush(context: ChannelHandlerContext) {
+    // If we're done writing (i.e. we have no more messages returned from state
+    // machine) then return.
+    guard !self.requestFinished else { return }
+
     do {
       loop: while true {
         switch try self.stateMachine.nextOutboundFrame() {
@@ -274,8 +279,8 @@ extension GRPCClientStreamHandler {
             ),
             promise: nil
           )
-
           context.flush()
+          self.requestFinished = true
           break loop
 
         case .awaitMoreMessages:
