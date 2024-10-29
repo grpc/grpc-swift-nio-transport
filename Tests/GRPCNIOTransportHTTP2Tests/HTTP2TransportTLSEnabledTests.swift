@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-import Crypto
 import Foundation
 import GRPCCore
 import GRPCNIOTransportHTTP2Posix
+import GRPCNIOTransportHTTP2TransportServices
 import NIOSSL
-import SwiftASN1
+import Network
 import Testing
-import X509
 
 @Suite("HTTP/2 transport E2E tests with TLS enabled")
 struct HTTP2TransportTLSEnabledTests {
@@ -29,8 +28,8 @@ struct HTTP2TransportTLSEnabledTests {
 
   @Test(
     "When using defaults, server does not perform client verification",
-    arguments: [TransportKind.posix],
-    [TransportKind.posix]
+    arguments: [TransportKind/*.posix, */.transportServices],
+    [TransportKind/*.posix, */.transportServices]
   )
   func testRPC_Defaults_OK(
     clientTransport: TransportKind,
@@ -58,8 +57,8 @@ struct HTTP2TransportTLSEnabledTests {
 
   @Test(
     "When using mTLS defaults, both client and server verify each others' certificates",
-    arguments: [TransportKind.posix],
-    [TransportKind.posix]
+    arguments: [TransportKind.posix, .transportServices],
+    [TransportKind.posix, .transportServices]
   )
   func testRPC_mTLS_OK(
     clientTransport: TransportKind,
@@ -89,8 +88,8 @@ struct HTTP2TransportTLSEnabledTests {
 
   @Test(
     "Error is surfaced when client fails server verification",
-    arguments: [TransportKind.posix],
-    [TransportKind.posix]
+    arguments: [TransportKind.posix, .transportServices],
+    [TransportKind.posix, .transportServices]
   )
   // Verification should fail because the custom hostname is missing on the client.
   func testClientFailsServerValidation(
@@ -98,43 +97,48 @@ struct HTTP2TransportTLSEnabledTests {
     serverTransport: TransportKind
   ) async throws {
     let certificateKeyPairs = try SelfSignedCertificateKeyPairs()
-    let clientConfig = self.makeMTLSClientConfig(
+    let clientTransportConfig = self.makeDefaultTLSClientConfig(
       for: clientTransport,
-      certificateKeyPairs: certificateKeyPairs,
-      serverHostname: "the-wrong-hostname"
+      certificateKeyPairs: certificateKeyPairs
     )
-
-    let serverConfig = self.makeMTLSServerConfig(
+    let serverTransportConfig = self.makeDefaultTLSServerConfig(
       for: serverTransport,
-      certificateKeyPairs: certificateKeyPairs,
-      includeClientCertificateInTrustRoots: true
+      certificateKeyPairs: certificateKeyPairs
     )
 
     try await self.withClientAndServer(
-      clientConfig: clientConfig,
-      serverConfig: serverConfig
+      clientConfig: clientTransportConfig,
+      serverConfig: serverTransportConfig
     ) { control in
       await #expect {
         try await self.executeUnaryRPC(control: control)
       } throws: { error in
-        guard let rootError = error as? RPCError else {
-          Issue.record("Should be an RPC error")
-          return false
-        }
+        let rootError = try #require(error as? RPCError)
         #expect(rootError.code == .unavailable)
-        #expect(
-          rootError.message
-            == "The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
-        )
 
-        guard
-          let sslError = rootError.cause as? NIOSSLExtraError,
-          case .failedToValidateHostname = sslError
-        else {
-          Issue.record(
-            "Should be a NIOSSLExtraError.failedToValidateHostname error, but was: \(String(describing: rootError.cause))"
+        switch clientTransport {
+        case .posix:
+          #expect(
+            rootError.message
+            == "The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
           )
-          return false
+          let sslError = try #require(rootError.cause as? NIOSSLExtraError)
+          guard sslError == .failedToValidateHostname else {
+            Issue.record(
+              "Should be a NIOSSLExtraError.failedToValidateHostname error, but was: \(String(describing: rootError.cause))"
+            )
+            return false
+          }
+
+        case .transportServices:
+          #expect(rootError.message.starts(with: "Could not establish a connection to"))
+          let nwError = try #require(rootError.cause as? NWError)
+          guard case .tls(-9808) /* bad certificate format */ = nwError else {
+            Issue.record(
+              "Should be a NWError.tls(-9808) error, but was: \(String(describing: rootError.cause))"
+            )
+            return false
+          }
         }
 
         return true
@@ -144,51 +148,58 @@ struct HTTP2TransportTLSEnabledTests {
 
   @Test(
     "Error is surfaced when server fails client verification",
-    arguments: [TransportKind.posix],
-    [TransportKind.posix]
+    arguments: [TransportKind.posix, .transportServices],
+    [TransportKind.posix, .transportServices]
   )
-  // Verification should fail because the server does not have trust roots containing the client cert.
+  // Verification should fail because the client does not offer a cert that
+  // the server can use for mutual verification.
   func testServerFailsClientValidation(
     clientTransport: TransportKind,
     serverTransport: TransportKind
   ) async throws {
     let certificateKeyPairs = try SelfSignedCertificateKeyPairs()
-    let clientConfig = self.makeMTLSClientConfig(
+    let clientTransportConfig = self.makeDefaultTLSClientConfig(
       for: clientTransport,
-      certificateKeyPairs: certificateKeyPairs,
-      serverHostname: "localhost"
+      certificateKeyPairs: certificateKeyPairs
     )
-    let serverConfig = self.makeMTLSServerConfig(
+    let serverTransportConfig = self.makeMTLSServerConfig(
       for: serverTransport,
       certificateKeyPairs: certificateKeyPairs,
-      includeClientCertificateInTrustRoots: false
+      includeClientCertificateInTrustRoots: true
     )
 
     try await self.withClientAndServer(
-      clientConfig: clientConfig,
-      serverConfig: serverConfig
+      clientConfig: clientTransportConfig,
+      serverConfig: serverTransportConfig
     ) { control in
       await #expect {
         try await self.executeUnaryRPC(control: control)
       } throws: { error in
-        guard let rootError = error as? RPCError else {
-          Issue.record("Should be an RPC error")
-          return false
-        }
+        let rootError = try #require(error as? RPCError)
         #expect(rootError.code == .unavailable)
         #expect(
           rootError.message
             == "The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
         )
 
-        guard
-          let sslError = rootError.cause as? NIOSSL.BoringSSLError,
-          case .sslError = sslError
-        else {
-          Issue.record(
-            "Should be a NIOSSL.sslError error, but was: \(String(describing: rootError.cause))"
-          )
-          return false
+        switch clientTransport {
+        case .posix:
+          let sslError = try #require(rootError.cause as? NIOSSL.BoringSSLError)
+          guard case .sslError = sslError else {
+            Issue.record(
+              "Should be a NIOSSL.sslError error, but was: \(String(describing: rootError.cause))"
+            )
+            return false
+          }
+
+        case .transportServices:
+          let nwError = try #require(rootError.cause as? NWError)
+          guard case .tls(-9829) /* unknown peer certificate */ = nwError else {
+            Issue.record(
+              "Should be a NWError.tls(-9829) error, but was: \(String(describing: rootError.cause))"
+            )
+            return false
+          }
         }
 
         return true
@@ -198,8 +209,13 @@ struct HTTP2TransportTLSEnabledTests {
 
   // - MARK: Test Utilities
 
+  enum TLSEnabledTestsError: Error {
+    case failedToImportPKCS12
+  }
+
   enum TransportKind: Sendable {
     case posix
+    case transportServices
   }
 
   struct Config<Transport, Security> {
@@ -212,7 +228,12 @@ struct HTTP2TransportTLSEnabledTests {
       HTTP2ClientTransport.Posix.Config,
       HTTP2ClientTransport.Posix.TransportSecurity
     >
+    typealias TransportServices = Config<
+      HTTP2ClientTransport.TransportServices.Config,
+      HTTP2ClientTransport.TransportServices.TransportSecurity
+    >
     case posix(Posix)
+    case transportServices(TransportServices)
   }
 
   enum ServerConfig {
@@ -220,11 +241,27 @@ struct HTTP2TransportTLSEnabledTests {
       HTTP2ServerTransport.Posix.Config,
       HTTP2ServerTransport.Posix.TransportSecurity
     >
+    typealias TransportServices = Config<
+      HTTP2ServerTransport.TransportServices.Config,
+      HTTP2ServerTransport.TransportServices.TransportSecurity
+    >
     case posix(Posix)
+    case transportServices(TransportServices)
   }
 
   private func makeDefaultPlaintextPosixClientConfig() -> ClientConfig.Posix {
     ClientConfig.Posix(
+      security: .plaintext,
+      transport: .defaults { config in
+        config.backoff.initial = .milliseconds(100)
+        config.backoff.multiplier = 1
+        config.backoff.jitter = 0
+      }
+    )
+  }
+
+  private func makeDefaultPlaintextTransportServicesClientConfig() -> ClientConfig.TransportServices {
+    ClientConfig.TransportServices(
       security: .plaintext,
       transport: .defaults { config in
         config.backoff.initial = .milliseconds(100)
@@ -248,7 +285,43 @@ struct HTTP2TransportTLSEnabledTests {
       }
       config.transport.http2.authority = "localhost"
       return .posix(config)
+    case .transportServices:
+      var config = self.makeDefaultPlaintextTransportServicesClientConfig()
+      config.security = .tls {
+        $0.trustRoots = .certificates([
+          .bytes(certificateKeyPairs.server.certificate, format: .der)
+        ])
+      }
+      config.transport.http2.authority = "localhost"
+      return .transportServices(config)
     }
+  }
+
+  private func makeSecIdentityProvider(
+    certificateBytes: [UInt8],
+    privateKeyBytes: [UInt8]
+  ) throws -> SecIdentity {
+    let password = "somepassword"
+    let bundle = NIOSSLPKCS12Bundle(
+      certificateChain: [try NIOSSLCertificate(bytes: certificateBytes, format: .der)],
+      privateKey: try NIOSSLPrivateKey(bytes: certificateBytes, format: .der)
+    )
+    let pkcs12Bytes = try bundle.serialize(passphrase: password.utf8)
+    let options = [kSecImportExportPassphrase as String: password]
+    var rawItems: CFArray?
+    let status = SecPKCS12Import(
+      Data(pkcs12Bytes) as CFData,
+      options as CFDictionary,
+      &rawItems
+    )
+    guard status == errSecSuccess else {
+      Issue.record("Failed to import PKCS12 bundle: status \(status).")
+      throw TLSEnabledTestsError.failedToImportPKCS12
+    }
+    let items = rawItems! as! [[String: Any]]
+    let firstItem = items[0]
+    let identity = firstItem[kSecImportItemIdentity as String] as! SecIdentity
+    return identity
   }
 
   private func makeMTLSClientConfig(
@@ -269,11 +342,28 @@ struct HTTP2TransportTLSEnabledTests {
       }
       config.transport.http2.authority = serverHostname
       return .posix(config)
+
+    case .transportServices:
+      var config = self.makeDefaultPlaintextTransportServicesClientConfig()
+      config.security = .mTLS {
+        try self.makeSecIdentityProvider(
+          certificateBytes: certificateKeyPairs.client.certificate,
+          privateKeyBytes: certificateKeyPairs.client.key
+        )
+      } configure: {
+        $0.trustRoots = .certificates([.bytes(certificateKeyPairs.server.certificate, format: .der)])
+      }
+      config.transport.http2.authority = serverHostname
+      return .transportServices(config)
     }
   }
 
   private func makeDefaultPlaintextPosixServerConfig() -> ServerConfig.Posix {
     ServerConfig.Posix(security: .plaintext, transport: .defaults)
+  }
+
+  private func makeDefaultPlaintextTransportServicesServerConfig() -> ServerConfig.TransportServices {
+    ServerConfig.TransportServices(security: .plaintext, transport: .defaults)
   }
 
   private func makeDefaultTLSServerConfig(
@@ -288,6 +378,16 @@ struct HTTP2TransportTLSEnabledTests {
         privateKey: .bytes(certificateKeyPairs.server.key, format: .der)
       )
       return .posix(config)
+
+    case .transportServices:
+      var config = self.makeDefaultPlaintextTransportServicesServerConfig()
+      config.security = .tls {
+        try self.makeSecIdentityProvider(
+          certificateBytes: certificateKeyPairs.server.certificate,
+          privateKeyBytes: certificateKeyPairs.server.key
+        )
+      }
+      return .transportServices(config)
     }
   }
 
@@ -310,6 +410,22 @@ struct HTTP2TransportTLSEnabledTests {
         }
       }
       return .posix(config)
+
+    case .transportServices:
+      var config = self.makeDefaultPlaintextTransportServicesServerConfig()
+      config.security = .mTLS {
+        try self.makeSecIdentityProvider(
+          certificateBytes: certificateKeyPairs.server.certificate,
+          privateKeyBytes: certificateKeyPairs.server.key
+        )
+      } configure: {
+        if includeClientCertificateInTrustRoots {
+          $0.trustRoots = .certificates([
+            .bytes(certificateKeyPairs.client.certificate, format: .der)
+          ])
+        }
+      }
+      return .transportServices(config)
     }
   }
 
@@ -322,25 +438,34 @@ struct HTTP2TransportTLSEnabledTests {
       let server = self.makeServer(config: serverConfig)
 
       group.addTask {
-        try await server.serve()
+        do {
+          try await server.serve()
+        } catch {
+          Issue.record(error, "Something went wrong when running the server")
+        }
       }
 
       guard let address = try await server.listeningAddress?.ipv4 else {
         Issue.record("Unexpected address to connect to")
         return
       }
+
       let target: any ResolvableTarget = .ipv4(host: address.host, port: address.port)
       let client = try self.makeClient(config: clientConfig, target: target)
 
       group.addTask {
-        try await client.run()
+        do {
+          try await client.run()
+        } catch {
+          Issue.record(error, "Something went wrong when running client")
+        }
       }
 
       let control = ControlClient(wrapping: client)
       try await test(control)
 
-      server.beginGracefulShutdown()
       client.beginGracefulShutdown()
+      server.beginGracefulShutdown()
     }
   }
 
@@ -349,7 +474,7 @@ struct HTTP2TransportTLSEnabledTests {
 
     switch config {
     case .posix(let config):
-      let server = GRPCServer(
+      return GRPCServer(
         transport: .http2NIOPosix(
           address: .ipv4(host: "127.0.0.1", port: 0),
           transportSecurity: config.security,
@@ -358,7 +483,15 @@ struct HTTP2TransportTLSEnabledTests {
         services: services
       )
 
-      return server
+    case .transportServices(let config):
+      return GRPCServer(
+        transport: .http2NIOTS(
+          address: .ipv4(host: "127.0.0.1", port: 0),
+          transportSecurity: config.security,
+          config: config.transport
+        ),
+        services: services
+      )
     }
   }
 
@@ -376,6 +509,14 @@ struct HTTP2TransportTLSEnabledTests {
         config: config.transport,
         serviceConfig: ServiceConfig()
       )
+
+    case .transportServices(let config):
+      transport = try HTTP2ClientTransport.TransportServices(
+        target: target,
+        transportSecurity: config.security,
+        config: config.transport,
+        serviceConfig: ServiceConfig()
+      )
     }
 
     return GRPCClient(transport: transport)
@@ -387,64 +528,5 @@ struct HTTP2TransportTLSEnabledTests {
     try await control.unary(request: request) { response in
       #expect(throws: Never.self) { try response.message }
     }
-  }
-}
-
-struct SelfSignedCertificateKeyPairs {
-  struct CertificateKeyPair {
-    let certificate: [UInt8]
-    let key: [UInt8]
-  }
-
-  let server: CertificateKeyPair
-  let client: CertificateKeyPair
-
-  init() throws {
-    let server = try Self.makeSelfSignedDERCertificateAndPrivateKey(name: "Server Certificate")
-    let client = try Self.makeSelfSignedDERCertificateAndPrivateKey(name: "Client Certificate")
-
-    self.server = CertificateKeyPair(certificate: server.cert, key: server.key)
-    self.client = CertificateKeyPair(certificate: client.cert, key: client.key)
-  }
-
-  private static func makeSelfSignedDERCertificateAndPrivateKey(
-    name: String
-  ) throws -> (cert: [UInt8], key: [UInt8]) {
-    let swiftCryptoKey = P256.Signing.PrivateKey()
-    let key = Certificate.PrivateKey(swiftCryptoKey)
-    let subjectName = try DistinguishedName { CommonName(name) }
-    let issuerName = subjectName
-    let now = Date()
-    let extensions = try Certificate.Extensions {
-      Critical(
-        BasicConstraints.isCertificateAuthority(maxPathLength: nil)
-      )
-      Critical(
-        KeyUsage(digitalSignature: true, keyCertSign: true)
-      )
-      Critical(
-        try ExtendedKeyUsage([.serverAuth, .clientAuth])
-      )
-      SubjectAlternativeNames([.dnsName("localhost")])
-    }
-    let certificate = try Certificate(
-      version: .v3,
-      serialNumber: Certificate.SerialNumber(),
-      publicKey: key.publicKey,
-      notValidBefore: now.addingTimeInterval(-60 * 60),
-      notValidAfter: now.addingTimeInterval(60 * 60 * 24 * 365),
-      issuer: issuerName,
-      subject: subjectName,
-      signatureAlgorithm: .ecdsaWithSHA256,
-      extensions: extensions,
-      issuerPrivateKey: key
-    )
-
-    var serializer = DER.Serializer()
-    try serializer.serialize(certificate)
-
-    let certBytes = serializer.serializedBytes
-    let keyBytes = try key.serializeAsPEM().derBytes
-    return (certBytes, keyBytes)
   }
 }
