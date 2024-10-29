@@ -21,6 +21,8 @@ public import NIOTransportServices  // has to be public because of default argum
 public import NIOCore  // has to be public because of EventLoopGroup param in init
 
 private import Network
+private import struct Foundation.Data
+private import struct Foundation.URL
 
 extension HTTP2ClientTransport {
   /// A `ClientTransport` using HTTP/2 built on top of `NIOTransportServices`.
@@ -145,11 +147,22 @@ extension HTTP2ClientTransport.TransportServices {
       case .plaintext:
         isPlainText = true
         bootstrap = NIOTSConnectionBootstrap(group: self.eventLoopGroup)
+          .channelOption(NIOTSChannelOptions.waitForActivity, value: false)
 
       case .tls(let tlsConfig):
         isPlainText = false
-        bootstrap = NIOTSConnectionBootstrap(group: self.eventLoopGroup)
-          .tlsOptions(try NWProtocolTLS.Options(tlsConfig))
+        do {
+          let options = try NWProtocolTLS.Options(tlsConfig)
+          bootstrap = NIOTSConnectionBootstrap(group: self.eventLoopGroup)
+            .channelOption(NIOTSChannelOptions.waitForActivity, value: false)
+            .tlsOptions(options)
+        } catch {
+          throw RuntimeError(
+            code: .transportError,
+            message: "Couldn't create NWProtocolTLS.Options, check your TLS configuration.",
+            cause: error
+          )
+        }
       }
 
       let (channel, multiplexer) = try await bootstrap.connect(to: address) { channel in
@@ -301,20 +314,48 @@ extension NWProtocolTLS.Options {
   convenience init(_ tlsConfig: HTTP2ClientTransport.TransportServices.Config.TLS) throws {
     self.init()
 
-    guard let sec_identity = sec_identity_create(try tlsConfig.identityProvider()) else {
-      throw RuntimeError(
-        code: .transportError,
-        message: """
+    if let identityProvider = tlsConfig.identityProvider {
+      guard let sec_identity = sec_identity_create(try identityProvider()) else {
+        throw RuntimeError(
+          code: .transportError,
+          message: """
           There was an issue creating the SecIdentity required to set up TLS. \
           Please check your TLS configuration.
           """
+        )
+      }
+
+      sec_protocol_options_set_local_identity(
+        self.securityProtocolOptions,
+        sec_identity
       )
     }
 
-    sec_protocol_options_set_local_identity(
-      self.securityProtocolOptions,
-      sec_identity
-    )
+    switch tlsConfig.serverCertificateVerification.wrapped {
+    case .doNotVerify:
+      sec_protocol_options_set_peer_authentication_required(
+        self.securityProtocolOptions,
+        false
+      )
+
+    case .fullVerification:
+      sec_protocol_options_set_peer_authentication_required(
+        self.securityProtocolOptions,
+        true
+      )
+      tlsConfig.serverHostname?.withCString { serverName in
+        sec_protocol_options_set_tls_server_name(
+          self.securityProtocolOptions,
+          serverName
+        )
+      }
+
+    case .noHostnameVerification:
+      sec_protocol_options_set_peer_authentication_required(
+        self.securityProtocolOptions,
+        true
+      )
+    }
 
     sec_protocol_options_set_min_tls_protocol_version(
       self.securityProtocolOptions,
@@ -326,6 +367,53 @@ extension NWProtocolTLS.Options {
         self.securityProtocolOptions,
         `protocol`
       )
+    }
+
+    switch tlsConfig.trustRoots.wrapped {
+    case .certificates(let certificates):
+      let verifyQueue = DispatchQueue(label: "certificateVerificationQueue")
+      let verifyBlock: sec_protocol_verify_t = { (metadata, trust, verifyCompleteCallback) in
+        let actualTrust = sec_trust_copy_ref(trust).takeRetainedValue()
+
+        let customAnchors: [SecCertificate]
+        do {
+          customAnchors = try certificates.map { certificateSource in
+            let certificateBytes: Data
+            switch certificateSource.wrapped {
+            case .file(let path, .der):
+              certificateBytes = try Data(contentsOf: URL(filePath: path))
+
+            case .bytes(let bytes, .der):
+              certificateBytes = Data(bytes)
+
+            case .file(_, let format), .bytes(_, let format):
+              fatalError("Certificate format must be DER, but was \(format).")
+            }
+
+            guard let certificate = SecCertificateCreateWithData(nil, certificateBytes as CFData) else {
+              fatalError("Certificate was not a valid DER-encoded X509 certificate.")
+            }
+            return certificate
+          }
+        } catch {
+          verifyCompleteCallback(false)
+          return
+        }
+
+        SecTrustSetAnchorCertificates(actualTrust, customAnchors as CFArray)
+        SecTrustEvaluateAsyncWithError(actualTrust, verifyQueue) { _, trusted, _ in
+          verifyCompleteCallback(trusted)
+        }
+      }
+
+      sec_protocol_options_set_verify_block(
+        self.securityProtocolOptions,
+        verifyBlock,
+        verifyQueue
+      )
+
+    case .systemDefault:
+      ()
     }
   }
 }

@@ -25,6 +25,8 @@ private import NIOHTTP2
 private import Network
 
 private import Synchronization
+private import struct Foundation.Data
+private import struct Foundation.URL
 
 extension HTTP2ServerTransport {
   /// A NIO Transport Services-backed implementation of a server transport.
@@ -257,6 +259,20 @@ extension NWProtocolTLS.Options {
       sec_identity
     )
 
+    switch tlsConfig.clientCertificateVerification.wrapped {
+    case .doNotVerify:
+      sec_protocol_options_set_peer_authentication_required(
+        self.securityProtocolOptions,
+        false
+      )
+
+    case .fullVerification, .noHostnameVerification:
+      sec_protocol_options_set_peer_authentication_required(
+        self.securityProtocolOptions,
+        true
+      )
+    }
+
     sec_protocol_options_set_min_tls_protocol_version(
       self.securityProtocolOptions,
       .TLSv12
@@ -267,6 +283,53 @@ extension NWProtocolTLS.Options {
         self.securityProtocolOptions,
         `protocol`
       )
+    }
+
+    switch tlsConfig.trustRoots.wrapped {
+    case .certificates(let certificates):
+      let verifyQueue = DispatchQueue(label: "certificateVerificationQueue")
+      let verifyBlock: sec_protocol_verify_t = { (metadata, trust, verifyCompleteCallback) in
+        let actualTrust = sec_trust_copy_ref(trust).takeRetainedValue()
+
+        let customAnchors: [SecCertificate]
+        do {
+          customAnchors = try certificates.map { certificateSource in
+            let certificateBytes: Data
+            switch certificateSource.wrapped {
+            case .file(let path, .der):
+              certificateBytes = try Data(contentsOf: URL(filePath: path))
+
+            case .bytes(let bytes, .der):
+              certificateBytes = Data(bytes)
+
+            case .file(_, let format), .bytes(_, let format):
+              fatalError("Certificate format must be DER, but was \(format).")
+            }
+
+            guard let certificate = SecCertificateCreateWithData(nil, certificateBytes as CFData) else {
+              fatalError("Certificate was not a valid DER-encoded X509 certificate.")
+            }
+            return certificate
+          }
+        } catch {
+          verifyCompleteCallback(false)
+          return
+        }
+
+        SecTrustSetAnchorCertificates(actualTrust, customAnchors as CFArray)
+        SecTrustEvaluateAsyncWithError(actualTrust, verifyQueue) { _, trusted, _ in
+          verifyCompleteCallback(trusted)
+        }
+      }
+
+      sec_protocol_options_set_verify_block(
+        self.securityProtocolOptions,
+        verifyBlock,
+        verifyQueue
+      )
+
+    case .systemDefault:
+      ()
     }
   }
 }

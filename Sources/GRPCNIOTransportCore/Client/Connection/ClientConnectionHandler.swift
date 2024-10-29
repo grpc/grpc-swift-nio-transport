@@ -522,9 +522,14 @@ extension ClientConnectionHandler {
     mutating func receivedError(_ error: any Error) {
       switch self.state {
       case .active(var active):
-        self.state = ._modifying
-        active.error = error
-        self.state = .active(active)
+        // Do not overwrite the first error that caused the closure:
+        // Sometimes, multiple errors can be triggered before the channel fully
+        // closes, but latter errors can mask the original issue.
+        if active.error == nil {
+          self.state = ._modifying
+          active.error = error
+          self.state = .active(active)
+        }
       case .closing, .closed:
         ()
       case ._modifying:
