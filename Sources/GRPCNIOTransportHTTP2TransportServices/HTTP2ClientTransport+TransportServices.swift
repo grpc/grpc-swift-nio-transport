@@ -319,9 +319,9 @@ extension NWProtocolTLS.Options {
         throw RuntimeError(
           code: .transportError,
           message: """
-          There was an issue creating the SecIdentity required to set up TLS. \
-          Please check your TLS configuration.
-          """
+            There was an issue creating the SecIdentity required to set up TLS. \
+            Please check your TLS configuration.
+            """
         )
       }
 
@@ -390,7 +390,8 @@ extension NWProtocolTLS.Options {
               fatalError("Certificate format must be DER, but was \(format).")
             }
 
-            guard let certificate = SecCertificateCreateWithData(nil, certificateBytes as CFData) else {
+            guard let certificate = SecCertificateCreateWithData(nil, certificateBytes as CFData)
+            else {
               fatalError("Certificate was not a valid DER-encoded X509 certificate.")
             }
             return certificate

@@ -306,7 +306,8 @@ extension NWProtocolTLS.Options {
               fatalError("Certificate format must be DER, but was \(format).")
             }
 
-            guard let certificate = SecCertificateCreateWithData(nil, certificateBytes as CFData) else {
+            guard let certificate = SecCertificateCreateWithData(nil, certificateBytes as CFData)
+            else {
               fatalError("Certificate was not a valid DER-encoded X509 certificate.")
             }
             return certificate

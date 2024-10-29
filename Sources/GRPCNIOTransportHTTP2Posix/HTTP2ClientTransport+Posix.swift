@@ -177,7 +177,11 @@ extension HTTP2ClientTransport.Posix {
         }
       }
 
-      return HTTP2Connection(channel: channel, multiplexer: multiplexer, isPlaintext: self.isPlainText)
+      return HTTP2Connection(
+        channel: channel,
+        multiplexer: multiplexer,
+        isPlaintext: self.isPlainText
+      )
     }
   }
 }
