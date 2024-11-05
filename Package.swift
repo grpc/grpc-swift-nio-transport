@@ -66,7 +66,7 @@ let dependencies: [Package.Dependency] = [
 let defaultSwiftSettings: [SwiftSetting] = [
   .swiftLanguageMode(.v6),
   .enableUpcomingFeature("ExistentialAny"),
-  .enableUpcomingFeature("InternalImportsByDefault")
+  .enableUpcomingFeature("InternalImportsByDefault"),
 ]
 
 let targets: [Target] = [
@@ -87,7 +87,7 @@ let targets: [Target] = [
       .product(name: "NIOCore", package: "swift-nio"),
       .product(name: "NIOHTTP2", package: "swift-nio-http2"),
       .product(name: "NIOExtras", package: "swift-nio-extras"),
-      .target(name: "CGRPCZlib")
+      .target(name: "CGRPCZlib"),
     ],
     swiftSettings: defaultSwiftSettings
   ),
@@ -140,7 +140,7 @@ let targets: [Target] = [
       .product(name: "X509", package: "swift-certificates"),
       .product(name: "NIOSSL", package: "swift-nio-ssl"),
     ]
-  )
+  ),
 ]
 
 let package = Package(

@@ -1,18 +1,17 @@
 #!/bin/bash
-
-# Copyright 2024, gRPC Authors All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+## Copyright 2024, gRPC Authors All rights reserved.
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##     http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
 
 set -euo pipefail
 
@@ -56,7 +55,7 @@ bound_port=$(grep -o "$pattern" < "$server_output_file" | grep -o '[0-9]*$')
 
 if [[ -z "$bound_port" ]]; then
   error "Failed to get the bound port."
-  kill $server_pid
+  kill $server_pid # ignore-unacceptable-language
   exit 1
 else
   log "Started server on $host:$bound_port"
@@ -91,7 +90,7 @@ done
 
 # Stop the server
 log "Stopping the server..."
-kill $server_pid
+kill $server_pid # ignore-unacceptable-language
 
 if [[ $failed_tests -gt 0 ]]; then
   error "$failed_tests tests failed."

@@ -15,16 +15,10 @@
 
 set -euo pipefail
 
-log() { printf -- "** %s\n" "$*" >&2; }
-error() { printf -- "** ERROR: %s\n" "$*" >&2; }
-fatal() { error "$@"; exit 1; }
-
 here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-integration_tests="$here/../IntegrationTests"
 
-log "Building performance tests..."
-if swift build --package-path "$integration_tests/grpc-performance-tests"; then
-  log "Build succeeded"
-else
-  fatal "Build failed"
-fi
+echo "Build performance tests"
+eval "$here/build-performance-tests.sh"
+
+echo "Run interop tests"
+eval "$here/run-interop-tests.sh"

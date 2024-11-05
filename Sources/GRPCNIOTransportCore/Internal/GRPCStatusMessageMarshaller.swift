@@ -56,7 +56,7 @@ extension GRPCStatusMessageMarshaller {
 
     for char in message.utf8 {
       switch char {
-      // See: https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md#responses
+      // See: https://github.com/grpc/grpc/blob/7f664c69b2a636386fbf95c16bc78c559734ce0f/doc/PROTOCOL-HTTP2.md#responses
       case 0x20 ... 0x24,
         0x26 ... 0x7E:
         bytes.append(char)
