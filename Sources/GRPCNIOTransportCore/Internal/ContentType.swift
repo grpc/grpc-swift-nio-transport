@@ -15,7 +15,7 @@
  */
 
 // See:
-// - https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md
+// - https://github.com/grpc/grpc/blob/7f664c69b2a636386fbf95c16bc78c559734ce0f/doc/PROTOCOL-HTTP2.md
 enum ContentType {
   case grpc
 

@@ -529,7 +529,7 @@ extension RoundRobinLoadBalancer {
       mutating func updateState(_ newState: ConnectivityState) -> Bool {
         // The transition from transient failure to connecting is ignored.
         //
-        // See: https://github.com/grpc/grpc/blob/master/doc/load-balancing.md
+        // See: https://github.com/grpc/grpc/blob/7f664c69b2a636386fbf95c16bc78c559734ce0f/doc/load-balancing.md
         if case .transientFailure = self.state, newState == .connecting {
           return false
         }
@@ -733,7 +733,7 @@ extension RoundRobinLoadBalancer {
 
 extension ConnectivityState {
   static func aggregate(_ states: some Collection<ConnectivityState>) -> ConnectivityState {
-    // See https://github.com/grpc/grpc/blob/master/doc/load-balancing.md
+    // See https://github.com/grpc/grpc/blob/7f664c69b2a636386fbf95c16bc78c559734ce0f/doc/load-balancing.md
 
     // If any one subchannel is in READY state, the channel's state is READY.
     if states.contains(where: { $0 == .ready }) {

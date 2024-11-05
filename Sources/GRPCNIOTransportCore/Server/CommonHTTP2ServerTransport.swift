@@ -235,7 +235,7 @@ package final class CommonHTTP2ServerTransport<
     // - If we get an error because the http2Stream failed to close, then there's nothing we can do
     // - If we get an error because the inner closure threw, then the only possible scenario in which
     // that could happen is if methodDescriptor.get() throws - in which case, it means we never got
-    // the RPC metadata, which means we can't do anything either and it's okay to just kill the stream.
+    // the RPC metadata, which means we can't do anything either and it's okay to just close the stream.
     try? await stream.executeThenClose { inbound, outbound in
       guard let descriptor = try? await descriptor.get() else {
         return

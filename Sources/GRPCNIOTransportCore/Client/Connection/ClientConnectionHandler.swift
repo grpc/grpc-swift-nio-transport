@@ -47,7 +47,7 @@ package enum ClientConnectionEvent: Sendable {
 /// 2. Closing the connection if it is idle (has no open streams) for a configured amount of time.
 /// 3. Forwarding lifecycle events to the next handler.
 ///
-/// Some of the behaviours are described in [gRFC A8](https://github.com/grpc/proposal/blob/master/A8-client-side-keepalive.md).
+/// Some of the behaviours are described in [gRFC A8](https://github.com/grpc/proposal/blob/0e1807a6e30a1a915c0dcadc873bca92b9fa9720/A8-client-side-keepalive.md).
 package final class ClientConnectionHandler: ChannelInboundHandler, ChannelOutboundHandler {
   package typealias InboundIn = HTTP2Frame
   package typealias InboundOut = ClientConnectionEvent

@@ -1274,7 +1274,7 @@ final class HTTP2TransportTests: XCTestCase {
   }
 
   private static let httpToStatusCodePairs: [(Int, RPCError.Code)] = [
-    // See https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md
+    // See https://github.com/grpc/grpc/blob/7f664c69b2a636386fbf95c16bc78c559734ce0f/doc/http-grpc-status-mapping.md
     (400, .internalError),
     (401, .unauthenticated),
     (403, .permissionDenied),

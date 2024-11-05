@@ -37,8 +37,8 @@ private import NIOTLS
 ///    too many pings.
 ///
 /// Some of the behaviours are described in:
-/// - [gRFC A8](https://github.com/grpc/proposal/blob/master/A8-client-side-keepalive.md), and
-/// - [gRFC A9](https://github.com/grpc/proposal/blob/master/A9-server-side-conn-mgt.md).
+/// - [gRFC A8](https://github.com/grpc/proposal/blob/0e1807a6e30a1a915c0dcadc873bca92b9fa9720/A8-client-side-keepalive.md), and
+/// - [gRFC A9](https://github.com/grpc/proposal/blob/0e1807a6e30a1a915c0dcadc873bca92b9fa9720/A9-server-side-conn-mgt.md).
 package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
   package typealias InboundIn = HTTP2Frame
   package typealias InboundOut = HTTP2Frame

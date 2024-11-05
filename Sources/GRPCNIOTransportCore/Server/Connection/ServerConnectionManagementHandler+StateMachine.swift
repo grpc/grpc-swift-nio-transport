@@ -333,7 +333,7 @@ extension ServerConnectionManagementHandler.StateMachine {
         // If there are no open streams and keep alive pings aren't allowed without calls then
         // use an interval of two hours.
         //
-        // This comes from gRFC A8: https://github.com/grpc/proposal/blob/master/A8-client-side-keepalive.md
+        // This comes from gRFC A8: https://github.com/grpc/proposal/blob/0e1807a6e30a1a915c0dcadc873bca92b9fa9720/A8-client-side-keepalive.md
         interval = .hours(2)
       }
 

@@ -638,7 +638,7 @@ extension GRPCStreamStateMachine {
     headers.reserveCapacity(7 + customMetadata.count)
 
     // Add required headers.
-    // See https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md#requests
+    // See https://github.com/grpc/grpc/blob/7f664c69b2a636386fbf95c16bc78c559734ce0f/doc/PROTOCOL-HTTP2.md#requests
 
     // The order is important here: reserved HTTP2 headers (those starting with `:`)
     // must come before all other headers.
@@ -851,7 +851,7 @@ extension GRPCStreamStateMachine {
       if (100 ... 199).contains(httpStatusCode.code) {
         // For 1xx status codes, the entire header should be skipped and a
         // subsequent header should be read.
-        // See https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md
+        // See https://github.com/grpc/grpc/blob/7f664c69b2a636386fbf95c16bc78c559734ce0f/doc/http-grpc-status-mapping.md
         return .invalid(.doNothing)
       }
 
@@ -1868,7 +1868,7 @@ extension Metadata {
 }
 
 extension Status.Code {
-  // See https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md
+  // See https://github.com/grpc/grpc/blob/7f664c69b2a636386fbf95c16bc78c559734ce0f/doc/http-grpc-status-mapping.md
   init(httpStatusCode: HTTPResponseStatus) {
     switch httpStatusCode {
     case .badRequest:
