@@ -98,7 +98,8 @@ let targets: [Target] = [
       .product(name: "NIOCore", package: "swift-nio"),
       .product(name: "NIOEmbedded", package: "swift-nio"),
       .product(name: "NIOTestUtils", package: "swift-nio"),
-    ]
+    ],
+    swiftSettings: defaultSwiftSettings
   ),
 
   // NIOPosix variant of the HTTP/2 transports.
@@ -139,7 +140,8 @@ let targets: [Target] = [
       .target(name: "GRPCNIOTransportHTTP2"),
       .product(name: "X509", package: "swift-certificates"),
       .product(name: "NIOSSL", package: "swift-nio-ssl"),
-    ]
+    ],
+    swiftSettings: defaultSwiftSettings
   ),
 ]
 

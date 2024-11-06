@@ -2837,7 +2837,7 @@ extension XCTestCase {
 }
 
 extension GRPCStreamStateMachine.OnNextOutboundFrame {
-  public static func == (
+  static func == (
     lhs: GRPCStreamStateMachine.OnNextOutboundFrame,
     rhs: GRPCStreamStateMachine.OnNextOutboundFrame
   ) -> Bool {
