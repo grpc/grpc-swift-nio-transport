@@ -12,19 +12,9 @@ jobs:
     with:
       license_header_check_project_name: "gRPC"
 
-  swift-license-check:
-    name: Swift License Header Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Mark the workspace as safe
-        run: git config --global --add safe.directory ${GITHUB_WORKSPACE}
-      - name: Run license check
-        run: |
-          ./dev/license-check.sh
+  grpc-soundness:
+    name: Soundness
+    uses: ./.github/workflows/soundness.yml
 
   unit-tests:
     name: Unit Tests
