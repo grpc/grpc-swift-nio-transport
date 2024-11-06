@@ -26,7 +26,7 @@ extension ClientConnectionEvent: Equatable {}
 extension ClientConnectionEvent.CloseReason: Equatable {}
 
 extension Connection.Event {
-  package static func == (lhs: Connection.Event, rhs: Connection.Event) -> Bool {
+  static func == (lhs: Connection.Event, rhs: Connection.Event) -> Bool {
     switch (lhs, rhs) {
     case (.connectSucceeded, .connectSucceeded),
       (.connectFailed, .connectFailed):
@@ -45,7 +45,7 @@ extension Connection.Event {
 }
 
 extension Connection.CloseReason {
-  package static func == (lhs: Connection.CloseReason, rhs: Connection.CloseReason) -> Bool {
+  static func == (lhs: Connection.CloseReason, rhs: Connection.CloseReason) -> Bool {
     switch (lhs, rhs) {
     case (.idleTimeout, .idleTimeout),
       (.keepaliveTimeout, .keepaliveTimeout),
@@ -63,7 +63,7 @@ extension Connection.CloseReason {
 }
 
 extension ClientConnectionEvent {
-  package static func == (lhs: ClientConnectionEvent, rhs: ClientConnectionEvent) -> Bool {
+  static func == (lhs: ClientConnectionEvent, rhs: ClientConnectionEvent) -> Bool {
     switch (lhs, rhs) {
     case (.ready, .ready):
       return true
@@ -76,7 +76,7 @@ extension ClientConnectionEvent {
 }
 
 extension ClientConnectionEvent.CloseReason {
-  package static func == (lhs: Self, rhs: Self) -> Bool {
+  static func == (lhs: Self, rhs: Self) -> Bool {
     switch (lhs, rhs) {
     case (.goAway(let lhsCode, let lhsMessage), .goAway(let rhsCode, let rhsMessage)):
       return lhsCode == rhsCode && lhsMessage == rhsMessage
