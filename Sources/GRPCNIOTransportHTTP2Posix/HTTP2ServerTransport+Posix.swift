@@ -20,11 +20,8 @@ internal import NIOCore
 internal import NIOExtras
 internal import NIOHTTP2
 public import NIOPosix  // has to be public because of default argument value in init
+private import NIOSSL
 private import Synchronization
-
-#if canImport(NIOSSL)
-import NIOSSL
-#endif
 
 extension HTTP2ServerTransport {
   /// A `ServerTransport` using HTTP/2 built on top of `NIOPosix`.
@@ -63,7 +60,6 @@ extension HTTP2ServerTransport {
         address: GRPCNIOTransportCore.SocketAddress,
         serverQuiescingHelper: ServerQuiescingHelper
       ) async throws -> NIOAsyncChannel<AcceptedChannel, Never> {
-        #if canImport(NIOSSL)
         let sslContext: NIOSSLContext?
 
         switch self.config.transportSecurity.wrapped {
@@ -80,7 +76,6 @@ extension HTTP2ServerTransport {
             )
           }
         }
-        #endif
 
         let serverChannel = try await ServerBootstrap(group: eventLoopGroup)
           .serverChannelOption(.socketOption(.so_reuseaddr), value: 1)
@@ -90,13 +85,11 @@ extension HTTP2ServerTransport {
           }
           .bind(to: address) { channel in
             channel.eventLoop.makeCompletedFuture {
-              #if canImport(NIOSSL)
               if let sslContext {
                 try channel.pipeline.syncOperations.addHandler(
                   NIOSSLServerHandler(context: sslContext)
                 )
               }
-              #endif
 
               let requireALPN: Bool
               let scheme: Scheme
