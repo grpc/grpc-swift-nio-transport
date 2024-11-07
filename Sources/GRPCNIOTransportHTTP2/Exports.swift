@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-@_exported import GRPCCore
 @_exported import GRPCNIOTransportCore
 @_exported import GRPCNIOTransportHTTP2Posix
 @_exported import GRPCNIOTransportHTTP2TransportServices
