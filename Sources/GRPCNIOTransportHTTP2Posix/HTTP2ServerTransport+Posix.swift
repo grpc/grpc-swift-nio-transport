@@ -80,8 +80,12 @@ extension HTTP2ServerTransport {
         let serverChannel = try await ServerBootstrap(group: eventLoopGroup)
           .serverChannelOption(.socketOption(.so_reuseaddr), value: 1)
           .serverChannelInitializer { channel in
-            let quiescingHandler = serverQuiescingHelper.makeServerChannelHandler(channel: channel)
-            return channel.pipeline.addHandler(quiescingHandler)
+            return channel.eventLoop.makeCompletedFuture {
+              let quiescingHandler = serverQuiescingHelper.makeServerChannelHandler(
+                channel: channel
+              )
+              return try channel.pipeline.syncOperations.addHandler(quiescingHandler)
+            }
           }
           .bind(to: address) { channel in
             channel.eventLoop.makeCompletedFuture {
