@@ -16,6 +16,7 @@
 
 import Crypto
 import Foundation
+import GRPCCore
 import GRPCNIOTransportHTTP2Posix
 import NIOSSL
 import SwiftASN1
