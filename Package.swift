@@ -138,6 +138,7 @@ let targets: [Target] = [
     name: "GRPCNIOTransportHTTP2Tests",
     dependencies: [
       .target(name: "GRPCNIOTransportHTTP2"),
+      .product(name: "GRPCCore", package: "grpc-swift"),
       .product(name: "X509", package: "swift-certificates"),
       .product(name: "NIOSSL", package: "swift-nio-ssl"),
     ],

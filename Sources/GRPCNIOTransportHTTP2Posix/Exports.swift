@@ -14,5 +14,4 @@
  * limitations under the License.
  */
 
-@_exported import GRPCCore
 @_exported import GRPCNIOTransportCore
