@@ -17,11 +17,8 @@
 import GRPCCore
 import GRPCNIOTransportCore
 import GRPCNIOTransportHTTP2Posix
-import XCTest
-
-#if canImport(NIOSSL)
 import NIOSSL
-#endif
+import XCTest
 
 final class HTTP2TransportNIOPosixTests: XCTestCase {
   func testGetListeningAddress_IPv4() async throws {
@@ -191,7 +188,6 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
     XCTAssertEqual(grpcConfig.backoff, HTTP2ClientTransport.Config.Backoff.defaults)
   }
 
-  #if canImport(NIOSSL)
   static let samplePemCert = """
     -----BEGIN CERTIFICATE-----
     MIIGGzCCBAOgAwIBAgIJAJ/X0Fo0ynmEMA0GCSqGSIb3DQEBCwUAMIGjMQswCQYD
@@ -478,5 +474,4 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
     XCTAssertEqual(nioSSLTLSConfig.trustRoots, .default)
     XCTAssertEqual(nioSSLTLSConfig.applicationProtocols, ["grpc-exp", "h2"])
   }
-  #endif
 }

@@ -18,10 +18,7 @@ public import GRPCCore
 public import GRPCNIOTransportCore  // should be @usableFromInline
 public import NIOCore  // has to be public because of EventLoopGroup param in init
 public import NIOPosix  // has to be public because of default argument value in init
-
-#if canImport(NIOSSL)
 private import NIOSSL
-#endif
 
 extension HTTP2ClientTransport {
   /// A `ClientTransport` using HTTP/2 built on top of `NIOPosix`.
@@ -129,23 +126,20 @@ extension HTTP2ClientTransport.Posix {
     private let config: HTTP2ClientTransport.Posix.Config
     private let eventLoopGroup: any EventLoopGroup
 
-    #if canImport(NIOSSL)
-    private let nioSSLContext: NIOSSLContext?
+    private let sslContext: NIOSSLContext?
     private let serverHostname: String?
-    #endif
 
     init(eventLoopGroup: any EventLoopGroup, config: HTTP2ClientTransport.Posix.Config) throws {
       self.eventLoopGroup = eventLoopGroup
       self.config = config
 
-      #if canImport(NIOSSL)
       switch self.config.transportSecurity.wrapped {
       case .plaintext:
-        self.nioSSLContext = nil
+        self.sslContext = nil
         self.serverHostname = nil
       case .tls(let tlsConfig):
         do {
-          self.nioSSLContext = try NIOSSLContext(configuration: TLSConfiguration(tlsConfig))
+          self.sslContext = try NIOSSLContext(configuration: TLSConfiguration(tlsConfig))
           self.serverHostname = tlsConfig.serverHostname
         } catch {
           throw RuntimeError(
@@ -155,7 +149,6 @@ extension HTTP2ClientTransport.Posix {
           )
         }
       }
-      #endif
     }
 
     func establishConnection(
@@ -165,16 +158,14 @@ extension HTTP2ClientTransport.Posix {
         group: self.eventLoopGroup
       ).connect(to: address) { channel in
         channel.eventLoop.makeCompletedFuture {
-          #if canImport(NIOSSL)
-          if let nioSSLContext = self.nioSSLContext {
+          if let sslContext = self.sslContext {
             try channel.pipeline.syncOperations.addHandler(
               NIOSSLClientHandler(
-                context: nioSSLContext,
+                context: sslContext,
                 serverHostname: self.serverHostname
               )
             )
           }
-          #endif
 
           return try channel.pipeline.syncOperations.configureGRPCClientPipeline(
             channel: channel,
