@@ -18,6 +18,9 @@
 public import GRPCNIOTransportCore
 public import Network
 
+private import struct Foundation.Data
+private import struct Foundation.URL
+
 extension HTTP2ServerTransport.TransportServices.Config {
   /// The security configuration for this connection.
   public struct TransportSecurity: Sendable {
@@ -142,6 +145,7 @@ extension HTTP2ClientTransport.TransportServices.Config {
     public var serverCertificateVerification: TLSConfig.CertificateVerification
 
     /// The trust roots to be used when verifying server certificates.
+    /// - Important: If specifying custom certificates, they must be DER-encoded X509 certificates.
     public var trustRoots: TLSConfig.TrustRootsSource
 
     /// An optional server hostname to use when verifying certificates.
@@ -219,6 +223,66 @@ extension HTTP2ClientTransport.TransportServices.Config {
       )
       configure(&config)
       return config
+    }
+  }
+}
+
+extension NWProtocolTLS.Options {
+  func setUpVerifyBlock(trustRootsSource: TLSConfig.TrustRootsSource) {
+    if let (verifyQueue, verifyBlock) = trustRootsSource.makeTrustRootsConfig() {
+      sec_protocol_options_set_verify_block(
+        self.securityProtocolOptions,
+        verifyBlock,
+        verifyQueue
+      )
+    }
+  }
+}
+
+extension TLSConfig.TrustRootsSource {
+  internal func makeTrustRootsConfig() -> (DispatchQueue, sec_protocol_verify_t)? {
+    switch self.wrapped {
+    case .certificates(let certificates):
+      let verifyQueue = DispatchQueue(label: "io.grpc.CertificateVerification")
+      let verifyBlock: sec_protocol_verify_t = { (metadata, trust, verifyCompleteCallback) in
+        let actualTrust = sec_trust_copy_ref(trust).takeRetainedValue()
+
+        let customAnchors: [SecCertificate]
+        do {
+          customAnchors = try certificates.map { certificateSource in
+            let certificateBytes: Data
+            switch certificateSource.wrapped {
+            case .file(let path, .der):
+              certificateBytes = try Data(contentsOf: URL(filePath: path))
+
+            case .bytes(let bytes, .der):
+              certificateBytes = Data(bytes)
+
+            case .file(_, let format), .bytes(_, let format):
+              fatalError("Certificate format must be DER, but was \(format).")
+            }
+
+            guard let certificate = SecCertificateCreateWithData(nil, certificateBytes as CFData)
+            else {
+              fatalError("Certificate was not a valid DER-encoded X509 certificate.")
+            }
+            return certificate
+          }
+        } catch {
+          verifyCompleteCallback(false)
+          return
+        }
+
+        SecTrustSetAnchorCertificates(actualTrust, customAnchors as CFArray)
+        SecTrustEvaluateAsyncWithError(actualTrust, verifyQueue) { _, trusted, _ in
+          verifyCompleteCallback(trusted)
+        }
+      }
+
+      return (verifyQueue, verifyBlock)
+
+    case .systemDefault:
+      return nil
     }
   }
 }
