@@ -131,7 +131,7 @@ package final class ClientConnectionHandler: ChannelInboundHandler, ChannelOutbo
       self.keepaliveTimeoutHandler = Timer(
         eventLoop: eventLoop,
         duration: keepaliveTimeout,
-        repeating: true,
+        repeating: false,
         handler: KeepaliveTimeoutHandlerView(self)
       )
     }
