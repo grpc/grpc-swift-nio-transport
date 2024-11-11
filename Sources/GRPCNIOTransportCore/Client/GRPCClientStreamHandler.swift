@@ -251,10 +251,6 @@ extension GRPCClientStreamHandler {
   }
 
   private func _flush(context: ChannelHandlerContext) {
-    // If we're done writing (i.e. we have no more messages returned from state
-    // machine) then return.
-    guard !self.requestFinished else { return }
-
     do {
       loop: while true {
         switch try self.stateMachine.nextOutboundFrame() {
@@ -266,6 +262,10 @@ extension GRPCClientStreamHandler {
           )
 
         case .noMoreMessages:
+          // If we're done writing (i.e. we have no more messages returned from state
+          // machine) then return.
+          if self.requestFinished { return }
+
           // Write an empty data frame with the EOS flag set, to signal the RPC
           // request is now finished.
           context.write(
