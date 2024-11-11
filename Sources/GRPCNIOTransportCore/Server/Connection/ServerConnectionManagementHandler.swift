@@ -407,7 +407,7 @@ package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
 
 // Timer handler views.
 extension ServerConnectionManagementHandler {
-  final class MaxIdleTimerHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
+  struct MaxIdleTimerHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
     private let handler: ServerConnectionManagementHandler
 
     init(_ handler: ServerConnectionManagementHandler) {
@@ -420,7 +420,7 @@ extension ServerConnectionManagementHandler {
     }
   }
 
-  final class MaxAgeTimerHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
+  struct MaxAgeTimerHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
     private let handler: ServerConnectionManagementHandler
 
     init(_ handler: ServerConnectionManagementHandler) {
@@ -433,7 +433,7 @@ extension ServerConnectionManagementHandler {
     }
   }
 
-  final class MaxGraceTimerHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
+  struct MaxGraceTimerHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
     private let handler: ServerConnectionManagementHandler
 
     init(_ handler: ServerConnectionManagementHandler) {
@@ -446,7 +446,7 @@ extension ServerConnectionManagementHandler {
     }
   }
 
-  final class KeepaliveTimerHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
+  struct KeepaliveTimerHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
     private let handler: ServerConnectionManagementHandler
 
     init(_ handler: ServerConnectionManagementHandler) {
@@ -459,7 +459,7 @@ extension ServerConnectionManagementHandler {
     }
   }
 
-  final class KeepaliveTimeoutHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
+  struct KeepaliveTimeoutHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
     private let handler: ServerConnectionManagementHandler
 
     init(_ handler: ServerConnectionManagementHandler) {

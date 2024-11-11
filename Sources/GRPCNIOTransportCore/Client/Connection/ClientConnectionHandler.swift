@@ -299,7 +299,7 @@ package final class ClientConnectionHandler: ChannelInboundHandler, ChannelOutbo
 
 // Timer handler views.
 extension ClientConnectionHandler {
-  final class MaxIdleTimerHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
+  struct MaxIdleTimerHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
     private let handler: ClientConnectionHandler
 
     init(_ handler: ClientConnectionHandler) {
@@ -312,7 +312,7 @@ extension ClientConnectionHandler {
     }
   }
 
-  final class KeepaliveTimerHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
+  struct KeepaliveTimerHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
     private let handler: ClientConnectionHandler
 
     init(_ handler: ClientConnectionHandler) {
@@ -325,7 +325,7 @@ extension ClientConnectionHandler {
     }
   }
 
-  final class KeepaliveTimeoutHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
+  struct KeepaliveTimeoutHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
     private let handler: ClientConnectionHandler
 
     init(_ handler: ClientConnectionHandler) {
