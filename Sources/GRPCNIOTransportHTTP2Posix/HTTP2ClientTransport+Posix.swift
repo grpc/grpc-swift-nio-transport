@@ -128,6 +128,7 @@ extension HTTP2ClientTransport.Posix {
 
     private let sslContext: NIOSSLContext?
     private let serverHostname: String?
+    private let isPlainText: Bool
 
     init(eventLoopGroup: any EventLoopGroup, config: HTTP2ClientTransport.Posix.Config) throws {
       self.eventLoopGroup = eventLoopGroup
@@ -137,10 +138,12 @@ extension HTTP2ClientTransport.Posix {
       case .plaintext:
         self.sslContext = nil
         self.serverHostname = nil
+        self.isPlainText = true
       case .tls(let tlsConfig):
         do {
           self.sslContext = try NIOSSLContext(configuration: TLSConfiguration(tlsConfig))
           self.serverHostname = tlsConfig.serverHostname
+          self.isPlainText = false
         } catch {
           throw RuntimeError(
             code: .transportError,
@@ -174,7 +177,11 @@ extension HTTP2ClientTransport.Posix {
         }
       }
 
-      return HTTP2Connection(channel: channel, multiplexer: multiplexer, isPlaintext: true)
+      return HTTP2Connection(
+        channel: channel,
+        multiplexer: multiplexer,
+        isPlaintext: self.isPlainText
+      )
     }
   }
 }

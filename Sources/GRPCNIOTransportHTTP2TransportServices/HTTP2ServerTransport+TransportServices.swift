@@ -257,6 +257,20 @@ extension NWProtocolTLS.Options {
       sec_identity
     )
 
+    switch tlsConfig.clientCertificateVerification.wrapped {
+    case .doNotVerify:
+      sec_protocol_options_set_peer_authentication_required(
+        self.securityProtocolOptions,
+        false
+      )
+
+    case .fullVerification, .noHostnameVerification:
+      sec_protocol_options_set_peer_authentication_required(
+        self.securityProtocolOptions,
+        true
+      )
+    }
+
     sec_protocol_options_set_min_tls_protocol_version(
       self.securityProtocolOptions,
       .TLSv12
@@ -268,6 +282,8 @@ extension NWProtocolTLS.Options {
         `protocol`
       )
     }
+
+    self.setUpVerifyBlock(trustRootsSource: tlsConfig.trustRoots)
   }
 }
 #endif
