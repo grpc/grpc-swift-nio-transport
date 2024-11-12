@@ -199,11 +199,8 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
   }
 
   func testServerConfig_Defaults() throws {
-    try XCTSkipIf(true)
-
-    let identityProvider = Self.loadIdentity
     let grpcTLSConfig = HTTP2ServerTransport.TransportServices.Config.TLS.defaults(
-      identityProvider: identityProvider
+      identityProvider: Self.loadIdentity
     )
     let grpcConfig = HTTP2ServerTransport.TransportServices.Config.defaults(
       transportSecurity: .tls(grpcTLSConfig)
@@ -213,17 +210,15 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
     XCTAssertEqual(grpcConfig.connection, HTTP2ServerTransport.Config.Connection.defaults)
     XCTAssertEqual(grpcConfig.http2, HTTP2ServerTransport.Config.HTTP2.defaults)
     XCTAssertEqual(grpcConfig.rpc, HTTP2ServerTransport.Config.RPC.defaults)
-    XCTAssertEqual(try grpcTLSConfig.identityProvider(), try identityProvider())
+
+    XCTAssertNotNil(grpcTLSConfig.identityProvider)
+    XCTAssertEqual(grpcTLSConfig.trustRoots, .systemDefault)
+    XCTAssertEqual(grpcTLSConfig.clientCertificateVerification, .noVerification)
     XCTAssertEqual(grpcTLSConfig.requireALPN, false)
   }
 
   func testClientConfig_Defaults() throws {
-    try XCTSkipIf(true)
-
-    let identityProvider = Self.loadIdentity
-    let grpcTLSConfig = HTTP2ClientTransport.TransportServices.Config.TLS(
-      identityProvider: identityProvider
-    )
+    let grpcTLSConfig = HTTP2ClientTransport.TransportServices.Config.TLS.defaults()
     let grpcConfig = HTTP2ClientTransport.TransportServices.Config.defaults(
       transportSecurity: .tls(grpcTLSConfig)
     )
@@ -232,7 +227,11 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
     XCTAssertEqual(grpcConfig.connection, HTTP2ClientTransport.Config.Connection.defaults)
     XCTAssertEqual(grpcConfig.http2, HTTP2ClientTransport.Config.HTTP2.defaults)
     XCTAssertEqual(grpcConfig.backoff, HTTP2ClientTransport.Config.Backoff.defaults)
-    XCTAssertEqual(try grpcTLSConfig.identityProvider(), try identityProvider())
+
+    XCTAssertNil(grpcTLSConfig.identityProvider)
+    XCTAssertNil(grpcTLSConfig.serverHostname)
+    XCTAssertEqual(grpcTLSConfig.serverCertificateVerification, .fullVerification)
+    XCTAssertEqual(grpcTLSConfig.trustRoots, .systemDefault)
   }
 }
 #endif
