@@ -30,8 +30,8 @@ public enum TLSConfig: Sendable {
 
   /// A description of where a certificate is coming from: either a byte array or a file.
   /// The serialization format is specified by ``TLSConfig/SerializationFormat``.
-  public struct CertificateSource: Sendable {
-    package enum Wrapped {
+  public struct CertificateSource: Sendable, Equatable {
+    package enum Wrapped: Equatable {
       case file(path: String, format: SerializationFormat)
       case bytes(bytes: [UInt8], format: SerializationFormat)
     }
@@ -90,8 +90,8 @@ public enum TLSConfig: Sendable {
   }
 
   /// A description of where the trust roots are coming from: either a custom certificate chain, or the system default trust store.
-  public struct TrustRootsSource: Sendable {
-    package enum Wrapped {
+  public struct TrustRootsSource: Sendable, Equatable {
+    package enum Wrapped: Equatable {
       case certificates([CertificateSource])
       case systemDefault
     }
@@ -113,8 +113,8 @@ public enum TLSConfig: Sendable {
   }
 
   /// How to verify certificates.
-  public struct CertificateVerification: Sendable {
-    package enum Wrapped {
+  public struct CertificateVerification: Sendable, Equatable {
+    package enum Wrapped: Equatable {
       case doNotVerify
       case fullVerification
       case noHostnameVerification
