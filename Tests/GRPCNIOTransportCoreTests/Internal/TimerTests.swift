@@ -16,82 +16,100 @@
 
 import GRPCCore
 import GRPCNIOTransportCore
+import NIOCore
 import NIOEmbedded
 import Synchronization
 import XCTest
 
 internal final class TimerTests: XCTestCase {
-  func testScheduleOneOffTimer() {
-    let loop = EmbeddedEventLoop()
-    defer { try! loop.close() }
+  fileprivate struct CounterTimerHandler: NIOScheduledCallbackHandler {
+    let counter = AtomicCounter(0)
 
-    let value = Atomic(0)
-    var timer = Timer(delay: .seconds(1), repeat: false)
-    timer.schedule(on: loop) {
-      let (old, _) = value.add(1, ordering: .releasing)
-      XCTAssertEqual(old, 0)
-    }
-
-    loop.advanceTime(by: .milliseconds(999))
-    XCTAssertEqual(value.load(ordering: .acquiring), 0)
-    loop.advanceTime(by: .milliseconds(1))
-    XCTAssertEqual(value.load(ordering: .acquiring), 1)
-
-    // Run again to make sure the task wasn't repeated.
-    loop.advanceTime(by: .seconds(1))
-    XCTAssertEqual(value.load(ordering: .acquiring), 1)
-  }
-
-  func testCancelOneOffTimer() {
-    let loop = EmbeddedEventLoop()
-    defer { try! loop.close() }
-
-    var timer = Timer(delay: .seconds(1), repeat: false)
-    timer.schedule(on: loop) {
-      XCTFail("Timer wasn't cancelled")
-    }
-
-    loop.advanceTime(by: .milliseconds(999))
-    timer.cancel()
-    loop.advanceTime(by: .milliseconds(1))
-  }
-
-  func testScheduleRepeatedTimer() throws {
-    let loop = EmbeddedEventLoop()
-    defer { try! loop.close() }
-
-    let counter = AtomicCounter()
-    var timer = Timer(delay: .seconds(1), repeat: true)
-    timer.schedule(on: loop) {
+    func handleScheduledCallback(eventLoop: some EventLoop) {
       counter.increment()
     }
-
-    loop.advanceTime(by: .milliseconds(999))
-    XCTAssertEqual(counter.value, 0)
-    loop.advanceTime(by: .milliseconds(1))
-    XCTAssertEqual(counter.value, 1)
-
-    loop.advanceTime(by: .seconds(1))
-    XCTAssertEqual(counter.value, 2)
-    loop.advanceTime(by: .seconds(1))
-    XCTAssertEqual(counter.value, 3)
-
-    timer.cancel()
-    loop.advanceTime(by: .seconds(1))
-    XCTAssertEqual(counter.value, 3)
   }
 
-  func testCancelRepeatedTimer() {
+  func testOneOffTimer() {
     let loop = EmbeddedEventLoop()
     defer { try! loop.close() }
 
-    var timer = Timer(delay: .seconds(1), repeat: true)
-    timer.schedule(on: loop) {
-      XCTFail("Timer wasn't cancelled")
-    }
+    let handler = CounterTimerHandler()
+    let timer = Timer(eventLoop: loop, duration: .seconds(1), repeating: false, handler: handler)
+    timer.start()
 
+    // Timer hasn't fired because we haven't reached the required duration.
+    loop.advanceTime(by: .milliseconds(999))
+    XCTAssertEqual(handler.counter.value, 0)
+
+    // Timer has fired once.
+    loop.advanceTime(by: .milliseconds(1))
+    XCTAssertEqual(handler.counter.value, 1)
+
+    // Timer does not repeat.
+    loop.advanceTime(by: .seconds(1))
+    XCTAssertEqual(handler.counter.value, 1)
+
+    // Timer can be restarted and then fires again after the duration.
+    timer.start()
+    loop.advanceTime(by: .seconds(1))
+    XCTAssertEqual(handler.counter.value, 2)
+
+    // Timer can be cancelled before the duration and then does not fire.
+    timer.start()
     loop.advanceTime(by: .milliseconds(999))
     timer.cancel()
     loop.advanceTime(by: .milliseconds(1))
+    XCTAssertEqual(handler.counter.value, 2)
+
+    // Timer can be restarted after being cancelled.
+    timer.start()
+    loop.advanceTime(by: .seconds(1))
+    XCTAssertEqual(handler.counter.value, 3)
+  }
+
+  func testRepeatedTimer() {
+    let loop = EmbeddedEventLoop()
+    defer { try! loop.close() }
+
+    let handler = CounterTimerHandler()
+    let timer = Timer(eventLoop: loop, duration: .seconds(1), repeating: true, handler: handler)
+    timer.start()
+
+    // Timer hasn't fired because we haven't reached the required duration.
+    loop.advanceTime(by: .milliseconds(999))
+    XCTAssertEqual(handler.counter.value, 0)
+
+    // Timer has fired once.
+    loop.advanceTime(by: .milliseconds(1))
+    XCTAssertEqual(handler.counter.value, 1)
+
+    // Timer hasn't fired again because we haven't reached the required duration again.
+    loop.advanceTime(by: .milliseconds(999))
+    XCTAssertEqual(handler.counter.value, 1)
+
+    // Timer has fired again.
+    loop.advanceTime(by: .milliseconds(1))
+    XCTAssertEqual(handler.counter.value, 2)
+
+    // Timer continues to fire on each second.
+    loop.advanceTime(by: .seconds(1))
+    XCTAssertEqual(handler.counter.value, 3)
+    loop.advanceTime(by: .seconds(1))
+    XCTAssertEqual(handler.counter.value, 4)
+    loop.advanceTime(by: .seconds(1))
+    XCTAssertEqual(handler.counter.value, 5)
+    loop.advanceTime(by: .seconds(5))
+    XCTAssertEqual(handler.counter.value, 10)
+
+    // Timer does not fire again, after being cancelled.
+    timer.cancel()
+    loop.advanceTime(by: .seconds(5))
+    XCTAssertEqual(handler.counter.value, 10)
+
+    // Timer can be restarted after being cancelled and continues to fire once per second.
+    timer.start()
+    loop.advanceTime(by: .seconds(5))
+    XCTAssertEqual(handler.counter.value, 15)
   }
 }
