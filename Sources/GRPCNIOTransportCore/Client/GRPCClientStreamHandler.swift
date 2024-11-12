@@ -266,6 +266,8 @@ extension GRPCClientStreamHandler {
           // machine) then return.
           if self.requestFinished { return }
 
+          self.requestFinished = true
+
           // Write an empty data frame with the EOS flag set, to signal the RPC
           // request is now finished.
           context.write(
@@ -280,7 +282,6 @@ extension GRPCClientStreamHandler {
             promise: nil
           )
           context.flush()
-          self.requestFinished = true
           break loop
 
         case .awaitMoreMessages:
