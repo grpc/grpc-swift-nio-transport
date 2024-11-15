@@ -28,8 +28,8 @@ struct HTTP2TransportTLSEnabledTests {
 
   @Test(
     "When using defaults, server does not perform client verification",
-    arguments: [TransportKind/*.posix, */.transportServices],
-    [TransportKind/*.posix, */.transportServices]
+    arguments: [TransportKind.posix, .transportServices],
+    [TransportKind.posix, .transportServices]
   )
   func testRPC_Defaults_OK(
     clientTransport: TransportKind,
