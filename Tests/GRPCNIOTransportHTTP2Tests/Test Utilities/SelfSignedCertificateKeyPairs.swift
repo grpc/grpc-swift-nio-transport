@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import SwiftASN1
-import X509
 import Crypto
 import Foundation
+import SwiftASN1
+import X509
 
 struct SelfSignedCertificateKeyPairs {
   struct CertificateKeyPair {
