@@ -154,7 +154,9 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
     let certificateKeyPairs = try SelfSignedCertificateKeyPairs()
     let password = "somepassword"
     let bundle = NIOSSLPKCS12Bundle(
-      certificateChain: [try NIOSSLCertificate(bytes: certificateKeyPairs.server.certificate, format: .der)],
+      certificateChain: [
+        try NIOSSLCertificate(bytes: certificateKeyPairs.server.certificate, format: .der)
+      ],
       privateKey: try NIOSSLPrivateKey(bytes: certificateKeyPairs.server.key, format: .der)
     )
     let pkcs12Bytes = try bundle.serialize(passphrase: password.utf8)
