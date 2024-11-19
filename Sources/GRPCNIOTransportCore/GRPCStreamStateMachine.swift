@@ -659,7 +659,8 @@ extension GRPCStreamStateMachine {
     }
 
     for metadataPair in customMetadata {
-      headers.add(name: metadataPair.key, value: metadataPair.value.encoded())
+      // Lowercase the field names for user-provided metadata.
+      headers.add(name: metadataPair.key.lowercased(), value: metadataPair.value.encoded())
     }
 
     return headers
@@ -1248,7 +1249,8 @@ extension GRPCStreamStateMachine {
     }
 
     for metadataPair in customMetadata {
-      headers.add(name: metadataPair.key, value: metadataPair.value.encoded())
+      // Lowercase the field names for user-provided metadata.
+      headers.add(name: metadataPair.key.lowercased(), value: metadataPair.value.encoded())
     }
   }
 
@@ -1827,7 +1829,8 @@ extension HPACKHeaders {
     }
 
     for (key, value) in metadata {
-      trailers.add(name: key, value: value.encoded())
+      // Lowercase the field names for user-provided metadata.
+      trailers.add(name: key.lowercased(), value: value.encoded())
     }
   }
 }

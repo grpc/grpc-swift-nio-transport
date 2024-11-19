@@ -1446,6 +1446,38 @@ final class HTTP2TransportTests: XCTestCase {
       }
     }
   }
+
+  func testUppercaseClientMetadataKey() async throws {
+    try await self.forEachTransportPair { control, _, _ in
+      let request = ClientRequest<ControlInput>(
+        message: .with {
+          $0.echoMetadataInHeaders = true
+          $0.numberOfMessages = 1
+        },
+        metadata: ["UPPERCASE-KEY": "value"]
+      )
+      try await control.unary(request: request) { response in
+        // Keys will be lowercase before being sent over the wire.
+        XCTAssertEqual(Array(response.metadata["echo-uppercase-key"]), ["value"])
+      }
+    }
+  }
+
+  func testUppercaseServerMetadataKey() async throws {
+    try await self.forEachTransportPair { control, _, _ in
+      let request = ClientRequest<ControlInput>(
+        message: .with {
+          $0.initialMetadataToAdd["UPPERCASE-KEY"] = "initial"
+          $0.trailingMetadataToAdd["UPPERCASE-KEY"] = "trailing"
+          $0.numberOfMessages = 1
+        }
+      )
+      try await control.unary(request: request) { response in
+        XCTAssertEqual(Array(response.metadata["uppercase-key"]), ["initial"])
+        XCTAssertEqual(Array(response.trailingMetadata["uppercase-key"]), ["trailing"])
+      }
+    }
+  }
 }
 
 extension [HTTP2TransportTests.Transport] {
