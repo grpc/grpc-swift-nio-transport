@@ -27,7 +27,7 @@ import XCTest
 final class GRPCClientStreamHandlerTests: XCTestCase {
   func testH2FramesAreIgnored() throws {
     let handler = GRPCClientStreamHandler(
-      methodDescriptor: .init(service: "test", method: "test"),
+      methodDescriptor: .testTest,
       scheme: .http,
       outboundEncoding: .none,
       acceptedEncodings: [],
@@ -58,7 +58,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
 
   func testServerInitialMetadataMissingHTTPStatusCodeResultsInFinishedRPC() throws {
     let handler = GRPCClientStreamHandler(
-      methodDescriptor: .init(service: "test", method: "test"),
+      methodDescriptor: .testTest,
       scheme: .http,
       outboundEncoding: .none,
       acceptedEncodings: [],
@@ -94,7 +94,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
 
   func testServerInitialMetadata1xxHTTPStatusCodeResultsInNothingRead() throws {
     let handler = GRPCClientStreamHandler(
-      methodDescriptor: .init(service: "test", method: "test"),
+      methodDescriptor: .testTest,
       scheme: .http,
       outboundEncoding: .none,
       acceptedEncodings: [],
@@ -125,7 +125,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
 
   func testServerInitialMetadataOtherNon200HTTPStatusCodeResultsInFinishedRPC() throws {
     let handler = GRPCClientStreamHandler(
-      methodDescriptor: .init(service: "test", method: "test"),
+      methodDescriptor: .testTest,
       scheme: .http,
       outboundEncoding: .none,
       acceptedEncodings: [],
@@ -162,7 +162,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
 
   func testServerInitialMetadataMissingContentTypeResultsInFinishedRPC() throws {
     let handler = GRPCClientStreamHandler(
-      methodDescriptor: .init(service: "test", method: "test"),
+      methodDescriptor: .testTest,
       scheme: .http,
       outboundEncoding: .none,
       acceptedEncodings: [],
@@ -198,7 +198,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
 
   func testNotAcceptedEncodingResultsInFinishedRPC() throws {
     let handler = GRPCClientStreamHandler(
-      methodDescriptor: .init(service: "test", method: "test"),
+      methodDescriptor: .testTest,
       scheme: .http,
       outboundEncoding: .deflate,
       acceptedEncodings: [.deflate],
@@ -256,7 +256,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
 
   func testOverMaximumPayloadSize() throws {
     let handler = GRPCClientStreamHandler(
-      methodDescriptor: .init(service: "test", method: "test"),
+      methodDescriptor: .testTest,
       scheme: .http,
       outboundEncoding: .none,
       acceptedEncodings: [],
@@ -323,7 +323,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
 
   func testServerSendsEOSWhenSendingMessage_ResultsInErrorStatus() throws {
     let handler = GRPCClientStreamHandler(
-      methodDescriptor: .init(service: "test", method: "test"),
+      methodDescriptor: .testTest,
       scheme: .http,
       outboundEncoding: .none,
       acceptedEncodings: [],
@@ -391,7 +391,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
 
   func testServerEndsStream() throws {
     let handler = GRPCClientStreamHandler(
-      methodDescriptor: .init(service: "test", method: "test"),
+      methodDescriptor: .testTest,
       scheme: .http,
       outboundEncoding: .none,
       acceptedEncodings: [],
@@ -457,7 +457,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
 
   func testNormalFlow() throws {
     let handler = GRPCClientStreamHandler(
-      methodDescriptor: .init(service: "test", method: "test"),
+      methodDescriptor: .testTest,
       scheme: .http,
       outboundEncoding: .none,
       acceptedEncodings: [],
@@ -575,7 +575,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
 
   func testReceiveMessageSplitAcrossMultipleBuffers() throws {
     let handler = GRPCClientStreamHandler(
-      methodDescriptor: .init(service: "test", method: "test"),
+      methodDescriptor: .testTest,
       scheme: .http,
       outboundEncoding: .none,
       acceptedEncodings: [],
@@ -680,7 +680,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
 
   func testSendMultipleMessagesInSingleBuffer() throws {
     let handler = GRPCClientStreamHandler(
-      methodDescriptor: .init(service: "test", method: "test"),
+      methodDescriptor: .testTest,
       scheme: .http,
       outboundEncoding: .none,
       acceptedEncodings: [],
@@ -764,7 +764,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
 
   func testUnexpectedStreamClose_ErrorFired() throws {
     let handler = GRPCClientStreamHandler(
-      methodDescriptor: .init(service: "test", method: "test"),
+      methodDescriptor: .testTest,
       scheme: .http,
       outboundEncoding: .none,
       acceptedEncodings: [],
@@ -814,7 +814,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
 
   func testUnexpectedStreamClose_ChannelInactive() throws {
     let handler = GRPCClientStreamHandler(
-      methodDescriptor: .init(service: "test", method: "test"),
+      methodDescriptor: .testTest,
       scheme: .http,
       outboundEncoding: .none,
       acceptedEncodings: [],
@@ -860,7 +860,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
 
   func testUnexpectedStreamClose_ResetStreamFrame() throws {
     let handler = GRPCClientStreamHandler(
-      methodDescriptor: .init(service: "test", method: "test"),
+      methodDescriptor: .testTest,
       scheme: .http,
       outboundEncoding: .none,
       acceptedEncodings: [],
@@ -938,4 +938,8 @@ extension EmbeddedChannel {
 
 private enum TestError: Error {
   case assertionFailure(String)
+}
+
+extension MethodDescriptor {
+  static let testTest = Self(fullyQualifiedService: "test", method: "test")
 }

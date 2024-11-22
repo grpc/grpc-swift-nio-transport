@@ -53,7 +53,10 @@ package struct MethodConfigs: Sendable, Hashable {
   ///  - descriptor: The ``MethodDescriptor`` for which to get or set a ``MethodConfig``.
   package subscript(_ descriptor: MethodDescriptor) -> MethodConfig? {
     get {
-      var name = MethodConfig.Name(service: descriptor.service, method: descriptor.method)
+      var name = MethodConfig.Name(
+        service: descriptor.service.fullyQualifiedService,
+        method: descriptor.method
+      )
 
       if let configuration = self.elements[name] {
         return configuration
@@ -72,7 +75,10 @@ package struct MethodConfigs: Sendable, Hashable {
     }
 
     set {
-      let name = MethodConfig.Name(service: descriptor.service, method: descriptor.method)
+      let name = MethodConfig.Name(
+        service: descriptor.service.fullyQualifiedService,
+        method: descriptor.method
+      )
       self.elements[name] = newValue
     }
   }
