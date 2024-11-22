@@ -143,7 +143,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
     var stateMachine = GRPCStreamStateMachine(
       configuration: .client(
         .init(
-          methodDescriptor: .init(service: "test", method: "test"),
+          methodDescriptor: .testTest,
           scheme: .http,
           outboundEncoding: compressionEnabled ? .deflate : .none,
           acceptedEncodings: [.deflate]
@@ -1847,8 +1847,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
       ":method": "POST",
       "content-type": "application/grpc",
     ]
-    let descriptor = MethodDescriptor(service: "test", method: "test")
-    XCTAssertEqual(action, .receivedMetadata(metadata, descriptor))
+    XCTAssertEqual(action, .receivedMetadata(metadata, .testTest))
   }
 
   func testReceiveMetadataWhenClientIdleAndServerIdle_MissingMethod() throws {

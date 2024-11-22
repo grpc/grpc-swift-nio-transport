@@ -18,16 +18,19 @@ import GRPCCore
 
 extension MethodDescriptor {
   static var echoGet: Self {
-    MethodDescriptor(service: "echo.Echo", method: "Get")
+    MethodDescriptor(fullyQualifiedService: "echo.Echo", method: "Get")
   }
 
   static var echoUpdate: Self {
-    MethodDescriptor(service: "echo.Echo", method: "Update")
+    MethodDescriptor(fullyQualifiedService: "echo.Echo", method: "Update")
   }
 }
 
 extension MethodConfig.Name {
   init(_ descriptor: MethodDescriptor) {
-    self = MethodConfig.Name(service: descriptor.service, method: descriptor.method)
+    self = MethodConfig.Name(
+      service: descriptor.service.fullyQualifiedService,
+      method: descriptor.method
+    )
   }
 }
