@@ -145,6 +145,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
         .init(
           methodDescriptor: .testTest,
           scheme: .http,
+          authority: nil,
           outboundEncoding: compressionEnabled ? .deflate : .none,
           acceptedEncodings: [.deflate]
         )

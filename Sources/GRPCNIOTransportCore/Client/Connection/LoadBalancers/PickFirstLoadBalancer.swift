@@ -77,6 +77,10 @@ package final class PickFirstLoadBalancer: Sendable {
   /// A connector, capable of creating connections.
   private let connector: any HTTP2Connector
 
+  /// The server authority. If `nil`, a value will be computed based on the endpoint being
+  /// connected to.
+  private let authority: String?
+
   /// Connection backoff configuration.
   private let backoff: ConnectionBackoff
 
@@ -94,11 +98,13 @@ package final class PickFirstLoadBalancer: Sendable {
 
   package init(
     connector: any HTTP2Connector,
+    authority: String?,
     backoff: ConnectionBackoff,
     defaultCompression: CompressionAlgorithm,
     enabledCompression: CompressionAlgorithmSet
   ) {
     self.connector = connector
+    self.authority = authority
     self.backoff = backoff
     self.defaultCompression = defaultCompression
     self.enabledCompression = enabledCompression
@@ -174,6 +180,7 @@ extension PickFirstLoadBalancer {
           endpoint: endpoint,
           id: id,
           connector: self.connector,
+          authority: self.authority,
           backoff: self.backoff,
           defaultCompression: self.defaultCompression,
           enabledCompression: self.enabledCompression

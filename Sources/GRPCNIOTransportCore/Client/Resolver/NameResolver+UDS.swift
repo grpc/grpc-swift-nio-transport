@@ -25,18 +25,32 @@ extension ResolvableTargets {
     /// The Unix Domain Socket address.
     public var address: SocketAddress.UnixDomainSocket
 
+    /// The authority of the service.
+    ///
+    /// If unset then the path of the address will be used.
+    public var authority: String?
+
     /// Create a new Unix Domain Socket address.
-    public init(address: SocketAddress.UnixDomainSocket) {
+    public init(address: SocketAddress.UnixDomainSocket, authority: String?) {
       self.address = address
+      self.authority = authority
     }
   }
 }
 
 extension ResolvableTarget where Self == ResolvableTargets.UnixDomainSocket {
   /// Creates a new resolvable Unix Domain Socket target.
-  /// - Parameter path: The path of the socket.
-  public static func unixDomainSocket(path: String) -> Self {
-    return Self(address: SocketAddress.UnixDomainSocket(path: path))
+  /// - Parameters
+  ///   - path: The path of the socket.
+  ///   - authority: The service authority.
+  public static func unixDomainSocket(
+    path: String,
+    authority: String? = nil
+  ) -> Self {
+    return Self(
+      address: SocketAddress.UnixDomainSocket(path: path),
+      authority: authority
+    )
   }
 }
 
@@ -53,7 +67,11 @@ extension NameResolvers {
     public func resolver(for target: Target) -> NameResolver {
       let endpoint = Endpoint(addresses: [.unixDomainSocket(target.address)])
       let resolutionResult = NameResolutionResult(endpoints: [endpoint], serviceConfig: nil)
-      return NameResolver(names: .constant(resolutionResult), updateMode: .pull)
+      return NameResolver(
+        names: .constant(resolutionResult),
+        updateMode: .pull,
+        authority: target.authority ?? target.address.path
+      )
     }
   }
 }

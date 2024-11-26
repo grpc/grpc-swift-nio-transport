@@ -127,7 +127,6 @@ extension HTTP2ClientTransport.Posix {
     private let eventLoopGroup: any EventLoopGroup
 
     private let sslContext: NIOSSLContext?
-    private let serverHostname: String?
     private let isPlainText: Bool
 
     init(eventLoopGroup: any EventLoopGroup, config: HTTP2ClientTransport.Posix.Config) throws {
@@ -137,12 +136,10 @@ extension HTTP2ClientTransport.Posix {
       switch self.config.transportSecurity.wrapped {
       case .plaintext:
         self.sslContext = nil
-        self.serverHostname = nil
         self.isPlainText = true
       case .tls(let tlsConfig):
         do {
           self.sslContext = try NIOSSLContext(configuration: TLSConfiguration(tlsConfig))
-          self.serverHostname = tlsConfig.serverHostname
           self.isPlainText = false
         } catch {
           throw RuntimeError(
@@ -155,7 +152,8 @@ extension HTTP2ClientTransport.Posix {
     }
 
     func establishConnection(
-      to address: GRPCNIOTransportCore.SocketAddress
+      to address: GRPCNIOTransportCore.SocketAddress,
+      authority: String?
     ) async throws -> HTTP2Connection {
       let (channel, multiplexer) = try await ClientBootstrap(
         group: self.eventLoopGroup
@@ -165,7 +163,7 @@ extension HTTP2ClientTransport.Posix {
             try channel.pipeline.syncOperations.addHandler(
               NIOSSLClientHandler(
                 context: sslContext,
-                serverHostname: self.serverHostname
+                serverHostname: authority
               )
             )
           }

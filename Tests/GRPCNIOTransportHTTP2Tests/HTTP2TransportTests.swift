@@ -1442,7 +1442,6 @@ final class HTTP2TransportTests: XCTestCase {
           let responses = try await response.messages.reduce(into: []) { $0.append($1) }
           XCTAssert(responses.isEmpty)
         }
-
       }
     }
   }
@@ -1476,6 +1475,143 @@ final class HTTP2TransportTests: XCTestCase {
         XCTAssertEqual(Array(response.metadata["uppercase-key"]), ["initial"])
         XCTAssertEqual(Array(response.trailingMetadata["uppercase-key"]), ["trailing"])
       }
+    }
+  }
+
+  private func checkAuthority(client: GRPCClient, expected: String) async throws {
+    let control = ControlClient(wrapping: client)
+    let input = ControlInput.with {
+      $0.echoMetadataInHeaders = true
+      $0.echoMetadataInTrailers = true
+      $0.numberOfMessages = 1
+      $0.payloadParameters = .with {
+        $0.content = 0
+        $0.size = 1024
+      }
+    }
+
+    try await control.unary(request: ClientRequest(message: input)) { response in
+      let initial = response.metadata
+      XCTAssertEqual(Array(initial["echo-authority"]), [.string(expected)])
+    }
+  }
+
+  private func testAuthority(
+    serverAddress: SocketAddress,
+    authorityOverride override: String? = nil,
+    clientTarget: (SocketAddress) -> any ResolvableTarget,
+    expectedAuthority: (SocketAddress) -> String
+  ) async throws {
+    try await withGRPCServer(
+      transport: .http2NIOPosix(
+        address: serverAddress,
+        config: .defaults(transportSecurity: .plaintext)
+      ),
+      services: [ControlService()]
+    ) { server in
+      guard let listeningAddress = try await server.listeningAddress else {
+        XCTFail("No listening address")
+        return
+      }
+
+      let target = clientTarget(listeningAddress)
+      try await withGRPCClient(
+        transport: .http2NIOPosix(
+          target: target,
+          config: .defaults(transportSecurity: .plaintext) {
+            $0.http2.authority = override
+          }
+        )
+      ) { client in
+        try await self.checkAuthority(client: client, expected: expectedAuthority(listeningAddress))
+      }
+    }
+  }
+
+  func testAuthorityDNS() async throws {
+    try await self.testAuthority(serverAddress: .ipv4(host: "127.0.0.1", port: 0)) { address in
+      return .dns(host: "localhost", port: address.ipv4!.port)
+    } expectedAuthority: { address in
+      return "localhost:\(address.ipv4!.port)"
+    }
+  }
+
+  func testOverrideAuthorityDNS() async throws {
+    try await self.testAuthority(
+      serverAddress: .ipv4(host: "127.0.0.1", port: 0),
+      authorityOverride: "respect-my-authority"
+    ) { address in
+      return .dns(host: "localhost", port: address.ipv4!.port)
+    } expectedAuthority: { _ in
+      return "respect-my-authority"
+    }
+  }
+
+  func testAuthorityIPv4() async throws {
+    try await self.testAuthority(serverAddress: .ipv4(host: "127.0.0.1", port: 0)) { address in
+      return .ipv4(host: "127.0.0.1", port: address.ipv4!.port)
+    } expectedAuthority: { address in
+      return "127.0.0.1:\(address.ipv4!.port)"
+    }
+  }
+
+  func testOverrideAuthorityIPv4() async throws {
+    try await self.testAuthority(
+      serverAddress: .ipv4(host: "127.0.0.1", port: 0),
+      authorityOverride: "respect-my-authority"
+    ) { address in
+      return .ipv4(host: "127.0.0.1", port: address.ipv4!.port)
+    } expectedAuthority: { _ in
+      return "respect-my-authority"
+    }
+  }
+
+  func testAuthorityIPv6() async throws {
+    try await self.testAuthority(serverAddress: .ipv6(host: "::1", port: 0)) { address in
+      return .ipv6(host: "::1", port: address.ipv6!.port)
+    } expectedAuthority: { address in
+      return "[::1]:\(address.ipv6!.port)"
+    }
+  }
+
+  func testOverrideAuthorityIPv6() async throws {
+    try await self.testAuthority(
+      serverAddress: .ipv6(host: "::1", port: 0),
+      authorityOverride: "respect-my-authority"
+    ) { address in
+      return .ipv6(host: "::1", port: address.ipv6!.port)
+    } expectedAuthority: { _ in
+      return "respect-my-authority"
+    }
+  }
+
+  func testAuthorityUDS() async throws {
+    let path = "test-authority-uds"
+    try await self.testAuthority(serverAddress: .unixDomainSocket(path: path)) { address in
+      return .unixDomainSocket(path: path)
+    } expectedAuthority: { _ in
+      return path
+    }
+  }
+
+  func testAuthorityLocalUDSOverride() async throws {
+    let path = "test-authority-local-uds-override"
+    try await self.testAuthority(serverAddress: .unixDomainSocket(path: path)) { address in
+      return .unixDomainSocket(path: path, authority: "respect-my-authority")
+    } expectedAuthority: { _ in
+      return "respect-my-authority"
+    }
+  }
+
+  func testOverrideAuthorityUDS() async throws {
+    let path = "test-override-authority-uds"
+    try await self.testAuthority(
+      serverAddress: .unixDomainSocket(path: path),
+      authorityOverride: "respect-my-authority"
+    ) { _ in
+      return .unixDomainSocket(path: path, authority: "should-be-ignored")
+    } expectedAuthority: { _ in
+      return "respect-my-authority"
     }
   }
 }

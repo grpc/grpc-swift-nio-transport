@@ -85,6 +85,10 @@ package final class Connection: Sendable {
   /// The address to connect to.
   private let address: SocketAddress
 
+  /// The server authority. If `nil`, a value will be computed based on the endpoint being
+  /// connected to.
+  private let authority: String?
+
   /// The default compression algorithm used for requests.
   private let defaultCompression: CompressionAlgorithm
 
@@ -109,11 +113,13 @@ package final class Connection: Sendable {
 
   package init(
     address: SocketAddress,
+    authority: String?,
     http2Connector: any HTTP2Connector,
     defaultCompression: CompressionAlgorithm,
     enabledCompression: CompressionAlgorithmSet
   ) {
     self.address = address
+    self.authority = authority
     self.defaultCompression = defaultCompression
     self.enabledCompression = enabledCompression
     self.http2Connector = http2Connector
@@ -129,7 +135,10 @@ package final class Connection: Sendable {
   package func run() async {
     func establishConnectionOrThrow() async throws(RPCError) -> HTTP2Connection {
       do {
-        return try await self.http2Connector.establishConnection(to: self.address)
+        return try await self.http2Connector.establishConnection(
+          to: self.address,
+          authority: self.authority ?? self.address.sniHostname
+        )
       } catch let error as RPCError {
         throw error
       } catch {
@@ -214,6 +223,7 @@ package final class Connection: Sendable {
           let streamHandler = GRPCClientStreamHandler(
             methodDescriptor: descriptor,
             scheme: scheme,
+            authority: self.authority ?? self.address.authority,
             outboundEncoding: compression,
             acceptedEncodings: self.enabledCompression,
             maxPayloadSize: maxRequestSize

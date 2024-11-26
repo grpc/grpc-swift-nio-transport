@@ -19,7 +19,10 @@ package import NIOHTTP2
 internal import NIOPosix
 
 package protocol HTTP2Connector: Sendable {
-  func establishConnection(to address: SocketAddress) async throws -> HTTP2Connection
+  func establishConnection(
+    to address: SocketAddress,
+    authority: String?
+  ) async throws -> HTTP2Connection
 }
 
 package struct HTTP2Connection: Sendable {

@@ -29,6 +29,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     let handler = GRPCClientStreamHandler(
       methodDescriptor: .testTest,
       scheme: .http,
+      authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
       maxPayloadSize: 1
@@ -60,6 +61,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     let handler = GRPCClientStreamHandler(
       methodDescriptor: .testTest,
       scheme: .http,
+      authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
       maxPayloadSize: 1,
@@ -96,6 +98,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     let handler = GRPCClientStreamHandler(
       methodDescriptor: .testTest,
       scheme: .http,
+      authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
       maxPayloadSize: 1,
@@ -127,6 +130,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     let handler = GRPCClientStreamHandler(
       methodDescriptor: .testTest,
       scheme: .http,
+      authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
       maxPayloadSize: 1,
@@ -164,6 +168,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     let handler = GRPCClientStreamHandler(
       methodDescriptor: .testTest,
       scheme: .http,
+      authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
       maxPayloadSize: 1,
@@ -200,6 +205,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     let handler = GRPCClientStreamHandler(
       methodDescriptor: .testTest,
       scheme: .http,
+      authority: nil,
       outboundEncoding: .deflate,
       acceptedEncodings: [.deflate],
       maxPayloadSize: 1
@@ -258,6 +264,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     let handler = GRPCClientStreamHandler(
       methodDescriptor: .testTest,
       scheme: .http,
+      authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
       maxPayloadSize: 1,
@@ -325,6 +332,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     let handler = GRPCClientStreamHandler(
       methodDescriptor: .testTest,
       scheme: .http,
+      authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
       maxPayloadSize: 100,
@@ -393,6 +401,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     let handler = GRPCClientStreamHandler(
       methodDescriptor: .testTest,
       scheme: .http,
+      authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
       maxPayloadSize: 1,
@@ -459,6 +468,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     let handler = GRPCClientStreamHandler(
       methodDescriptor: .testTest,
       scheme: .http,
+      authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
       maxPayloadSize: 100,
@@ -577,6 +587,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     let handler = GRPCClientStreamHandler(
       methodDescriptor: .testTest,
       scheme: .http,
+      authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
       maxPayloadSize: 100,
@@ -682,6 +693,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     let handler = GRPCClientStreamHandler(
       methodDescriptor: .testTest,
       scheme: .http,
+      authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
       maxPayloadSize: 100,
@@ -766,6 +778,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     let handler = GRPCClientStreamHandler(
       methodDescriptor: .testTest,
       scheme: .http,
+      authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
       maxPayloadSize: 1,
@@ -816,6 +829,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     let handler = GRPCClientStreamHandler(
       methodDescriptor: .testTest,
       scheme: .http,
+      authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
       maxPayloadSize: 1,
@@ -862,6 +876,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     let handler = GRPCClientStreamHandler(
       methodDescriptor: .testTest,
       scheme: .http,
+      authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
       maxPayloadSize: 1,

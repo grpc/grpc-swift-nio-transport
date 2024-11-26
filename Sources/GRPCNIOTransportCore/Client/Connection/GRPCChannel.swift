@@ -52,6 +52,10 @@ package final class GRPCChannel: ClientTransport {
   /// A factory for connections.
   private let connector: any HTTP2Connector
 
+  /// The server authority. If `nil`, a value will be computed based on the endpoint being
+  /// connected to.
+  private let authority: String?
+
   /// The connection backoff configuration used by the subchannel when establishing a connection.
   private let backoff: ConnectionBackoff
 
@@ -81,6 +85,12 @@ package final class GRPCChannel: ClientTransport {
     self._connectivityState = AsyncStream.makeStream()
     self.input = AsyncStream.makeStream()
     self.connector = connector
+
+    if let authority = config.http2.authority ?? resolver.authority {
+      self.authority = PercentEncoding.encodeAuthority(authority)
+    } else {
+      self.authority = nil
+    }
 
     self.backoff = ConnectionBackoff(
       initial: config.backoff.initial,
@@ -446,6 +456,7 @@ extension GRPCChannel {
         state.changeLoadBalancerKind(to: loadBalancerConfig) {
           let loadBalancer = RoundRobinLoadBalancer(
             connector: self.connector,
+            authority: self.authority,
             backoff: self.backoff,
             defaultCompression: self.defaultCompression,
             enabledCompression: self.enabledCompression
@@ -463,6 +474,7 @@ extension GRPCChannel {
         state.changeLoadBalancerKind(to: loadBalancerConfig) {
           let loadBalancer = PickFirstLoadBalancer(
             connector: self.connector,
+            authority: self.authority,
             backoff: self.backoff,
             defaultCompression: self.defaultCompression,
             enabledCompression: self.enabledCompression

@@ -159,28 +159,22 @@ extension HTTP2ClientTransport.Posix.Config {
     /// The trust roots to be used when verifying server certificates.
     public var trustRoots: TLSConfig.TrustRootsSource
 
-    /// An optional server hostname to use when verifying certificates.
-    public var serverHostname: String?
-
     /// Create a new HTTP2 NIO Posix client transport TLS config.
     /// - Parameters:
     ///   - certificateChain: The certificates the client will offer during negotiation.
     ///   - privateKey: The private key associated with the leaf certificate.
     ///   - serverCertificateVerification: How to verify the server certificate, if one is presented.
     ///   - trustRoots: The trust roots to be used when verifying server certificates.
-    ///   - serverHostname: An optional server hostname to use when verifying certificates.
     public init(
       certificateChain: [TLSConfig.CertificateSource],
       privateKey: TLSConfig.PrivateKeySource?,
       serverCertificateVerification: TLSConfig.CertificateVerification,
-      trustRoots: TLSConfig.TrustRootsSource,
-      serverHostname: String?
+      trustRoots: TLSConfig.TrustRootsSource
     ) {
       self.certificateChain = certificateChain
       self.privateKey = privateKey
       self.serverCertificateVerification = serverCertificateVerification
       self.trustRoots = trustRoots
-      self.serverHostname = serverHostname
     }
 
     /// Create a new HTTP2 NIO Posix transport TLS config, with some values defaulted:
@@ -188,7 +182,6 @@ extension HTTP2ClientTransport.Posix.Config {
     /// - `privateKey` equals `nil`
     /// - `serverCertificateVerification` equals `fullVerification`
     /// - `trustRoots` equals `systemDefault`
-    /// - `serverHostname` equals `nil`
     ///
     /// - Parameters:
     ///   - configure: A closure which allows you to modify the defaults before returning them.
@@ -200,8 +193,7 @@ extension HTTP2ClientTransport.Posix.Config {
         certificateChain: [],
         privateKey: nil,
         serverCertificateVerification: .fullVerification,
-        trustRoots: .systemDefault,
-        serverHostname: nil
+        trustRoots: .systemDefault
       )
       configure(&config)
       return config
@@ -212,14 +204,12 @@ extension HTTP2ClientTransport.Posix.Config {
     /// - `privateKey` equals `nil`
     /// - `serverCertificateVerification` equals `fullVerification`
     /// - `trustRoots` equals `systemDefault`
-    /// - `serverHostname` equals `nil`
     public static var defaults: Self { .defaults() }
 
     /// Create a new HTTP2 NIO Posix transport TLS config, with some values defaulted to match
     /// the requirements of mTLS:
     /// - `trustRoots` equals `systemDefault`
     /// - `serverCertificateVerification` equals `fullVerification`
-    /// - `serverHostname` equals `nil`
     ///
     /// - Parameters:
     ///   - certificateChain: The certificates the client will offer during negotiation.
@@ -235,8 +225,7 @@ extension HTTP2ClientTransport.Posix.Config {
         certificateChain: certificateChain,
         privateKey: privateKey,
         serverCertificateVerification: .fullVerification,
-        trustRoots: .systemDefault,
-        serverHostname: nil
+        trustRoots: .systemDefault
       )
       configure(&config)
       return config
