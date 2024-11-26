@@ -1759,7 +1759,7 @@ extension MethodDescriptor {
     view.formIndex(after: &index)
     let method = String(view[index...])
 
-    self.init(service: service, method: method)
+    self.init(service: ServiceDescriptor(fullyQualifiedService: service), method: method)
   }
 }
 

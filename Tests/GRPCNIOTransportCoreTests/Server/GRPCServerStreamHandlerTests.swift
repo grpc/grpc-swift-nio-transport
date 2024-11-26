@@ -763,7 +763,7 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
 
     XCTAssertEqual(
       try promise.futureResult.wait(),
-      MethodDescriptor(service: "SomeService", method: "SomeMethod")
+      MethodDescriptor(fullyQualifiedService: "SomeService", method: "SomeMethod")
     )
   }
 

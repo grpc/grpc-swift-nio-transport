@@ -20,7 +20,7 @@ import GRPCCore
 struct ControlService: RegistrableRPCService {
   func registerMethods(with router: inout RPCRouter) {
     router.registerHandler(
-      forMethod: MethodDescriptor(service: "Control", method: "Unary"),
+      forMethod: MethodDescriptor(fullyQualifiedService: "Control", method: "Unary"),
       deserializer: JSONDeserializer<ControlInput>(),
       serializer: JSONSerializer<ControlOutput>(),
       handler: { request, context in
@@ -28,7 +28,7 @@ struct ControlService: RegistrableRPCService {
       }
     )
     router.registerHandler(
-      forMethod: MethodDescriptor(service: "Control", method: "ServerStream"),
+      forMethod: MethodDescriptor(fullyQualifiedService: "Control", method: "ServerStream"),
       deserializer: JSONDeserializer<ControlInput>(),
       serializer: JSONSerializer<ControlOutput>(),
       handler: { request, context in
@@ -36,7 +36,7 @@ struct ControlService: RegistrableRPCService {
       }
     )
     router.registerHandler(
-      forMethod: MethodDescriptor(service: "Control", method: "ClientStream"),
+      forMethod: MethodDescriptor(fullyQualifiedService: "Control", method: "ClientStream"),
       deserializer: JSONDeserializer<ControlInput>(),
       serializer: JSONSerializer<ControlOutput>(),
       handler: { request, context in
@@ -44,7 +44,7 @@ struct ControlService: RegistrableRPCService {
       }
     )
     router.registerHandler(
-      forMethod: MethodDescriptor(service: "Control", method: "BidiStream"),
+      forMethod: MethodDescriptor(fullyQualifiedService: "Control", method: "BidiStream"),
       deserializer: JSONDeserializer<ControlInput>(),
       serializer: JSONSerializer<ControlOutput>(),
       handler: { request, context in
@@ -52,7 +52,7 @@ struct ControlService: RegistrableRPCService {
       }
     )
     router.registerHandler(
-      forMethod: MethodDescriptor(service: "Control", method: "WaitForCancellation"),
+      forMethod: MethodDescriptor(fullyQualifiedService: "Control", method: "WaitForCancellation"),
       deserializer: JSONDeserializer<CancellationKind>(),
       serializer: JSONSerializer<Empty>(),
       handler: { request, context in
