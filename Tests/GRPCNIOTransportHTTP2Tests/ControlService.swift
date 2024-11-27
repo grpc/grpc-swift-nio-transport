@@ -102,7 +102,10 @@ extension ControlService {
 
     // Check if the request is for a trailers-only response.
     if let status = message.status, message.isTrailersOnly {
-      let trailers = message.echoMetadataInTrailers ? request.metadata.echo() : [:]
+      var trailers = message.echoMetadataInTrailers ? request.metadata.echo() : [:]
+      for (key, value) in message.trailingMetadataToAdd {
+        trailers.addString(value, forKey: key)
+      }
       let code = Status.Code(rawValue: status.code.rawValue).flatMap { RPCError.Code($0) }
 
       if let code = code {
@@ -117,7 +120,10 @@ extension ControlService {
     }
 
     // Not a trailers-only response. Should the metadata be echo'd back?
-    let metadata = message.echoMetadataInHeaders ? request.metadata.echo() : [:]
+    var metadata = message.echoMetadataInHeaders ? request.metadata.echo() : [:]
+    for (key, value) in message.initialMetadataToAdd {
+      metadata.addString(value, forKey: key)
+    }
 
     // The iterator needs to be transferred into the response. This is okay: we won't touch the
     // iterator again from the current concurrency domain.
@@ -174,10 +180,13 @@ extension ControlService {
 
     // Check whether the RPC should be finished (i.e. the input `hasStatus`).
     guard let status = input.status else {
-      if input.echoMetadataInTrailers {
+      if input.echoMetadataInTrailers || !input.trailingMetadataToAdd.isEmpty {
         // There was no status in the input, but echo metadata in trailers was set. This is an
         // implicit 'ok' status.
-        let trailers = input.echoMetadataInTrailers ? metadata.echo() : [:]
+        var trailers = input.echoMetadataInTrailers ? metadata.echo() : [:]
+        for (key, value) in input.trailingMetadataToAdd {
+          trailers.addString(value, forKey: key)
+        }
         return .return(trailers)
       } else {
         // No status, and not echoing back metadata. Continue consuming the input stream.
@@ -186,7 +195,10 @@ extension ControlService {
     }
 
     // Build the trailers.
-    let trailers = input.echoMetadataInTrailers ? metadata.echo() : [:]
+    var trailers = input.echoMetadataInTrailers ? metadata.echo() : [:]
+    for (key, value) in input.trailingMetadataToAdd {
+      trailers.addString(value, forKey: key)
+    }
 
     if status.code == .ok {
       return .return(trailers)
