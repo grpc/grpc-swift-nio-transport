@@ -8,8 +8,8 @@ This module provides HTTP/2 transports for client and server built on top SwiftN
 module and uses SwiftNIO's `NIOSSL` module to provide TLS.
 
 The two transport types are:
-- ``HTTP2ClientTransport/Posix``, and
-- ``HTTP2ServerTransport/Posix``.
+- `HTTP2ClientTransport.Posix`, and
+- `HTTP2ServerTransport.Posix`.
 
 ### Availability
 

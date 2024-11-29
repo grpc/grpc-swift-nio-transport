@@ -8,8 +8,8 @@ This module provides HTTP/2 transports for client and server built on top SwiftN
 `NIOTransportServices` module which provide TLS via Apple's Network framework.
 
 The two transport types are:
-- ``HTTP2ClientTransport/TransportServices``, and
-- ``HTTP2ServerTransport/TransportServices``.
+- `HTTP2ClientTransport.TransportServices`, and
+- `HTTP2ServerTransport.TransportServices`.
 
 ### Availability
 
