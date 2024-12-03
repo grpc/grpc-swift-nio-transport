@@ -191,6 +191,40 @@ package final class CommonHTTP2ServerTransport<
     }
   }
 
+  private func peerInfo(channel: any Channel) -> String {
+    guard let remote = channel.remoteAddress else {
+      return "<unknown>"
+    }
+
+    switch remote {
+    case .v4(let address):
+      // '!' is safe, v4 always has a port.
+      return "ipv4:\(address.host):\(remote.port!)"
+
+    case .v6(let address):
+      // '!' is safe, v6 always has a port.
+      return "ipv6:[\(address.host)]:\(remote.port!)"
+
+    case .unixDomainSocket:
+      // The pathname will be on the local address.
+      guard let local = channel.localAddress else {
+        // UDS but no local address; this shouldn't ever happen but at least note the transport
+        // as being UDS.
+        return "unix:<unknown>"
+      }
+
+      switch local {
+      case .unixDomainSocket:
+        // '!' is safe, UDS always has a path.
+        return "unix:\(local.pathname!)"
+
+      case .v4, .v6:
+        // Remote address is UDS but local isn't. This shouldn't ever happen.
+        return "unix:<unknown>"
+      }
+    }
+  }
+
   private func handleConnection(
     _ connection: NIOAsyncChannel<HTTP2Frame, HTTP2Frame>,
     multiplexer: ChannelPipeline.SynchronousOperations.HTTP2StreamMultiplexer,
@@ -199,6 +233,7 @@ package final class CommonHTTP2ServerTransport<
       _ context: ServerContext
     ) async -> Void
   ) async throws {
+    let peer = self.peerInfo(channel: connection.channel)
     try await connection.executeThenClose { inbound, _ in
       await withDiscardingTaskGroup { group in
         group.addTask {
@@ -213,7 +248,12 @@ package final class CommonHTTP2ServerTransport<
         do {
           for try await (stream, descriptor) in multiplexer.inbound {
             group.addTask {
-              await self.handleStream(stream, handler: streamHandler, descriptor: descriptor)
+              await self.handleStream(
+                stream,
+                handler: streamHandler,
+                descriptor: descriptor,
+                peer: peer
+              )
             }
           }
         } catch {
@@ -229,7 +269,8 @@ package final class CommonHTTP2ServerTransport<
       _ stream: RPCStream<Inbound, Outbound>,
       _ context: ServerContext
     ) async -> Void,
-    descriptor: EventLoopFuture<MethodDescriptor>
+    descriptor: EventLoopFuture<MethodDescriptor>,
+    peer: String
   ) async {
     // It's okay to ignore these errors:
     // - If we get an error because the http2Stream failed to close, then there's nothing we can do
@@ -267,7 +308,7 @@ package final class CommonHTTP2ServerTransport<
           )
         )
 
-        let context = ServerContext(descriptor: descriptor, cancellation: handle)
+        let context = ServerContext(descriptor: descriptor, peer: peer, cancellation: handle)
         await streamHandler(rpcStream, context)
       }
     }

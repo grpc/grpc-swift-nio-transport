@@ -247,6 +247,12 @@ extension ServerBootstrap {
         to: VsockAddress(virtualSocket),
         childChannelInitializer: childChannelInitializer
       )
+    } else if let uds = address.unixDomainSocket {
+      return try await self.bind(
+        unixDomainSocketPath: uds.path,
+        cleanupExistingSocketFile: true,
+        childChannelInitializer: childChannelInitializer
+      )
     } else {
       return try await self.bind(
         to: NIOCore.SocketAddress(address),

@@ -46,7 +46,8 @@ final class HTTP2TransportTests: XCTestCase {
   }
 
   func forEachTransportPair(
-    _ transport: [Transport] = .supported,
+    _ transport: [Transport] = [.init(server: .posix, client: .posix)],
+    serverAddress: SocketAddress = .ipv4(host: "127.0.0.1", port: 0),
     enableControlService: Bool = true,
     clientCompression: CompressionAlgorithm = .none,
     clientEnabledCompression: CompressionAlgorithmSet = .none,
@@ -57,6 +58,7 @@ final class HTTP2TransportTests: XCTestCase {
       try await withThrowingTaskGroup(of: Void.self) { group in
         let (server, address) = try await self.runServer(
           in: &group,
+          address: serverAddress,
           kind: pair.server,
           enableControlService: enableControlService,
           compression: serverCompression
@@ -134,6 +136,7 @@ final class HTTP2TransportTests: XCTestCase {
 
   private func runServer(
     in group: inout ThrowingTaskGroup<Void, any Error>,
+    address: SocketAddress,
     kind: Transport.Kind,
     enableControlService: Bool,
     compression: CompressionAlgorithmSet
@@ -144,7 +147,7 @@ final class HTTP2TransportTests: XCTestCase {
     case .posix:
       let server = GRPCServer(
         transport: .http2NIOPosix(
-          address: .ipv4(host: "127.0.0.1", port: 0),
+          address: address,
           config: .defaults(transportSecurity: .plaintext) {
             $0.compression.enabledAlgorithms = compression
           }
@@ -163,7 +166,7 @@ final class HTTP2TransportTests: XCTestCase {
       #if canImport(Network)
       let server = GRPCServer(
         transport: .http2NIOTS(
-          address: .ipv4(host: "127.0.0.1", port: 0),
+          address: address,
           config: .defaults(transportSecurity: .plaintext) {
             $0.compression.enabledAlgorithms = compression
           }
@@ -1612,6 +1615,36 @@ final class HTTP2TransportTests: XCTestCase {
       return .unixDomainSocket(path: path, authority: "should-be-ignored")
     } expectedAuthority: { _ in
       return "respect-my-authority"
+    }
+  }
+
+  func testPeerInfoIPv4() async throws {
+    try await self.forEachTransportPair(
+      serverAddress: .ipv4(host: "127.0.0.1", port: 0)
+    ) { control, _, _ in
+      let peerInfo = try await control.peerInfo()
+      let matches = peerInfo.matches(of: /ipv4:127.0.0.1:\d+/)
+      XCTAssertNotNil(matches)
+    }
+  }
+
+  func testPeerInfoIPv6() async throws {
+    try await self.forEachTransportPair(
+      serverAddress: .ipv6(host: "::1", port: 0)
+    ) { control, _, _ in
+      let peerInfo = try await control.peerInfo()
+      let matches = peerInfo.matches(of: /ipv6:[::1]:\d+/)
+      XCTAssertNotNil(matches)
+    }
+  }
+
+  func testPeerInfoUDS() async throws {
+    let path = "peer-info-uds"
+    try await self.forEachTransportPair(
+      serverAddress: .unixDomainSocket(path: path)
+    ) { control, _, _ in
+      let peerInfo = try await control.peerInfo()
+      XCTAssertEqual(peerInfo, "unix:peer-info-uds")
     }
   }
 }
