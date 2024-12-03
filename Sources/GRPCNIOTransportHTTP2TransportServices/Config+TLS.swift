@@ -21,7 +21,7 @@ public import Network
 private import struct Foundation.Data
 private import struct Foundation.URL
 
-extension HTTP2ServerTransport.TransportServices.Config {
+extension HTTP2ServerTransport.TransportServices {
   /// The security configuration for this connection.
   public struct TransportSecurity: Sendable {
     package enum Wrapped: Sendable {
@@ -34,12 +34,46 @@ extension HTTP2ServerTransport.TransportServices.Config {
     /// This connection is plaintext: no encryption will take place.
     public static let plaintext = Self(wrapped: .plaintext)
 
-    /// This connection will use TLS.
+    /// Secures connections with the given TLS configuration.
     public static func tls(_ tls: TLS) -> Self {
       Self(wrapped: .tls(tls))
     }
-  }
 
+    /// Secures connections with the TLS.
+    ///
+    /// - Parameters:
+    ///   - identityProvider: A provider for the `SecIdentity` to be used when setting up TLS.
+    ///   - configure: A closure allowing you to modify the configuration before returning it.
+    public static func tls(
+      identityProvider: @Sendable @escaping () throws -> SecIdentity,
+      configure: (_ config: inout TLS) -> Void = { _ in }
+    ) -> Self {
+      let tlsConfig: TLS = .defaults(
+        identityProvider: identityProvider,
+        configure: configure
+      )
+      return .tls(tlsConfig)
+    }
+
+    /// Secures connections with the mutual TLS.
+    ///
+    /// - Parameters:
+    ///   - identityProvider: A provider for the `SecIdentity` to be used when setting up TLS.
+    ///   - configure: A closure allowing you to modify the configuration before returning it.
+    public static func mTLS(
+      identityProvider: @Sendable @escaping () throws -> SecIdentity,
+      configure: (_ config: inout TLS) -> Void = { _ in }
+    ) -> Self {
+      let tlsConfig: TLS = .mTLS(
+        identityProvider: identityProvider,
+        configure: configure
+      )
+      return .tls(tlsConfig)
+    }
+  }
+}
+
+extension HTTP2ServerTransport.TransportServices {
   public struct TLS: Sendable {
     /// How to verify the client certificate, if one is presented.
     public var clientCertificateVerification: TLSConfig.CertificateVerification
@@ -80,6 +114,7 @@ extension HTTP2ServerTransport.TransportServices.Config {
     ///
     /// - Parameters:
     ///   - identityProvider: A provider for the `SecIdentity` to be used when setting up TLS.
+    ///   - configure: A closure which allows you to modify the defaults before returning them.
     /// - Returns: A new HTTP2 NIO Transport Services transport TLS config.
     public static func defaults(
       identityProvider: @Sendable @escaping () throws -> SecIdentity,
@@ -121,7 +156,7 @@ extension HTTP2ServerTransport.TransportServices.Config {
   }
 }
 
-extension HTTP2ClientTransport.TransportServices.Config {
+extension HTTP2ClientTransport.TransportServices {
   /// The security configuration for this connection.
   public struct TransportSecurity: Sendable {
     package enum Wrapped: Sendable {
@@ -134,12 +169,46 @@ extension HTTP2ClientTransport.TransportServices.Config {
     /// This connection is plaintext: no encryption will take place.
     public static let plaintext = Self(wrapped: .plaintext)
 
-    /// This connection will use TLS.
+    /// Secure connections with the given TLS configuration.
     public static func tls(_ tls: TLS) -> Self {
       Self(wrapped: .tls(tls))
     }
-  }
 
+    /// Secure connections with TLS.
+    ///
+    /// - Parameters:
+    ///   - configure: A closure which allows you to modify the defaults before returning them.
+    public static func tls(
+      configure: (_ config: inout TLS) -> Void = { _ in }
+    ) -> Self {
+      let tlsConfig: TLS = .defaults(configure: configure)
+      return .tls(tlsConfig)
+    }
+
+    /// Secure connections with TLS.
+    public static var tls: Self {
+      return .tls()
+    }
+
+    /// Secure connections with mutual TLS.
+    ///
+    /// - Parameters:
+    ///   - identityProvider: A provider for the `SecIdentity` to be used when setting up TLS.
+    ///   - configure: A closure which allows you to modify the defaults before returning them.
+    public static func mTLS(
+      identityProvider: @Sendable @escaping () throws -> SecIdentity,
+      configure: (_ config: inout TLS) -> Void = { _ in }
+    ) -> Self {
+      let tlsConfig: TLS = .mTLS(
+        identityProvider: identityProvider,
+        configure: configure
+      )
+      return .tls(tlsConfig)
+    }
+  }
+}
+
+extension HTTP2ClientTransport.TransportServices {
   public struct TLS: Sendable {
     /// How to verify the server certificate, if one is presented.
     public var serverCertificateVerification: TLSConfig.CertificateVerification

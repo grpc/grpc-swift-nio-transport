@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-extension HTTP2ServerTransport.Posix.Config {
+extension HTTP2ServerTransport.Posix {
   /// The security configuration for this connection.
   public struct TransportSecurity: Sendable {
     package enum Wrapped: Sendable {
@@ -27,12 +27,52 @@ extension HTTP2ServerTransport.Posix.Config {
     /// This connection is plaintext: no encryption will take place.
     public static let plaintext = Self(wrapped: .plaintext)
 
-    /// This connection will use TLS.
+    /// Secure connections with the given TLS configuration.
     public static func tls(_ tls: TLS) -> Self {
       Self(wrapped: .tls(tls))
     }
-  }
 
+    /// Secure connections with TLS.
+    ///
+    /// - Parameters:
+    ///   - certificateChain: The certificates the server will offer during negotiation.
+    ///   - privateKey: The private key associated with the leaf certificate.
+    ///   - configure: A closure which allows you to modify the defaults before returning them.
+    public static func tls(
+      certificateChain: [TLSConfig.CertificateSource],
+      privateKey: TLSConfig.PrivateKeySource,
+      configure: (_ config: inout TLS) -> Void = { _ in }
+    ) -> Self {
+      let tlsConfig: TLS = .defaults(
+        certificateChain: certificateChain,
+        privateKey: privateKey,
+        configure: configure
+      )
+      return .tls(tlsConfig)
+    }
+
+    /// Secure the connection with mutual TLS.
+    ///
+    /// - Parameters:
+    ///   - certificateChain: The certificates the client will offer during negotiation.
+    ///   - privateKey: The private key associated with the leaf certificate.
+    ///   - configure: A closure which allows you to modify the defaults before returning them.
+    public static func mTLS(
+      certificateChain: [TLSConfig.CertificateSource],
+      privateKey: TLSConfig.PrivateKeySource,
+      configure: (_ config: inout TLS) -> Void = { _ in }
+    ) -> Self {
+      let tlsConfig: TLS = .mTLS(
+        certificateChain: certificateChain,
+        privateKey: privateKey,
+        configure: configure
+      )
+      return .tls(tlsConfig)
+    }
+  }
+}
+
+extension HTTP2ServerTransport.Posix.TransportSecurity {
   public struct TLS: Sendable {
     /// The certificates the server will offer during negotiation.
     public var certificateChain: [TLSConfig.CertificateSource]
@@ -127,7 +167,7 @@ extension HTTP2ServerTransport.Posix.Config {
   }
 }
 
-extension HTTP2ClientTransport.Posix.Config {
+extension HTTP2ClientTransport.Posix {
   /// The security configuration for this connection.
   public struct TransportSecurity: Sendable {
     package enum Wrapped: Sendable {
@@ -140,12 +180,48 @@ extension HTTP2ClientTransport.Posix.Config {
     /// This connection is plaintext: no encryption will take place.
     public static let plaintext = Self(wrapped: .plaintext)
 
-    /// This connection will use TLS.
+    /// Secure the connection with the given TLS configuration.
     public static func tls(_ tls: TLS) -> Self {
       Self(wrapped: .tls(tls))
     }
-  }
 
+    /// Secure the connection with TLS using the default configuration.
+    ///
+    /// - Parameters:
+    ///   - configure: A closure which allows you to modify the defaults before returning them.
+    public static func tls(
+      configure: (_ config: inout TLS) -> Void = { _ in }
+    ) -> Self {
+      Self.tls(.defaults(configure: configure))
+    }
+
+    /// Secure the connection with TLS using the default configuration.
+    public static var tls: Self {
+      Self.tls(.defaults())
+    }
+
+    /// Secure the connection with mutual TLS.
+    ///
+    /// - Parameters:
+    ///   - certificateChain: The certificates the client will offer during negotiation.
+    ///   - privateKey: The private key associated with the leaf certificate.
+    ///   - configure: A closure which allows you to modify the defaults before returning them.
+    public static func mTLS(
+      certificateChain: [TLSConfig.CertificateSource],
+      privateKey: TLSConfig.PrivateKeySource,
+      configure: (_ config: inout TLS) -> Void = { _ in }
+    ) -> Self {
+      let tlsConfig: TLS = .mTLS(
+        certificateChain: certificateChain,
+        privateKey: privateKey,
+        configure: configure
+      )
+      return .tls(tlsConfig)
+    }
+  }
+}
+
+extension HTTP2ClientTransport.Posix.TransportSecurity {
   public struct TLS: Sendable {
     /// The certificates the client will offer during negotiation.
     public var certificateChain: [TLSConfig.CertificateSource]

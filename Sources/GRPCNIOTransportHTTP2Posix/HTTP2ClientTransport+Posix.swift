@@ -45,7 +45,7 @@ extension HTTP2ClientTransport {
   /// try await withThrowingDiscardingTaskGroup { group in
   ///   let transport = try HTTP2ClientTransport.Posix(
   ///     target: .ipv4(host: "example.com"),
-  ///     config: .defaults(transportSecurity: .plaintext)
+  ///     transportSecurity: .plaintext
   ///   )
   ///   let client = GRPCClient(transport: transport)
   ///   group.addTask {
@@ -62,6 +62,7 @@ extension HTTP2ClientTransport {
     ///
     /// - Parameters:
     ///   - target: A target to resolve.
+    ///   - transportSecurity: The configuration for securing network traffic.
     ///   - config: Configuration for the transport.
     ///   - resolverRegistry: A registry of resolver factories.
     ///   - serviceConfig: Service config controlling how the transport should establish and
@@ -72,7 +73,8 @@ extension HTTP2ClientTransport {
     /// - Throws: When no suitable resolver could be found for the `target`.
     public init(
       target: any ResolvableTarget,
-      config: Config,
+      transportSecurity: TransportSecurity,
+      config: Config = .defaults,
       resolverRegistry: NameResolverRegistry = .defaults,
       serviceConfig: ServiceConfig = ServiceConfig(),
       eventLoopGroup: any EventLoopGroup = .singletonMultiThreadedEventLoopGroup
@@ -89,7 +91,11 @@ extension HTTP2ClientTransport {
 
       self.channel = GRPCChannel(
         resolver: resolver,
-        connector: try Connector(eventLoopGroup: eventLoopGroup, config: config),
+        connector: try Connector(
+          eventLoopGroup: eventLoopGroup,
+          config: config,
+          transportSecurity: transportSecurity
+        ),
         config: GRPCChannel.Config(posix: config),
         defaultServiceConfig: serviceConfig
       )
@@ -129,11 +135,15 @@ extension HTTP2ClientTransport.Posix {
     private let sslContext: NIOSSLContext?
     private let isPlainText: Bool
 
-    init(eventLoopGroup: any EventLoopGroup, config: HTTP2ClientTransport.Posix.Config) throws {
+    init(
+      eventLoopGroup: any EventLoopGroup,
+      config: HTTP2ClientTransport.Posix.Config,
+      transportSecurity: HTTP2ClientTransport.Posix.TransportSecurity
+    ) throws {
       self.eventLoopGroup = eventLoopGroup
       self.config = config
 
-      switch self.config.transportSecurity.wrapped {
+      switch transportSecurity.wrapped {
       case .plaintext:
         self.sslContext = nil
         self.isPlainText = true
@@ -198,9 +208,6 @@ extension HTTP2ClientTransport.Posix {
     /// Compression configuration.
     public var compression: HTTP2ClientTransport.Config.Compression
 
-    /// The transport's security.
-    public var transportSecurity: TransportSecurity
-
     /// Creates a new connection configuration.
     ///
     /// - Parameters:
@@ -208,38 +215,37 @@ extension HTTP2ClientTransport.Posix {
     ///   - backoff: Backoff configuration.
     ///   - connection: Connection configuration.
     ///   - compression: Compression configuration.
-    ///   - transportSecurity: The transport's security configuration.
     ///
-    /// - SeeAlso: ``defaults(transportSecurity:configure:)``
+    /// - SeeAlso: ``defaults(configure:)`` and ``defaults``.
     public init(
       http2: HTTP2ClientTransport.Config.HTTP2,
       backoff: HTTP2ClientTransport.Config.Backoff,
       connection: HTTP2ClientTransport.Config.Connection,
-      compression: HTTP2ClientTransport.Config.Compression,
-      transportSecurity: TransportSecurity
+      compression: HTTP2ClientTransport.Config.Compression
     ) {
       self.http2 = http2
       self.connection = connection
       self.backoff = backoff
       self.compression = compression
-      self.transportSecurity = transportSecurity
+    }
+
+    /// Default configuration.
+    public static var defaults: Self {
+      Self.defaults()
     }
 
     /// Default values.
     ///
     /// - Parameters:
-    ///   - transportSecurity: The security settings applied to the transport.
     ///   - configure: A closure which allows you to modify the defaults before returning them.
     public static func defaults(
-      transportSecurity: TransportSecurity,
       configure: (_ config: inout Self) -> Void = { _ in }
     ) -> Self {
       var config = Self(
         http2: .defaults,
         backoff: .defaults,
         connection: .defaults,
-        compression: .defaults,
-        transportSecurity: transportSecurity
+        compression: .defaults
       )
       configure(&config)
       return config
@@ -263,6 +269,7 @@ extension ClientTransport where Self == HTTP2ClientTransport.Posix {
   ///
   /// - Parameters:
   ///   - target: A target to resolve.
+  ///   - transportSecurity: The configuration for securing network traffic.
   ///   - config: Configuration for the transport.
   ///   - resolverRegistry: A registry of resolver factories.
   ///   - serviceConfig: Service config controlling how the transport should establish and
@@ -273,13 +280,15 @@ extension ClientTransport where Self == HTTP2ClientTransport.Posix {
   /// - Throws: When no suitable resolver could be found for the `target`.
   public static func http2NIOPosix(
     target: any ResolvableTarget,
-    config: HTTP2ClientTransport.Posix.Config,
+    transportSecurity: HTTP2ClientTransport.Posix.TransportSecurity,
+    config: HTTP2ClientTransport.Posix.Config = .defaults,
     resolverRegistry: NameResolverRegistry = .defaults,
     serviceConfig: ServiceConfig = ServiceConfig(),
     eventLoopGroup: any EventLoopGroup = .singletonMultiThreadedEventLoopGroup
   ) throws -> Self {
     return try HTTP2ClientTransport.Posix(
       target: target,
+      transportSecurity: transportSecurity,
       config: config,
       resolverRegistry: resolverRegistry,
       serviceConfig: serviceConfig,
