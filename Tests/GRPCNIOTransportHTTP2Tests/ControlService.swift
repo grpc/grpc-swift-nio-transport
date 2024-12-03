@@ -62,6 +62,17 @@ struct ControlService: RegistrableRPCService {
         )
       }
     )
+    router.registerHandler(
+      forMethod: MethodDescriptor(fullyQualifiedService: "Control", method: "PeerInfo"),
+      deserializer: JSONDeserializer<String>(),
+      serializer: JSONSerializer<String>()
+    ) { request, context in
+      return StreamingServerResponse { response in
+        let info = try await self.peerInfo(context: context)
+        try await response.write(info)
+        return [:]
+      }
+    }
   }
 }
 
@@ -88,6 +99,10 @@ extension ControlService {
         }
       }
     }
+  }
+
+  private func peerInfo(context: ServerContext) async throws -> String {
+    return context.peer
   }
 
   private func handle(
