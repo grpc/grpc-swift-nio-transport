@@ -229,7 +229,6 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
     XCTAssertEqual(grpcConfig.backoff, HTTP2ClientTransport.Config.Backoff.defaults)
 
     XCTAssertNil(grpcTLSConfig.identityProvider)
-    XCTAssertNil(grpcTLSConfig.serverHostname)
     XCTAssertEqual(grpcTLSConfig.serverCertificateVerification, .fullVerification)
     XCTAssertEqual(grpcTLSConfig.trustRoots, .systemDefault)
   }

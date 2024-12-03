@@ -297,6 +297,7 @@ final class RoundRobinLoadBalancerTests: XCTestCase {
   func testPickSubchannelWhenNotReady() {
     let loadBalancer = RoundRobinLoadBalancer(
       connector: .never,
+      authority: "ignored",
       backoff: .defaults,
       defaultCompression: .none,
       enabledCompression: .none
@@ -308,6 +309,7 @@ final class RoundRobinLoadBalancerTests: XCTestCase {
   func testPickSubchannelWhenClosed() async {
     let loadBalancer = RoundRobinLoadBalancer(
       connector: .never,
+      authority: "ignored",
       backoff: .defaults,
       defaultCompression: .none,
       enabledCompression: .none

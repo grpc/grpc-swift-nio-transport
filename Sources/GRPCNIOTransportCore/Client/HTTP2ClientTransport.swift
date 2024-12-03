@@ -144,15 +144,24 @@ extension HTTP2ClientTransport.Config {
     /// The value is clamped to `... (1 << 31) - 1`.
     public var targetWindowSize: Int
 
+    /// The authority of the server.
+    ///
+    /// Any value set here will unconditionally override any value derived from the target address.
+    ///
+    /// The server authority is used in the ":authority" pseudoheader and in the TLS SNI
+    /// extension, if applicable.
+    public var authority: String?
+
     /// Creates a new HTTP/2 configuration.
-    public init(maxFrameSize: Int, targetWindowSize: Int) {
+    public init(maxFrameSize: Int, targetWindowSize: Int, authority: String?) {
       self.maxFrameSize = maxFrameSize
       self.targetWindowSize = targetWindowSize
+      self.authority = authority
     }
 
     /// Default values, max frame size is 16KiB, and the target window size is 8MiB.
     public static var defaults: Self {
-      Self(maxFrameSize: 1 << 14, targetWindowSize: 8 * 1024 * 1024)
+      Self(maxFrameSize: 1 << 14, targetWindowSize: 8 * 1024 * 1024, authority: nil)
     }
   }
 }

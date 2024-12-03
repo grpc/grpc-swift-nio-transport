@@ -31,17 +31,20 @@ enum GRPCStreamStateMachineConfiguration {
   struct ClientConfiguration {
     var methodDescriptor: MethodDescriptor
     var scheme: Scheme
+    var authority: String?
     var outboundEncoding: CompressionAlgorithm
     var acceptedEncodings: CompressionAlgorithmSet
 
     init(
       methodDescriptor: MethodDescriptor,
       scheme: Scheme,
+      authority: String?,
       outboundEncoding: CompressionAlgorithm,
       acceptedEncodings: CompressionAlgorithmSet
     ) {
       self.methodDescriptor = methodDescriptor
       self.scheme = scheme
+      self.authority = authority
       self.outboundEncoding = outboundEncoding
       self.acceptedEncodings = acceptedEncodings.union(.none)
     }
@@ -630,6 +633,7 @@ extension GRPCStreamStateMachine {
   private func makeClientHeaders(
     methodDescriptor: MethodDescriptor,
     scheme: Scheme,
+    authority: String?,
     outboundEncoding: CompressionAlgorithm?,
     acceptedEncodings: CompressionAlgorithmSet,
     customMetadata: Metadata
@@ -645,6 +649,9 @@ extension GRPCStreamStateMachine {
     headers.add("POST", forKey: .method)
     headers.add(scheme.rawValue, forKey: .scheme)
     headers.add(methodDescriptor.path, forKey: .path)
+    if let authority = authority {
+      headers.add(authority, forKey: .authority)
+    }
 
     // Add required gRPC headers.
     headers.add(ContentType.grpc.canonicalValue, forKey: .contentType)
@@ -690,6 +697,7 @@ extension GRPCStreamStateMachine {
       return self.makeClientHeaders(
         methodDescriptor: configuration.methodDescriptor,
         scheme: configuration.scheme,
+        authority: configuration.authority,
         outboundEncoding: configuration.outboundEncoding,
         acceptedEncodings: configuration.acceptedEncodings,
         customMetadata: metadata
@@ -1764,6 +1772,7 @@ extension MethodDescriptor {
 }
 
 internal enum GRPCHTTP2Keys: String {
+  case authority = ":authority"
   case path = ":path"
   case contentType = "content-type"
   case encoding = "grpc-encoding"

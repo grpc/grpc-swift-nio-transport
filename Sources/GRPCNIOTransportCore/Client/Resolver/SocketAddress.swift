@@ -70,6 +70,35 @@ public struct SocketAddress: Hashable, Sendable {
 }
 
 extension SocketAddress {
+  package var authority: String {
+    let rawValue: String
+
+    switch self.value {
+    case .ipv4(let address):
+      rawValue = "\(address.host):\(address.port)"
+    case .ipv6(let address):
+      rawValue = "[\(address.host)]:\(address.port)"
+    case .unix(let address):
+      rawValue = address.path
+    case .vsock(let address):
+      rawValue = "\(address.contextID.rawValue):\(address.port.rawValue)"
+    }
+
+    return PercentEncoding.encodeAuthority(rawValue)
+  }
+
+  package var sniHostname: String? {
+    switch self.value {
+    case .ipv4, .ipv6:
+      // Literal IP addresses aren't allowed in the SNI hostname.
+      return nil
+    case .vsock, .unix:
+      return self.authority
+    }
+  }
+}
+
+extension SocketAddress {
   /// Creates a socket address by wrapping a ``SocketAddress/IPv4-swift.struct``.
   public static func ipv4(_ address: IPv4) -> Self {
     return Self(.ipv4(address))

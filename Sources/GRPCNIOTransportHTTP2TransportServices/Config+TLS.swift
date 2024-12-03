@@ -148,9 +148,6 @@ extension HTTP2ClientTransport.TransportServices.Config {
     /// - Important: If specifying custom certificates, they must be DER-encoded X509 certificates.
     public var trustRoots: TLSConfig.TrustRootsSource
 
-    /// An optional server hostname to use when verifying certificates.
-    public var serverHostname: String?
-
     /// An optional provider for the `SecIdentity` to be used when setting up TLS.
     public var identityProvider: (@Sendable () throws -> SecIdentity)?
 
@@ -158,16 +155,13 @@ extension HTTP2ClientTransport.TransportServices.Config {
     /// - Parameters:
     ///   - serverCertificateVerification: How to verify the server certificate, if one is presented.
     ///   - trustRoots: The trust roots to be used when verifying server certificates.
-    ///   - serverHostname: An optional server hostname to use when verifying certificates.
     ///   - identityProvider: A provider for the `SecIdentity` to be used when setting up TLS.
     public init(
       serverCertificateVerification: TLSConfig.CertificateVerification,
       trustRoots: TLSConfig.TrustRootsSource,
-      serverHostname: String?,
       identityProvider: (@Sendable () throws -> SecIdentity)?
     ) {
       self.serverCertificateVerification = serverCertificateVerification
-      self.serverHostname = serverHostname
       self.trustRoots = trustRoots
       self.identityProvider = identityProvider
     }
@@ -175,7 +169,6 @@ extension HTTP2ClientTransport.TransportServices.Config {
     /// Create a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted:
     /// - `serverCertificateVerification` equals `fullVerification`
     /// - `trustRoots` equals `systemDefault`
-    /// - `serverHostname` equals `nil`
     /// - `identityProvider` equals `nil`
     ///
     /// - Parameters:
@@ -187,7 +180,6 @@ extension HTTP2ClientTransport.TransportServices.Config {
       var config = Self(
         serverCertificateVerification: .fullVerification,
         trustRoots: .systemDefault,
-        serverHostname: nil,
         identityProvider: nil
       )
       configure(&config)
@@ -197,7 +189,6 @@ extension HTTP2ClientTransport.TransportServices.Config {
     /// Create a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted:
     /// - `serverCertificateVerification` equals `fullVerification`
     /// - `trustRoots` equals `systemDefault`
-    /// - `serverHostname` equals `nil`
     /// - `identityProvider` equals `nil`
     public static var defaults: Self { .defaults() }
 
@@ -205,7 +196,6 @@ extension HTTP2ClientTransport.TransportServices.Config {
     /// the requirements of mTLS:
     /// - `serverCertificateVerification` equals `fullVerification`
     /// - `trustRoots` equals `systemDefault`
-    /// - `serverHostname` equals `nil`
     ///
     /// - Parameters:
     ///   - identityProvider: A provider for the `SecIdentity` to be used when setting up TLS.
@@ -218,7 +208,6 @@ extension HTTP2ClientTransport.TransportServices.Config {
       var config = Self(
         serverCertificateVerification: .fullVerification,
         trustRoots: .systemDefault,
-        serverHostname: nil,
         identityProvider: identityProvider
       )
       configure(&config)
