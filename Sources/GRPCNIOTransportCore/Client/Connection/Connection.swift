@@ -85,8 +85,8 @@ package final class Connection: Sendable {
   /// The address to connect to.
   private let address: SocketAddress
 
-  /// The server authority. If `nil`, a value will be computed based on the endpoint being
-  /// connected to.
+  /// The percent-encoded server authority. If `nil`, a value will be computed based on the endpoint
+  /// being connected to.
   private let authority: String?
 
   /// The default compression algorithm used for requests.
@@ -137,6 +137,9 @@ package final class Connection: Sendable {
       do {
         return try await self.http2Connector.establishConnection(
           to: self.address,
+          // The authority here is used for the SNI hostname in the TLS handshake (if applicable)
+          // where a raw IP address isn't permitted, so fallback to 'address.sniHostname' rather
+          // than 'address.authority'.
           authority: self.authority ?? self.address.sniHostname
         )
       } catch let error as RPCError {
@@ -223,6 +226,8 @@ package final class Connection: Sendable {
           let streamHandler = GRPCClientStreamHandler(
             methodDescriptor: descriptor,
             scheme: scheme,
+            // The value of authority here is being used for the ":authority" pseudo-header. Derive
+            // one from the address if we don't already have one.
             authority: self.authority ?? self.address.authority,
             outboundEncoding: compression,
             acceptedEncodings: self.enabledCompression,

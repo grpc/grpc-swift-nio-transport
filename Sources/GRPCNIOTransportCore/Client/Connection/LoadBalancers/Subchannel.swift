@@ -83,8 +83,8 @@ package final class Subchannel: Sendable {
   /// A factory for connections.
   private let connector: any HTTP2Connector
 
-  /// The server authority. If `nil`, a value will be computed based on the endpoint being
-  /// connected to.
+  /// The percent-encoded server authority. If `nil`, a value will be computed based on the endpoint
+  /// being connected to.
   private let authority: String?
 
   /// The connection backoff configuration used by the subchannel when establishing a connection.

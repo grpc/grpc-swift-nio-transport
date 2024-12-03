@@ -109,8 +109,8 @@ package final class RoundRobinLoadBalancer: Sendable {
   /// A connector, capable of creating connections.
   private let connector: any HTTP2Connector
 
-  /// The server authority. If `nil`, a value will be computed based on the endpoint being
-  /// connected to.
+  /// The percent-encoded server authority. If `nil`, a value will be computed based on the endpoint
+  /// being connected to.
   private let authority: String?
 
   /// Connection backoff configuration.

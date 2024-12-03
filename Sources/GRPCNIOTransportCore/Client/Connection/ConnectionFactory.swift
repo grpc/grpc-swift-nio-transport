@@ -19,6 +19,11 @@ package import NIOHTTP2
 internal import NIOPosix
 
 package protocol HTTP2Connector: Sendable {
+  /// Attempt to establish a connection to the given address.
+  ///
+  /// - Parameters:
+  ///   - address: The address to connect to.
+  ///   - authority: The authority as used for the TLS SNI extension (if applicable).
   func establishConnection(
     to address: SocketAddress,
     authority: String?

@@ -52,8 +52,8 @@ package final class GRPCChannel: ClientTransport {
   /// A factory for connections.
   private let connector: any HTTP2Connector
 
-  /// The server authority. If `nil`, a value will be computed based on the endpoint being
-  /// connected to.
+  /// The percent-encoded server authority. If `nil`, a value will be computed based on the endpoint
+  /// being connected to.
   private let authority: String?
 
   /// The connection backoff configuration used by the subchannel when establishing a connection.
@@ -86,6 +86,9 @@ package final class GRPCChannel: ClientTransport {
     self.input = AsyncStream.makeStream()
     self.connector = connector
 
+    // Determine the authority to use for the ":authority" pseudo-header and in the TLS SNI
+    // extension. This value will be used for all subchannels and connections. If no authority
+    // is set then one will be derived for each address being connected to.
     if let authority = config.http2.authority ?? resolver.authority {
       self.authority = PercentEncoding.encodeAuthority(authority)
     } else {
