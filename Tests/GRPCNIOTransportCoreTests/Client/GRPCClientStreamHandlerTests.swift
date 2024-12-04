@@ -529,13 +529,15 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     // Half-close the outbound end: this would be triggered by finishing the client's writer.
     XCTAssertNoThrow(channel.close(mode: .output, promise: nil))
 
-    // Flush to make sure the EOS is written.
-    channel.flush()
-
     // Make sure the EOS frame was sent
     let emptyEOSFrame = try channel.assertReadDataOutbound()
     XCTAssertEqual(emptyEOSFrame.data, .byteBuffer(.init()))
     XCTAssertTrue(emptyEOSFrame.endStream)
+
+    // Make sure that, if we flush again, we're not writing anything else down
+    // the stream. We should have closed at this point.
+    channel.flush()
+    XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
 
     // Make sure we cannot write anymore because client's closed.
     XCTAssertThrowsError(

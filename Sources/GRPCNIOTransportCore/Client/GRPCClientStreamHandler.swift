@@ -29,6 +29,7 @@ final class GRPCClientStreamHandler: ChannelDuplexHandler {
 
   private var isReading = false
   private var flushPending = false
+  private var requestFinished = false
 
   init(
     methodDescriptor: MethodDescriptor,
@@ -263,6 +264,12 @@ extension GRPCClientStreamHandler {
           )
 
         case .noMoreMessages:
+          // If we're done writing (i.e. we have no more messages returned from state
+          // machine) then return.
+          if self.requestFinished { return }
+
+          self.requestFinished = true
+
           // Write an empty data frame with the EOS flag set, to signal the RPC
           // request is now finished.
           context.write(
@@ -276,7 +283,6 @@ extension GRPCClientStreamHandler {
             ),
             promise: nil
           )
-
           context.flush()
           break loop
 
