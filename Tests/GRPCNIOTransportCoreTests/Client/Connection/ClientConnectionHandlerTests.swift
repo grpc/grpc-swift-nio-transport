@@ -241,6 +241,8 @@ struct ClientConnectionHandlerTests {
     let closed = connection.closeGracefully()
     #expect(try connection.readEvent() == .closing(.initiatedLocally))
     connection.streamClosed(1)
+    // Need to run the event loop to fire the close event.
+    connection.channel.embeddedEventLoop.run()
     try closed.wait()
   }
 
@@ -411,6 +413,7 @@ extension ClientConnectionHandlerTests {
 
     func streamClosed(_ id: HTTP2StreamID) {
       self.streamDelegate.streamClosed(id, channel: self.channel)
+      self.channel.embeddedEventLoop.run()
     }
 
     func goAway(
@@ -453,6 +456,7 @@ extension ClientConnectionHandlerTests {
       let promise = self.channel.embeddedEventLoop.makePromise(of: Void.self)
       let event = ClientConnectionHandler.OutboundEvent.closeGracefully
       self.channel.pipeline.triggerUserOutboundEvent(event, promise: promise)
+      self.channel.embeddedEventLoop.run()
       return promise.futureResult
     }
   }

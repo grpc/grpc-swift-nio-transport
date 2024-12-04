@@ -92,7 +92,7 @@ final class BenchmarkClient: Sendable {
   }
 
   internal func run() async throws {
-    let benchmarkClient = Grpc_Testing_BenchmarkService_Client(wrapping: self.client)
+    let benchmarkClient = Grpc_Testing_BenchmarkService.Client(wrapping: self.client)
     return try await withThrowingTaskGroup(of: Void.self) { clientGroup in
       // Start the client.
       clientGroup.addTask {
@@ -148,7 +148,7 @@ final class BenchmarkClient: Sendable {
     return (result, nanoseconds: Double(endTime - startTime))
   }
 
-  private func unary(benchmark: Grpc_Testing_BenchmarkService_Client) async {
+  private func unary(benchmark: Grpc_Testing_BenchmarkService.Client) async {
     let (errorCode, nanoseconds): (RPCError.Code?, Double) = await self.timeIt {
       do {
         try await benchmark.unaryCall(request: ClientRequest(message: self.message)) {
@@ -165,7 +165,7 @@ final class BenchmarkClient: Sendable {
     self.record(latencyNanos: nanoseconds, errorCode: errorCode)
   }
 
-  private func streaming(benchmark: Grpc_Testing_BenchmarkService_Client) async {
+  private func streaming(benchmark: Grpc_Testing_BenchmarkService.Client) async {
     // Streaming RPCs ping-pong messages back and forth. To achieve this the response message
     // stream is sent to the request closure, and the request closure indicates the outcome back
     // to the response handler to keep the RPC alive for the appropriate amount of time.

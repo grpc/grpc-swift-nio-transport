@@ -47,7 +47,7 @@ extension HTTP2ClientTransport {
   /// try await withThrowingDiscardingTaskGroup { group in
   ///   let transport = try HTTP2ClientTransport.TransportServices(
   ///     target: .ipv4(host: "example.com"),
-  ///     config: .defaults(transportSecurity: .plaintext)
+  ///     transportSecurity: .plaintext
   ///   )
   ///   let client = GRPCClient(transport: transport)
   ///   group.addTask {
@@ -68,6 +68,7 @@ extension HTTP2ClientTransport {
     ///
     /// - Parameters:
     ///   - target: A target to resolve.
+    ///   - transportSecurity: The configuration for securing network traffic.
     ///   - config: Configuration for the transport.
     ///   - resolverRegistry: A registry of resolver factories.
     ///   - serviceConfig: Service config controlling how the transport should establish and
@@ -78,7 +79,8 @@ extension HTTP2ClientTransport {
     /// - Throws: When no suitable resolver could be found for the `target`.
     public init(
       target: any ResolvableTarget,
-      config: Config,
+      transportSecurity: TransportSecurity,
+      config: Config = .defaults,
       resolverRegistry: NameResolverRegistry = .defaults,
       serviceConfig: ServiceConfig = ServiceConfig(),
       eventLoopGroup: any EventLoopGroup = .singletonNIOTSEventLoopGroup
@@ -95,7 +97,11 @@ extension HTTP2ClientTransport {
 
       self.channel = GRPCChannel(
         resolver: resolver,
-        connector: Connector(eventLoopGroup: eventLoopGroup, config: config),
+        connector: Connector(
+          eventLoopGroup: eventLoopGroup,
+          config: config,
+          transportSecurity: transportSecurity
+        ),
         config: GRPCChannel.Config(transportServices: config),
         defaultServiceConfig: serviceConfig
       )
@@ -126,22 +132,26 @@ extension HTTP2ClientTransport {
 extension HTTP2ClientTransport.TransportServices {
   struct Connector: HTTP2Connector {
     private let config: HTTP2ClientTransport.TransportServices.Config
+    private let transportSecurity: HTTP2ClientTransport.TransportServices.TransportSecurity
     private let eventLoopGroup: any EventLoopGroup
 
     init(
       eventLoopGroup: any EventLoopGroup,
-      config: HTTP2ClientTransport.TransportServices.Config
+      config: HTTP2ClientTransport.TransportServices.Config,
+      transportSecurity: HTTP2ClientTransport.TransportServices.TransportSecurity
     ) {
       self.eventLoopGroup = eventLoopGroup
       self.config = config
+      self.transportSecurity = transportSecurity
     }
 
     func establishConnection(
-      to address: GRPCNIOTransportCore.SocketAddress
+      to address: GRPCNIOTransportCore.SocketAddress,
+      authority: String?
     ) async throws -> HTTP2Connection {
       let bootstrap: NIOTSConnectionBootstrap
       let isPlainText: Bool
-      switch self.config.transportSecurity.wrapped {
+      switch self.transportSecurity.wrapped {
       case .plaintext:
         isPlainText = true
         bootstrap = NIOTSConnectionBootstrap(group: self.eventLoopGroup)
@@ -150,7 +160,7 @@ extension HTTP2ClientTransport.TransportServices {
       case .tls(let tlsConfig):
         isPlainText = false
         do {
-          let options = try NWProtocolTLS.Options(tlsConfig)
+          let options = try NWProtocolTLS.Options(tlsConfig, authority: authority)
           bootstrap = NIOTSConnectionBootstrap(group: self.eventLoopGroup)
             .channelOption(NIOTSChannelOptions.waitForActivity, value: false)
             .tlsOptions(options)
@@ -196,9 +206,6 @@ extension HTTP2ClientTransport.TransportServices {
     /// Compression configuration.
     public var compression: HTTP2ClientTransport.Config.Compression
 
-    /// The transport's security.
-    public var transportSecurity: TransportSecurity
-
     /// Creates a new connection configuration.
     ///
     /// - Parameters:
@@ -206,38 +213,37 @@ extension HTTP2ClientTransport.TransportServices {
     ///   - backoff: Backoff configuration.
     ///   - connection: Connection configuration.
     ///   - compression: Compression configuration.
-    ///   - transportSecurity: The transport's security configuration.
     ///
-    /// - SeeAlso: ``defaults(transportSecurity:configure:)``
+    /// - SeeAlso: ``defaults(configure:)`` and ``defaults``.
     public init(
       http2: HTTP2ClientTransport.Config.HTTP2,
       backoff: HTTP2ClientTransport.Config.Backoff,
       connection: HTTP2ClientTransport.Config.Connection,
-      compression: HTTP2ClientTransport.Config.Compression,
-      transportSecurity: TransportSecurity
+      compression: HTTP2ClientTransport.Config.Compression
     ) {
       self.http2 = http2
       self.connection = connection
       self.backoff = backoff
       self.compression = compression
-      self.transportSecurity = transportSecurity
+    }
+
+    /// Default configuration.
+    public static var defaults: Self {
+      Self.defaults()
     }
 
     /// Default values.
     ///
     /// - Parameters:
-    ///   - transportSecurity: The security settings applied to the transport.
     ///   - configure: A closure which allows you to modify the defaults before returning them.
     public static func defaults(
-      transportSecurity: TransportSecurity,
       configure: (_ config: inout Self) -> Void = { _ in }
     ) -> Self {
       var config = Self(
         http2: .defaults,
         backoff: .defaults,
         connection: .defaults,
-        compression: .defaults,
-        transportSecurity: transportSecurity
+        compression: .defaults
       )
       configure(&config)
       return config
@@ -283,6 +289,7 @@ extension ClientTransport where Self == HTTP2ClientTransport.TransportServices {
   ///
   /// - Parameters:
   ///   - target: A target to resolve.
+  ///   - transportSecurity: The security settings applied to the transport.
   ///   - config: Configuration for the transport.
   ///   - resolverRegistry: A registry of resolver factories.
   ///   - serviceConfig: Service config controlling how the transport should establish and
@@ -293,13 +300,15 @@ extension ClientTransport where Self == HTTP2ClientTransport.TransportServices {
   /// - Throws: When no suitable resolver could be found for the `target`.
   public static func http2NIOTS(
     target: any ResolvableTarget,
-    config: HTTP2ClientTransport.TransportServices.Config,
+    transportSecurity: HTTP2ClientTransport.TransportServices.TransportSecurity,
+    config: HTTP2ClientTransport.TransportServices.Config = .defaults,
     resolverRegistry: NameResolverRegistry = .defaults,
     serviceConfig: ServiceConfig = ServiceConfig(),
     eventLoopGroup: any EventLoopGroup = .singletonNIOTSEventLoopGroup
   ) throws -> Self {
     try HTTP2ClientTransport.TransportServices(
       target: target,
+      transportSecurity: transportSecurity,
       config: config,
       resolverRegistry: resolverRegistry,
       serviceConfig: serviceConfig,
@@ -309,7 +318,10 @@ extension ClientTransport where Self == HTTP2ClientTransport.TransportServices {
 }
 
 extension NWProtocolTLS.Options {
-  convenience init(_ tlsConfig: HTTP2ClientTransport.TransportServices.Config.TLS) throws {
+  convenience init(
+    _ tlsConfig: HTTP2ClientTransport.TransportServices.TLS,
+    authority: String?
+  ) throws {
     self.init()
 
     if let identityProvider = tlsConfig.identityProvider {
@@ -341,7 +353,7 @@ extension NWProtocolTLS.Options {
         self.securityProtocolOptions,
         true
       )
-      tlsConfig.serverHostname?.withCString { serverName in
+      authority?.withCString { serverName in
         sec_protocol_options_set_tls_server_name(
           self.securityProtocolOptions,
           serverName

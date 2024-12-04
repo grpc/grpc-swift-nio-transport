@@ -187,6 +187,7 @@ final class ConnectionTests: XCTestCase {
   func testMakeStreamOnNotRunningConnection() async throws {
     let connection = Connection(
       address: .ipv4(host: "ignored", port: 0),
+      authority: "ignored",
       http2Connector: .never,
       defaultCompression: .none,
       enabledCompression: .none

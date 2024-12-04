@@ -34,6 +34,7 @@ final class GRPCClientStreamHandler: ChannelDuplexHandler {
   init(
     methodDescriptor: MethodDescriptor,
     scheme: Scheme,
+    authority: String?,
     outboundEncoding: CompressionAlgorithm,
     acceptedEncodings: CompressionAlgorithmSet,
     maxPayloadSize: Int,
@@ -44,6 +45,7 @@ final class GRPCClientStreamHandler: ChannelDuplexHandler {
         .init(
           methodDescriptor: methodDescriptor,
           scheme: scheme,
+          authority: authority,
           outboundEncoding: outboundEncoding,
           acceptedEncodings: acceptedEncodings
         )

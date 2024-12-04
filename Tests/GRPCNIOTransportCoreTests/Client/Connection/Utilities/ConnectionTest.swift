@@ -42,6 +42,7 @@ enum ConnectionTest {
     try await withThrowingTaskGroup(of: Void.self) { group in
       let connection = Connection(
         address: address,
+        authority: nil,
         http2Connector: connector,
         defaultCompression: .none,
         enabledCompression: .none

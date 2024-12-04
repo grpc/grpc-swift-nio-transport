@@ -37,18 +37,18 @@ struct HTTP2TransportTLSEnabledTests {
     serverTransport: TransportKind
   ) async throws {
     let certificateKeyPairs = try SelfSignedCertificateKeyPairs()
-    let clientTransportConfig = self.makeDefaultClientTLSConfig(
+    let clientConfig = self.makeDefaultTLSClientConfig(
       for: clientTransport,
       certificateKeyPairs: certificateKeyPairs
     )
-    let serverTransportConfig = self.makeDefaultServerTLSConfig(
+    let serverConfig = self.makeDefaultTLSServerConfig(
       for: serverTransport,
       certificateKeyPairs: certificateKeyPairs
     )
 
     try await self.withClientAndServer(
-      clientTLSConfig: clientTransportConfig,
-      serverTLSConfig: serverTransportConfig
+      clientConfig: clientConfig,
+      serverConfig: serverConfig
     ) { control in
       await #expect(throws: Never.self) {
         try await self.executeUnaryRPC(control: control)
@@ -66,20 +66,20 @@ struct HTTP2TransportTLSEnabledTests {
     serverTransport: TransportKind
   ) async throws {
     let certificateKeyPairs = try SelfSignedCertificateKeyPairs()
-    let clientTransportConfig = self.makeMTLSClientTLSConfig(
+    let clientConfig = self.makeMTLSClientConfig(
       for: clientTransport,
       certificateKeyPairs: certificateKeyPairs,
       serverHostname: "localhost"
     )
-    let serverTransportConfig = self.makeMTLSServerTLSConfig(
+    let serverConfig = self.makeMTLSServerConfig(
       for: serverTransport,
       certificateKeyPairs: certificateKeyPairs,
       includeClientCertificateInTrustRoots: true
     )
 
     try await self.withClientAndServer(
-      clientTLSConfig: clientTransportConfig,
-      serverTLSConfig: serverTransportConfig
+      clientConfig: clientConfig,
+      serverConfig: serverConfig
     ) { control in
       await #expect(throws: Never.self) {
         try await self.executeUnaryRPC(control: control)
@@ -98,20 +98,21 @@ struct HTTP2TransportTLSEnabledTests {
     serverTransport: TransportKind
   ) async throws {
     let certificateKeyPairs = try SelfSignedCertificateKeyPairs()
-    let clientTransportConfig = self.makeMTLSClientTLSConfig(
+    let clientConfig = self.makeMTLSClientConfig(
       for: clientTransport,
       certificateKeyPairs: certificateKeyPairs,
-      serverHostname: nil
+      serverHostname: "the-wrong-hostname"
     )
-    let serverTransportConfig = self.makeMTLSServerTLSConfig(
+
+    let serverConfig = self.makeMTLSServerConfig(
       for: serverTransport,
       certificateKeyPairs: certificateKeyPairs,
       includeClientCertificateInTrustRoots: true
     )
 
     try await self.withClientAndServer(
-      clientTLSConfig: clientTransportConfig,
-      serverTLSConfig: serverTransportConfig
+      clientConfig: clientConfig,
+      serverConfig: serverConfig
     ) { control in
       await #expect {
         try await self.executeUnaryRPC(control: control)
@@ -152,20 +153,20 @@ struct HTTP2TransportTLSEnabledTests {
     serverTransport: TransportKind
   ) async throws {
     let certificateKeyPairs = try SelfSignedCertificateKeyPairs()
-    let clientTransportConfig = self.makeMTLSClientTLSConfig(
+    let clientConfig = self.makeMTLSClientConfig(
       for: clientTransport,
       certificateKeyPairs: certificateKeyPairs,
       serverHostname: "localhost"
     )
-    let serverTransportConfig = self.makeMTLSServerTLSConfig(
+    let serverConfig = self.makeMTLSServerConfig(
       for: serverTransport,
       certificateKeyPairs: certificateKeyPairs,
       includeClientCertificateInTrustRoots: false
     )
 
     try await self.withClientAndServer(
-      clientTLSConfig: clientTransportConfig,
-      serverTLSConfig: serverTransportConfig
+      clientConfig: clientConfig,
+      serverConfig: serverConfig
     ) { control in
       await #expect {
         try await self.executeUnaryRPC(control: control)
@@ -201,106 +202,124 @@ struct HTTP2TransportTLSEnabledTests {
     case posix
   }
 
-  enum TLSConfig {
-    enum Client {
-      case posix(HTTP2ClientTransport.Posix.Config.TransportSecurity)
-    }
-
-    enum Server {
-      case posix(HTTP2ServerTransport.Posix.Config.TransportSecurity)
-    }
+  struct Config<Transport, Security> {
+    var security: Security
+    var transport: Transport
   }
 
-  func makeDefaultClientTLSConfig(
+  enum ClientConfig {
+    typealias Posix = Config<
+      HTTP2ClientTransport.Posix.Config,
+      HTTP2ClientTransport.Posix.TransportSecurity
+    >
+    case posix(Posix)
+  }
+
+  enum ServerConfig {
+    typealias Posix = Config<
+      HTTP2ServerTransport.Posix.Config,
+      HTTP2ServerTransport.Posix.TransportSecurity
+    >
+    case posix(Posix)
+  }
+
+  private func makeDefaultPlaintextPosixClientConfig() -> ClientConfig.Posix {
+    ClientConfig.Posix(
+      security: .plaintext,
+      transport: .defaults { config in
+        config.backoff.initial = .milliseconds(100)
+        config.backoff.multiplier = 1
+        config.backoff.jitter = 0
+      }
+    )
+  }
+
+  private func makeDefaultTLSClientConfig(
     for transportSecurity: TransportKind,
     certificateKeyPairs: SelfSignedCertificateKeyPairs
-  ) -> TLSConfig.Client {
+  ) -> ClientConfig {
     switch transportSecurity {
     case .posix:
-      return .posix(
-        .tls(
-          .defaults {
-            $0.trustRoots = .certificates([
-              .bytes(certificateKeyPairs.server.certificate, format: .der)
-            ])
-            $0.serverHostname = "localhost"
-          }
-        )
-      )
+      var config = self.makeDefaultPlaintextPosixClientConfig()
+      config.security = .tls {
+        $0.trustRoots = .certificates([
+          .bytes(certificateKeyPairs.server.certificate, format: .der)
+        ])
+      }
+      config.transport.http2.authority = "localhost"
+      return .posix(config)
     }
   }
 
-  func makeMTLSClientTLSConfig(
+  private func makeMTLSClientConfig(
     for transportKind: TransportKind,
     certificateKeyPairs: SelfSignedCertificateKeyPairs,
     serverHostname: String?
-  ) -> TLSConfig.Client {
+  ) -> ClientConfig {
     switch transportKind {
     case .posix:
-      return .posix(
-        .tls(
-          .mTLS(
-            certificateChain: [.bytes(certificateKeyPairs.client.certificate, format: .der)],
-            privateKey: .bytes(certificateKeyPairs.client.key, format: .der)
-          ) {
-            $0.trustRoots = .certificates([
-              .bytes(certificateKeyPairs.server.certificate, format: .der)
-            ])
-            $0.serverHostname = serverHostname
-          }
-        )
-      )
+      var config = self.makeDefaultPlaintextPosixClientConfig()
+      config.security = .mTLS(
+        certificateChain: [.bytes(certificateKeyPairs.client.certificate, format: .der)],
+        privateKey: .bytes(certificateKeyPairs.client.key, format: .der)
+      ) {
+        $0.trustRoots = .certificates([
+          .bytes(certificateKeyPairs.server.certificate, format: .der)
+        ])
+      }
+      config.transport.http2.authority = serverHostname
+      return .posix(config)
     }
   }
 
-  func makeDefaultServerTLSConfig(
+  private func makeDefaultPlaintextPosixServerConfig() -> ServerConfig.Posix {
+    ServerConfig.Posix(security: .plaintext, transport: .defaults)
+  }
+
+  private func makeDefaultTLSServerConfig(
     for transportKind: TransportKind,
     certificateKeyPairs: SelfSignedCertificateKeyPairs
-  ) -> TLSConfig.Server {
+  ) -> ServerConfig {
     switch transportKind {
     case .posix:
-      return .posix(
-        .tls(
-          .defaults(
-            certificateChain: [.bytes(certificateKeyPairs.server.certificate, format: .der)],
-            privateKey: .bytes(certificateKeyPairs.server.key, format: .der)
-          )
-        )
+      var config = self.makeDefaultPlaintextPosixServerConfig()
+      config.security = .tls(
+        certificateChain: [.bytes(certificateKeyPairs.server.certificate, format: .der)],
+        privateKey: .bytes(certificateKeyPairs.server.key, format: .der)
       )
+      return .posix(config)
     }
   }
 
-  func makeMTLSServerTLSConfig(
+  private func makeMTLSServerConfig(
     for transportKind: TransportKind,
     certificateKeyPairs: SelfSignedCertificateKeyPairs,
     includeClientCertificateInTrustRoots: Bool
-  ) -> TLSConfig.Server {
+  ) -> ServerConfig {
     switch transportKind {
     case .posix:
-      return .posix(
-        .tls(
-          .mTLS(
-            certificateChain: [.bytes(certificateKeyPairs.server.certificate, format: .der)],
-            privateKey: .bytes(certificateKeyPairs.server.key, format: .der)
-          ) {
-            if includeClientCertificateInTrustRoots {
-              $0.trustRoots = .certificates([
-                .bytes(certificateKeyPairs.client.certificate, format: .der)
-              ])
-            }
-          }
-        )
-      )
+      var config = self.makeDefaultPlaintextPosixServerConfig()
+      config.security = .mTLS(
+        certificateChain: [.bytes(certificateKeyPairs.server.certificate, format: .der)],
+        privateKey: .bytes(certificateKeyPairs.server.key, format: .der)
+      ) {
+        if includeClientCertificateInTrustRoots {
+          $0.trustRoots = .certificates([
+            .bytes(certificateKeyPairs.client.certificate, format: .der)
+          ])
+        }
+      }
+      return .posix(config)
     }
   }
 
   func withClientAndServer(
-    clientTLSConfig: TLSConfig.Client,
-    serverTLSConfig: TLSConfig.Server,
+    clientConfig: ClientConfig,
+    serverConfig: ServerConfig,
     _ test: (ControlClient) async throws -> Void
   ) async throws {
     try await withThrowingDiscardingTaskGroup { group in
-      let server = self.makeServer(tlsConfig: serverTLSConfig)
+      let server = self.makeServer(config: serverConfig)
 
       group.addTask {
         try await server.serve()
@@ -311,7 +330,7 @@ struct HTTP2TransportTLSEnabledTests {
         return
       }
       let target: any ResolvableTarget = .ipv4(host: address.host, port: address.port)
-      let client = try self.makeClient(tlsConfig: clientTLSConfig, target: target)
+      let client = try self.makeClient(config: clientConfig, target: target)
 
       group.addTask {
         try await client.run()
@@ -325,15 +344,16 @@ struct HTTP2TransportTLSEnabledTests {
     }
   }
 
-  private func makeServer(tlsConfig: TLSConfig.Server) -> GRPCServer {
+  private func makeServer(config: ServerConfig) -> GRPCServer {
     let services = [ControlService()]
 
-    switch tlsConfig {
-    case .posix(let transportSecurity):
+    switch config {
+    case .posix(let config):
       let server = GRPCServer(
         transport: .http2NIOPosix(
           address: .ipv4(host: "127.0.0.1", port: 0),
-          config: .defaults(transportSecurity: transportSecurity)
+          transportSecurity: config.security,
+          config: config.transport
         ),
         services: services
       )
@@ -343,20 +363,17 @@ struct HTTP2TransportTLSEnabledTests {
   }
 
   private func makeClient(
-    tlsConfig: TLSConfig.Client,
+    config: ClientConfig,
     target: any ResolvableTarget
   ) throws -> GRPCClient {
     let transport: any ClientTransport
 
-    switch tlsConfig {
-    case .posix(let transportSecurity):
+    switch config {
+    case .posix(let config):
       transport = try HTTP2ClientTransport.Posix(
         target: target,
-        config: .defaults(transportSecurity: transportSecurity) { config in
-          config.backoff.initial = .milliseconds(100)
-          config.backoff.multiplier = 1
-          config.backoff.jitter = 0
-        },
+        transportSecurity: config.security,
+        config: config.transport,
         serviceConfig: ServiceConfig()
       )
     }

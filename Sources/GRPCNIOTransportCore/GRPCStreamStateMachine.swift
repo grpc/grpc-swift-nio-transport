@@ -31,17 +31,20 @@ enum GRPCStreamStateMachineConfiguration {
   struct ClientConfiguration {
     var methodDescriptor: MethodDescriptor
     var scheme: Scheme
+    var authority: String?
     var outboundEncoding: CompressionAlgorithm
     var acceptedEncodings: CompressionAlgorithmSet
 
     init(
       methodDescriptor: MethodDescriptor,
       scheme: Scheme,
+      authority: String?,
       outboundEncoding: CompressionAlgorithm,
       acceptedEncodings: CompressionAlgorithmSet
     ) {
       self.methodDescriptor = methodDescriptor
       self.scheme = scheme
+      self.authority = authority
       self.outboundEncoding = outboundEncoding
       self.acceptedEncodings = acceptedEncodings.union(.none)
     }
@@ -630,6 +633,7 @@ extension GRPCStreamStateMachine {
   private func makeClientHeaders(
     methodDescriptor: MethodDescriptor,
     scheme: Scheme,
+    authority: String?,
     outboundEncoding: CompressionAlgorithm?,
     acceptedEncodings: CompressionAlgorithmSet,
     customMetadata: Metadata
@@ -645,6 +649,9 @@ extension GRPCStreamStateMachine {
     headers.add("POST", forKey: .method)
     headers.add(scheme.rawValue, forKey: .scheme)
     headers.add(methodDescriptor.path, forKey: .path)
+    if let authority = authority {
+      headers.add(authority, forKey: .authority)
+    }
 
     // Add required gRPC headers.
     headers.add(ContentType.grpc.canonicalValue, forKey: .contentType)
@@ -659,7 +666,8 @@ extension GRPCStreamStateMachine {
     }
 
     for metadataPair in customMetadata {
-      headers.add(name: metadataPair.key, value: metadataPair.value.encoded())
+      // Lowercase the field names for user-provided metadata.
+      headers.add(name: metadataPair.key.lowercased(), value: metadataPair.value.encoded())
     }
 
     return headers
@@ -689,6 +697,7 @@ extension GRPCStreamStateMachine {
       return self.makeClientHeaders(
         methodDescriptor: configuration.methodDescriptor,
         scheme: configuration.scheme,
+        authority: configuration.authority,
         outboundEncoding: configuration.outboundEncoding,
         acceptedEncodings: configuration.acceptedEncodings,
         customMetadata: metadata
@@ -1248,7 +1257,8 @@ extension GRPCStreamStateMachine {
     }
 
     for metadataPair in customMetadata {
-      headers.add(name: metadataPair.key, value: metadataPair.value.encoded())
+      // Lowercase the field names for user-provided metadata.
+      headers.add(name: metadataPair.key.lowercased(), value: metadataPair.value.encoded())
     }
   }
 
@@ -1757,11 +1767,12 @@ extension MethodDescriptor {
     view.formIndex(after: &index)
     let method = String(view[index...])
 
-    self.init(service: service, method: method)
+    self.init(service: ServiceDescriptor(fullyQualifiedService: service), method: method)
   }
 }
 
 internal enum GRPCHTTP2Keys: String {
+  case authority = ":authority"
   case path = ":path"
   case contentType = "content-type"
   case encoding = "grpc-encoding"
@@ -1827,7 +1838,8 @@ extension HPACKHeaders {
     }
 
     for (key, value) in metadata {
-      trailers.add(name: key, value: value.encoded())
+      // Lowercase the field names for user-provided metadata.
+      trailers.add(name: key.lowercased(), value: value.encoded())
     }
   }
 }

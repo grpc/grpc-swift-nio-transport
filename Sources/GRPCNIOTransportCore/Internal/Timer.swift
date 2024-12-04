@@ -16,55 +16,54 @@
 
 package import NIOCore
 
-package struct Timer {
-  /// The delay to wait before running the task.
-  private let delay: TimeAmount
-  /// The task to run, if scheduled.
-  private var task: Kind?
-  /// Whether the task to schedule is repeated.
-  private let `repeat`: Bool
+/// A timer backed by `NIOScheduledCallback`.
+package final class Timer<Handler: NIOScheduledCallbackHandler> where Handler: Sendable {
+  /// The event loop on which to run this timer.
+  private let eventLoop: any EventLoop
 
-  private enum Kind {
-    case once(Scheduled<Void>)
-    case repeated(RepeatedTask)
+  /// The duration of the timer.
+  private let duration: TimeAmount
 
-    func cancel() {
-      switch self {
-      case .once(let task):
-        task.cancel()
-      case .repeated(let task):
-        task.cancel()
-      }
-    }
+  /// Whether this timer should repeat.
+  private let repeating: Bool
+
+  /// The handler to call when the timer fires.
+  private let handler: Handler
+
+  /// The currently scheduled callback if the timer is running.
+  private var scheduledCallback: NIOScheduledCallback?
+
+  package init(eventLoop: any EventLoop, duration: TimeAmount, repeating: Bool, handler: Handler) {
+    self.eventLoop = eventLoop
+    self.duration = duration
+    self.repeating = repeating
+    self.handler = handler
+    self.scheduledCallback = nil
   }
 
-  package init(delay: TimeAmount, repeat: Bool = false) {
-    self.delay = delay
-    self.task = nil
-    self.repeat = `repeat`
+  /// Cancel the timer, if it is running.
+  package func cancel() {
+    self.eventLoop.assertInEventLoop()
+    guard let scheduledCallback = self.scheduledCallback else { return }
+    scheduledCallback.cancel()
   }
 
-  /// Schedule a task on the given `EventLoop`.
-  package mutating func schedule(
-    on eventLoop: any EventLoop,
-    work: @escaping @Sendable () throws -> Void
-  ) {
-    self.task?.cancel()
-
-    if self.repeat {
-      let task = eventLoop.scheduleRepeatedTask(initialDelay: self.delay, delay: self.delay) { _ in
-        try work()
-      }
-      self.task = .repeated(task)
-    } else {
-      let task = eventLoop.scheduleTask(in: self.delay, work)
-      self.task = .once(task)
-    }
+  /// Start or restart the timer.
+  package func start() {
+    self.eventLoop.assertInEventLoop()
+    self.scheduledCallback?.cancel()
+    // Only throws if the event loop is shutting down, so we'll just swallow the error here.
+    self.scheduledCallback = try? self.eventLoop.scheduleCallback(in: self.duration, handler: self)
   }
+}
 
-  /// Cancels the task, if one was scheduled.
-  package mutating func cancel() {
-    self.task?.cancel()
-    self.task = nil
+extension Timer: NIOScheduledCallbackHandler, @unchecked Sendable where Handler: Sendable {
+  /// For repeated timer support, the timer itself proxies the callback and restarts the timer.
+  ///
+  /// - NOTE: Users should not call this function directly.
+  package func handleScheduledCallback(eventLoop: some EventLoop) {
+    self.eventLoop.assertInEventLoop()
+    self.handler.handleScheduledCallback(eventLoop: eventLoop)
+    if self.repeating { self.start() }
   }
 }

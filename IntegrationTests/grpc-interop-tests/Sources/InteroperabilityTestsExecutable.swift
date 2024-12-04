@@ -41,7 +41,8 @@ struct InteroperabilityTestsExecutable: AsyncParsableCommand {
       let server = GRPCServer(
         transport: .http2NIOPosix(
           address: .ipv4(host: self.host, port: self.port),
-          config: .defaults(transportSecurity: .plaintext) {
+          transportSecurity: .plaintext,
+          config: .defaults {
             $0.compression.enabledAlgorithms = .all
           }
         ),
@@ -115,7 +116,8 @@ struct InteroperabilityTestsExecutable: AsyncParsableCommand {
       return GRPCClient(
         transport: try .http2NIOPosix(
           target: .ipv4(host: host, port: port),
-          config: .defaults(transportSecurity: .plaintext) {
+          transportSecurity: .plaintext,
+          config: .defaults {
             $0.compression.enabledAlgorithms = .all
           },
           serviceConfig: serviceConfig

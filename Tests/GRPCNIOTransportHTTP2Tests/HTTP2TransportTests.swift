@@ -46,7 +46,8 @@ final class HTTP2TransportTests: XCTestCase {
   }
 
   func forEachTransportPair(
-    _ transport: [Transport] = .supported,
+    _ transport: [Transport] = [.init(server: .posix, client: .posix)],
+    serverAddress: SocketAddress = .ipv4(host: "127.0.0.1", port: 0),
     enableControlService: Bool = true,
     clientCompression: CompressionAlgorithm = .none,
     clientEnabledCompression: CompressionAlgorithmSet = .none,
@@ -57,6 +58,7 @@ final class HTTP2TransportTests: XCTestCase {
       try await withThrowingTaskGroup(of: Void.self) { group in
         let (server, address) = try await self.runServer(
           in: &group,
+          address: serverAddress,
           kind: pair.server,
           enableControlService: enableControlService,
           compression: serverCompression
@@ -134,6 +136,7 @@ final class HTTP2TransportTests: XCTestCase {
 
   private func runServer(
     in group: inout ThrowingTaskGroup<Void, any Error>,
+    address: SocketAddress,
     kind: Transport.Kind,
     enableControlService: Bool,
     compression: CompressionAlgorithmSet
@@ -144,8 +147,9 @@ final class HTTP2TransportTests: XCTestCase {
     case .posix:
       let server = GRPCServer(
         transport: .http2NIOPosix(
-          address: .ipv4(host: "127.0.0.1", port: 0),
-          config: .defaults(transportSecurity: .plaintext) {
+          address: address,
+          transportSecurity: .plaintext,
+          config: .defaults {
             $0.compression.enabledAlgorithms = compression
           }
         ),
@@ -163,8 +167,9 @@ final class HTTP2TransportTests: XCTestCase {
       #if canImport(Network)
       let server = GRPCServer(
         transport: .http2NIOTS(
-          address: .ipv4(host: "127.0.0.1", port: 0),
-          config: .defaults(transportSecurity: .plaintext) {
+          address: address,
+          transportSecurity: .plaintext,
+          config: .defaults {
             $0.compression.enabledAlgorithms = compression
           }
         ),
@@ -197,7 +202,8 @@ final class HTTP2TransportTests: XCTestCase {
       serviceConfig.loadBalancingConfig = [.roundRobin]
       transport = try HTTP2ClientTransport.Posix(
         target: target,
-        config: .defaults(transportSecurity: .plaintext) {
+        transportSecurity: .plaintext,
+        config: .defaults {
           $0.compression.algorithm = compression
           $0.compression.enabledAlgorithms = enabledCompression
         },
@@ -210,7 +216,8 @@ final class HTTP2TransportTests: XCTestCase {
       serviceConfig.loadBalancingConfig = [.roundRobin]
       transport = try HTTP2ClientTransport.TransportServices(
         target: target,
-        config: .defaults(transportSecurity: .plaintext) {
+        transportSecurity: .plaintext,
+        config: .defaults {
           $0.compression.algorithm = compression
           $0.compression.enabledAlgorithms = enabledCompression
         },
@@ -1442,8 +1449,207 @@ final class HTTP2TransportTests: XCTestCase {
           let responses = try await response.messages.reduce(into: []) { $0.append($1) }
           XCTAssert(responses.isEmpty)
         }
-
       }
+    }
+  }
+
+  func testUppercaseClientMetadataKey() async throws {
+    try await self.forEachTransportPair { control, _, _ in
+      let request = ClientRequest<ControlInput>(
+        message: .with {
+          $0.echoMetadataInHeaders = true
+          $0.numberOfMessages = 1
+        },
+        metadata: ["UPPERCASE-KEY": "value"]
+      )
+      try await control.unary(request: request) { response in
+        // Keys will be lowercase before being sent over the wire.
+        XCTAssertEqual(Array(response.metadata["echo-uppercase-key"]), ["value"])
+      }
+    }
+  }
+
+  func testUppercaseServerMetadataKey() async throws {
+    try await self.forEachTransportPair { control, _, _ in
+      let request = ClientRequest<ControlInput>(
+        message: .with {
+          $0.initialMetadataToAdd["UPPERCASE-KEY"] = "initial"
+          $0.trailingMetadataToAdd["UPPERCASE-KEY"] = "trailing"
+          $0.numberOfMessages = 1
+        }
+      )
+      try await control.unary(request: request) { response in
+        XCTAssertEqual(Array(response.metadata["uppercase-key"]), ["initial"])
+        XCTAssertEqual(Array(response.trailingMetadata["uppercase-key"]), ["trailing"])
+      }
+    }
+  }
+
+  private func checkAuthority(client: GRPCClient, expected: String) async throws {
+    let control = ControlClient(wrapping: client)
+    let input = ControlInput.with {
+      $0.echoMetadataInHeaders = true
+      $0.echoMetadataInTrailers = true
+      $0.numberOfMessages = 1
+      $0.payloadParameters = .with {
+        $0.content = 0
+        $0.size = 1024
+      }
+    }
+
+    try await control.unary(request: ClientRequest(message: input)) { response in
+      let initial = response.metadata
+      XCTAssertEqual(Array(initial["echo-authority"]), [.string(expected)])
+    }
+  }
+
+  private func testAuthority(
+    serverAddress: SocketAddress,
+    authorityOverride override: String? = nil,
+    clientTarget: (SocketAddress) -> any ResolvableTarget,
+    expectedAuthority: (SocketAddress) -> String
+  ) async throws {
+    try await withGRPCServer(
+      transport: .http2NIOPosix(
+        address: serverAddress,
+        transportSecurity: .plaintext
+      ),
+      services: [ControlService()]
+    ) { server in
+      guard let listeningAddress = try await server.listeningAddress else {
+        XCTFail("No listening address")
+        return
+      }
+
+      let target = clientTarget(listeningAddress)
+      try await withGRPCClient(
+        transport: .http2NIOPosix(
+          target: target,
+          transportSecurity: .plaintext,
+          config: .defaults {
+            $0.http2.authority = override
+          }
+        )
+      ) { client in
+        try await self.checkAuthority(client: client, expected: expectedAuthority(listeningAddress))
+      }
+    }
+  }
+
+  func testAuthorityDNS() async throws {
+    try await self.testAuthority(serverAddress: .ipv4(host: "127.0.0.1", port: 0)) { address in
+      return .dns(host: "localhost", port: address.ipv4!.port)
+    } expectedAuthority: { address in
+      return "localhost:\(address.ipv4!.port)"
+    }
+  }
+
+  func testOverrideAuthorityDNS() async throws {
+    try await self.testAuthority(
+      serverAddress: .ipv4(host: "127.0.0.1", port: 0),
+      authorityOverride: "respect-my-authority"
+    ) { address in
+      return .dns(host: "localhost", port: address.ipv4!.port)
+    } expectedAuthority: { _ in
+      return "respect-my-authority"
+    }
+  }
+
+  func testAuthorityIPv4() async throws {
+    try await self.testAuthority(serverAddress: .ipv4(host: "127.0.0.1", port: 0)) { address in
+      return .ipv4(host: "127.0.0.1", port: address.ipv4!.port)
+    } expectedAuthority: { address in
+      return "127.0.0.1:\(address.ipv4!.port)"
+    }
+  }
+
+  func testOverrideAuthorityIPv4() async throws {
+    try await self.testAuthority(
+      serverAddress: .ipv4(host: "127.0.0.1", port: 0),
+      authorityOverride: "respect-my-authority"
+    ) { address in
+      return .ipv4(host: "127.0.0.1", port: address.ipv4!.port)
+    } expectedAuthority: { _ in
+      return "respect-my-authority"
+    }
+  }
+
+  func testAuthorityIPv6() async throws {
+    try await self.testAuthority(serverAddress: .ipv6(host: "::1", port: 0)) { address in
+      return .ipv6(host: "::1", port: address.ipv6!.port)
+    } expectedAuthority: { address in
+      return "[::1]:\(address.ipv6!.port)"
+    }
+  }
+
+  func testOverrideAuthorityIPv6() async throws {
+    try await self.testAuthority(
+      serverAddress: .ipv6(host: "::1", port: 0),
+      authorityOverride: "respect-my-authority"
+    ) { address in
+      return .ipv6(host: "::1", port: address.ipv6!.port)
+    } expectedAuthority: { _ in
+      return "respect-my-authority"
+    }
+  }
+
+  func testAuthorityUDS() async throws {
+    let path = "test-authority-uds"
+    try await self.testAuthority(serverAddress: .unixDomainSocket(path: path)) { address in
+      return .unixDomainSocket(path: path)
+    } expectedAuthority: { _ in
+      return path
+    }
+  }
+
+  func testAuthorityLocalUDSOverride() async throws {
+    let path = "test-authority-local-uds-override"
+    try await self.testAuthority(serverAddress: .unixDomainSocket(path: path)) { address in
+      return .unixDomainSocket(path: path, authority: "respect-my-authority")
+    } expectedAuthority: { _ in
+      return "respect-my-authority"
+    }
+  }
+
+  func testOverrideAuthorityUDS() async throws {
+    let path = "test-override-authority-uds"
+    try await self.testAuthority(
+      serverAddress: .unixDomainSocket(path: path),
+      authorityOverride: "respect-my-authority"
+    ) { _ in
+      return .unixDomainSocket(path: path, authority: "should-be-ignored")
+    } expectedAuthority: { _ in
+      return "respect-my-authority"
+    }
+  }
+
+  func testPeerInfoIPv4() async throws {
+    try await self.forEachTransportPair(
+      serverAddress: .ipv4(host: "127.0.0.1", port: 0)
+    ) { control, _, _ in
+      let peerInfo = try await control.peerInfo()
+      let matches = peerInfo.matches(of: /ipv4:127.0.0.1:\d+/)
+      XCTAssertNotNil(matches)
+    }
+  }
+
+  func testPeerInfoIPv6() async throws {
+    try await self.forEachTransportPair(
+      serverAddress: .ipv6(host: "::1", port: 0)
+    ) { control, _, _ in
+      let peerInfo = try await control.peerInfo()
+      let matches = peerInfo.matches(of: /ipv6:[::1]:\d+/)
+      XCTAssertNotNil(matches)
+    }
+  }
+
+  func testPeerInfoUDS() async throws {
+    let path = "peer-info-uds"
+    try await self.forEachTransportPair(
+      serverAddress: .unixDomainSocket(path: path)
+    ) { control, _, _ in
+      let peerInfo = try await control.peerInfo()
+      XCTAssertEqual(peerInfo, "unix:peer-info-uds")
     }
   }
 }

@@ -26,13 +26,15 @@ extension ResolvableTargets {
     public var host: String
 
     /// The port to use with resolved addresses.
-    public var port: Int
+    ///
+    /// If no port is specified then 443 is used.
+    public var port: Int?
 
     /// Create a new DNS target.
     /// - Parameters:
     ///   - host: The host to resolve via DNS.
     ///   - port: The port to use with resolved addresses.
-    public init(host: String, port: Int) {
+    public init(host: String, port: Int?) {
       self.host = host
       self.port = port
     }
@@ -43,9 +45,9 @@ extension ResolvableTarget where Self == ResolvableTargets.DNS {
   /// Creates a new resolvable DNS target.
   /// - Parameters:
   ///   - host: The host address to resolve.
-  ///   - port: The port to use for each resolved address.
+  ///   - port: The port to use for each resolved address. 443 will be used if unspecified.
   /// - Returns: A ``ResolvableTarget``.
-  public static func dns(host: String, port: Int = 443) -> Self {
+  public static func dns(host: String, port: Int? = nil) -> Self {
     return Self(host: host, port: port)
   }
 }
@@ -60,7 +62,14 @@ extension NameResolvers {
 
     public func resolver(for target: Target) -> NameResolver {
       let resolver = Self.Resolver(target: target)
-      return NameResolver(names: RPCAsyncSequence(wrapping: resolver), updateMode: .pull)
+      // Only append the port if explicitly set. If it's nil the default port of 443 is used
+      // should be omitted from the authority.
+      let authority = target.host + (target.port.map { ":\($0)" } ?? "")
+      return NameResolver(
+        names: RPCAsyncSequence(wrapping: resolver),
+        updateMode: .pull,
+        authority: authority
+      )
     }
   }
 }
@@ -79,13 +88,16 @@ extension NameResolvers.DNS {
       let addresses: [SocketAddress]
 
       do {
-        addresses = try await DNSResolver.resolve(host: self.target.host, port: self.target.port)
+        addresses = try await DNSResolver.resolve(
+          host: self.target.host,
+          port: self.target.port ?? 443  // Assume TLS if no port is specified.
+        )
       } catch let error as CancellationError {
         throw error
       } catch {
         throw RPCError(
           code: .internalError,
-          message: "Couldn't resolve address for \(self.target.host):\(self.target.port)",
+          message: "Couldn't resolve address for \(self.target.host):\(self.target.port ?? 443)",
           cause: error
         )
       }

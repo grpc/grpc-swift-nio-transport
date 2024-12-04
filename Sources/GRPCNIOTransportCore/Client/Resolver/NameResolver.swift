@@ -31,6 +31,9 @@ public struct NameResolver: Sendable {
   /// How ``names`` is updated and should be consumed.
   public let updateMode: UpdateMode
 
+  /// The authority of the service.
+  public let authority: String?
+
   public struct UpdateMode: Hashable, Sendable {
     enum Value: Hashable, Sendable {
       case push
@@ -51,9 +54,14 @@ public struct NameResolver: Sendable {
   }
 
   /// Create a new name resolver.
-  public init(names: RPCAsyncSequence<NameResolutionResult, any Error>, updateMode: UpdateMode) {
+  public init(
+    names: RPCAsyncSequence<NameResolutionResult, any Error>,
+    updateMode: UpdateMode,
+    authority: String? = nil
+  ) {
     self.names = names
     self.updateMode = updateMode
+    self.authority = authority
   }
 }
 

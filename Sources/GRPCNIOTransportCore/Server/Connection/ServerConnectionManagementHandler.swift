@@ -48,25 +48,21 @@ package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
   /// The `EventLoop` of the `Channel` this handler exists in.
   private let eventLoop: any EventLoop
 
-  /// The maximum amount of time a connection may be idle for. If the connection remains idle
-  /// (i.e. has no open streams) for this period of time then the connection will be gracefully
-  /// closed.
-  private var maxIdleTimer: Timer?
+  /// The timer used to gracefully close idle connections.
+  private var maxIdleTimerHandler: Timer<MaxIdleTimerHandlerView>?
 
-  /// The maximum age of a connection. If the connection remains open after this amount of time
-  /// then it will be gracefully closed.
-  private var maxAgeTimer: Timer?
+  /// The timer used to gracefully close old connections.
+  private var maxAgeTimerHandler: Timer<MaxAgeTimerHandlerView>?
 
-  /// The maximum amount of time a connection may spend closing gracefully, after which it is
-  /// closed abruptly. The timer starts after the second GOAWAY frame has been sent.
-  private var maxGraceTimer: Timer?
+  /// The timer used to forcefully close a connection during a graceful close.
+  /// The timer starts after the second GOAWAY frame has been sent.
+  private var maxGraceTimerHandler: Timer<MaxGraceTimerHandlerView>?
 
-  /// The amount of time to wait before sending a keep alive ping.
-  private var keepaliveTimer: Timer?
+  /// The timer used to send keep-alive pings.
+  private var keepaliveTimerHandler: Timer<KeepaliveTimerHandlerView>?
 
-  /// The amount of time the client has to reply after sending a keep alive ping. Only used if
-  /// `keepaliveTimer` is set.
-  private var keepaliveTimeoutTimer: Timer
+  /// The timer used to detect keep alive timeouts, if keep-alive pings are enabled.
+  private var keepaliveTimeoutHandler: Timer<KeepaliveTimeoutHandlerView>?
 
   /// Opaque data sent in keep alive pings.
   private let keepalivePingData: HTTP2PingData
@@ -222,14 +218,6 @@ package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
   ) {
     self.eventLoop = eventLoop
 
-    self.maxIdleTimer = maxIdleTime.map { Timer(delay: $0) }
-    self.maxAgeTimer = maxAge.map { Timer(delay: $0) }
-    self.maxGraceTimer = maxGraceTime.map { Timer(delay: $0) }
-
-    self.keepaliveTimer = keepaliveTime.map { Timer(delay: $0) }
-    // Always create a keep alive timeout timer, it's only used if there is a keep alive timer.
-    self.keepaliveTimeoutTimer = Timer(delay: keepaliveTimeout ?? .seconds(20))
-
     // Generate a random value to be used as keep alive ping data.
     let pingData = UInt64.random(in: .min ... .max)
     self.keepalivePingData = HTTP2PingData(withInteger: pingData)
@@ -246,6 +234,47 @@ package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
     self.frameStats = FrameStats()
 
     self.requireALPN = requireALPN
+
+    if let maxIdleTime {
+      self.maxIdleTimerHandler = Timer(
+        eventLoop: eventLoop,
+        duration: maxIdleTime,
+        repeating: false,
+        handler: MaxIdleTimerHandlerView(self)
+      )
+    }
+    if let maxAge {
+      self.maxAgeTimerHandler = Timer(
+        eventLoop: eventLoop,
+        duration: maxAge,
+        repeating: false,
+        handler: MaxAgeTimerHandlerView(self)
+      )
+    }
+    if let maxGraceTime {
+      self.maxGraceTimerHandler = Timer(
+        eventLoop: eventLoop,
+        duration: maxGraceTime,
+        repeating: false,
+        handler: MaxGraceTimerHandlerView(self)
+      )
+    }
+    if let keepaliveTime {
+      let keepaliveTimeout = keepaliveTimeout ?? .seconds(20)
+      // NOTE: The use of a non-repeating timer is deliberate for the server, and is different from the client.
+      self.keepaliveTimerHandler = Timer(
+        eventLoop: eventLoop,
+        duration: keepaliveTime,
+        repeating: false,
+        handler: KeepaliveTimerHandlerView(self)
+      )
+      self.keepaliveTimeoutHandler = Timer(
+        eventLoop: eventLoop,
+        duration: keepaliveTimeout,
+        repeating: false,
+        handler: KeepaliveTimeoutHandlerView(self)
+      )
+    }
   }
 
   package func handlerAdded(context: ChannelHandlerContext) {
@@ -258,29 +287,18 @@ package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
   }
 
   package func channelActive(context: ChannelHandlerContext) {
-    let view = LoopBoundView(handler: self, context: context)
-
-    self.maxAgeTimer?.schedule(on: context.eventLoop) {
-      view.initiateGracefulShutdown()
-    }
-
-    self.maxIdleTimer?.schedule(on: context.eventLoop) {
-      view.initiateGracefulShutdown()
-    }
-
-    self.keepaliveTimer?.schedule(on: context.eventLoop) {
-      view.keepaliveTimerFired()
-    }
-
+    self.maxAgeTimerHandler?.start()
+    self.maxIdleTimerHandler?.start()
+    self.keepaliveTimerHandler?.start()
     context.fireChannelActive()
   }
 
   package func channelInactive(context: ChannelHandlerContext) {
-    self.maxIdleTimer?.cancel()
-    self.maxAgeTimer?.cancel()
-    self.maxGraceTimer?.cancel()
-    self.keepaliveTimer?.cancel()
-    self.keepaliveTimeoutTimer.cancel()
+    self.maxIdleTimerHandler?.cancel()
+    self.maxAgeTimerHandler?.cancel()
+    self.maxGraceTimerHandler?.cancel()
+    self.keepaliveTimerHandler?.cancel()
+    self.keepaliveTimeoutHandler?.cancel()
     context.fireChannelInactive()
   }
 
@@ -293,7 +311,7 @@ package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
       self._streamClosed(event.streamID, channel: context.channel)
 
     case is ChannelShouldQuiesceEvent:
-      self.initiateGracefulShutdown(context: context)
+      self.initiateGracefulShutdown()
 
     case TLSUserEvent.handshakeCompleted(let negotiatedProtocol):
       if negotiatedProtocol == nil, self.requireALPN {
@@ -349,8 +367,8 @@ package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
     self.inReadLoop = true
 
     // Any read data indicates that the connection is alive so cancel the keep-alive timers.
-    self.keepaliveTimer?.cancel()
-    self.keepaliveTimeoutTimer.cancel()
+    self.keepaliveTimerHandler?.cancel()
+    self.keepaliveTimeoutHandler?.cancel()
 
     let frame = self.unwrapInboundIn(data)
     switch frame.payload {
@@ -377,10 +395,7 @@ package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
     self.inReadLoop = false
 
     // Done reading: schedule the keep-alive timer.
-    let view = LoopBoundView(handler: self, context: context)
-    self.keepaliveTimer?.schedule(on: context.eventLoop) {
-      view.keepaliveTimerFired()
-    }
+    self.keepaliveTimerHandler?.start()
 
     context.fireChannelReadComplete()
   }
@@ -390,26 +405,71 @@ package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
   }
 }
 
+// Timer handler views.
 extension ServerConnectionManagementHandler {
-  struct LoopBoundView: @unchecked Sendable {
+  struct MaxIdleTimerHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
     private let handler: ServerConnectionManagementHandler
-    private let context: ChannelHandlerContext
 
-    init(handler: ServerConnectionManagementHandler, context: ChannelHandlerContext) {
+    init(_ handler: ServerConnectionManagementHandler) {
       self.handler = handler
-      self.context = context
     }
 
-    func initiateGracefulShutdown() {
-      self.context.eventLoop.assertInEventLoop()
-      self.handler.initiateGracefulShutdown(context: self.context)
+    func handleScheduledCallback(eventLoop: some EventLoop) {
+      self.handler.eventLoop.assertInEventLoop()
+      self.handler.initiateGracefulShutdown()
+    }
+  }
+
+  struct MaxAgeTimerHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
+    private let handler: ServerConnectionManagementHandler
+
+    init(_ handler: ServerConnectionManagementHandler) {
+      self.handler = handler
     }
 
-    func keepaliveTimerFired() {
-      self.context.eventLoop.assertInEventLoop()
-      self.handler.keepaliveTimerFired(context: self.context)
+    func handleScheduledCallback(eventLoop: some EventLoop) {
+      self.handler.eventLoop.assertInEventLoop()
+      self.handler.initiateGracefulShutdown()
+    }
+  }
+
+  struct MaxGraceTimerHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
+    private let handler: ServerConnectionManagementHandler
+
+    init(_ handler: ServerConnectionManagementHandler) {
+      self.handler = handler
     }
 
+    func handleScheduledCallback(eventLoop: some EventLoop) {
+      self.handler.eventLoop.assertInEventLoop()
+      self.handler.context?.close(promise: nil)
+    }
+  }
+
+  struct KeepaliveTimerHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
+    private let handler: ServerConnectionManagementHandler
+
+    init(_ handler: ServerConnectionManagementHandler) {
+      self.handler = handler
+    }
+
+    func handleScheduledCallback(eventLoop: some EventLoop) {
+      self.handler.eventLoop.assertInEventLoop()
+      self.handler.keepaliveTimerFired()
+    }
+  }
+
+  struct KeepaliveTimeoutHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
+    private let handler: ServerConnectionManagementHandler
+
+    init(_ handler: ServerConnectionManagementHandler) {
+      self.handler = handler
+    }
+
+    func handleScheduledCallback(eventLoop: some EventLoop) {
+      self.handler.eventLoop.assertInEventLoop()
+      self.handler.initiateGracefulShutdown()
+    }
   }
 }
 
@@ -450,7 +510,7 @@ extension ServerConnectionManagementHandler {
 
   private func _streamCreated(_ id: HTTP2StreamID, channel: any Channel) {
     // The connection isn't idle if a stream is open.
-    self.maxIdleTimer?.cancel()
+    self.maxIdleTimerHandler?.cancel()
     self.state.streamOpened(id)
   }
 
@@ -459,13 +519,25 @@ extension ServerConnectionManagementHandler {
 
     switch self.state.streamClosed(id) {
     case .startIdleTimer:
-      let loopBound = LoopBoundView(handler: self, context: context)
-      self.maxIdleTimer?.schedule(on: context.eventLoop) {
-        loopBound.initiateGracefulShutdown()
-      }
-
+      self.maxIdleTimerHandler?.start()
     case .close:
-      context.close(mode: .all, promise: nil)
+      // Defer closing until the next tick of the event loop.
+      //
+      // This point is reached because the server is shutting down gracefully and the stream count
+      // has dropped to zero, meaning the connection is no longer required and can be closed.
+      // However, the stream would've been closed by writing and flushing a frame with end stream
+      // set. These are two distinct events in the channel pipeline. The HTTP/2 handler updates the
+      // state machine when a frame is written, which in this case results in the stream closed
+      // event which we're reacting to here.
+      //
+      // Importantly the HTTP/2 handler hasn't yet seen the flush event, so the bytes of the frame
+      // with end-stream set - and potentially some other frames - are sitting in a buffer in the
+      // HTTP/2 handler. If we close on this event loop tick then those frames will be dropped.
+      // Delaying the close by a loop tick will allow the flush to happen before the close.
+      let loopBound = NIOLoopBound(context, eventLoop: context.eventLoop)
+      context.eventLoop.execute {
+        loopBound.value.close(mode: .all, promise: nil)
+      }
 
     case .none:
       ()
@@ -482,14 +554,15 @@ extension ServerConnectionManagementHandler {
     }
   }
 
-  private func initiateGracefulShutdown(context: ChannelHandlerContext) {
+  private func initiateGracefulShutdown() {
+    guard let context = self.context else { return }
     context.eventLoop.assertInEventLoop()
 
     // Cancel any timers if initiating shutdown.
-    self.maxIdleTimer?.cancel()
-    self.maxAgeTimer?.cancel()
-    self.keepaliveTimer?.cancel()
-    self.keepaliveTimeoutTimer.cancel()
+    self.maxIdleTimerHandler?.cancel()
+    self.maxAgeTimerHandler?.cancel()
+    self.keepaliveTimerHandler?.cancel()
+    self.keepaliveTimeoutHandler?.cancel()
 
     switch self.state.startGracefulShutdown() {
     case .sendGoAwayAndPing(let pingData):
@@ -562,10 +635,7 @@ extension ServerConnectionManagementHandler {
       } else {
         // RPCs may have a grace period for finishing once the second GOAWAY frame has finished.
         // If this is set close the connection abruptly once the grace period passes.
-        let loopBound = NIOLoopBound(context, eventLoop: context.eventLoop)
-        self.maxGraceTimer?.schedule(on: context.eventLoop) {
-          loopBound.value.close(promise: nil)
-        }
+        self.maxGraceTimerHandler?.start()
       }
 
     case .none:
@@ -573,15 +643,13 @@ extension ServerConnectionManagementHandler {
     }
   }
 
-  private func keepaliveTimerFired(context: ChannelHandlerContext) {
+  private func keepaliveTimerFired() {
+    guard let context = self.context else { return }
     let ping = HTTP2Frame(streamID: .rootStream, payload: .ping(self.keepalivePingData, ack: false))
     context.write(self.wrapInboundOut(ping), promise: nil)
     self.maybeFlush(context: context)
 
     // Schedule a timeout on waiting for the response.
-    let loopBound = LoopBoundView(handler: self, context: context)
-    self.keepaliveTimeoutTimer.schedule(on: context.eventLoop) {
-      loopBound.initiateGracefulShutdown()
-    }
+    self.keepaliveTimeoutHandler?.start()
   }
 }

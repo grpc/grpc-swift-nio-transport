@@ -41,7 +41,7 @@ extension HTTP2ServerTransport {
   /// try await withThrowingDiscardingTaskGroup { group in
   ///   let transport = HTTP2ServerTransport.Posix(
   ///     address: .ipv4(host: "127.0.0.1", port: 0),
-  ///     config: .defaults(transportSecurity: .plaintext)
+  ///     transportSecurity: .plaintext
   ///   )
   ///   let server = GRPCServer(transport: transport, services: someServices)
   ///   group.addTask {
@@ -54,6 +54,7 @@ extension HTTP2ServerTransport {
   public struct Posix: ServerTransport, ListeningServerTransport {
     private struct ListenerFactory: HTTP2ListenerFactory {
       let config: Config
+      let transportSecurity: TransportSecurity
 
       func makeListeningChannel(
         eventLoopGroup: any EventLoopGroup,
@@ -62,7 +63,7 @@ extension HTTP2ServerTransport {
       ) async throws -> NIOAsyncChannel<AcceptedChannel, Never> {
         let sslContext: NIOSSLContext?
 
-        switch self.config.transportSecurity.wrapped {
+        switch self.transportSecurity.wrapped {
         case .plaintext:
           sslContext = nil
         case .tls(let tlsConfig):
@@ -97,7 +98,7 @@ extension HTTP2ServerTransport {
 
               let requireALPN: Bool
               let scheme: Scheme
-              switch self.config.transportSecurity.wrapped {
+              switch self.transportSecurity.wrapped {
               case .plaintext:
                 requireALPN = false
                 scheme = .http
@@ -141,14 +142,16 @@ extension HTTP2ServerTransport {
     ///
     /// - Parameters:
     ///   - address: The address to which the server should be bound.
+    ///   - transportSecurity: The configuration for securing network traffic.
     ///   - config: The transport configuration.
     ///   - eventLoopGroup: The ELG from which to get ELs to run this transport.
     public init(
       address: GRPCNIOTransportCore.SocketAddress,
-      config: Config,
+      transportSecurity: TransportSecurity,
+      config: Config = .defaults,
       eventLoopGroup: MultiThreadedEventLoopGroup = .singletonMultiThreadedEventLoopGroup
     ) {
-      let factory = ListenerFactory(config: config)
+      let factory = ListenerFactory(config: config, transportSecurity: transportSecurity)
       let helper = ServerQuiescingHelper(group: eventLoopGroup)
       self.underlyingTransport = CommonHTTP2ServerTransport(
         address: address,
@@ -188,9 +191,6 @@ extension HTTP2ServerTransport.Posix {
     /// RPC configuration.
     public var rpc: HTTP2ServerTransport.Config.RPC
 
-    /// The transport's security.
-    public var transportSecurity: TransportSecurity
-
     /// Construct a new `Config`.
     ///
     /// - Parameters:
@@ -198,38 +198,37 @@ extension HTTP2ServerTransport.Posix {
     ///   - rpc: RPC configuration.
     ///   - connection: Connection configuration.
     ///   - compression: Compression configuration.
-    ///   - transportSecurity: The transport's security configuration.
     ///
-    /// - SeeAlso: ``defaults(transportSecurity:configure:)``
+    /// - SeeAlso: ``defaults(configure:)`` and ``defaults``.
     public init(
       http2: HTTP2ServerTransport.Config.HTTP2,
       rpc: HTTP2ServerTransport.Config.RPC,
       connection: HTTP2ServerTransport.Config.Connection,
-      compression: HTTP2ServerTransport.Config.Compression,
-      transportSecurity: TransportSecurity
+      compression: HTTP2ServerTransport.Config.Compression
     ) {
       self.compression = compression
       self.connection = connection
       self.http2 = http2
       self.rpc = rpc
-      self.transportSecurity = transportSecurity
+    }
+
+    /// Default configuration.
+    public static var defaults: Self {
+      Self.defaults()
     }
 
     /// Default values for the different configurations.
     ///
     /// - Parameters:
-    ///   - transportSecurity: The security settings applied to the transport.
     ///   - configure: A closure which allows you to modify the defaults before returning them.
     public static func defaults(
-      transportSecurity: TransportSecurity,
       configure: (_ config: inout Self) -> Void = { _ in }
     ) -> Self {
       var config = Self(
         http2: .defaults,
         rpc: .defaults,
         connection: .defaults,
-        compression: .defaults,
-        transportSecurity: transportSecurity
+        compression: .defaults
       )
       configure(&config)
       return config
@@ -247,6 +246,12 @@ extension ServerBootstrap {
         to: VsockAddress(virtualSocket),
         childChannelInitializer: childChannelInitializer
       )
+    } else if let uds = address.unixDomainSocket {
+      return try await self.bind(
+        unixDomainSocketPath: uds.path,
+        cleanupExistingSocketFile: true,
+        childChannelInitializer: childChannelInitializer
+      )
     } else {
       return try await self.bind(
         to: NIOCore.SocketAddress(address),
@@ -261,17 +266,20 @@ extension ServerTransport where Self == HTTP2ServerTransport.Posix {
   ///
   /// - Parameters:
   ///   - address: The address to which the server should be bound.
+  ///   - transportSecurity: The configuration for securing network traffic.
   ///   - config: The transport configuration.
   ///   - eventLoopGroup: The underlying NIO `EventLoopGroup` to the server on. This must
   ///       be a `MultiThreadedEventLoopGroup` or an `EventLoop` from
   ///       a `MultiThreadedEventLoopGroup`.
   public static func http2NIOPosix(
     address: GRPCNIOTransportCore.SocketAddress,
-    config: HTTP2ServerTransport.Posix.Config,
+    transportSecurity: HTTP2ServerTransport.Posix.TransportSecurity,
+    config: HTTP2ServerTransport.Posix.Config = .defaults,
     eventLoopGroup: MultiThreadedEventLoopGroup = .singletonMultiThreadedEventLoopGroup
   ) -> Self {
     return HTTP2ServerTransport.Posix(
       address: address,
+      transportSecurity: transportSecurity,
       config: config,
       eventLoopGroup: eventLoopGroup
     )

@@ -14,23 +14,28 @@
  * limitations under the License.
  */
 
-import GRPCCore
+import GRPCNIOTransportCore
+import Testing
 
-extension MethodDescriptor {
-  static var echoGet: Self {
-    MethodDescriptor(fullyQualifiedService: "echo.Echo", method: "Get")
-  }
-
-  static var echoUpdate: Self {
-    MethodDescriptor(fullyQualifiedService: "echo.Echo", method: "Update")
-  }
-}
-
-extension MethodConfig.Name {
-  init(_ descriptor: MethodDescriptor) {
-    self = MethodConfig.Name(
-      service: descriptor.service.fullyQualifiedService,
-      method: descriptor.method
-    )
+@Suite("Percent encoding")
+struct PercentEncodingTests {
+  @Test(
+    "encode ':authority'",
+    arguments: [
+      ("", ""),
+      ("foo", "foo"),
+      ("FOO", "FOO"),
+      ("f00", "f00"),
+      ("f0&", "f0&"),
+      ("f**", "f**"),
+      ("fo#", "fo%23"),
+      ("fo/o|bar", "fo%2Fo%7Cbar"),
+      ("foo?bar", "foo%3Fbar"),
+      ("foo<bar>", "foo%3Cbar%3E"),
+    ]
+  )
+  func encodeAuthority(_ input: String, expected: String) {
+    let encoded = PercentEncoding.encodeAuthority(input)
+    #expect(encoded == expected)
   }
 }

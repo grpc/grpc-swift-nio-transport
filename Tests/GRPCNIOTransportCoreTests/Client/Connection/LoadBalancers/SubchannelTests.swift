@@ -568,6 +568,7 @@ final class SubchannelTests: XCTestCase {
       endpoint: Endpoint(addresses: addresses),
       id: SubchannelID(),
       connector: connector,
+      authority: nil,
       backoff: backoff ?? .defaults,
       defaultCompression: .none,
       enabledCompression: .none

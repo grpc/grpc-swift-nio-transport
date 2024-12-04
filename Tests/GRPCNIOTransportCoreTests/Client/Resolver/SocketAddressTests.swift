@@ -77,4 +77,18 @@ final class SocketAddressTests: XCTestCase {
     vsock.port = .any
     XCTAssertDescription(vsock, "[vsock]-1:-1")
   }
+
+  func testAuthority() {
+    var address: SocketAddress = .ipv4(host: "127.0.0.1", port: 42)
+    XCTAssertEqual(address.authority, "127.0.0.1:42")
+
+    address = .ipv6(host: "::1", port: 42)
+    XCTAssertEqual(address.authority, "[::1]:42")
+
+    address = .unixDomainSocket(path: "foo")
+    XCTAssertEqual(address.authority, "foo")
+
+    address = .vsock(contextID: 42, port: 8000)
+    XCTAssertEqual(address.authority, "42:8000")
+  }
 }

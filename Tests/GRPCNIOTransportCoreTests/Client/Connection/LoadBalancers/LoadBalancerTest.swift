@@ -41,6 +41,7 @@ enum LoadBalancerTest {
     ) {
       let pickFirst = PickFirstLoadBalancer(
         connector: connector,
+        authority: nil,
         backoff: backoff,
         defaultCompression: .none,
         enabledCompression: .none
@@ -67,6 +68,7 @@ enum LoadBalancerTest {
     ) {
       let roundRobin = RoundRobinLoadBalancer(
         connector: connector,
+        authority: nil,
         backoff: backoff,
         defaultCompression: .none,
         enabledCompression: .none

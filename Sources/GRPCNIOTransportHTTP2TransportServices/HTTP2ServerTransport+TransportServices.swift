@@ -31,6 +31,7 @@ extension HTTP2ServerTransport {
   public struct TransportServices: ServerTransport, ListeningServerTransport {
     private struct ListenerFactory: HTTP2ListenerFactory {
       let config: Config
+      let transportSecurity: TransportSecurity
 
       func makeListeningChannel(
         eventLoopGroup: any EventLoopGroup,
@@ -41,7 +42,7 @@ extension HTTP2ServerTransport {
 
         let requireALPN: Bool
         let scheme: Scheme
-        switch self.config.transportSecurity.wrapped {
+        switch self.transportSecurity.wrapped {
         case .plaintext:
           requireALPN = false
           scheme = .http
@@ -102,14 +103,16 @@ extension HTTP2ServerTransport {
     ///
     /// - Parameters:
     ///   - address: The address to which the server should be bound.
+    ///   - transportSecurity: The security settings applied to the transport.
     ///   - config: The transport configuration.
     ///   - eventLoopGroup: The ELG from which to get ELs to run this transport.
     public init(
       address: GRPCNIOTransportCore.SocketAddress,
-      config: Config,
+      transportSecurity: TransportSecurity,
+      config: Config = .defaults,
       eventLoopGroup: NIOTSEventLoopGroup = .singletonNIOTSEventLoopGroup
     ) {
-      let factory = ListenerFactory(config: config)
+      let factory = ListenerFactory(config: config, transportSecurity: transportSecurity)
       let helper = ServerQuiescingHelper(group: eventLoopGroup)
       self.underlyingTransport = CommonHTTP2ServerTransport(
         address: address,
@@ -149,45 +152,40 @@ extension HTTP2ServerTransport.TransportServices {
     /// RPC configuration.
     public var rpc: HTTP2ServerTransport.Config.RPC
 
-    /// The transport's security.
-    public var transportSecurity: TransportSecurity
-
     /// Construct a new `Config`.
     /// - Parameters:
     ///   - compression: Compression configuration.
     ///   - connection: Connection configuration.
     ///   - http2: HTTP2 configuration.
     ///   - rpc: RPC configuration.
-    ///   - transportSecurity: The transport's security configuration.
     public init(
       compression: HTTP2ServerTransport.Config.Compression,
       connection: HTTP2ServerTransport.Config.Connection,
       http2: HTTP2ServerTransport.Config.HTTP2,
-      rpc: HTTP2ServerTransport.Config.RPC,
-      transportSecurity: TransportSecurity
+      rpc: HTTP2ServerTransport.Config.RPC
     ) {
       self.compression = compression
       self.connection = connection
       self.http2 = http2
       self.rpc = rpc
-      self.transportSecurity = transportSecurity
+    }
+
+    public static var defaults: Self {
+      Self.defaults()
     }
 
     /// Default values for the different configurations.
     ///
     /// - Parameters:
-    ///   - transportSecurity: The transport's security configuration.
     ///   - configure: A closure which allows you to modify the defaults before returning them.
     public static func defaults(
-      transportSecurity: TransportSecurity,
       configure: (_ config: inout Self) -> Void = { _ in }
     ) -> Self {
       var config = Self(
         compression: .defaults,
         connection: .defaults,
         http2: .defaults,
-        rpc: .defaults,
-        transportSecurity: transportSecurity
+        rpc: .defaults
       )
       configure(&config)
       return config
@@ -222,16 +220,19 @@ extension ServerTransport where Self == HTTP2ServerTransport.TransportServices {
   ///
   /// - Parameters:
   ///   - address: The address to which the server should be bound.
+  ///   - transportSecurity: The security settings applied to the transport.
   ///   - config: The transport configuration.
   ///   - eventLoopGroup: The underlying NIO `EventLoopGroup` to the server on. This must
   ///       be a `NIOTSEventLoopGroup` or an `EventLoop` from a `NIOTSEventLoopGroup`.
   public static func http2NIOTS(
     address: GRPCNIOTransportCore.SocketAddress,
-    config: HTTP2ServerTransport.TransportServices.Config,
+    transportSecurity: HTTP2ServerTransport.TransportServices.TransportSecurity,
+    config: HTTP2ServerTransport.TransportServices.Config = .defaults,
     eventLoopGroup: NIOTSEventLoopGroup = .singletonNIOTSEventLoopGroup
   ) -> Self {
     return HTTP2ServerTransport.TransportServices(
       address: address,
+      transportSecurity: transportSecurity,
       config: config,
       eventLoopGroup: eventLoopGroup
     )
@@ -239,7 +240,7 @@ extension ServerTransport where Self == HTTP2ServerTransport.TransportServices {
 }
 
 extension NWProtocolTLS.Options {
-  convenience init(_ tlsConfig: HTTP2ServerTransport.TransportServices.Config.TLS) throws {
+  convenience init(_ tlsConfig: HTTP2ServerTransport.TransportServices.TLS) throws {
     self.init()
 
     guard let sec_identity = sec_identity_create(try tlsConfig.identityProvider()) else {

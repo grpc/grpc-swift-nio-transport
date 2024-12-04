@@ -63,17 +63,14 @@ package final class ClientConnectionHandler: ChannelInboundHandler, ChannelOutbo
   /// The `EventLoop` of the `Channel` this handler exists in.
   private let eventLoop: any EventLoop
 
-  /// The maximum amount of time the connection may be idle for. If the connection remains idle
-  /// (i.e. has no open streams) for this period of time then the connection will be gracefully
-  /// closed.
-  private var maxIdleTimer: Timer?
+  /// The timer used to gracefully close idle connections.
+  private var maxIdleTimerHandler: Timer<MaxIdleTimerHandlerView>?
 
-  /// The amount of time to wait before sending a keep alive ping.
-  private var keepaliveTimer: Timer?
+  /// The timer used to send keep-alive pings.
+  private var keepaliveTimerHandler: Timer<KeepaliveTimerHandlerView>?
 
-  /// The amount of time the client has to reply after sending a keep alive ping. Only used if
-  /// `keepaliveTimer` is set.
-  private var keepaliveTimeoutTimer: Timer
+  /// The timer used to detect keep alive timeouts, if keep-alive pings are enabled.
+  private var keepaliveTimeoutHandler: Timer<KeepaliveTimeoutHandlerView>?
 
   /// Opaque data sent in keep alive pings.
   private let keepalivePingData: HTTP2PingData
@@ -110,14 +107,34 @@ package final class ClientConnectionHandler: ChannelInboundHandler, ChannelOutbo
     keepaliveWithoutCalls: Bool
   ) {
     self.eventLoop = eventLoop
-    self.maxIdleTimer = maxIdleTime.map { Timer(delay: $0) }
-    self.keepaliveTimer = keepaliveTime.map { Timer(delay: $0, repeat: true) }
-    self.keepaliveTimeoutTimer = Timer(delay: keepaliveTimeout ?? .seconds(20))
     self.keepalivePingData = HTTP2PingData(withInteger: .random(in: .min ... .max))
     self.state = StateMachine(allowKeepaliveWithoutCalls: keepaliveWithoutCalls)
 
     self.flushPending = false
     self.inReadLoop = false
+    if let maxIdleTime {
+      self.maxIdleTimerHandler = Timer(
+        eventLoop: eventLoop,
+        duration: maxIdleTime,
+        repeating: false,
+        handler: MaxIdleTimerHandlerView(self)
+      )
+    }
+    if let keepaliveTime {
+      let keepaliveTimeout = keepaliveTimeout ?? .seconds(20)
+      self.keepaliveTimerHandler = Timer(
+        eventLoop: eventLoop,
+        duration: keepaliveTime,
+        repeating: true,
+        handler: KeepaliveTimerHandlerView(self)
+      )
+      self.keepaliveTimeoutHandler = Timer(
+        eventLoop: eventLoop,
+        duration: keepaliveTimeout,
+        repeating: false,
+        handler: KeepaliveTimeoutHandlerView(self)
+      )
+    }
   }
 
   package func handlerAdded(context: ChannelHandlerContext) {
@@ -142,8 +159,8 @@ package final class ClientConnectionHandler: ChannelInboundHandler, ChannelOutbo
       promise.succeed()
     }
 
-    self.keepaliveTimer?.cancel()
-    self.keepaliveTimeoutTimer.cancel()
+    self.keepaliveTimerHandler?.cancel()
+    self.keepaliveTimeoutHandler?.cancel()
     context.fireChannelInactive()
   }
 
@@ -222,11 +239,8 @@ package final class ClientConnectionHandler: ChannelInboundHandler, ChannelOutbo
       // Pings are ack'd by the HTTP/2 handler so we only pay attention to acks here, and in
       // particular only those carrying the keep-alive data.
       if ack, data == self.keepalivePingData {
-        let loopBound = LoopBoundView(handler: self, context: context)
-        self.keepaliveTimeoutTimer.cancel()
-        self.keepaliveTimer?.schedule(on: context.eventLoop) {
-          loopBound.keepaliveTimerFired()
-        }
+        self.keepaliveTimeoutHandler?.cancel()
+        self.keepaliveTimerHandler?.start()
       }
 
     case .settings(.settings(_)):
@@ -236,15 +250,8 @@ package final class ClientConnectionHandler: ChannelInboundHandler, ChannelOutbo
       // becoming active is insufficient as, for example, a TLS handshake may fail after
       // establishing the TCP connection, or the server isn't configured for gRPC (or HTTP/2).
       if isInitialSettings {
-        let loopBound = LoopBoundView(handler: self, context: context)
-        self.keepaliveTimer?.schedule(on: context.eventLoop) {
-          loopBound.keepaliveTimerFired()
-        }
-
-        self.maxIdleTimer?.schedule(on: context.eventLoop) {
-          loopBound.maxIdleTimerFired()
-        }
-
+        self.keepaliveTimerHandler?.start()
+        self.maxIdleTimerHandler?.start()
         context.fireChannelRead(self.wrapInboundOut(.ready))
       }
 
@@ -290,29 +297,44 @@ package final class ClientConnectionHandler: ChannelInboundHandler, ChannelOutbo
   }
 }
 
+// Timer handler views.
 extension ClientConnectionHandler {
-  struct LoopBoundView: @unchecked Sendable {
+  struct MaxIdleTimerHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
     private let handler: ClientConnectionHandler
-    private let context: ChannelHandlerContext
 
-    init(handler: ClientConnectionHandler, context: ChannelHandlerContext) {
+    init(_ handler: ClientConnectionHandler) {
       self.handler = handler
-      self.context = context
     }
 
-    func keepaliveTimerFired() {
-      self.context.eventLoop.assertInEventLoop()
-      self.handler.keepaliveTimerFired(context: self.context)
+    func handleScheduledCallback(eventLoop: some EventLoop) {
+      self.handler.eventLoop.assertInEventLoop()
+      self.handler.maxIdleTimerFired()
+    }
+  }
+
+  struct KeepaliveTimerHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
+    private let handler: ClientConnectionHandler
+
+    init(_ handler: ClientConnectionHandler) {
+      self.handler = handler
     }
 
-    func keepaliveTimeoutExpired() {
-      self.context.eventLoop.assertInEventLoop()
-      self.handler.keepaliveTimeoutExpired(context: self.context)
+    func handleScheduledCallback(eventLoop: some EventLoop) {
+      self.handler.eventLoop.assertInEventLoop()
+      self.handler.keepaliveTimerFired()
+    }
+  }
+
+  struct KeepaliveTimeoutHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
+    private let handler: ClientConnectionHandler
+
+    init(_ handler: ClientConnectionHandler) {
+      self.handler = handler
     }
 
-    func maxIdleTimerFired() {
-      self.context.eventLoop.assertInEventLoop()
-      self.handler.maxIdleTimerFired(context: self.context)
+    func handleScheduledCallback(eventLoop: some EventLoop) {
+      self.handler.eventLoop.assertInEventLoop()
+      self.handler.keepaliveTimeoutExpired()
     }
   }
 }
@@ -356,7 +378,7 @@ extension ClientConnectionHandler {
     self.eventLoop.assertInEventLoop()
 
     // Stream created, so the connection isn't idle.
-    self.maxIdleTimer?.cancel()
+    self.maxIdleTimerHandler?.cancel()
     self.state.streamOpened(id)
   }
 
@@ -368,19 +390,30 @@ extension ClientConnectionHandler {
     case .startIdleTimer(let cancelKeepalive):
       // All streams are closed, restart the idle timer, and stop the keep-alive timer (it may
       // not stop if keep-alive is allowed when there are no active calls).
-      let loopBound = LoopBoundView(handler: self, context: context)
-      self.maxIdleTimer?.schedule(on: context.eventLoop) {
-        loopBound.maxIdleTimerFired()
-      }
+      self.maxIdleTimerHandler?.start()
 
       if cancelKeepalive {
-        self.keepaliveTimer?.cancel()
+        self.keepaliveTimerHandler?.cancel()
       }
 
     case .close:
-      // Connection was closing but waiting for all streams to close. They must all be closed
-      // now so close the connection.
-      context.close(promise: nil)
+      // Defer closing until the next tick of the event loop.
+      //
+      // This point is reached because the server is shutting down gracefully and the stream count
+      // has dropped to zero, meaning the connection is no longer required and can be closed.
+      // However, the stream would've been closed by writing and flushing a frame with end stream
+      // set. These are two distinct events in the channel pipeline. The HTTP/2 handler updates the
+      // state machine when a frame is written, which in this case results in the stream closed
+      // event which we're reacting to here.
+      //
+      // Importantly the HTTP/2 handler hasn't yet seen the flush event, so the bytes of the frame
+      // with end-stream set - and potentially some other frames - are sitting in a buffer in the
+      // HTTP/2 handler. If we close on this event loop tick then those frames will be dropped.
+      // Delaying the close by a loop tick will allow the flush to happen before the close.
+      let loopBound = NIOLoopBound(context, eventLoop: context.eventLoop)
+      context.eventLoop.execute {
+        loopBound.value.close(mode: .all, promise: nil)
+      }
 
     case .none:
       ()
@@ -397,34 +430,31 @@ extension ClientConnectionHandler {
     }
   }
 
-  private func keepaliveTimerFired(context: ChannelHandlerContext) {
-    guard self.state.sendKeepalivePing() else { return }
+  private func keepaliveTimerFired() {
+    guard self.state.sendKeepalivePing(), let context = self.context else { return }
 
     // Cancel the keep alive timer when the client sends a ping. The timer is resumed when the ping
     // is acknowledged.
-    self.keepaliveTimer?.cancel()
+    self.keepaliveTimerHandler?.cancel()
 
     let ping = HTTP2Frame(streamID: .rootStream, payload: .ping(self.keepalivePingData, ack: false))
     context.write(self.wrapOutboundOut(ping), promise: nil)
     self.maybeFlush(context: context)
 
     // Schedule a timeout on waiting for the response.
-    let loopBound = LoopBoundView(handler: self, context: context)
-    self.keepaliveTimeoutTimer.schedule(on: context.eventLoop) {
-      loopBound.keepaliveTimeoutExpired()
-    }
+    self.keepaliveTimeoutHandler?.start()
   }
 
-  private func keepaliveTimeoutExpired(context: ChannelHandlerContext) {
-    guard self.state.beginClosing() else { return }
+  private func keepaliveTimeoutExpired() {
+    guard self.state.beginClosing(), let context = self.context else { return }
 
     context.fireChannelRead(self.wrapInboundOut(.closing(.keepaliveExpired)))
     self.writeAndFlushGoAway(context: context, message: "keepalive_expired")
     context.close(promise: nil)
   }
 
-  private func maxIdleTimerFired(context: ChannelHandlerContext) {
-    guard self.state.beginClosing() else { return }
+  private func maxIdleTimerFired() {
+    guard self.state.beginClosing(), let context = self.context else { return }
 
     context.fireChannelRead(self.wrapInboundOut(.closing(.idle)))
     self.writeAndFlushGoAway(context: context, message: "idle")

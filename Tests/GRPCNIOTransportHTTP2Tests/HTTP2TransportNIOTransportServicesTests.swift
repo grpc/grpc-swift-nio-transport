@@ -73,7 +73,7 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
   func testGetListeningAddress_IPv4() async throws {
     let transport = GRPCNIOTransportCore.HTTP2ServerTransport.TransportServices(
       address: .ipv4(host: "0.0.0.0", port: 0),
-      config: .defaults(transportSecurity: .plaintext)
+      transportSecurity: .plaintext
     )
 
     try await withThrowingDiscardingTaskGroup { group in
@@ -93,7 +93,7 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
   func testGetListeningAddress_IPv6() async throws {
     let transport = GRPCNIOTransportCore.HTTP2ServerTransport.TransportServices(
       address: .ipv6(host: "::1", port: 0),
-      config: .defaults(transportSecurity: .plaintext)
+      transportSecurity: .plaintext
     )
 
     try await withThrowingDiscardingTaskGroup { group in
@@ -113,7 +113,7 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
   func testGetListeningAddress_UnixDomainSocket() async throws {
     let transport = GRPCNIOTransportCore.HTTP2ServerTransport.TransportServices(
       address: .unixDomainSocket(path: "/tmp/niots-uds-test"),
-      config: .defaults(transportSecurity: .plaintext)
+      transportSecurity: .plaintext
     )
     defer {
       // NIOTS does not unlink the UDS on close.
@@ -139,7 +139,7 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
   func testGetListeningAddress_InvalidAddress() async {
     let transport = GRPCNIOTransportCore.HTTP2ServerTransport.TransportServices(
       address: .unixDomainSocket(path: "/this/should/be/an/invalid/path"),
-      config: .defaults(transportSecurity: .plaintext)
+      transportSecurity: .plaintext
     )
 
     try? await withThrowingDiscardingTaskGroup { group in
@@ -168,7 +168,7 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
   func testGetListeningAddress_StoppedListening() async throws {
     let transport = GRPCNIOTransportCore.HTTP2ServerTransport.TransportServices(
       address: .ipv4(host: "0.0.0.0", port: 0),
-      config: .defaults(transportSecurity: .plaintext)
+      transportSecurity: .plaintext
     )
 
     try? await withThrowingDiscardingTaskGroup { group in
@@ -199,12 +199,10 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
   }
 
   func testServerConfig_Defaults() throws {
-    let grpcTLSConfig = HTTP2ServerTransport.TransportServices.Config.TLS.defaults(
+    let grpcTLSConfig = HTTP2ServerTransport.TransportServices.TLS.defaults(
       identityProvider: Self.loadIdentity
     )
-    let grpcConfig = HTTP2ServerTransport.TransportServices.Config.defaults(
-      transportSecurity: .tls(grpcTLSConfig)
-    )
+    let grpcConfig = HTTP2ServerTransport.TransportServices.Config.defaults
 
     XCTAssertEqual(grpcConfig.compression, HTTP2ServerTransport.Config.Compression.defaults)
     XCTAssertEqual(grpcConfig.connection, HTTP2ServerTransport.Config.Connection.defaults)
@@ -218,10 +216,8 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
   }
 
   func testClientConfig_Defaults() throws {
-    let grpcTLSConfig = HTTP2ClientTransport.TransportServices.Config.TLS.defaults()
-    let grpcConfig = HTTP2ClientTransport.TransportServices.Config.defaults(
-      transportSecurity: .tls(grpcTLSConfig)
-    )
+    let grpcTLSConfig = HTTP2ClientTransport.TransportServices.TLS.defaults
+    let grpcConfig = HTTP2ClientTransport.TransportServices.Config.defaults
 
     XCTAssertEqual(grpcConfig.compression, HTTP2ClientTransport.Config.Compression.defaults)
     XCTAssertEqual(grpcConfig.connection, HTTP2ClientTransport.Config.Connection.defaults)
@@ -229,7 +225,6 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
     XCTAssertEqual(grpcConfig.backoff, HTTP2ClientTransport.Config.Backoff.defaults)
 
     XCTAssertNil(grpcTLSConfig.identityProvider)
-    XCTAssertNil(grpcTLSConfig.serverHostname)
     XCTAssertEqual(grpcTLSConfig.serverCertificateVerification, .fullVerification)
     XCTAssertEqual(grpcTLSConfig.trustRoots, .systemDefault)
   }

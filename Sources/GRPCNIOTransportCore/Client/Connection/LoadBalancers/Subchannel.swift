@@ -83,6 +83,10 @@ package final class Subchannel: Sendable {
   /// A factory for connections.
   private let connector: any HTTP2Connector
 
+  /// The percent-encoded server authority. If `nil`, a value will be computed based on the endpoint
+  /// being connected to.
+  private let authority: String?
+
   /// The connection backoff configuration used by the subchannel when establishing a connection.
   private let backoff: ConnectionBackoff
 
@@ -96,6 +100,7 @@ package final class Subchannel: Sendable {
     endpoint: Endpoint,
     id: SubchannelID,
     connector: any HTTP2Connector,
+    authority: String?,
     backoff: ConnectionBackoff,
     defaultCompression: CompressionAlgorithm,
     enabledCompression: CompressionAlgorithmSet
@@ -106,6 +111,7 @@ package final class Subchannel: Sendable {
     self.endpoint = endpoint
     self.id = id
     self.connector = connector
+    self.authority = authority
     self.backoff = backoff
     self.defaultCompression = defaultCompression
     self.enabledCompression = enabledCompression
@@ -194,6 +200,7 @@ extension Subchannel {
       state.makeConnection(
         to: self.endpoint.addresses,
         using: self.connector,
+        authority: self.authority,
         backoff: self.backoff,
         defaultCompression: self.defaultCompression,
         enabledCompression: self.enabledCompression
@@ -283,7 +290,10 @@ extension Subchannel {
   }
 
   private func handleConnectFailedEvent(in group: inout DiscardingTaskGroup, error: RPCError) {
-    let onConnectFailed = self.state.withLock { $0.connectFailed(connector: self.connector) }
+    let onConnectFailed = self.state.withLock {
+      $0.connectFailed(connector: self.connector, authority: self.authority)
+    }
+
     switch onConnectFailed {
     case .connect(let connection):
       // Try the next address.
@@ -469,6 +479,7 @@ extension Subchannel {
     mutating func makeConnection(
       to addresses: [SocketAddress],
       using connector: any HTTP2Connector,
+      authority: String?,
       backoff: ConnectionBackoff,
       defaultCompression: CompressionAlgorithm,
       enabledCompression: CompressionAlgorithmSet
@@ -480,6 +491,7 @@ extension Subchannel {
 
         let connection = Connection(
           address: address,
+          authority: authority,
           http2Connector: connector,
           defaultCompression: defaultCompression,
           enabledCompression: enabledCompression
@@ -563,7 +575,10 @@ extension Subchannel {
       case backoff(Duration)
     }
 
-    mutating func connectFailed(connector: any HTTP2Connector) -> OnConnectFailed {
+    mutating func connectFailed(
+      connector: any HTTP2Connector,
+      authority: String?
+    ) -> OnConnectFailed {
       let onConnectFailed: OnConnectFailed
 
       switch self {
@@ -571,6 +586,7 @@ extension Subchannel {
         if let address = state.addressIterator.next() {
           state.connection = Connection(
             address: address,
+            authority: authority,
             http2Connector: connector,
             defaultCompression: .none,
             enabledCompression: .all
@@ -582,6 +598,7 @@ extension Subchannel {
           let address = state.addressIterator.next()!
           state.connection = Connection(
             address: address,
+            authority: authority,
             http2Connector: connector,
             defaultCompression: .none,
             enabledCompression: .all

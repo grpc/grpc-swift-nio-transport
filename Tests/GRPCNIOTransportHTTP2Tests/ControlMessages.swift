@@ -64,6 +64,12 @@ struct ControlInput: Codable {
   /// removed (":path" should become "echo-path").
   var echoMetadataInTrailers: Bool = false
 
+  /// Key-value pairs to add to the initial metadata.
+  var initialMetadataToAdd: [String: String] = [:]
+
+  /// Key-value pairs to add to the trailing metadata.
+  var trailingMetadataToAdd: [String: String] = [:]
+
   struct Status: Codable {
     var code: GRPCCore.Status.Code
     var message: String

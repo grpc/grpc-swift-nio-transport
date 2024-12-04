@@ -126,7 +126,7 @@ extension CertificateVerification {
 }
 
 extension TLSConfiguration {
-  package init(_ tlsConfig: HTTP2ServerTransport.Posix.Config.TLS) throws {
+  package init(_ tlsConfig: HTTP2ServerTransport.Posix.TransportSecurity.TLS) throws {
     let certificateChain = try tlsConfig.certificateChain.sslCertificateSources()
     let privateKey = try NIOSSLPrivateKey(privateKey: tlsConfig.privateKey)
 
@@ -142,7 +142,7 @@ extension TLSConfiguration {
     self.applicationProtocols = ["grpc-exp", "h2"]
   }
 
-  package init(_ tlsConfig: HTTP2ClientTransport.Posix.Config.TLS) throws {
+  package init(_ tlsConfig: HTTP2ClientTransport.Posix.TransportSecurity.TLS) throws {
     self = TLSConfiguration.makeClientConfiguration()
     self.certificateChain = try tlsConfig.certificateChain.sslCertificateSources()
 

@@ -33,11 +33,11 @@ internal struct ControlClient {
   ) async throws -> R where R: Sendable {
     try await self.client.unary(
       request: request,
-      descriptor: MethodDescriptor(service: "Control", method: "Unary"),
+      descriptor: MethodDescriptor(fullyQualifiedService: "Control", method: "Unary"),
       serializer: JSONSerializer(),
       deserializer: JSONDeserializer(),
       options: options,
-      handler: body
+      onResponse: body
     )
   }
 
@@ -48,11 +48,11 @@ internal struct ControlClient {
   ) async throws -> R where R: Sendable {
     try await self.client.serverStreaming(
       request: request,
-      descriptor: MethodDescriptor(service: "Control", method: "ServerStream"),
+      descriptor: MethodDescriptor(fullyQualifiedService: "Control", method: "ServerStream"),
       serializer: JSONSerializer(),
       deserializer: JSONDeserializer(),
       options: options,
-      handler: body
+      onResponse: body
     )
   }
 
@@ -66,11 +66,11 @@ internal struct ControlClient {
   ) async throws -> R where R: Sendable {
     try await self.client.clientStreaming(
       request: request,
-      descriptor: MethodDescriptor(service: "Control", method: "ClientStream"),
+      descriptor: MethodDescriptor(fullyQualifiedService: "Control", method: "ClientStream"),
       serializer: JSONSerializer(),
       deserializer: JSONDeserializer(),
       options: options,
-      handler: body
+      onResponse: body
     )
   }
 
@@ -81,11 +81,11 @@ internal struct ControlClient {
   ) async throws -> R where R: Sendable {
     try await self.client.bidirectionalStreaming(
       request: request,
-      descriptor: MethodDescriptor(service: "Control", method: "BidiStream"),
+      descriptor: MethodDescriptor(fullyQualifiedService: "Control", method: "BidiStream"),
       serializer: JSONSerializer(),
       deserializer: JSONDeserializer(),
       options: options,
-      handler: body
+      onResponse: body
     )
   }
 
@@ -98,11 +98,27 @@ internal struct ControlClient {
   ) async throws -> R where R: Sendable {
     try await self.client.serverStreaming(
       request: request,
-      descriptor: MethodDescriptor(service: "Control", method: "WaitForCancellation"),
+      descriptor: MethodDescriptor(fullyQualifiedService: "Control", method: "WaitForCancellation"),
       serializer: JSONSerializer(),
       deserializer: JSONDeserializer(),
       options: options,
-      handler: body
+      onResponse: body
+    )
+  }
+
+  internal func peerInfo<R>(
+    options: GRPCCore.CallOptions = .defaults,
+    _ body: @Sendable @escaping (
+      _ response: GRPCCore.ClientResponse<String>
+    ) async throws -> R = { try $0.message }
+  ) async throws -> R where R: Sendable {
+    try await self.client.unary(
+      request: ClientRequest(message: ""),
+      descriptor: MethodDescriptor(fullyQualifiedService: "Control", method: "PeerInfo"),
+      serializer: JSONSerializer(),
+      deserializer: JSONDeserializer(),
+      options: options,
+      onResponse: body
     )
   }
 }
