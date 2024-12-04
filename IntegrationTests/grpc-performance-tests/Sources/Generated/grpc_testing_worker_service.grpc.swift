@@ -26,42 +26,65 @@
 
 import GRPCCore
 import GRPCProtobuf
+import SwiftProtobuf
 
+// MARK: - grpc.testing.WorkerService
+
+/// Namespace containing generated types for the "grpc.testing.WorkerService" service.
 internal enum Grpc_Testing_WorkerService {
-    internal static let descriptor = GRPCCore.ServiceDescriptor.grpc_testing_WorkerService
+    /// Service descriptor for the "grpc.testing.WorkerService" service.
+    internal static let descriptor = GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.WorkerService")
+    /// Namespace for method metadata.
     internal enum Method {
+        /// Namespace for "RunServer" metadata.
         internal enum RunServer {
+            /// Request type for "RunServer".
             internal typealias Input = Grpc_Testing_ServerArgs
+            /// Response type for "RunServer".
             internal typealias Output = Grpc_Testing_ServerStatus
+            /// Descriptor for "RunServer".
             internal static let descriptor = GRPCCore.MethodDescriptor(
-                service: Grpc_Testing_WorkerService.descriptor.fullyQualifiedService,
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.WorkerService"),
                 method: "RunServer"
             )
         }
+        /// Namespace for "RunClient" metadata.
         internal enum RunClient {
+            /// Request type for "RunClient".
             internal typealias Input = Grpc_Testing_ClientArgs
+            /// Response type for "RunClient".
             internal typealias Output = Grpc_Testing_ClientStatus
+            /// Descriptor for "RunClient".
             internal static let descriptor = GRPCCore.MethodDescriptor(
-                service: Grpc_Testing_WorkerService.descriptor.fullyQualifiedService,
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.WorkerService"),
                 method: "RunClient"
             )
         }
+        /// Namespace for "CoreCount" metadata.
         internal enum CoreCount {
+            /// Request type for "CoreCount".
             internal typealias Input = Grpc_Testing_CoreRequest
+            /// Response type for "CoreCount".
             internal typealias Output = Grpc_Testing_CoreResponse
+            /// Descriptor for "CoreCount".
             internal static let descriptor = GRPCCore.MethodDescriptor(
-                service: Grpc_Testing_WorkerService.descriptor.fullyQualifiedService,
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.WorkerService"),
                 method: "CoreCount"
             )
         }
+        /// Namespace for "QuitWorker" metadata.
         internal enum QuitWorker {
+            /// Request type for "QuitWorker".
             internal typealias Input = Grpc_Testing_Void
+            /// Response type for "QuitWorker".
             internal typealias Output = Grpc_Testing_Void
+            /// Descriptor for "QuitWorker".
             internal static let descriptor = GRPCCore.MethodDescriptor(
-                service: Grpc_Testing_WorkerService.descriptor.fullyQualifiedService,
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.WorkerService"),
                 method: "QuitWorker"
             )
         }
+        /// Descriptors for all methods in the "grpc.testing.WorkerService" service.
         internal static let descriptors: [GRPCCore.MethodDescriptor] = [
             RunServer.descriptor,
             RunClient.descriptor,
@@ -69,60 +92,295 @@ internal enum Grpc_Testing_WorkerService {
             QuitWorker.descriptor
         ]
     }
-    @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
-    internal typealias StreamingServiceProtocol = Grpc_Testing_WorkerService_StreamingServiceProtocol
-    @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
-    internal typealias ServiceProtocol = Grpc_Testing_WorkerService_ServiceProtocol
 }
 
 extension GRPCCore.ServiceDescriptor {
-    internal static let grpc_testing_WorkerService = Self(
-        package: "grpc.testing",
-        service: "WorkerService"
-    )
+    /// Service descriptor for the "grpc.testing.WorkerService" service.
+    internal static let grpc_testing_WorkerService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.WorkerService")
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
-internal protocol Grpc_Testing_WorkerService_StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
-    /// Start server with specified workload.
-    /// First request sent specifies the ServerConfig followed by ServerStatus
-    /// response. After that, a "Mark" can be sent anytime to request the latest
-    /// stats. Closing the stream will initiate shutdown of the test server
-    /// and once the shutdown has finished, the OK status is sent to terminate
-    /// this RPC.
-    func runServer(
-        request: GRPCCore.StreamingServerRequest<Grpc_Testing_ServerArgs>,
-        context: GRPCCore.ServerContext
-    ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_ServerStatus>
-    
-    /// Start client with specified workload.
-    /// First request sent specifies the ClientConfig followed by ClientStatus
-    /// response. After that, a "Mark" can be sent anytime to request the latest
-    /// stats. Closing the stream will initiate shutdown of the test client
-    /// and once the shutdown has finished, the OK status is sent to terminate
-    /// this RPC.
-    func runClient(
-        request: GRPCCore.StreamingServerRequest<Grpc_Testing_ClientArgs>,
-        context: GRPCCore.ServerContext
-    ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_ClientStatus>
-    
-    /// Just return the core count - unary call
-    func coreCount(
-        request: GRPCCore.StreamingServerRequest<Grpc_Testing_CoreRequest>,
-        context: GRPCCore.ServerContext
-    ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_CoreResponse>
-    
-    /// Quit this worker
-    func quitWorker(
-        request: GRPCCore.StreamingServerRequest<Grpc_Testing_Void>,
-        context: GRPCCore.ServerContext
-    ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_Void>
+// MARK: grpc.testing.WorkerService (server)
+
+extension Grpc_Testing_WorkerService {
+    /// Streaming variant of the service protocol for the "grpc.testing.WorkerService" service.
+    ///
+    /// This protocol is the lowest-level of the service protocols generated for this service
+    /// giving you the most flexibility over the implementation of your service. This comes at
+    /// the cost of more verbose and less strict APIs. Each RPC requires you to implement it in
+    /// terms of a request stream and response stream. Where only a single request or response
+    /// message is expected, you are responsible for enforcing this invariant is maintained.
+    ///
+    /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
+    /// or ``SimpleServiceProtocol`` instead.
+    internal protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+        /// Handle the "RunServer" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Start server with specified workload.
+        /// > First request sent specifies the ServerConfig followed by ServerStatus
+        /// > response. After that, a "Mark" can be sent anytime to request the latest
+        /// > stats. Closing the stream will initiate shutdown of the test server
+        /// > and once the shutdown has finished, the OK status is sent to terminate
+        /// > this RPC.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Grpc_Testing_ServerArgs` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Grpc_Testing_ServerStatus` messages.
+        func runServer(
+            request: GRPCCore.StreamingServerRequest<Grpc_Testing_ServerArgs>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_ServerStatus>
+
+        /// Handle the "RunClient" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Start client with specified workload.
+        /// > First request sent specifies the ClientConfig followed by ClientStatus
+        /// > response. After that, a "Mark" can be sent anytime to request the latest
+        /// > stats. Closing the stream will initiate shutdown of the test client
+        /// > and once the shutdown has finished, the OK status is sent to terminate
+        /// > this RPC.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Grpc_Testing_ClientArgs` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Grpc_Testing_ClientStatus` messages.
+        func runClient(
+            request: GRPCCore.StreamingServerRequest<Grpc_Testing_ClientArgs>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_ClientStatus>
+
+        /// Handle the "CoreCount" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Just return the core count - unary call
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Grpc_Testing_CoreRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Grpc_Testing_CoreResponse` messages.
+        func coreCount(
+            request: GRPCCore.StreamingServerRequest<Grpc_Testing_CoreRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_CoreResponse>
+
+        /// Handle the "QuitWorker" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Quit this worker
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Grpc_Testing_Void` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Grpc_Testing_Void` messages.
+        func quitWorker(
+            request: GRPCCore.StreamingServerRequest<Grpc_Testing_Void>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_Void>
+    }
+
+    /// Service protocol for the "grpc.testing.WorkerService" service.
+    ///
+    /// This protocol is higher level than ``StreamingServiceProtocol`` but lower level than
+    /// the ``SimpleServiceProtocol``, it provides access to request and response metadata and
+    /// trailing response metadata. If you don't need these then consider using
+    /// the ``SimpleServiceProtocol``. If you need fine grained control over your RPCs then
+    /// use ``StreamingServiceProtocol``.
+    internal protocol ServiceProtocol: Grpc_Testing_WorkerService.StreamingServiceProtocol {
+        /// Handle the "RunServer" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Start server with specified workload.
+        /// > First request sent specifies the ServerConfig followed by ServerStatus
+        /// > response. After that, a "Mark" can be sent anytime to request the latest
+        /// > stats. Closing the stream will initiate shutdown of the test server
+        /// > and once the shutdown has finished, the OK status is sent to terminate
+        /// > this RPC.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Grpc_Testing_ServerArgs` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Grpc_Testing_ServerStatus` messages.
+        func runServer(
+            request: GRPCCore.StreamingServerRequest<Grpc_Testing_ServerArgs>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_ServerStatus>
+
+        /// Handle the "RunClient" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Start client with specified workload.
+        /// > First request sent specifies the ClientConfig followed by ClientStatus
+        /// > response. After that, a "Mark" can be sent anytime to request the latest
+        /// > stats. Closing the stream will initiate shutdown of the test client
+        /// > and once the shutdown has finished, the OK status is sent to terminate
+        /// > this RPC.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Grpc_Testing_ClientArgs` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Grpc_Testing_ClientStatus` messages.
+        func runClient(
+            request: GRPCCore.StreamingServerRequest<Grpc_Testing_ClientArgs>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_ClientStatus>
+
+        /// Handle the "CoreCount" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Just return the core count - unary call
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Grpc_Testing_CoreRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Grpc_Testing_CoreResponse` message.
+        func coreCount(
+            request: GRPCCore.ServerRequest<Grpc_Testing_CoreRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Grpc_Testing_CoreResponse>
+
+        /// Handle the "QuitWorker" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Quit this worker
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Grpc_Testing_Void` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Grpc_Testing_Void` message.
+        func quitWorker(
+            request: GRPCCore.ServerRequest<Grpc_Testing_Void>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Grpc_Testing_Void>
+    }
+
+    /// Simple service protocol for the "grpc.testing.WorkerService" service.
+    ///
+    /// This is the highest level protocol for the service. The API is the easiest to use but
+    /// doesn't provide access to request or response metadata. If you need access to these
+    /// then use ``ServiceProtocol`` instead.
+    internal protocol SimpleServiceProtocol: Grpc_Testing_WorkerService.ServiceProtocol {
+        /// Handle the "RunServer" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Start server with specified workload.
+        /// > First request sent specifies the ServerConfig followed by ServerStatus
+        /// > response. After that, a "Mark" can be sent anytime to request the latest
+        /// > stats. Closing the stream will initiate shutdown of the test server
+        /// > and once the shutdown has finished, the OK status is sent to terminate
+        /// > this RPC.
+        ///
+        /// - Parameters:
+        ///   - request: A stream of `Grpc_Testing_ServerArgs` messages.
+        ///   - response: A response stream of `Grpc_Testing_ServerStatus` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        func runServer(
+            request: GRPCCore.RPCAsyncSequence<Grpc_Testing_ServerArgs, any Swift.Error>,
+            response: GRPCCore.RPCWriter<Grpc_Testing_ServerStatus>,
+            context: GRPCCore.ServerContext
+        ) async throws
+
+        /// Handle the "RunClient" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Start client with specified workload.
+        /// > First request sent specifies the ClientConfig followed by ClientStatus
+        /// > response. After that, a "Mark" can be sent anytime to request the latest
+        /// > stats. Closing the stream will initiate shutdown of the test client
+        /// > and once the shutdown has finished, the OK status is sent to terminate
+        /// > this RPC.
+        ///
+        /// - Parameters:
+        ///   - request: A stream of `Grpc_Testing_ClientArgs` messages.
+        ///   - response: A response stream of `Grpc_Testing_ClientStatus` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        func runClient(
+            request: GRPCCore.RPCAsyncSequence<Grpc_Testing_ClientArgs, any Swift.Error>,
+            response: GRPCCore.RPCWriter<Grpc_Testing_ClientStatus>,
+            context: GRPCCore.ServerContext
+        ) async throws
+
+        /// Handle the "CoreCount" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Just return the core count - unary call
+        ///
+        /// - Parameters:
+        ///   - request: A `Grpc_Testing_CoreRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Grpc_Testing_CoreResponse` to respond with.
+        func coreCount(
+            request: Grpc_Testing_CoreRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Grpc_Testing_CoreResponse
+
+        /// Handle the "QuitWorker" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Quit this worker
+        ///
+        /// - Parameters:
+        ///   - request: A `Grpc_Testing_Void` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Grpc_Testing_Void` to respond with.
+        func quitWorker(
+            request: Grpc_Testing_Void,
+            context: GRPCCore.ServerContext
+        ) async throws -> Grpc_Testing_Void
+    }
 }
 
-/// Conformance to `GRPCCore.RegistrableRPCService`.
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+// Default implementation of 'registerMethods(with:)'.
 extension Grpc_Testing_WorkerService.StreamingServiceProtocol {
-    @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
     internal func registerMethods(with router: inout GRPCCore.RPCRouter) {
         router.registerHandler(
             forMethod: Grpc_Testing_WorkerService.Method.RunServer.descriptor,
@@ -171,45 +429,7 @@ extension Grpc_Testing_WorkerService.StreamingServiceProtocol {
     }
 }
 
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
-internal protocol Grpc_Testing_WorkerService_ServiceProtocol: Grpc_Testing_WorkerService.StreamingServiceProtocol {
-    /// Start server with specified workload.
-    /// First request sent specifies the ServerConfig followed by ServerStatus
-    /// response. After that, a "Mark" can be sent anytime to request the latest
-    /// stats. Closing the stream will initiate shutdown of the test server
-    /// and once the shutdown has finished, the OK status is sent to terminate
-    /// this RPC.
-    func runServer(
-        request: GRPCCore.StreamingServerRequest<Grpc_Testing_ServerArgs>,
-        context: GRPCCore.ServerContext
-    ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_ServerStatus>
-    
-    /// Start client with specified workload.
-    /// First request sent specifies the ClientConfig followed by ClientStatus
-    /// response. After that, a "Mark" can be sent anytime to request the latest
-    /// stats. Closing the stream will initiate shutdown of the test client
-    /// and once the shutdown has finished, the OK status is sent to terminate
-    /// this RPC.
-    func runClient(
-        request: GRPCCore.StreamingServerRequest<Grpc_Testing_ClientArgs>,
-        context: GRPCCore.ServerContext
-    ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_ClientStatus>
-    
-    /// Just return the core count - unary call
-    func coreCount(
-        request: GRPCCore.ServerRequest<Grpc_Testing_CoreRequest>,
-        context: GRPCCore.ServerContext
-    ) async throws -> GRPCCore.ServerResponse<Grpc_Testing_CoreResponse>
-    
-    /// Quit this worker
-    func quitWorker(
-        request: GRPCCore.ServerRequest<Grpc_Testing_Void>,
-        context: GRPCCore.ServerContext
-    ) async throws -> GRPCCore.ServerResponse<Grpc_Testing_Void>
-}
-
-/// Partial conformance to `Grpc_Testing_WorkerService_StreamingServiceProtocol`.
-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+// Default implementation of streaming methods from 'StreamingServiceProtocol'.
 extension Grpc_Testing_WorkerService.ServiceProtocol {
     internal func coreCount(
         request: GRPCCore.StreamingServerRequest<Grpc_Testing_CoreRequest>,
@@ -221,7 +441,7 @@ extension Grpc_Testing_WorkerService.ServiceProtocol {
         )
         return GRPCCore.StreamingServerResponse(single: response)
     }
-    
+
     internal func quitWorker(
         request: GRPCCore.StreamingServerRequest<Grpc_Testing_Void>,
         context: GRPCCore.ServerContext
@@ -231,5 +451,68 @@ extension Grpc_Testing_WorkerService.ServiceProtocol {
             context: context
         )
         return GRPCCore.StreamingServerResponse(single: response)
+    }
+}
+
+// Default implementation of methods from 'ServiceProtocol'.
+extension Grpc_Testing_WorkerService.SimpleServiceProtocol {
+    internal func runServer(
+        request: GRPCCore.StreamingServerRequest<Grpc_Testing_ServerArgs>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_ServerStatus> {
+        return GRPCCore.StreamingServerResponse<Grpc_Testing_ServerStatus>(
+            metadata: [:],
+            producer: { writer in
+                try await self.runServer(
+                    request: request.messages,
+                    response: writer,
+                    context: context
+                )
+                return [:]
+            }
+        )
+    }
+
+    internal func runClient(
+        request: GRPCCore.StreamingServerRequest<Grpc_Testing_ClientArgs>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_ClientStatus> {
+        return GRPCCore.StreamingServerResponse<Grpc_Testing_ClientStatus>(
+            metadata: [:],
+            producer: { writer in
+                try await self.runClient(
+                    request: request.messages,
+                    response: writer,
+                    context: context
+                )
+                return [:]
+            }
+        )
+    }
+
+    internal func coreCount(
+        request: GRPCCore.ServerRequest<Grpc_Testing_CoreRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Grpc_Testing_CoreResponse> {
+        return GRPCCore.ServerResponse<Grpc_Testing_CoreResponse>(
+            message: try await self.coreCount(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    internal func quitWorker(
+        request: GRPCCore.ServerRequest<Grpc_Testing_Void>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Grpc_Testing_Void> {
+        return GRPCCore.ServerResponse<Grpc_Testing_Void>(
+            message: try await self.quitWorker(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
     }
 }
