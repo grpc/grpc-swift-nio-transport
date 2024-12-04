@@ -32,18 +32,21 @@ Bootstrapping a client or server is made easier using the `.http2NIOPosix` short
 try await withGRPCClient(
   transport: try .http2NIOPosix(
     target: .dns(host: "localhost", port: 31415),
-    config: .defaults(transportSecurity: .tls(.defaults))
+    transportSecurity: .tls
   )
 ) { client in
   // ...
 }
 
-// Create a server listening on "127.0.0.1" on any available port
-// using default plaintext security configuration.
+// Create a plaintext server listening on "127.0.0.1" on any available port
+// modifying the default configuration to set max concurrent streams to 256.
 try await withGRPCServer(
   transport: .http2NIOPosix(
     address: .ipv4(host: "127.0.0.1", port: 0),
-    config: .defaults(transportSecurity: .plaintext)
+    transportSecurity: .plaintext,
+    config: .defaults { config in
+      config.http2.maxConcurrentStreams = 256
+    }
   ),
   services: [...]
 ) { server in

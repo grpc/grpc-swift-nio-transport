@@ -31,7 +31,7 @@ Bootstrapping a client or server is made easier using the `.http2NIOTS` shorthan
 try await withGRPCClient(
   transport: try .http2NIOTS(
     target: .dns(host: "localhost", port: 31415),
-    config: .defaults(transportSecurity: .tls(.defaults))
+    transportSecurity: .tls
   )
 ) { client in
   // ...
@@ -42,7 +42,10 @@ try await withGRPCClient(
 try await withGRPCServer(
   transport: .http2NIOTS(
     address: .ipv4(host: "127.0.0.1", port: 0),
-    config: .defaults(transportSecurity: .plaintext)
+    transportSecurity: .plaintext,
+    config: .defaults { config in
+      config.http2.maxConcurrentStreams = 256
+    }
   ),
   services: [...]
 ) { server in
