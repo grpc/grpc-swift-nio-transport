@@ -148,7 +148,8 @@ final class HTTP2TransportTests: XCTestCase {
       let server = GRPCServer(
         transport: .http2NIOPosix(
           address: address,
-          config: .defaults(transportSecurity: .plaintext) {
+          transportSecurity: .plaintext,
+          config: .defaults {
             $0.compression.enabledAlgorithms = compression
           }
         ),
@@ -167,7 +168,8 @@ final class HTTP2TransportTests: XCTestCase {
       let server = GRPCServer(
         transport: .http2NIOTS(
           address: address,
-          config: .defaults(transportSecurity: .plaintext) {
+          transportSecurity: .plaintext,
+          config: .defaults {
             $0.compression.enabledAlgorithms = compression
           }
         ),
@@ -200,7 +202,8 @@ final class HTTP2TransportTests: XCTestCase {
       serviceConfig.loadBalancingConfig = [.roundRobin]
       transport = try HTTP2ClientTransport.Posix(
         target: target,
-        config: .defaults(transportSecurity: .plaintext) {
+        transportSecurity: .plaintext,
+        config: .defaults {
           $0.compression.algorithm = compression
           $0.compression.enabledAlgorithms = enabledCompression
         },
@@ -213,7 +216,8 @@ final class HTTP2TransportTests: XCTestCase {
       serviceConfig.loadBalancingConfig = [.roundRobin]
       transport = try HTTP2ClientTransport.TransportServices(
         target: target,
-        config: .defaults(transportSecurity: .plaintext) {
+        transportSecurity: .plaintext,
+        config: .defaults {
           $0.compression.algorithm = compression
           $0.compression.enabledAlgorithms = enabledCompression
         },
@@ -1508,7 +1512,7 @@ final class HTTP2TransportTests: XCTestCase {
     try await withGRPCServer(
       transport: .http2NIOPosix(
         address: serverAddress,
-        config: .defaults(transportSecurity: .plaintext)
+        transportSecurity: .plaintext
       ),
       services: [ControlService()]
     ) { server in
@@ -1521,7 +1525,8 @@ final class HTTP2TransportTests: XCTestCase {
       try await withGRPCClient(
         transport: .http2NIOPosix(
           target: target,
-          config: .defaults(transportSecurity: .plaintext) {
+          transportSecurity: .plaintext,
+          config: .defaults {
             $0.http2.authority = override
           }
         )

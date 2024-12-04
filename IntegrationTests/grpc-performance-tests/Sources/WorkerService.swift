@@ -388,11 +388,12 @@ extension WorkerService {
     let eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: numberOfThreads)
 
     // Don't restrict the max payload size, the client is always trusted.
-    var config = HTTP2ServerTransport.Posix.Config.defaults(transportSecurity: .plaintext)
+    var config = HTTP2ServerTransport.Posix.Config.defaults
     config.rpc.maxRequestPayloadSize = .max
 
     let transport = HTTP2ServerTransport.Posix(
       address: .ipv4(host: "127.0.0.1", port: Int(serverConfig.port)),
+      transportSecurity: .plaintext,
       config: config,
       eventLoopGroup: eventLoopGroup
     )
@@ -457,7 +458,7 @@ extension WorkerService {
         client: GRPCClient(
           transport: try .http2NIOPosix(
             target: target,
-            config: .defaults(transportSecurity: .plaintext)
+            transportSecurity: .plaintext
           )
         ),
         concurrentRPCs: Int(config.outstandingRpcsPerChannel),

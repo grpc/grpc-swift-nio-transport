@@ -37,7 +37,7 @@ internal struct ControlClient {
       serializer: JSONSerializer(),
       deserializer: JSONDeserializer(),
       options: options,
-      handler: body
+      onResponse: body
     )
   }
 
@@ -52,7 +52,7 @@ internal struct ControlClient {
       serializer: JSONSerializer(),
       deserializer: JSONDeserializer(),
       options: options,
-      handler: body
+      onResponse: body
     )
   }
 
@@ -70,7 +70,7 @@ internal struct ControlClient {
       serializer: JSONSerializer(),
       deserializer: JSONDeserializer(),
       options: options,
-      handler: body
+      onResponse: body
     )
   }
 
@@ -85,7 +85,7 @@ internal struct ControlClient {
       serializer: JSONSerializer(),
       deserializer: JSONDeserializer(),
       options: options,
-      handler: body
+      onResponse: body
     )
   }
 
@@ -102,7 +102,7 @@ internal struct ControlClient {
       serializer: JSONSerializer(),
       deserializer: JSONDeserializer(),
       options: options,
-      handler: body
+      onResponse: body
     )
   }
 
@@ -118,7 +118,7 @@ internal struct ControlClient {
       serializer: JSONSerializer(),
       deserializer: JSONDeserializer(),
       options: options,
-      handler: body
+      onResponse: body
     )
   }
 }
