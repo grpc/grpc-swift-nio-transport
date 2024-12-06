@@ -25,7 +25,8 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
   func testGetListeningAddress_IPv4() async throws {
     let transport = GRPCNIOTransportCore.HTTP2ServerTransport.TransportServices(
       address: .ipv4(host: "0.0.0.0", port: 0),
-      transportSecurity: .plaintext
+      transportSecurity: .plaintext,
+      config: .defaults
     )
 
     try await withThrowingDiscardingTaskGroup { group in
@@ -195,10 +196,8 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
   }
 
   func testClientConfig_Defaults() throws {
-    let grpcTLSConfig = HTTP2ClientTransport.TransportServices.Config.TLS.defaults
-    let grpcConfig = HTTP2ClientTransport.TransportServices.Config.defaults(
-      transportSecurity: .tls(grpcTLSConfig)
-    )
+    let grpcTLSConfig = HTTP2ClientTransport.TransportServices.TLS.defaults
+    let grpcConfig = HTTP2ClientTransport.TransportServices.Config.defaults
 
     XCTAssertEqual(grpcConfig.compression, HTTP2ClientTransport.Config.Compression.defaults)
     XCTAssertEqual(grpcConfig.connection, HTTP2ClientTransport.Config.Connection.defaults)

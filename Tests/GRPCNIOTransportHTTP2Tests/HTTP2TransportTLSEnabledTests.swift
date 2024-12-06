@@ -99,7 +99,8 @@ struct HTTP2TransportTLSEnabledTests {
     let certificateKeyPairs = try SelfSignedCertificateKeyPairs()
     let clientTransportConfig = self.makeDefaultTLSClientConfig(
       for: clientTransport,
-      certificateKeyPairs: certificateKeyPairs
+      certificateKeyPairs: certificateKeyPairs,
+      authority: nil
     )
     let serverTransportConfig = self.makeDefaultTLSServerConfig(
       for: serverTransport,
@@ -273,7 +274,8 @@ struct HTTP2TransportTLSEnabledTests {
 
   private func makeDefaultTLSClientConfig(
     for transportSecurity: TransportKind,
-    certificateKeyPairs: SelfSignedCertificateKeyPairs
+    certificateKeyPairs: SelfSignedCertificateKeyPairs,
+    authority: String? = "localhost"
   ) -> ClientConfig {
     switch transportSecurity {
     case .posix:
@@ -283,8 +285,9 @@ struct HTTP2TransportTLSEnabledTests {
           .bytes(certificateKeyPairs.server.certificate, format: .der)
         ])
       }
-      config.transport.http2.authority = "localhost"
+      config.transport.http2.authority = authority
       return .posix(config)
+
     case .transportServices:
       var config = self.makeDefaultPlaintextTransportServicesClientConfig()
       config.security = .tls {
@@ -292,7 +295,7 @@ struct HTTP2TransportTLSEnabledTests {
           .bytes(certificateKeyPairs.server.certificate, format: .der)
         ])
       }
-      config.transport.http2.authority = "localhost"
+      config.transport.http2.authority = authority
       return .transportServices(config)
     }
   }
@@ -304,7 +307,7 @@ struct HTTP2TransportTLSEnabledTests {
     let password = "somepassword"
     let bundle = NIOSSLPKCS12Bundle(
       certificateChain: [try NIOSSLCertificate(bytes: certificateBytes, format: .der)],
-      privateKey: try NIOSSLPrivateKey(bytes: certificateBytes, format: .der)
+      privateKey: try NIOSSLPrivateKey(bytes: privateKeyBytes, format: .der)
     )
     let pkcs12Bytes = try bundle.serialize(passphrase: password.utf8)
     let options = [kSecImportExportPassphrase as String: password]
