@@ -337,8 +337,13 @@ extension GRPCChannel {
           return
         }
 
-        let enqueued = self.state.withLock { state in
+        let (enqueued, loadBalancer) = self.state.withLock { state in
           state.enqueue(continuation: continuation, waitForReady: waitForReady, id: id)
+        }
+
+        if let loadBalancer = loadBalancer {
+          // Attempting to pick a subchannel will trigger a connect event if the subchannel is idle.
+          _ = loadBalancer.pickSubchannel()
         }
 
         // Not enqueued because the channel is shutdown or shutting down.
@@ -896,20 +901,21 @@ extension GRPCChannel.StateMachine {
     continuation: CheckedContinuation<LoadBalancer, any Error>,
     waitForReady: Bool,
     id: QueueEntryID
-  ) -> Bool {
+  ) -> (enqueued: Bool, loadBalancer: LoadBalancer?) {
     switch self.state {
     case .notRunning(var state):
       self.state = ._modifying
       state.queue.append(continuation: continuation, waitForReady: waitForReady, id: id)
       self.state = .notRunning(state)
-      return true
+      return (true, nil)
     case .running(var state):
       self.state = ._modifying
       state.queue.append(continuation: continuation, waitForReady: waitForReady, id: id)
       self.state = .running(state)
-      return true
+      // If idle then return the current load balancer so that it can be told to start connecting.
+      return (true, state.connectivityState == .idle ? state.current : nil)
     case .stopping, .stopped:
-      return false
+      return (false, nil)
     case ._modifying:
       fatalError("Invalid state")
     }
