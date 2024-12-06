@@ -1400,6 +1400,8 @@ final class HTTP2TransportTests: XCTestCase {
       let request = ClientRequest(message: input)
       try await control.serverStream(request: request) { response in
         XCTAssertEqual(Array(response.metadata["echo-scheme"]), ["http"])
+        // Workaround https://github.com/grpc/grpc-swift-nio-transport/issues/43
+        for try await _ in response.messages {}
       }
     }
   }
@@ -1430,6 +1432,8 @@ final class HTTP2TransportTests: XCTestCase {
       }
       try await control.bidiStream(request: request) { response in
         XCTAssertEqual(Array(response.metadata["echo-scheme"]), ["http"])
+        // Workaround https://github.com/grpc/grpc-swift-nio-transport/issues/43
+        for try await _ in response.messages {}
       }
     }
   }
