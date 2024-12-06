@@ -334,7 +334,6 @@ package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
 
   package func errorCaught(context: ChannelHandlerContext, error: any Error) {
     if self.closeConnectionOnError(error) {
-      context.fireErrorCaught(error)
       context.close(mode: .all, promise: nil)
     }
   }
