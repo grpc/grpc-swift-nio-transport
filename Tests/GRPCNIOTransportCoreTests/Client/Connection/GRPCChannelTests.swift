@@ -795,6 +795,60 @@ final class GRPCChannelTests: XCTestCase {
       group.cancelAll()
     }
   }
+
+  func testMakeStreamAfterIdleTimeout() async throws {
+    let server = TestServer(eventLoopGroup: .singletonMultiThreadedEventLoopGroup)
+    let address = try await server.bind()
+
+    // Configure a low idle time.
+    let channel = GRPCChannel(
+      resolver: .static(endpoints: [Endpoint(address)]),
+      connector: .posix(maxIdleTime: .milliseconds(50)),
+      config: .defaults,
+      defaultServiceConfig: ServiceConfig()
+    )
+
+    try await withThrowingDiscardingTaskGroup { group in
+      group.addTask {
+        // Just respond with 'ok'.
+        try await server.run { inbound, outbound in
+          let status = Status(code: .ok, message: "")
+          try await outbound.write(.status(status, [:]))
+          outbound.finish()
+        }
+      }
+
+      group.addTask {
+        await channel.connect()
+      }
+
+      func doAnRPC() async throws {
+        try await channel.withStream(descriptor: .echoGet, options: .defaults) { stream in
+          try await stream.outbound.write(.metadata([:]))
+          await stream.outbound.finish()
+
+          let response = try await stream.inbound.reduce(into: []) { $0.append($1) }
+          switch response.first {
+          case .status(let status, _):
+            XCTAssertEqual(status.code, .ok)
+          default:
+            XCTFail("Expected status")
+          }
+        }
+      }
+
+      // Do an RPC.
+      try await doAnRPC()
+
+      // Wait for the idle time to pass.
+      try await Task.sleep(for: .milliseconds(100))
+
+      // Do another RPC.
+      try await doAnRPC()
+
+      group.cancelAll()
+    }
+  }
 }
 
 extension GRPCChannel.Config {
