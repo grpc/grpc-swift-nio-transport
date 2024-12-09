@@ -279,7 +279,7 @@ struct HTTP2TransportTLSEnabledTests {
     )
   }
 
-  private func makeDefaultPlaintextTransportServicesClientConfig() -> ClientConfig.TransportServices {
+  private func makeDefaultPlaintextTSClientConfig() -> ClientConfig.TransportServices {
     ClientConfig.TransportServices(
       security: .plaintext,
       transport: .defaults { config in
@@ -307,7 +307,7 @@ struct HTTP2TransportTLSEnabledTests {
       return .posix(config)
 
     case .transportServices:
-      var config = self.makeDefaultPlaintextTransportServicesClientConfig()
+      var config = self.makeDefaultPlaintextTSClientConfig()
       config.security = .tls {
         $0.trustRoots = .certificates([
           .bytes(certificateKeyPairs.server.certificate, format: .der)
@@ -365,14 +365,16 @@ struct HTTP2TransportTLSEnabledTests {
       return .posix(config)
 
     case .transportServices:
-      var config = self.makeDefaultPlaintextTransportServicesClientConfig()
+      var config = self.makeDefaultPlaintextTSClientConfig()
       config.security = .mTLS {
         try self.makeSecIdentityProvider(
           certificateBytes: certificateKeyPairs.client.certificate,
           privateKeyBytes: certificateKeyPairs.client.key
         )
       } configure: {
-        $0.trustRoots = .certificates([.bytes(certificateKeyPairs.server.certificate, format: .der)])
+        $0.trustRoots = .certificates([
+          .bytes(certificateKeyPairs.server.certificate, format: .der)
+        ])
       }
       config.transport.http2.authority = serverHostname
       return .transportServices(config)
@@ -383,7 +385,7 @@ struct HTTP2TransportTLSEnabledTests {
     ServerConfig.Posix(security: .plaintext, transport: .defaults)
   }
 
-  private func makeDefaultPlaintextTransportServicesServerConfig() -> ServerConfig.TransportServices {
+  private func makeDefaultPlaintextTSServerConfig() -> ServerConfig.TransportServices {
     ServerConfig.TransportServices(security: .plaintext, transport: .defaults)
   }
 
@@ -401,7 +403,7 @@ struct HTTP2TransportTLSEnabledTests {
       return .posix(config)
 
     case .transportServices:
-      var config = self.makeDefaultPlaintextTransportServicesServerConfig()
+      var config = self.makeDefaultPlaintextTSServerConfig()
       config.security = .tls {
         try self.makeSecIdentityProvider(
           certificateBytes: certificateKeyPairs.server.certificate,
@@ -433,7 +435,7 @@ struct HTTP2TransportTLSEnabledTests {
       return .posix(config)
 
     case .transportServices:
-      var config = self.makeDefaultPlaintextTransportServicesServerConfig()
+      var config = self.makeDefaultPlaintextTSServerConfig()
       config.security = .mTLS {
         try self.makeSecIdentityProvider(
           certificateBytes: certificateKeyPairs.server.certificate,
