@@ -21,7 +21,7 @@ import GRPCNIOTransportHTTP2TransportServices
 import NIOSSL
 import Testing
 
-#if canImport(Darwin)
+#if canImport(Network)
 import Network
 #endif
 
@@ -31,8 +31,7 @@ struct HTTP2TransportTLSEnabledTests {
 
   @Test(
     "When using defaults, server does not perform client verification",
-    arguments: [TransportKind.posix, .transportServices],
-    [TransportKind.posix, .transportServices]
+    arguments: TransportKind.supported, TransportKind.supported
   )
   func testRPC_Defaults_OK(
     clientTransport: TransportKind,
@@ -60,8 +59,7 @@ struct HTTP2TransportTLSEnabledTests {
 
   @Test(
     "When using mTLS defaults, both client and server verify each others' certificates",
-    arguments: [TransportKind.posix, .transportServices],
-    [TransportKind.posix, .transportServices]
+    arguments: TransportKind.supported, TransportKind.supported
   )
   func testRPC_mTLS_OK(
     clientTransport: TransportKind,
@@ -91,8 +89,7 @@ struct HTTP2TransportTLSEnabledTests {
 
   @Test(
     "Error is surfaced when client fails server verification",
-    arguments: [TransportKind.posix, .transportServices],
-    [TransportKind.posix, .transportServices]
+    arguments: TransportKind.supported, TransportKind.supported
   )
   // Verification should fail because the custom hostname is missing on the client.
   func testClientFailsServerValidation(
@@ -134,8 +131,8 @@ struct HTTP2TransportTLSEnabledTests {
             return false
           }
 
+        #if canImport(Network)
         case .transportServices:
-          #if canImport(Darwin)
           #expect(rootError.message.starts(with: "Could not establish a connection to"))
           let nwError = try #require(rootError.cause as? NWError)
           guard case .tls(Security.errSSLBadCert) = nwError else {
@@ -144,7 +141,7 @@ struct HTTP2TransportTLSEnabledTests {
             )
             return false
           }
-          #endif
+        #endif
         }
 
         return true
@@ -154,8 +151,7 @@ struct HTTP2TransportTLSEnabledTests {
 
   @Test(
     "Error is surfaced when server fails client verification",
-    arguments: [TransportKind.posix, .transportServices],
-    [TransportKind.posix, .transportServices]
+    arguments: TransportKind.supported, TransportKind.supported
   )
   // Verification should fail because the client does not offer a cert that
   // the server can use for mutual verification.
@@ -198,16 +194,16 @@ struct HTTP2TransportTLSEnabledTests {
             return false
           }
 
+        #if canImport(Network)
         case .transportServices:
-          #if canImport(Darwin)
           let nwError = try #require(rootError.cause as? NWError)
           guard case .tls(Security.errSSLPeerCertUnknown) = nwError else {
             Issue.record(
-              "Should be a NWError.tls(-9829) error, but was: \(String(describing: rootError.cause))"
+              "Should be a NWError.tls(-9829/errSSLPeerCertUnknown) error, but was: \(String(describing: rootError.cause))"
             )
             return false
           }
-          #endif
+        #endif
         }
 
         return true
@@ -226,10 +222,12 @@ struct HTTP2TransportTLSEnabledTests {
 
   enum TransportKind: Sendable {
     case posix
+    #if canImport(Network)
     case transportServices
+    #endif
 
     static var supported: [TransportKind] {
-      #if canImport(Darwin)
+      #if canImport(Network)
       return [.posix, .transportServices]
       #else
       return [.posix]
@@ -247,12 +245,15 @@ struct HTTP2TransportTLSEnabledTests {
       HTTP2ClientTransport.Posix.Config,
       HTTP2ClientTransport.Posix.TransportSecurity
     >
+    case posix(Posix)
+
+    #if canImport(Network)
     typealias TransportServices = Config<
       HTTP2ClientTransport.TransportServices.Config,
       HTTP2ClientTransport.TransportServices.TransportSecurity
     >
-    case posix(Posix)
     case transportServices(TransportServices)
+    #endif
   }
 
   enum ServerConfig {
@@ -260,12 +261,15 @@ struct HTTP2TransportTLSEnabledTests {
       HTTP2ServerTransport.Posix.Config,
       HTTP2ServerTransport.Posix.TransportSecurity
     >
+    case posix(Posix)
+
+    #if canImport(Network)
     typealias TransportServices = Config<
       HTTP2ServerTransport.TransportServices.Config,
       HTTP2ServerTransport.TransportServices.TransportSecurity
     >
-    case posix(Posix)
     case transportServices(TransportServices)
+    #endif
   }
 
   private func makeDefaultPlaintextPosixClientConfig() -> ClientConfig.Posix {
@@ -279,6 +283,7 @@ struct HTTP2TransportTLSEnabledTests {
     )
   }
 
+  #if canImport(Network)
   private func makeDefaultPlaintextTSClientConfig() -> ClientConfig.TransportServices {
     ClientConfig.TransportServices(
       security: .plaintext,
@@ -289,6 +294,7 @@ struct HTTP2TransportTLSEnabledTests {
       }
     )
   }
+  #endif
 
   private func makeDefaultTLSClientConfig(
     for transportSecurity: TransportKind,
@@ -306,6 +312,7 @@ struct HTTP2TransportTLSEnabledTests {
       config.transport.http2.authority = authority
       return .posix(config)
 
+    #if canImport(Network)
     case .transportServices:
       var config = self.makeDefaultPlaintextTSClientConfig()
       config.security = .tls {
@@ -315,9 +322,11 @@ struct HTTP2TransportTLSEnabledTests {
       }
       config.transport.http2.authority = authority
       return .transportServices(config)
+    #endif
     }
   }
 
+  #if canImport(Network)
   private func makeSecIdentityProvider(
     certificateBytes: [UInt8],
     privateKeyBytes: [UInt8]
@@ -344,6 +353,7 @@ struct HTTP2TransportTLSEnabledTests {
     let identity = firstItem[kSecImportItemIdentity as String] as! SecIdentity
     return identity
   }
+  #endif
 
   private func makeMTLSClientConfig(
     for transportKind: TransportKind,
@@ -364,6 +374,7 @@ struct HTTP2TransportTLSEnabledTests {
       config.transport.http2.authority = serverHostname
       return .posix(config)
 
+    #if canImport(Network)
     case .transportServices:
       var config = self.makeDefaultPlaintextTSClientConfig()
       config.security = .mTLS {
@@ -378,6 +389,7 @@ struct HTTP2TransportTLSEnabledTests {
       }
       config.transport.http2.authority = serverHostname
       return .transportServices(config)
+    #endif
     }
   }
 
@@ -385,9 +397,11 @@ struct HTTP2TransportTLSEnabledTests {
     ServerConfig.Posix(security: .plaintext, transport: .defaults)
   }
 
+  #if canImport(Network)
   private func makeDefaultPlaintextTSServerConfig() -> ServerConfig.TransportServices {
     ServerConfig.TransportServices(security: .plaintext, transport: .defaults)
   }
+  #endif
 
   private func makeDefaultTLSServerConfig(
     for transportKind: TransportKind,
@@ -402,6 +416,7 @@ struct HTTP2TransportTLSEnabledTests {
       )
       return .posix(config)
 
+    #if canImport(Network)
     case .transportServices:
       var config = self.makeDefaultPlaintextTSServerConfig()
       config.security = .tls {
@@ -411,6 +426,7 @@ struct HTTP2TransportTLSEnabledTests {
         )
       }
       return .transportServices(config)
+    #endif
     }
   }
 
@@ -434,6 +450,7 @@ struct HTTP2TransportTLSEnabledTests {
       }
       return .posix(config)
 
+    #if canImport(Network)
     case .transportServices:
       var config = self.makeDefaultPlaintextTSServerConfig()
       config.security = .mTLS {
@@ -449,6 +466,7 @@ struct HTTP2TransportTLSEnabledTests {
         }
       }
       return .transportServices(config)
+    #endif
     }
   }
 
@@ -505,6 +523,7 @@ struct HTTP2TransportTLSEnabledTests {
         services: services
       )
 
+    #if canImport(Network)
     case .transportServices(let config):
       return GRPCServer(
         transport: .http2NIOTS(
@@ -514,6 +533,7 @@ struct HTTP2TransportTLSEnabledTests {
         ),
         services: services
       )
+    #endif
     }
   }
 
@@ -532,6 +552,7 @@ struct HTTP2TransportTLSEnabledTests {
         serviceConfig: ServiceConfig()
       )
 
+    #if canImport(Network)
     case .transportServices(let config):
       transport = try HTTP2ClientTransport.TransportServices(
         target: target,
@@ -539,6 +560,7 @@ struct HTTP2TransportTLSEnabledTests {
         config: config.transport,
         serviceConfig: ServiceConfig()
       )
+    #endif
     }
 
     return GRPCClient(transport: transport)
