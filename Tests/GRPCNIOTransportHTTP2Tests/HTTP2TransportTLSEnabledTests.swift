@@ -19,8 +19,11 @@ import GRPCCore
 import GRPCNIOTransportHTTP2Posix
 import GRPCNIOTransportHTTP2TransportServices
 import NIOSSL
-import Network
 import Testing
+
+#if canImport(Darwin)
+import Network
+#endif
 
 @Suite("HTTP/2 transport E2E tests with TLS enabled")
 struct HTTP2TransportTLSEnabledTests {
@@ -132,14 +135,16 @@ struct HTTP2TransportTLSEnabledTests {
           }
 
         case .transportServices:
+          #if canImport(Darwin)
           #expect(rootError.message.starts(with: "Could not establish a connection to"))
           let nwError = try #require(rootError.cause as? NWError)
-          guard case .tls(-9808) /* bad certificate format */ = nwError else {
+          guard case .tls(Security.errSSLBadCert) = nwError else {
             Issue.record(
-              "Should be a NWError.tls(-9808) error, but was: \(String(describing: rootError.cause))"
+              "Should be a NWError.tls(-9808/errSSLBadCert) error, but was: \(String(describing: rootError.cause))"
             )
             return false
           }
+          #endif
         }
 
         return true
@@ -194,13 +199,15 @@ struct HTTP2TransportTLSEnabledTests {
           }
 
         case .transportServices:
+          #if canImport(Darwin)
           let nwError = try #require(rootError.cause as? NWError)
-          guard case .tls(-9829) /* unknown peer certificate */ = nwError else {
+          guard case .tls(Security.errSSLPeerCertUnknown) = nwError else {
             Issue.record(
               "Should be a NWError.tls(-9829) error, but was: \(String(describing: rootError.cause))"
             )
             return false
           }
+          #endif
         }
 
         return true
@@ -212,11 +219,22 @@ struct HTTP2TransportTLSEnabledTests {
 
   enum TLSEnabledTestsError: Error {
     case failedToImportPKCS12
+    case unexpectedListeningAddress
+    case serverError(cause: any Error)
+    case clientError(cause: any Error)
   }
 
   enum TransportKind: Sendable {
     case posix
     case transportServices
+
+    static var supported: [TransportKind] {
+      #if canImport(Darwin)
+      return [.posix, .transportServices]
+      #else
+      return [.posix]
+      #endif
+    }
   }
 
   struct Config<Transport, Security> {
@@ -444,13 +462,12 @@ struct HTTP2TransportTLSEnabledTests {
         do {
           try await server.serve()
         } catch {
-          Issue.record(error, "Something went wrong when running the server")
+          throw TLSEnabledTestsError.serverError(cause: error)
         }
       }
 
       guard let address = try await server.listeningAddress?.ipv4 else {
-        Issue.record("Unexpected address to connect to")
-        return
+        throw TLSEnabledTestsError.unexpectedListeningAddress
       }
 
       let target: any ResolvableTarget = .ipv4(host: address.host, port: address.port)
@@ -460,7 +477,7 @@ struct HTTP2TransportTLSEnabledTests {
         do {
           try await client.run()
         } catch {
-          Issue.record(error, "Something went wrong when running client")
+          throw TLSEnabledTestsError.clientError(cause: error)
         }
       }
 

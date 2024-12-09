@@ -25,8 +25,7 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
   func testGetListeningAddress_IPv4() async throws {
     let transport = GRPCNIOTransportCore.HTTP2ServerTransport.TransportServices(
       address: .ipv4(host: "0.0.0.0", port: 0),
-      transportSecurity: .plaintext,
-      config: .defaults
+      transportSecurity: .plaintext
     )
 
     try await withThrowingDiscardingTaskGroup { group in
