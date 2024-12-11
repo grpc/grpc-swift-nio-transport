@@ -103,52 +103,52 @@ struct HTTP2TransportTLSEnabledTests {
     let clientTransportConfig = self.makeDefaultTLSClientConfig(
       for: clientTransport,
       certificateKeyPairs: certificateKeyPairs,
-      authority: nil
+      authority: "wrong-hostname"
     )
     let serverTransportConfig = self.makeDefaultTLSServerConfig(
       for: serverTransport,
       certificateKeyPairs: certificateKeyPairs
     )
 
-    try await self.withClientAndServer(
-      clientConfig: clientTransportConfig,
-      serverConfig: serverTransportConfig
-    ) { control in
-      await #expect {
+    await #expect {
+      try await self.withClientAndServer(
+        clientConfig: clientTransportConfig,
+        serverConfig: serverTransportConfig
+      ) { control in
         try await self.executeUnaryRPC(control: control)
-      } throws: { error in
-        let rootError = try #require(error as? RPCError)
-        #expect(rootError.code == .unavailable)
+      }
+    } throws: { error in
+      let rootError = try #require(error as? RPCError)
+      #expect(rootError.code == .unavailable)
 
-        switch clientTransport {
-        case .posix:
-          #expect(
-            rootError.message
-              == "The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
+      switch clientTransport {
+      case .posix:
+        #expect(
+          rootError.message
+          == "The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
+        )
+        let sslError = try #require(rootError.cause as? NIOSSLExtraError)
+        guard sslError == .failedToValidateHostname else {
+          Issue.record(
+            "Should be a NIOSSLExtraError.failedToValidateHostname error, but was: \(String(describing: rootError.cause))"
           )
-          let sslError = try #require(rootError.cause as? NIOSSLExtraError)
-          guard sslError == .failedToValidateHostname else {
-            Issue.record(
-              "Should be a NIOSSLExtraError.failedToValidateHostname error, but was: \(String(describing: rootError.cause))"
-            )
-            return false
-          }
-
-        #if canImport(Network)
-        case .transportServices:
-          #expect(rootError.message.starts(with: "Could not establish a connection to"))
-          let nwError = try #require(rootError.cause as? NWError)
-          guard case .tls(Security.errSSLBadCert) = nwError else {
-            Issue.record(
-              "Should be a NWError.tls(-9808/errSSLBadCert) error, but was: \(String(describing: rootError.cause))"
-            )
-            return false
-          }
-        #endif
+          return false
         }
 
-        return true
+      #if canImport(Network)
+      case .transportServices:
+        #expect(rootError.message.starts(with: "Could not establish a connection to"))
+        let nwError = try #require(rootError.cause as? NWError)
+        guard case .tls(Security.errSSLBadCert) = nwError else {
+          Issue.record(
+            "Should be a NWError.tls(-9808/errSSLBadCert) error, but was: \(String(describing: rootError.cause))"
+          )
+          return false
+        }
+      #endif
       }
+
+      return true
     }
   }
 
@@ -174,44 +174,53 @@ struct HTTP2TransportTLSEnabledTests {
       includeClientCertificateInTrustRoots: true
     )
 
-    try await self.withClientAndServer(
-      clientConfig: clientTransportConfig,
-      serverConfig: serverTransportConfig
-    ) { control in
-      await #expect {
+    await #expect {
+      try await self.withClientAndServer(
+        clientConfig: clientTransportConfig,
+        serverConfig: serverTransportConfig
+      ) { control in
         try await self.executeUnaryRPC(control: control)
-      } throws: { error in
-        let rootError = try #require(error as? RPCError)
-        #expect(rootError.code == .unavailable)
-        #expect(
-          rootError.message
-            == "The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
-        )
+      }
+    } throws: { error in
+      let rootError = try #require(error as? RPCError)
+      #expect(rootError.code == .unavailable)
+      #expect(
+        rootError.message
+        == "The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
+      )
 
-        switch clientTransport {
-        case .posix:
-          let sslError = try #require(rootError.cause as? NIOSSL.BoringSSLError)
-          guard case .sslError = sslError else {
-            Issue.record(
-              "Should be a NIOSSL.sslError error, but was: \(String(describing: rootError.cause))"
-            )
-            return false
-          }
-
-        #if canImport(Network)
-        case .transportServices:
-          let nwError = try #require(rootError.cause as? NWError)
-          guard case .tls(Security.errSSLPeerCertUnknown) = nwError else {
-            Issue.record(
-              "Should be a NWError.tls(-9829/errSSLPeerCertUnknown) error, but was: \(String(describing: rootError.cause))"
-            )
-            return false
-          }
-        #endif
+      switch clientTransport {
+      case .posix:
+        let sslError = try #require(rootError.cause as? NIOSSL.BoringSSLError)
+        guard case .sslError = sslError else {
+          Issue.record(
+            "Should be a NIOSSL.sslError error, but was: \(String(describing: rootError.cause))"
+          )
+          return false
         }
 
-        return true
+      #if canImport(Network)
+      case .transportServices:
+        let nwError = try #require(rootError.cause as? NWError)
+        guard case .tls(Security.errSSLPeerCertUnknown) = nwError else {
+          // When the TLS handshake fails, the connection will be closed from the client.
+          // Network.framework will generally surface the right SSL error (in this case, an "unknown
+          // certificate" from the server), but it will sometimes instead return the broken pipe
+          // error caused by the underlying TLS handshake handler closing the connection:
+          // we should tolerate this.
+          if case .posix(POSIXErrorCode.EPIPE) = nwError {
+            return true
+          }
+          
+          Issue.record(
+            "Should be a NWError.tls(-9829/errSSLPeerCertUnknown) error, but was: \(String(describing: rootError.cause))"
+          )
+          return false
+        }
+      #endif
       }
+
+      return true
     }
   }
 
@@ -341,7 +350,10 @@ struct HTTP2TransportTLSEnabledTests {
       privateKey: try NIOSSLPrivateKey(bytes: privateKeyBytes, format: .der)
     )
     let pkcs12Bytes = try bundle.serialize(passphrase: password.utf8)
-    let options = [kSecImportExportPassphrase as String: password]
+    let options = [
+      kSecImportExportPassphrase as String: password,
+      kSecImportToMemoryOnly: kCFBooleanTrue!
+    ] as [AnyHashable : Any]
     var rawItems: CFArray?
     let status = SecPKCS12Import(
       Data(pkcs12Bytes) as CFData,
