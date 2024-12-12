@@ -1866,7 +1866,7 @@ extension Metadata {
     for header in headers {
       if header.name.hasSuffix("-bin") {
         do {
-          let decodedBinary = try header.value.base64Decoded()
+          let decodedBinary = try Base64.decode(string: header.value)
           metadata.addBinary(decodedBinary, forKey: header.name)
         } catch {
           metadata.addString(header.value, forKey: header.name)
