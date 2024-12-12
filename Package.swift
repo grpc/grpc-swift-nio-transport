@@ -67,6 +67,7 @@ let defaultSwiftSettings: [SwiftSetting] = [
   .swiftLanguageMode(.v6),
   .enableUpcomingFeature("ExistentialAny"),
   .enableUpcomingFeature("InternalImportsByDefault"),
+  .enableUpcomingFeature("MemberImportVisibility"),
 ]
 
 let targets: [Target] = [
