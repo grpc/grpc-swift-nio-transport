@@ -125,7 +125,7 @@ struct HTTP2TransportTLSEnabledTests {
       case .posix:
         #expect(
           rootError.message
-          == "The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
+            == "The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
         )
         let sslError = try #require(rootError.cause as? NIOSSLExtraError)
         guard sslError == .failedToValidateHostname else {
@@ -186,7 +186,7 @@ struct HTTP2TransportTLSEnabledTests {
       #expect(rootError.code == .unavailable)
       #expect(
         rootError.message
-        == "The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
+          == "The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
       )
 
       switch clientTransport {
@@ -211,7 +211,7 @@ struct HTTP2TransportTLSEnabledTests {
           if case .posix(POSIXErrorCode.EPIPE) = nwError {
             return true
           }
-          
+
           Issue.record(
             "Should be a NWError.tls(-9829/errSSLPeerCertUnknown) error, but was: \(String(describing: rootError.cause))"
           )
@@ -350,10 +350,11 @@ struct HTTP2TransportTLSEnabledTests {
       privateKey: try NIOSSLPrivateKey(bytes: privateKeyBytes, format: .der)
     )
     let pkcs12Bytes = try bundle.serialize(passphrase: password.utf8)
-    let options = [
-      kSecImportExportPassphrase as String: password,
-      kSecImportToMemoryOnly: kCFBooleanTrue!
-    ] as [AnyHashable : Any]
+    let options =
+      [
+        kSecImportExportPassphrase as String: password,
+        kSecImportToMemoryOnly: kCFBooleanTrue!,
+      ] as [AnyHashable: Any]
     var rawItems: CFArray?
     let status = SecPKCS12Import(
       Data(pkcs12Bytes) as CFData,
