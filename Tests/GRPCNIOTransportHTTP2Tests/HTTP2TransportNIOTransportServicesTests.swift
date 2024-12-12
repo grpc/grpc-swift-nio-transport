@@ -19,57 +19,9 @@ import GRPCCore
 import GRPCNIOTransportCore
 import GRPCNIOTransportHTTP2TransportServices
 import XCTest
+import NIOSSL
 
 final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
-  private static let p12bundleURL = URL(fileURLWithPath: #filePath)
-    .deletingLastPathComponent()  // (this file)
-    .deletingLastPathComponent()  // GRPCHTTP2TransportTests
-    .deletingLastPathComponent()  // Tests
-    .appendingPathComponent("Sources")
-    .appendingPathComponent("GRPCSampleData")
-    .appendingPathComponent("bundle")
-    .appendingPathExtension("p12")
-
-  @Sendable private static func loadIdentity() throws -> SecIdentity {
-    let data = try Data(contentsOf: Self.p12bundleURL)
-
-    var externalFormat = SecExternalFormat.formatUnknown
-    var externalItemType = SecExternalItemType.itemTypeUnknown
-    let passphrase = "password" as CFTypeRef
-    var exportKeyParams = SecItemImportExportKeyParameters()
-    exportKeyParams.passphrase = Unmanaged.passUnretained(passphrase)
-    var items: CFArray?
-
-    let status = SecItemImport(
-      data as CFData,
-      "bundle.p12" as CFString,
-      &externalFormat,
-      &externalItemType,
-      SecItemImportExportFlags(rawValue: 0),
-      &exportKeyParams,
-      nil,
-      &items
-    )
-
-    if status != errSecSuccess {
-      XCTFail(
-        """
-        Unable to load identity from '\(Self.p12bundleURL)'. \
-        SecItemImport failed with status \(status)
-        """
-      )
-    } else if items == nil {
-      XCTFail(
-        """
-        Unable to load identity from '\(Self.p12bundleURL)'. \
-        SecItemImport failed.
-        """
-      )
-    }
-
-    return ((items! as NSArray)[0] as! SecIdentity)
-  }
-
   func testGetListeningAddress_IPv4() async throws {
     let transport = GRPCNIOTransportCore.HTTP2ServerTransport.TransportServices(
       address: .ipv4(host: "0.0.0.0", port: 0),
@@ -198,6 +150,33 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
     }
   }
 
+  @Sendable private static func loadIdentity() throws -> SecIdentity {
+    let certificateKeyPairs = try SelfSignedCertificateKeyPairs()
+    let password = "somepassword"
+    let bundle = NIOSSLPKCS12Bundle(
+      certificateChain: [
+        try NIOSSLCertificate(bytes: certificateKeyPairs.server.certificate, format: .der)
+      ],
+      privateKey: try NIOSSLPrivateKey(bytes: certificateKeyPairs.server.key, format: .der)
+    )
+    let pkcs12Bytes = try bundle.serialize(passphrase: password.utf8)
+    let options = [kSecImportExportPassphrase as String: password]
+    var rawItems: CFArray?
+    let status = SecPKCS12Import(
+      Data(pkcs12Bytes) as CFData,
+      options as CFDictionary,
+      &rawItems
+    )
+    guard status == errSecSuccess else {
+      XCTFail("Failed to import PKCS12 bundle: status \(status).")
+      throw HTTP2TransportNIOTransportServicesTestsError.failedToImportPKCS12
+    }
+    let items = rawItems! as! [[String: Any]]
+    let firstItem = items[0]
+    let identity = firstItem[kSecImportItemIdentity as String] as! SecIdentity
+    return identity
+  }
+
   func testServerConfig_Defaults() throws {
     let grpcTLSConfig = HTTP2ServerTransport.TransportServices.TLS.defaults(
       identityProvider: Self.loadIdentity
@@ -228,5 +207,9 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
     XCTAssertEqual(grpcTLSConfig.serverCertificateVerification, .fullVerification)
     XCTAssertEqual(grpcTLSConfig.trustRoots, .systemDefault)
   }
+}
+
+enum HTTP2TransportNIOTransportServicesTestsError: Error {
+  case failedToImportPKCS12
 }
 #endif
