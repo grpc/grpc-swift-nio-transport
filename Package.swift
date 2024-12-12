@@ -67,6 +67,7 @@ let defaultSwiftSettings: [SwiftSetting] = [
   .swiftLanguageMode(.v6),
   .enableUpcomingFeature("ExistentialAny"),
   .enableUpcomingFeature("InternalImportsByDefault"),
+  .enableUpcomingFeature("MemberImportVisibility"),
 ]
 
 let targets: [Target] = [
@@ -159,14 +160,3 @@ let package = Package(
   dependencies: dependencies,
   targets: targets
 )
-
-// ---    STANDARD CROSS-REPO SETTINGS DO NOT EDIT   --- //
-for target in package.targets {
-  if target.type != .plugin {
-    var settings = target.swiftSettings ?? []
-    // https://github.com/swiftlang/swift-evolution/blob/main/proposals/0444-member-import-visibility.md
-    settings.append(.enableUpcomingFeature("MemberImportVisibility"))
-    target.swiftSettings = settings
-  }
-}
-// --- END: STANDARD CROSS-REPO SETTINGS DO NOT EDIT --- //
