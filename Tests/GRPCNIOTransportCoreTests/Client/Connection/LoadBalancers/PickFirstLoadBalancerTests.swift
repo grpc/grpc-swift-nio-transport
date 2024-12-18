@@ -295,6 +295,7 @@ final class PickFirstLoadBalancerTests: XCTestCase {
       case .connectivityStateChanged(.ready):
         switch idleCount.value {
         case 1:
+          XCTAssertNotNil(context.loadBalancer.pickSubchannel())
           // Must be connected to server 1, send a GOAWAY frame.
           let channel = context.servers[0].server.clients.first!
           let goAway = HTTP2Frame(
@@ -307,6 +308,7 @@ final class PickFirstLoadBalancerTests: XCTestCase {
           // Must only be connected to server 2 now.
           XCTAssertEqual(context.servers[0].server.clients.count, 0)
           XCTAssertEqual(context.servers[1].server.clients.count, 1)
+          XCTAssertNotNil(context.loadBalancer.pickSubchannel())
           context.loadBalancer.close()
 
         default:
