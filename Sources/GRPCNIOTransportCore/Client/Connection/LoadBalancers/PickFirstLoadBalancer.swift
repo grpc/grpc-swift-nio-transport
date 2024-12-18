@@ -328,6 +328,7 @@ extension PickFirstLoadBalancer.State.Active {
       if self.connectivityState == .idle {
         // Current subchannel is idle and we have a new endpoint, move straight to the new
         // subchannel.
+        self.isCurrentGoingAway = false
         self.current = newSubchannel
         self.parked[current.id] = current
         onUpdateEndpoint = .connect(newSubchannel, close: current)
@@ -345,10 +346,12 @@ extension PickFirstLoadBalancer.State.Active {
       onUpdateEndpoint = .connect(newSubchannel, close: next)
 
     case (.none, .none):
+      self.isCurrentGoingAway = false
       self.current = newSubchannel
       onUpdateEndpoint = .connect(newSubchannel, close: nil)
 
     case (.none, .some(let next)):
+      self.isCurrentGoingAway = false
       self.current = newSubchannel
       self.next = nil
       self.parked[next.id] = next
@@ -368,6 +371,10 @@ extension PickFirstLoadBalancer.State.Active {
       if connectivityState == self.connectivityState {
         onUpdate = .none
       } else {
+        // If the subchannel was going away and became idle then it went away.
+        if connectivityState == .idle {
+          self.isCurrentGoingAway = false
+        }
         self.connectivityState = connectivityState
         onUpdate = .publishStateChange(connectivityState)
       }
