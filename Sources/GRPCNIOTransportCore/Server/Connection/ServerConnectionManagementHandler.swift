@@ -609,6 +609,9 @@ extension ServerConnectionManagementHandler {
 
       context.write(self.wrapOutboundOut(goAway), promise: nil)
       self.maybeFlush(context: context)
+
+      // We must delay the channel close after sending the GOAWAY packet by a tick to make sure it
+      // gets flushed and delivered to the client before the connection is closed.
       let loopBound = NIOLoopBound(context, eventLoop: context.eventLoop)
       context.eventLoop.execute {
         loopBound.value.close(promise: nil)
