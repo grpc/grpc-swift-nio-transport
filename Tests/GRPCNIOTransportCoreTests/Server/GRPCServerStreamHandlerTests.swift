@@ -1104,20 +1104,13 @@ struct ServerStreamHandlerTests {
       GRPCHTTP2Keys.contentType.rawValue: "application/grpc",
       GRPCHTTP2Keys.te.rawValue: "trailers",
     ]
-    #expect(throws: Never.self) {
-      try channel.writeInbound(
-        HTTP2Frame.FramePayload.headers(.init(headers: clientInitialMetadata))
-      )
-    }
+    try channel.writeInbound(
+      HTTP2Frame.FramePayload.headers(.init(headers: clientInitialMetadata))
+    )
 
     // Now we write back server's initial metadata...
-    let headers: HPACKHeaders = [
-      "some-custom-header": "some-custom-value"
-    ]
-    let serverInitialMetadata = RPCResponsePart.metadata(Metadata(headers: headers))
-    #expect(throws: Never.self) {
-      try channel.writeOutbound(serverInitialMetadata)
-    }
+    let serverInitialMetadata = RPCResponsePart.metadata([:])
+    try channel.writeOutbound(serverInitialMetadata)
 
     // And this should have updated the FrameStats
     #expect(handlers.connectionHandler.frameStats.didWriteHeadersOrData)
@@ -1125,9 +1118,7 @@ struct ServerStreamHandlerTests {
     // Manually reset the FrameStats to make sure that writing data also updates it correctly.
     handlers.connectionHandler.frameStats.reset()
     #expect(!handlers.connectionHandler.frameStats.didWriteHeadersOrData)
-    #expect(throws: Never.self) {
-      try channel.writeOutbound(RPCResponsePart.message([42]))
-    }
+    try channel.writeOutbound(RPCResponsePart.message([42]))
     #expect(handlers.connectionHandler.frameStats.didWriteHeadersOrData)
 
     // Clean up.
