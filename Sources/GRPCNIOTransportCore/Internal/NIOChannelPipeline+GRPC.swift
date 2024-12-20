@@ -71,6 +71,10 @@ extension ChannelPipeline.SynchronousOperations {
     var http2HandlerStreamConfiguration = NIOHTTP2Handler.StreamConfiguration()
     http2HandlerStreamConfiguration.targetWindowSize = clampedTargetWindowSize
 
+    let boundConnectionManagementHandler = NIOLoopBound(
+      serverConnectionHandler.syncView,
+      eventLoop: self.eventLoop
+    )
     let streamMultiplexer = try self.configureAsyncHTTP2Pipeline(
       mode: .server,
       streamDelegate: serverConnectionHandler.http2StreamDelegate,
@@ -86,7 +90,8 @@ extension ChannelPipeline.SynchronousOperations {
           acceptedEncodings: compressionConfig.enabledAlgorithms,
           maxPayloadSize: rpcConfig.maxRequestPayloadSize,
           methodDescriptorPromise: methodDescriptorPromise,
-          eventLoop: streamChannel.eventLoop
+          eventLoop: streamChannel.eventLoop,
+          connectionManagementHandler: boundConnectionManagementHandler.value
         )
         try streamChannel.pipeline.syncOperations.addHandler(streamHandler)
 

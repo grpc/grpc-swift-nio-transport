@@ -33,12 +33,25 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     descriptorPromise: EventLoopPromise<MethodDescriptor>? = nil,
     disableAssertions: Bool = false
   ) -> GRPCServerStreamHandler {
+    let serverConnectionManagementHandler = ServerConnectionManagementHandler(
+      eventLoop: channel.eventLoop,
+      maxIdleTime: nil,
+      maxAge: nil,
+      maxGraceTime: nil,
+      keepaliveTime: nil,
+      keepaliveTimeout: nil,
+      allowKeepaliveWithoutCalls: false,
+      minPingIntervalWithoutCalls: .minutes(5),
+      requireALPN: false
+    )
+
     return GRPCServerStreamHandler(
       scheme: scheme,
       acceptedEncodings: acceptedEncodings,
       maxPayloadSize: maxPayloadSize,
       methodDescriptorPromise: descriptorPromise ?? channel.eventLoop.makePromise(),
       eventLoop: channel.eventLoop,
+      connectionManagementHandler: serverConnectionManagementHandler.syncView,
       skipStateMachineAssertions: disableAssertions
     )
   }
@@ -974,28 +987,50 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
 }
 
 struct ServerStreamHandlerTests {
-  private func makeServerStreamHandler(
+  struct ConnectionAndStreamHandlers {
+    let streamHandler: GRPCServerStreamHandler
+    let connectionHandler: ServerConnectionManagementHandler
+  }
+
+  private func makeServerConnectionAndStreamHandlers(
     channel: any Channel,
     scheme: Scheme = .http,
     acceptedEncodings: CompressionAlgorithmSet = [],
     maxPayloadSize: Int = .max,
     descriptorPromise: EventLoopPromise<MethodDescriptor>? = nil,
     disableAssertions: Bool = false
-  ) -> GRPCServerStreamHandler {
-    return GRPCServerStreamHandler(
+  ) -> ConnectionAndStreamHandlers {
+    let connectionManagementHandler = ServerConnectionManagementHandler(
+      eventLoop: channel.eventLoop,
+      maxIdleTime: nil,
+      maxAge: nil,
+      maxGraceTime: nil,
+      keepaliveTime: nil,
+      keepaliveTimeout: nil,
+      allowKeepaliveWithoutCalls: false,
+      minPingIntervalWithoutCalls: .minutes(5),
+      requireALPN: false
+    )
+    let streamHandler = GRPCServerStreamHandler(
       scheme: scheme,
       acceptedEncodings: acceptedEncodings,
       maxPayloadSize: maxPayloadSize,
       methodDescriptorPromise: descriptorPromise ?? channel.eventLoop.makePromise(),
       eventLoop: channel.eventLoop,
+      connectionManagementHandler: connectionManagementHandler.syncView,
       skipStateMachineAssertions: disableAssertions
+    )
+
+    return ConnectionAndStreamHandlers(
+      streamHandler: streamHandler,
+      connectionHandler: connectionManagementHandler
     )
   }
 
   @Test("ChannelShouldQuiesceEvent is buffered and turns into RPC cancellation")
   func shouldQuiesceEventIsBufferedBeforeHandleIsSet() async throws {
     let channel = EmbeddedChannel()
-    let handler = self.makeServerStreamHandler(channel: channel)
+    let handler = self.makeServerConnectionAndStreamHandlers(channel: channel).streamHandler
     try channel.pipeline.syncOperations.addHandler(handler)
     channel.pipeline.fireUserInboundEventTriggered(ChannelShouldQuiesceEvent())
 
@@ -1011,7 +1046,7 @@ struct ServerStreamHandlerTests {
   @Test("ChannelShouldQuiesceEvent turns into RPC cancellation")
   func shouldQuiesceEventTriggersCancellation() async throws {
     let channel = EmbeddedChannel()
-    let handler = self.makeServerStreamHandler(channel: channel)
+    let handler = self.makeServerConnectionAndStreamHandlers(channel: channel).streamHandler
     try channel.pipeline.syncOperations.addHandler(handler)
 
     await withServerContextRPCCancellationHandle { handle in
@@ -1028,7 +1063,7 @@ struct ServerStreamHandlerTests {
   @Test("RST_STREAM turns into RPC cancellation")
   func rstStreamTriggersCancellation() async throws {
     let channel = EmbeddedChannel()
-    let handler = self.makeServerStreamHandler(channel: channel)
+    let handler = self.makeServerConnectionAndStreamHandlers(channel: channel).streamHandler
     try channel.pipeline.syncOperations.addHandler(handler)
 
     await withServerContextRPCCancellationHandle { handle in
@@ -1045,6 +1080,51 @@ struct ServerStreamHandlerTests {
     _ = try? channel.finish()
   }
 
+  @Test("Connection FrameStats are updated when writing headers or data frames")
+  func connectionFrameStatsAreUpdatedAccordingly() async throws {
+    let channel = EmbeddedChannel()
+    let handlers = self.makeServerConnectionAndStreamHandlers(channel: channel)
+    try channel.pipeline.syncOperations.addHandler(handlers.streamHandler)
+
+    // We have written nothing yet, so expect FrameStats/didWriteHeadersOrData to be false
+    #expect(!handlers.connectionHandler.frameStats.didWriteHeadersOrData)
+
+    // FrameStats aren't affected by pings received
+    channel.pipeline.fireChannelRead(
+      NIOAny(HTTP2Frame.FramePayload.ping(.init(withInteger: 42), ack: false))
+    )
+    #expect(!handlers.connectionHandler.frameStats.didWriteHeadersOrData)
+
+    // Now write back headers and make sure FrameStats are updated accordingly:
+    // To do that, we first need to receive client's initial metadata...
+    let clientInitialMetadata: HPACKHeaders = [
+      GRPCHTTP2Keys.path.rawValue: "/SomeService/SomeMethod",
+      GRPCHTTP2Keys.scheme.rawValue: "http",
+      GRPCHTTP2Keys.method.rawValue: "POST",
+      GRPCHTTP2Keys.contentType.rawValue: "application/grpc",
+      GRPCHTTP2Keys.te.rawValue: "trailers",
+    ]
+    try channel.writeInbound(
+      HTTP2Frame.FramePayload.headers(.init(headers: clientInitialMetadata))
+    )
+
+    // Now we write back server's initial metadata...
+    let serverInitialMetadata = RPCResponsePart.metadata([:])
+    try channel.writeOutbound(serverInitialMetadata)
+
+    // And this should have updated the FrameStats
+    #expect(handlers.connectionHandler.frameStats.didWriteHeadersOrData)
+
+    // Manually reset the FrameStats to make sure that writing data also updates it correctly.
+    handlers.connectionHandler.frameStats.reset()
+    #expect(!handlers.connectionHandler.frameStats.didWriteHeadersOrData)
+    try channel.writeOutbound(RPCResponsePart.message([42]))
+    #expect(handlers.connectionHandler.frameStats.didWriteHeadersOrData)
+
+    // Clean up.
+    // Throwing is fine: the channel is closed abruptly, errors are expected.
+    _ = try? channel.finish()
+  }
 }
 
 extension EmbeddedChannel {

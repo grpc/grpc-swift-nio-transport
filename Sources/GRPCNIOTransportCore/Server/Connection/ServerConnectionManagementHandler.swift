@@ -121,9 +121,9 @@ package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
   }
 
   /// Stats about recently written frames. Used to determine whether to reset keep-alive state.
-  private var frameStats: FrameStats
+  package var frameStats: FrameStats
 
-  struct FrameStats {
+  package struct FrameStats {
     private(set) var didWriteHeadersOrData = false
 
     /// Mark that a HEADERS frame has been written.
@@ -609,7 +609,13 @@ extension ServerConnectionManagementHandler {
 
       context.write(self.wrapOutboundOut(goAway), promise: nil)
       self.maybeFlush(context: context)
-      context.close(promise: nil)
+
+      // We must delay the channel close after sending the GOAWAY packet by a tick to make sure it
+      // gets flushed and delivered to the client before the connection is closed.
+      let loopBound = NIOLoopBound(context, eventLoop: context.eventLoop)
+      context.eventLoop.execute {
+        loopBound.value.close(promise: nil)
+      }
 
     case .sendAck:
       ()  // ACKs are sent by NIO's HTTP/2 handler, don't double ack.
