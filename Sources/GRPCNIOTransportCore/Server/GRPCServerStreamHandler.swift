@@ -42,6 +42,8 @@ package final class GRPCServerStreamHandler: ChannelDuplexHandler, RemovableChan
 
   private var cancellationHandle: Optional<ServerContext.RPCCancellationHandle>
 
+  package let connectionManagementHandler: ServerConnectionManagementHandler.SyncView
+
   // Existential errors unconditionally allocate, avoid this per-use allocation by doing it
   // statically.
   private static let handlerRemovedBeforeDescriptorResolved: any Error = RPCError(
@@ -55,6 +57,7 @@ package final class GRPCServerStreamHandler: ChannelDuplexHandler, RemovableChan
     maxPayloadSize: Int,
     methodDescriptorPromise: EventLoopPromise<MethodDescriptor>,
     eventLoop: any EventLoop,
+    connectionManagementHandler: ServerConnectionManagementHandler.SyncView,
     cancellationHandler: ServerContext.RPCCancellationHandle? = nil,
     skipStateMachineAssertions: Bool = false
   ) {
@@ -66,6 +69,7 @@ package final class GRPCServerStreamHandler: ChannelDuplexHandler, RemovableChan
     self.methodDescriptorPromise = methodDescriptorPromise
     self.cancellationHandle = cancellationHandler
     self.eventLoop = eventLoop
+    self.connectionManagementHandler = connectionManagementHandler
   }
 
   package func setCancellationHandle(_ handle: ServerContext.RPCCancellationHandle) {
@@ -136,13 +140,16 @@ extension GRPCServerStreamHandler {
               switch self.stateMachine.nextInboundMessage() {
               case .receiveMessage(let message):
                 context.fireChannelRead(self.wrapInboundOut(.message(message)))
+
               case .awaitMoreMessages:
                 break loop
+
               case .noMoreMessages:
                 context.fireUserInboundEventTriggered(ChannelEvent.inputClosed)
                 break loop
               }
             }
+
           case .doNothing:
             ()
           }
@@ -261,6 +268,7 @@ extension GRPCServerStreamHandler {
         self.flushPending = true
         let headers = try self.stateMachine.send(metadata: metadata)
         context.write(self.wrapOutboundOut(.headers(.init(headers: headers))), promise: promise)
+        self.connectionManagementHandler.wroteHeadersFrame()
       } catch let invalidState {
         let error = RPCError(invalidState)
         promise?.fail(error)
@@ -270,6 +278,7 @@ extension GRPCServerStreamHandler {
     case .message(let message):
       do {
         try self.stateMachine.send(message: message, promise: promise)
+        self.connectionManagementHandler.wroteDataFrame()
       } catch let invalidState {
         let error = RPCError(invalidState)
         promise?.fail(error)
