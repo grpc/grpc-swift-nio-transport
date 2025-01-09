@@ -15,6 +15,7 @@
  */
 
 public import GRPCCore
+public import NIOCore
 
 /// A namespace for the HTTP/2 client transport.
 public enum HTTP2ClientTransport {}
@@ -162,6 +163,34 @@ extension HTTP2ClientTransport.Config {
     /// Default values, max frame size is 16KiB, and the target window size is 8MiB.
     public static var defaults: Self {
       Self(maxFrameSize: 1 << 14, targetWindowSize: 8 * 1024 * 1024, authority: nil)
+    }
+  }
+
+  /// A set of callbacks used for debugging purposes.
+  ///
+  /// The callbacks give you access to the underlying NIO `Channel` after gRPC's initializer has
+  /// run for each `Channel`. These callbacks are intended for debugging purposes.
+  ///
+  /// - Important: You should be very careful when implementing these callbacks as they may have
+  ///   unexpected side effects on your gRPC application.
+  public struct ChannelDebuggingCallbacks: Sendable {
+    /// A callback invoked with each new TCP connection.
+    public var onCreateTCPConnection: (@Sendable (_ channel: any Channel) async throws -> Void)?
+
+    /// A callback invoked with each new HTTP/2 stream.
+    public var onCreateHTTP2Stream: (@Sendable (_ channel: any Channel) async throws -> Void)?
+
+    public init(
+      onCreateTCPConnection: (@Sendable (_ channel: any Channel) -> Void)?,
+      onCreateHTTP2Stream: (@Sendable (_ channel: any Channel) -> Void)?
+    ) {
+      self.onCreateTCPConnection = onCreateTCPConnection
+      self.onCreateHTTP2Stream = onCreateHTTP2Stream
+    }
+
+    /// Default values; no callbacks are set.
+    public static var defaults: Self {
+      Self(onCreateTCPConnection: nil, onCreateHTTP2Stream: nil)
     }
   }
 }

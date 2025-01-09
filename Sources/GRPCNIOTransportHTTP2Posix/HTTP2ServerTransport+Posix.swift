@@ -85,8 +85,11 @@ extension HTTP2ServerTransport {
               let quiescingHandler = serverQuiescingHelper.makeServerChannelHandler(
                 channel: channel
               )
-              return try channel.pipeline.syncOperations.addHandler(quiescingHandler)
-            }
+              try channel.pipeline.syncOperations.addHandler(quiescingHandler)
+            }.runCallbackIfSet(
+              on: channel,
+              callback: self.config.channelDebuggingCallbacks.onBindTCPListener
+            )
           }
           .bind(to: address) { channel in
             channel.eventLoop.makeCompletedFuture {
@@ -113,10 +116,14 @@ extension HTTP2ServerTransport {
                 connectionConfig: self.config.connection,
                 http2Config: self.config.http2,
                 rpcConfig: self.config.rpc,
+                debugConfig: self.config.channelDebuggingCallbacks,
                 requireALPN: requireALPN,
                 scheme: scheme
               )
-            }
+            }.runCallbackIfSet(
+              on: channel,
+              callback: self.config.channelDebuggingCallbacks.onAcceptTCPConnection
+            )
           }
 
         return serverChannel
@@ -191,6 +198,9 @@ extension HTTP2ServerTransport.Posix {
     /// RPC configuration.
     public var rpc: HTTP2ServerTransport.Config.RPC
 
+    /// Channel callbacks for debugging.
+    public var channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
+
     /// Construct a new `Config`.
     ///
     /// - Parameters:
@@ -198,18 +208,21 @@ extension HTTP2ServerTransport.Posix {
     ///   - rpc: RPC configuration.
     ///   - connection: Connection configuration.
     ///   - compression: Compression configuration.
+    ///   - channelDebuggingCallbacks: Channel callbacks for debugging.
     ///
     /// - SeeAlso: ``defaults(configure:)`` and ``defaults``.
     public init(
       http2: HTTP2ServerTransport.Config.HTTP2,
       rpc: HTTP2ServerTransport.Config.RPC,
       connection: HTTP2ServerTransport.Config.Connection,
-      compression: HTTP2ServerTransport.Config.Compression
+      compression: HTTP2ServerTransport.Config.Compression,
+      channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
     ) {
       self.compression = compression
       self.connection = connection
       self.http2 = http2
       self.rpc = rpc
+      self.channelDebuggingCallbacks = channelDebuggingCallbacks
     }
 
     /// Default configuration.
@@ -228,7 +241,8 @@ extension HTTP2ServerTransport.Posix {
         http2: .defaults,
         rpc: .defaults,
         connection: .defaults,
-        compression: .defaults
+        compression: .defaults,
+        channelDebuggingCallbacks: .defaults
       )
       configure(&config)
       return config

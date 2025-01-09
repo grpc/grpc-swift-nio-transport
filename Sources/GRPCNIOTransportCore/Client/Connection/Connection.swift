@@ -202,10 +202,10 @@ package final class Connection: Sendable {
     descriptor: MethodDescriptor,
     options: CallOptions
   ) async throws -> Stream {
-    let (multiplexer, scheme) = try self.state.withLock { state in
+    let (multiplexer, scheme, onCreateStream) = try self.state.withLock { state in
       switch state {
       case .connected(let connected):
-        return (connected.multiplexer, connected.scheme)
+        return (connected.multiplexer, connected.scheme, connected.onCreateHTTP2Stream)
       case .notConnected, .closing, .closed:
         throw RPCError(code: .unavailable, message: "subchannel isn't ready")
       }
@@ -243,7 +243,10 @@ package final class Connection: Sendable {
               outboundType: RPCRequestPart.self
             )
           )
-        }
+        }.runCallbackIfSet(
+          on: channel,
+          callback: onCreateStream
+        )
       }
 
       return Stream(wrapping: stream, descriptor: descriptor)
@@ -461,11 +464,14 @@ extension Connection {
       var multiplexer: NIOHTTP2Handler.AsyncStreamMultiplexer<Void>
       /// Whether the connection is plaintext, `false` implies TLS is being used.
       var scheme: Scheme
+      /// A user-provided callback to call after creating the stream.
+      var onCreateHTTP2Stream: (@Sendable (any Channel) async throws -> Void)?
 
       init(_ connection: HTTP2Connection) {
         self.channel = connection.channel
         self.multiplexer = connection.multiplexer
         self.scheme = connection.isPlaintext ? .http : .https
+        self.onCreateHTTP2Stream = connection.onCreateHTTP2Stream
       }
     }
 

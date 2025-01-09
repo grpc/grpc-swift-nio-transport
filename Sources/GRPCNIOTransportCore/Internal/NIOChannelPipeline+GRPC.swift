@@ -31,6 +31,7 @@ extension ChannelPipeline.SynchronousOperations {
     connectionConfig: HTTP2ServerTransport.Config.Connection,
     http2Config: HTTP2ServerTransport.Config.HTTP2,
     rpcConfig: HTTP2ServerTransport.Config.RPC,
+    debugConfig: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks,
     requireALPN: Bool,
     scheme: Scheme
   ) throws -> (HTTP2ConnectionChannel, HTTP2StreamMultiplexer) {
@@ -99,7 +100,10 @@ extension ChannelPipeline.SynchronousOperations {
           wrappingChannelSynchronously: streamChannel
         )
         return (asyncStreamChannel, methodDescriptorPromise.futureResult)
-      }
+      }.runCallbackIfSet(
+        on: streamChannel,
+        callback: debugConfig.onAcceptHTTP2Stream
+      )
     }
 
     try self.addHandler(serverConnectionHandler)
