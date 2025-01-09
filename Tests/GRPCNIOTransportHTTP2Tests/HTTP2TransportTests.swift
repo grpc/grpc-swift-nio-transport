@@ -87,7 +87,7 @@ final class HTTP2TransportTests: XCTestCase {
   }
 
   func forEachClientAndHTTPStatusCodeServer(
-    _ kind: [TransportKind] = [.posix, .transportServices],
+    _ kind: [TransportKind] = TransportKind.supported,
     _ execute: (ControlClient, TransportKind) async throws -> Void
   ) async throws {
     for clientKind in kind {
