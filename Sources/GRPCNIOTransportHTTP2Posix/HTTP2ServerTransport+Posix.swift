@@ -52,6 +52,8 @@ extension HTTP2ServerTransport {
   /// }
   /// ```
   public struct Posix: ServerTransport, ListeningServerTransport {
+    public typealias Bytes = GRPCNIOTransportBytes
+
     private struct ListenerFactory: HTTP2ListenerFactory {
       let config: Config
       let transportSecurity: TransportSecurity

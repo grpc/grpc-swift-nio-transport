@@ -30,7 +30,7 @@ final class ZlibTests: XCTestCase {
     the people who are crazy enough to think they can change the world, are the ones who do.
     """
 
-  private func compress(_ input: [UInt8], method: Zlib.Method) throws -> ByteBuffer {
+  private func compress(_ input: ByteBuffer, method: Zlib.Method) throws -> ByteBuffer {
     let compressor = Zlib.Compressor(method: method)
     defer { compressor.end() }
 
@@ -43,7 +43,7 @@ final class ZlibTests: XCTestCase {
     _ input: ByteBuffer,
     method: Zlib.Method,
     limit: Int = .max
-  ) throws -> [UInt8] {
+  ) throws -> ByteBuffer {
     let decompressor = Zlib.Decompressor(method: method)
     defer { decompressor.end() }
 
@@ -52,21 +52,21 @@ final class ZlibTests: XCTestCase {
   }
 
   func testRoundTripUsingDeflate() throws {
-    let original = Array(self.text.utf8)
+    let original = ByteBuffer(bytes: self.text.utf8)
     let compressed = try self.compress(original, method: .deflate)
     let decompressed = try self.decompress(compressed, method: .deflate)
     XCTAssertEqual(original, decompressed)
   }
 
   func testRoundTripUsingGzip() throws {
-    let original = Array(self.text.utf8)
+    let original = ByteBuffer(bytes: self.text.utf8)
     let compressed = try self.compress(original, method: .gzip)
     let decompressed = try self.decompress(compressed, method: .gzip)
     XCTAssertEqual(original, decompressed)
   }
 
   func testRepeatedCompresses() throws {
-    let original = Array(self.text.utf8)
+    let original = ByteBuffer(bytes: self.text.utf8)
     let compressor = Zlib.Compressor(method: .deflate)
     defer { compressor.end() }
 
@@ -82,7 +82,7 @@ final class ZlibTests: XCTestCase {
   }
 
   func testRepeatedDecompresses() throws {
-    let original = Array(self.text.utf8)
+    let original = ByteBuffer(bytes: self.text.utf8)
     let decompressor = Zlib.Decompressor(method: .deflate)
     defer { decompressor.end() }
 
@@ -101,14 +101,14 @@ final class ZlibTests: XCTestCase {
     // This compresses down to 17 bytes with deflate. The decompressor sets the output buffer to
     // be double the size of the input buffer and will grow it if necessary. This test exercises
     // that path.
-    let original = [UInt8](repeating: 0, count: 1024)
+    let original = ByteBuffer(repeating: 0, count: 1024)
     let compressed = try self.compress(original, method: .deflate)
     let decompressed = try self.decompress(compressed, method: .deflate)
     XCTAssertEqual(decompressed, original)
   }
 
   func testDecompressRespectsLimit() throws {
-    let compressed = try self.compress(Array(self.text.utf8), method: .deflate)
+    let compressed = try self.compress(ByteBuffer(bytes: self.text.utf8), method: .deflate)
     let limit = compressed.readableBytes - 1
     XCTAssertThrowsError(
       ofType: RPCError.self,
@@ -123,13 +123,13 @@ final class ZlibTests: XCTestCase {
     defer { compressor.end() }
 
     var buffer = ByteBuffer()
-    try compressor.compress(Array(repeating: 0, count: 1024), into: &buffer)
+    try compressor.compress(ByteBuffer(repeating: 0, count: 1024), into: &buffer)
 
     // Should be some readable bytes.
     let byteCount1 = buffer.readableBytes
     XCTAssertGreaterThan(byteCount1, 0)
 
-    try compressor.compress(Array(repeating: 1, count: 1024), into: &buffer)
+    try compressor.compress(ByteBuffer(repeating: 1, count: 1024), into: &buffer)
 
     // Should be some readable bytes.
     let byteCount2 = buffer.readableBytes
@@ -137,9 +137,9 @@ final class ZlibTests: XCTestCase {
 
     let slice1 = buffer.readSlice(length: byteCount1)!
     let decompressed1 = try self.decompress(slice1, method: .deflate)
-    XCTAssertEqual(decompressed1, Array(repeating: 0, count: 1024))
+    XCTAssertEqual(decompressed1, ByteBuffer(repeating: 0, count: 1024))
 
     let decompressed2 = try self.decompress(buffer, method: .deflate)
-    XCTAssertEqual(decompressed2, Array(repeating: 1, count: 1024))
+    XCTAssertEqual(decompressed2, ByteBuffer(repeating: 1, count: 1024))
   }
 }

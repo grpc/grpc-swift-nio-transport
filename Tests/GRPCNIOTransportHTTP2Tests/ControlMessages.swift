@@ -137,16 +137,18 @@ struct Empty: Codable {
 struct JSONSerializer<Message: Encodable>: MessageSerializer {
   private let encoder = JSONEncoder()
 
-  func serialize(_ message: Message) throws -> [UInt8] {
+  func serialize<Bytes: GRPCContiguousBytes>(_ message: Message) throws -> Bytes {
     let data = try self.encoder.encode(message)
-    return Array(data)
+    return Bytes(data)
   }
 }
 
 struct JSONDeserializer<Message: Decodable>: MessageDeserializer {
   private let decoder = JSONDecoder()
 
-  func deserialize(_ serializedMessageBytes: [UInt8]) throws -> Message {
-    try self.decoder.decode(Message.self, from: Data(serializedMessageBytes))
+  func deserialize<Bytes: GRPCContiguousBytes>(_ serializedMessageBytes: Bytes) throws -> Message {
+    try serializedMessageBytes.withUnsafeBytes {
+      try self.decoder.decode(Message.self, from: Data($0))
+    }
   }
 }

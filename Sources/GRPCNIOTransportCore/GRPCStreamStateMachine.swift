@@ -88,7 +88,7 @@ private enum GRPCStreamStateMachineState {
     var deframer: GRPCMessageDeframer?
     var decompressor: Zlib.Decompressor?
 
-    var inboundMessageBuffer: OneOrManyQueue<[UInt8]>
+    var inboundMessageBuffer: OneOrManyQueue<ByteBuffer>
 
     // Store the headers received from the remote peer, its storage can be reused when sending
     // headers back to the remote peer.
@@ -122,7 +122,7 @@ private enum GRPCStreamStateMachineState {
     var deframer: GRPCMessageDeframer
     var decompressor: Zlib.Decompressor?
 
-    var inboundMessageBuffer: OneOrManyQueue<[UInt8]>
+    var inboundMessageBuffer: OneOrManyQueue<ByteBuffer>
 
     // Store the headers received from the remote peer, its storage can be reused when sending
     // headers back to the remote peer.
@@ -153,7 +153,7 @@ private enum GRPCStreamStateMachineState {
     let deframer: GRPCMessageDeframer?
     var decompressor: Zlib.Decompressor?
 
-    var inboundMessageBuffer: OneOrManyQueue<[UInt8]>
+    var inboundMessageBuffer: OneOrManyQueue<ByteBuffer>
 
     // This transition should only happen on the server-side when, upon receiving
     // initial client metadata, some of the headers are invalid and we must reject
@@ -205,7 +205,7 @@ private enum GRPCStreamStateMachineState {
     let deframer: GRPCMessageDeframer?
     var decompressor: Zlib.Decompressor?
 
-    var inboundMessageBuffer: OneOrManyQueue<[UInt8]>
+    var inboundMessageBuffer: OneOrManyQueue<ByteBuffer>
 
     // Store the headers received from the remote peer, its storage can be reused when sending
     // headers back to the remote peer.
@@ -275,7 +275,7 @@ private enum GRPCStreamStateMachineState {
     var deframer: GRPCMessageDeframer?
     var decompressor: Zlib.Decompressor?
 
-    var inboundMessageBuffer: OneOrManyQueue<[UInt8]>
+    var inboundMessageBuffer: OneOrManyQueue<ByteBuffer>
 
     // Store the headers received from the remote peer, its storage can be reused when sending
     // headers back to the remote peer.
@@ -340,7 +340,7 @@ private enum GRPCStreamStateMachineState {
     var outboundCompression: CompressionAlgorithm
 
     // These are already deframed, so we don't need the deframer anymore.
-    var inboundMessageBuffer: OneOrManyQueue<[UInt8]>
+    var inboundMessageBuffer: OneOrManyQueue<ByteBuffer>
 
     // This transition should only happen on the server-side when, upon receiving
     // initial client metadata, some of the headers are invalid and we must reject
@@ -424,7 +424,7 @@ struct GRPCStreamStateMachine {
     }
   }
 
-  mutating func send(message: [UInt8], promise: EventLoopPromise<Void>?) throws(InvalidState) {
+  mutating func send(message: ByteBuffer, promise: EventLoopPromise<Void>?) throws(InvalidState) {
     switch self.configuration {
     case .client:
       try self.clientSend(message: message, promise: promise)
@@ -556,7 +556,7 @@ struct GRPCStreamStateMachine {
     /// There isn't a message ready to be sent, but we could still receive more, so keep trying.
     case awaitMoreMessages
     /// A message has been received.
-    case receiveMessage([UInt8])
+    case receiveMessage(ByteBuffer)
   }
 
   mutating func nextInboundMessage() -> OnNextInboundMessage {
@@ -716,7 +716,7 @@ extension GRPCStreamStateMachine {
   }
 
   private mutating func clientSend(
-    message: [UInt8],
+    message: ByteBuffer,
     promise: EventLoopPromise<Void>?
   ) throws(InvalidState) {
     switch self.state {
@@ -1146,7 +1146,7 @@ extension GRPCStreamStateMachine {
         return .readInbound
       } catch {
         self.state = .clientClosedServerOpen(state)
-        let status = Status(code: .internalError, message: "Failed to decode message")
+        let status = Status(code: .internalError, message: "Failed to decode message \(error)")
         return .endRPCAndForwardErrorStatus_clientOnly(status)
       }
 
@@ -1321,7 +1321,7 @@ extension GRPCStreamStateMachine {
   }
 
   private mutating func serverSend(
-    message: [UInt8],
+    message: ByteBuffer,
     promise: EventLoopPromise<Void>?
   ) throws(InvalidState) {
     switch self.state {

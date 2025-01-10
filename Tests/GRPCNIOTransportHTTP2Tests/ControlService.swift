@@ -18,7 +18,7 @@ import Foundation
 import GRPCCore
 
 struct ControlService: RegistrableRPCService {
-  func registerMethods(with router: inout RPCRouter) {
+  func registerMethods<Transport: ServerTransport>(with router: inout RPCRouter<Transport>) {
     router.registerHandler(
       forMethod: MethodDescriptor(fullyQualifiedService: "Control", method: "Unary"),
       deserializer: JSONDeserializer<ControlInput>(),
