@@ -205,9 +205,9 @@ extension HTTP2ServerTransport.Config {
     public var onAcceptHTTP2Stream: (@Sendable (_ channel: any Channel) async throws -> Void)?
 
     public init(
-      onBindTCPListener: (@Sendable (_ channel: any Channel) -> Void)?,
-      onAcceptTCPConnection: (@Sendable (_ channel: any Channel) -> Void)?,
-      onAcceptHTTP2Stream: (@Sendable (_ channel: any Channel) -> Void)?
+      onBindTCPListener: (@Sendable (_ channel: any Channel) async throws -> Void)?,
+      onAcceptTCPConnection: (@Sendable (_ channel: any Channel) async throws -> Void)?,
+      onAcceptHTTP2Stream: (@Sendable (_ channel: any Channel) async throws -> Void)?
     ) {
       self.onBindTCPListener = onBindTCPListener
       self.onAcceptTCPConnection = onAcceptTCPConnection

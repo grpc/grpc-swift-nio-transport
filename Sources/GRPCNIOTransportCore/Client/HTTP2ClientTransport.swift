@@ -181,8 +181,8 @@ extension HTTP2ClientTransport.Config {
     public var onCreateHTTP2Stream: (@Sendable (_ channel: any Channel) async throws -> Void)?
 
     public init(
-      onCreateTCPConnection: (@Sendable (_ channel: any Channel) -> Void)?,
-      onCreateHTTP2Stream: (@Sendable (_ channel: any Channel) -> Void)?
+      onCreateTCPConnection: (@Sendable (_ channel: any Channel) async throws -> Void)?,
+      onCreateHTTP2Stream: (@Sendable (_ channel: any Channel) async throws -> Void)?
     ) {
       self.onCreateTCPConnection = onCreateTCPConnection
       self.onCreateHTTP2Stream = onCreateHTTP2Stream
