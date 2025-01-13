@@ -23,7 +23,7 @@ struct ChannelDebugCallbackTests {
   @Test(arguments: TransportKind.allCases, TransportKind.allCases)
   func debugCallbacksAreCalled(serverKind: TransportKind, clientKind: TransportKind) async throws {
     // Validates the callbacks are called appropriately by setting up callbacks which increment
-    // counters and then returning those stats from a gRPC service. The clients interactions with
+    // counters and then returning those stats from a gRPC service. The client's interactions with
     // the service drive the callbacks.
 
     let stats = DebugCallbackStats()
