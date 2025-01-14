@@ -71,13 +71,13 @@
  */
 
 // swift-format-ignore: DontRepeatTypeInStaticProperties
-enum Base64 {
-  struct DecodingOptions: OptionSet {
-    internal let rawValue: UInt
-    internal init(rawValue: UInt) { self.rawValue = rawValue }
+package enum Base64 {
+  package struct DecodingOptions: OptionSet {
+    package let rawValue: UInt
+    package init(rawValue: UInt) { self.rawValue = rawValue }
 
-    internal static let base64UrlAlphabet = DecodingOptions(rawValue: UInt(1 << 0))
-    internal static let omitPaddingCharacter = DecodingOptions(rawValue: UInt(1 << 1))
+    package static let base64UrlAlphabet = DecodingOptions(rawValue: UInt(1 << 0))
+    package static let omitPaddingCharacter = DecodingOptions(rawValue: UInt(1 << 1))
   }
 
   enum DecodingError: Error, Equatable {
@@ -87,7 +87,9 @@ enum Base64 {
     case unexpectedEnd
   }
 
-  static func encode<Buffer: Collection>(bytes: Buffer) -> String where Buffer.Element == UInt8 {
+  package static func encode<Buffer: Collection>(
+    bytes: Buffer
+  ) -> String where Buffer.Element == UInt8 {
     guard !bytes.isEmpty else {
       return ""
     }
@@ -122,7 +124,7 @@ enum Base64 {
     }
   }
 
-  static func decode(
+  package static func decode(
     string encoded: String,
     options: DecodingOptions = []
   ) throws -> [UInt8] {

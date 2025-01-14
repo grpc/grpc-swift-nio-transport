@@ -438,7 +438,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
           GRPCHTTP2Keys.contentType.rawValue: ContentType.grpc.canonicalValue,
           GRPCHTTP2Keys.encoding.rawValue: "deflate",
           "custom": "123",
-          "custom-bin": String(base64Encoding: [42, 43, 44]),
+          "custom-bin": Base64.encode(bytes: [42, 43, 44]),
         ],
         endStream: false
       )
@@ -466,7 +466,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
           GRPCHTTP2Keys.contentType.rawValue: ContentType.grpc.canonicalValue,
           GRPCHTTP2Keys.encoding.rawValue: "deflate",
           "custom": "123",
-          "custom-bin": String(base64Encoding: [42, 43, 44]),
+          "custom-bin": Base64.encode(bytes: [42, 43, 44]),
         ],
         endStream: false
       )
@@ -493,7 +493,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
           GRPCHTTP2Keys.contentType.rawValue: ContentType.grpc.canonicalValue,
           GRPCHTTP2Keys.encoding.rawValue: "deflate",
           "custom": "123",
-          "custom-bin": String(base64Encoding: [42, 43, 44]),
+          "custom-bin": Base64.encode(bytes: [42, 43, 44]),
         ],
         endStream: false
       )
