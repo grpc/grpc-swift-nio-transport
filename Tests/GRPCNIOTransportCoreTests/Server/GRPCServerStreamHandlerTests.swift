@@ -1071,7 +1071,7 @@ struct ServerStreamHandlerTests {
       #expect(!handle.isCancelled)
 
       let rstStream: HTTP2Frame.FramePayload = .rstStream(.cancel)
-      channel.pipeline.fireChannelRead(NIOAny(rstStream))
+      channel.pipeline.fireChannelRead(rstStream)
 
       #expect(handle.isCancelled)
     }
@@ -1091,7 +1091,7 @@ struct ServerStreamHandlerTests {
 
     // FrameStats aren't affected by pings received
     channel.pipeline.fireChannelRead(
-      NIOAny(HTTP2Frame.FramePayload.ping(.init(withInteger: 42), ack: false))
+      HTTP2Frame.FramePayload.ping(.init(withInteger: 42), ack: false)
     )
     #expect(!handlers.connectionHandler.frameStats.didWriteHeadersOrData)
 

@@ -167,7 +167,7 @@ struct ServerConnectionManagementHandlerTests {
     // Write a frame into the channel _without_ calling channel read complete. This will cancel
     // the keep alive timer.
     let settings = HTTP2Frame(streamID: .rootStream, payload: .settings(.settings([])))
-    connection.channel.pipeline.fireChannelRead(NIOAny(settings))
+    connection.channel.pipeline.fireChannelRead(settings)
 
     // Run out the keep alive timer, it shouldn't fire.
     connection.advanceTime(by: .minutes(5))
