@@ -202,7 +202,10 @@ package final class GRPCChannel: ClientTransport {
   package func withStream<T: Sendable>(
     descriptor: MethodDescriptor,
     options: CallOptions,
-    _ closure: (_ stream: RPCStream<Inbound, Outbound>, _ context: ClientContext) async throws -> T
+    _ closure: (
+      _ stream: RPCStream<ClientTransport.Inbound, ClientTransport.Outbound>,
+      _ context: ClientContext
+    ) async throws -> T
   ) async throws -> T {
     // Merge options from the call with those from the service config.
     let methodConfig = self.config(forMethod: descriptor)
@@ -214,18 +217,11 @@ package final class GRPCChannel: ClientTransport {
       case .created(let stream):
         return try await stream.execute { inbound, outbound in
           let rpcStream = RPCStream(
-            descriptor: stream.descriptor,
+            descriptor: stream.context.descriptor,
             inbound: RPCAsyncSequence<RPCResponsePart, any Error>(wrapping: inbound),
             outbound: RPCWriter.Closable(wrapping: outbound)
           )
-          let context = ClientContext(
-            descriptor: descriptor,
-            remotePeer: stream.peerInfo,
-            localPeer: stream.localInfo,
-            serverHostname: self.authority ?? "<unknown>",
-            networkTransportMethod: "tcp"
-          )
-          return try await closure(rpcStream, context)
+          return try await closure(rpcStream, stream.context)
         }
 
       case .tryAgain(let error):

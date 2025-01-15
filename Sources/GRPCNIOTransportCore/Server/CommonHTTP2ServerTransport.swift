@@ -199,7 +199,7 @@ package final class CommonHTTP2ServerTransport<
       _ context: ServerContext
     ) async -> Void
   ) async throws {
-    let peer = connection.channel.getRemoteAddressInfo()
+    let peer = connection.remoteAddressInfo
     try await connection.executeThenClose { inbound, _ in
       await withDiscardingTaskGroup { group in
         group.addTask {

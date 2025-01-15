@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import NIOCore
+internal import NIOCore
 
-extension Channel {
-  func getRemoteAddressInfo() -> String {
-    guard let remote = self.remoteAddress else {
+extension NIOAsyncChannel {
+  var remoteAddressInfo: String {
+    guard let remote = self.channel.remoteAddress else {
       return "<unknown>"
     }
 
@@ -33,7 +33,7 @@ extension Channel {
 
     case .unixDomainSocket:
       // The pathname will be on the local address.
-      guard let local = self.localAddress else {
+      guard let local = self.channel.localAddress else {
         // UDS but no local address; this shouldn't ever happen but at least note the transport
         // as being UDS.
         return "unix:<unknown>"
@@ -51,8 +51,8 @@ extension Channel {
     }
   }
 
-  func getLocalAddressInfo() -> String {
-    guard let local = self.localAddress else {
+  var localAddressInfo: String {
+    guard let local = self.channel.localAddress else {
       return "<unknown>"
     }
 
