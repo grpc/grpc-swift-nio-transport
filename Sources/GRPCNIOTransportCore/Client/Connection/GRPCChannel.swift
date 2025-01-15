@@ -220,7 +220,7 @@ package final class GRPCChannel: ClientTransport {
           )
           let context = ClientContext(
             descriptor: descriptor,
-            remotePeer: stream.peerInfo ,
+            remotePeer: stream.peerInfo,
             localPeer: stream.localInfo,
             serverHostname: self.authority ?? "<unknown>",
             networkTransportMethod: "tcp"
