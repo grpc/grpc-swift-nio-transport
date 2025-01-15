@@ -17,8 +17,8 @@
 package import GRPCCore
 package import NIOCore
 
-public enum ServerConnection {
-  public enum Stream {
+package enum ServerConnection {
+  package enum Stream {
     package struct Outbound: ClosableRPCWriterProtocol {
       package typealias Element = RPCResponsePart
 

@@ -18,3 +18,33 @@ This module, ``GRPCNIOTransportHTTP2``, re-exports the contents of both of these
 
 `GRPCNIOTransportHTTP2Posix` is available on all platforms, while
 `GRPCNIOTransportHTTP2TransportServices` is only available on Darwin based platforms.
+
+## Topics
+
+### Client and server transports
+
+- ``HTTP2ClientTransport``
+- ``HTTP2ServerTransport``
+
+### Transport extensions
+
+- ``ListeningServerTransport``
+
+### Name resolution
+
+- ``ResolvableTarget``
+- ``ResolvableTargets``
+- ``NameResolvers``
+- ``NameResolverRegistry``
+- ``NameResolverFactory``
+- ``NameResolver``
+- ``NameResolutionResult``
+
+### Addresses
+
+- ``SocketAddress``
+- ``Endpoint``
+
+### TLS
+
+- ``TLSConfig``
