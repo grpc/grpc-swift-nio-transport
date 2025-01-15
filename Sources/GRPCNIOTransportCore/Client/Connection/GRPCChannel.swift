@@ -198,11 +198,11 @@ package final class GRPCChannel: ClientTransport {
     self.input.continuation.yield(.close)
   }
 
-  /// Opens a stream using the transport, and uses it as input into a user-provided closure.
+  /// Opens a stream using the transport, and uses it as input into a user-provided closure, alongside the client's context.
   package func withStream<T: Sendable>(
     descriptor: MethodDescriptor,
     options: CallOptions,
-    _ closure: (_ stream: RPCStream<Inbound, Outbound>) async throws -> T
+    _ closure: (_ stream: RPCStream<Inbound, Outbound>, _ context: ClientContext) async throws -> T
   ) async throws -> T {
     // Merge options from the call with those from the service config.
     let methodConfig = self.config(forMethod: descriptor)
@@ -218,7 +218,14 @@ package final class GRPCChannel: ClientTransport {
             inbound: RPCAsyncSequence<RPCResponsePart, any Error>(wrapping: inbound),
             outbound: RPCWriter.Closable(wrapping: outbound)
           )
-          return try await closure(rpcStream)
+          let context = ClientContext(
+            descriptor: descriptor,
+            remotePeer: stream.peerInfo ,
+            localPeer: stream.localInfo,
+            serverHostname: self.authority ?? "<unknown>",
+            networkTransportMethod: "tcp"
+          )
+          return try await closure(rpcStream, context)
         }
 
       case .tryAgain(let error):

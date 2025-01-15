@@ -191,40 +191,6 @@ package final class CommonHTTP2ServerTransport<
     }
   }
 
-  private func peerInfo(channel: any Channel) -> String {
-    guard let remote = channel.remoteAddress else {
-      return "<unknown>"
-    }
-
-    switch remote {
-    case .v4(let address):
-      // '!' is safe, v4 always has a port.
-      return "ipv4:\(address.host):\(remote.port!)"
-
-    case .v6(let address):
-      // '!' is safe, v6 always has a port.
-      return "ipv6:[\(address.host)]:\(remote.port!)"
-
-    case .unixDomainSocket:
-      // The pathname will be on the local address.
-      guard let local = channel.localAddress else {
-        // UDS but no local address; this shouldn't ever happen but at least note the transport
-        // as being UDS.
-        return "unix:<unknown>"
-      }
-
-      switch local {
-      case .unixDomainSocket:
-        // '!' is safe, UDS always has a path.
-        return "unix:\(local.pathname!)"
-
-      case .v4, .v6:
-        // Remote address is UDS but local isn't. This shouldn't ever happen.
-        return "unix:<unknown>"
-      }
-    }
-  }
-
   private func handleConnection(
     _ connection: NIOAsyncChannel<HTTP2Frame, HTTP2Frame>,
     multiplexer: ChannelPipeline.SynchronousOperations.HTTP2StreamMultiplexer,
@@ -233,7 +199,7 @@ package final class CommonHTTP2ServerTransport<
       _ context: ServerContext
     ) async -> Void
   ) async throws {
-    let peer = self.peerInfo(channel: connection.channel)
+    let peer = connection.channel.getRemoteAddressInfo()
     try await connection.executeThenClose { inbound, _ in
       await withDiscardingTaskGroup { group in
         group.addTask {

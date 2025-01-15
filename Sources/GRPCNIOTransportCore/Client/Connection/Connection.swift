@@ -421,6 +421,14 @@ extension Connection {
 
     private let http2Stream: NIOAsyncChannel<RPCResponsePart, RPCRequestPart>
 
+    var peerInfo: String {
+      self.http2Stream.channel.getRemoteAddressInfo()
+    }
+
+    var localInfo: String {
+      self.http2Stream.channel.getLocalAddressInfo()
+    }
+
     init(
       wrapping stream: NIOAsyncChannel<RPCResponsePart, RPCRequestPart>,
       descriptor: MethodDescriptor
