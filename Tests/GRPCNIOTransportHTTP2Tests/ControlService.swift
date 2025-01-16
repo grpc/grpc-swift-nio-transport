@@ -68,8 +68,15 @@ struct ControlService: RegistrableRPCService {
       serializer: JSONSerializer<String>()
     ) { request, context in
       return StreamingServerResponse { response in
-        let info = try await self.peerInfo(context: context)
-        try await response.write(info)
+        let responseString = """
+        \(self.serverRemotePeerInfo(context: context))\n
+        \(self.serverLocalPeerInfo(context: context))\n
+        \(self.clientRemotePeerInfo(request: request))\n
+        \(self.clientLocalPeerInfo(request: request))
+        """
+
+        try await response.write(responseString)
+
         return [:]
       }
     }
@@ -101,8 +108,22 @@ extension ControlService {
     }
   }
 
-  private func peerInfo(context: ServerContext) async throws -> String {
-    return context.peer
+  private func serverRemotePeerInfo(context: ServerContext) -> String {
+    "Server's remote peer: \(context.peer)"
+  }
+
+  private func serverLocalPeerInfo(context: ServerContext) -> String {
+    "Server's local peer: <not yet implemented>"
+  }
+
+  private func clientRemotePeerInfo<T>(request: StreamingServerRequest<T>) -> String {
+    let remotePeer = request.metadata[stringValues: "remotePeer"].first(where: { _ in true })!
+    return "Client's remote peer: \(remotePeer)"
+  }
+
+  private func clientLocalPeerInfo<T>(request: StreamingServerRequest<T>) -> String {
+    let localPeer = request.metadata[stringValues: "localPeer"].first(where: { _ in true })!
+    return "Client's local peer: \(localPeer)"
   }
 
   private func handle(
@@ -264,3 +285,19 @@ private struct UnsafeTransfer<Wrapped> {
 }
 
 extension UnsafeTransfer: @unchecked Sendable {}
+
+struct PeerInfoClientInterceptor: ClientInterceptor {
+  func intercept<Input, Output>(
+    request: StreamingClientRequest<Input>,
+    context: ClientContext,
+    next: (
+      StreamingClientRequest<Input>,
+      ClientContext
+    ) async throws -> StreamingClientResponse<Output>
+  ) async throws -> StreamingClientResponse<Output> where Input : Sendable, Output : Sendable {
+    var request = request
+    request.metadata.addString(context.localPeer, forKey: "localPeer")
+    request.metadata.addString(context.remotePeer, forKey: "remotePeer")
+    return try await next(request, context)
+  }
+}
