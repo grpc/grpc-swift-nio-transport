@@ -69,11 +69,11 @@ struct ControlService: RegistrableRPCService {
     ) { request, context in
       return StreamingServerResponse { response in
         let responseString = """
-        \(self.serverRemotePeerInfo(context: context))\n
-        \(self.serverLocalPeerInfo(context: context))\n
-        \(self.clientRemotePeerInfo(request: request))\n
-        \(self.clientLocalPeerInfo(request: request))
-        """
+          \(self.serverRemotePeerInfo(context: context))\n
+          \(self.serverLocalPeerInfo(context: context))\n
+          \(self.clientRemotePeerInfo(request: request))\n
+          \(self.clientLocalPeerInfo(request: request))
+          """
 
         try await response.write(responseString)
 
@@ -294,7 +294,7 @@ struct PeerInfoClientInterceptor: ClientInterceptor {
       StreamingClientRequest<Input>,
       ClientContext
     ) async throws -> StreamingClientResponse<Output>
-  ) async throws -> StreamingClientResponse<Output> where Input : Sendable, Output : Sendable {
+  ) async throws -> StreamingClientResponse<Output> where Input: Sendable, Output: Sendable {
     var request = request
     request.metadata.addString(context.localPeer, forKey: "localPeer")
     request.metadata.addString(context.remotePeer, forKey: "remotePeer")
