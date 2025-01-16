@@ -109,7 +109,7 @@ internal struct ControlClient {
   internal func peerInfo<R>(
     options: GRPCCore.CallOptions = .defaults,
     _ body: @Sendable @escaping (
-      _ response: GRPCCore.ClientResponse<String>
+      _ response: GRPCCore.ClientResponse<ControlService.PeerInfoResponse>
     ) async throws -> R = { try $0.message }
   ) async throws -> R where R: Sendable {
     try await self.client.unary(

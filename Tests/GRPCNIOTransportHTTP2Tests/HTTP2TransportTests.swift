@@ -1632,31 +1632,21 @@ final class HTTP2TransportTests: XCTestCase {
       serverAddress: .ipv4(host: "127.0.0.1", port: 0)
     ) { control, _, _ in
       let peerInfo = try await control.peerInfo()
-      let addresses = peerInfo.split(separator: "\n")
 
-      guard addresses.count == 4 else {
-        XCTFail("Unexpected response: should have received 4 different addresses, got \(addresses)")
-        return
-      }
-
-      let serverRemotePeer = addresses[0]
-      let serverRemotePeerMatches = serverRemotePeer.wholeMatch(
+      let serverRemotePeerMatches = peerInfo.server.remote.wholeMatch(
         of: /Server's remote peer: ipv4:127.0.0.1:(\d+)/
       )
       let clientPort = try XCTUnwrap(serverRemotePeerMatches).1
 
       // TODO: Uncomment when server local peer info is implemented
 
-      //      let serverLocalPeer = addresses[1]
-      //      let serverLocalPeerMatches = serverLocalPeer.wholeMatch(of: /Server's local peer: <not yet implemented>/)
+      //      let serverLocalPeerMatches = peerInfo.server.local.wholeMatch(of: /Server's local peer: <not yet implemented>/)
       //      let serverPort = XCTUnwrap(serverLocalPeerMatches).1
 
-      //      let clientRemotePeer = addresses[2]
-      //      let clientRemotePeerMatches = clientRemotePeer.wholeMatch(of: /Client's remote peer: ipv4:127.0.0.1:(\d+)/)
+      //      let clientRemotePeerMatches = peerInfo.client.remote.wholeMatch(of: /Client's remote peer: ipv4:127.0.0.1:(\d+)/)
       //      XCTAssertEqual(try XCTUnwrap(clientRemotePeerMatches).1, serverPort)
 
-      let clientLocalPeer = addresses[3]
-      let clientLocalPeerMatches = clientLocalPeer.wholeMatch(
+      let clientLocalPeerMatches = peerInfo.client.local.wholeMatch(
         of: /Client's local peer: ipv4:127.0.0.1:(\d+)/
       )
       XCTAssertEqual(try XCTUnwrap(clientLocalPeerMatches).1, clientPort)
@@ -1668,31 +1658,21 @@ final class HTTP2TransportTests: XCTestCase {
       serverAddress: .ipv6(host: "::1", port: 0)
     ) { control, _, _ in
       let peerInfo = try await control.peerInfo()
-      let addresses = peerInfo.split(separator: "\n")
 
-      guard addresses.count == 4 else {
-        XCTFail("Unexpected response: should have received 4 different addresses, got \(addresses)")
-        return
-      }
-
-      let serverRemotePeer = addresses[0]
-      let serverRemotePeerMatches = serverRemotePeer.wholeMatch(
+      let serverRemotePeerMatches = peerInfo.server.remote.wholeMatch(
         of: /Server's remote peer: ipv6:[::1]:(\d+)/
       )
       let clientPort = try XCTUnwrap(serverRemotePeerMatches).1
 
       // TODO: Uncomment when server local peer info is implemented
 
-      //      let serverLocalPeer = addresses[1]
-      //      let serverLocalPeerMatches = serverLocalPeer.wholeMatch(of: /Server's local peer: <not yet implemented>/)
+      //      let serverLocalPeerMatches = peerInfo.server.local.wholeMatch(of: /Server's local peer: <not yet implemented>/)
       //      let serverPort = XCTUnwrap(serverLocalPeerMatches).1
 
-      //      let clientRemotePeer = addresses[2]
-      //      let clientRemotePeerMatches = clientRemotePeer.wholeMatch(of: /Client's remote peer: ipv6:[::1]:(\d+)/)
+      //      let clientRemotePeerMatches = peerInfo.client.remote.wholeMatch(of: /Client's remote peer: ipv6:[::1]:(\d+)/)
       //      XCTAssertEqual(try XCTUnwrap(clientRemotePeerMatches).1, serverPort)
 
-      let clientLocalPeer = addresses[3]
-      let clientLocalPeerMatches = clientLocalPeer.wholeMatch(
+      let clientLocalPeerMatches = peerInfo.client.local.wholeMatch(
         of: /Client's local peer: ipv6:[::1]:(\d+)/
       )
       XCTAssertEqual(try XCTUnwrap(clientLocalPeerMatches).1, clientPort)
@@ -1705,33 +1685,25 @@ final class HTTP2TransportTests: XCTestCase {
       serverAddress: .unixDomainSocket(path: path)
     ) { control, _, _ in
       let peerInfo = try await control.peerInfo()
-      let addresses = peerInfo.split(separator: "\n")
 
-      guard addresses.count == 4 else {
-        XCTFail("Unexpected response: should have received 4 different addresses, got \(addresses)")
-        return
-      }
-
-      let serverRemotePeer = addresses[0]
-      let serverRemotePeerMatches = serverRemotePeer.wholeMatch(
+      let serverRemotePeerMatches = peerInfo.server.remote.wholeMatch(
         of: /Server's remote peer: unix:peer-info-uds/
       )
       XCTAssertNotNil(serverRemotePeerMatches)
 
-      let serverLocalPeer = addresses[1]
-      let serverLocalPeerMatches = serverLocalPeer.wholeMatch(
+      let serverLocalPeerMatches = peerInfo.server.local.wholeMatch(
         of: /Server's local peer: <not yet implemented>/
       )
       XCTAssertNotNil(serverLocalPeerMatches)
 
-      let clientRemotePeer = addresses[2]
-      let clientRemotePeerMatches = clientRemotePeer.wholeMatch(
+      let clientRemotePeerMatches = peerInfo.client.remote.wholeMatch(
         of: /Client's remote peer: unix:peer-info-uds/
       )
       XCTAssertNotNil(clientRemotePeerMatches)
 
-      let clientLocalPeer = addresses[3]
-      let clientLocalPeerMatches = clientLocalPeer.wholeMatch(of: /Client's local peer: unix:/)
+      let clientLocalPeerMatches = peerInfo.client.local.wholeMatch(
+        of: /Client's local peer: unix:peer-info-uds/
+      )
       XCTAssertNotNil(clientLocalPeerMatches)
     }
   }

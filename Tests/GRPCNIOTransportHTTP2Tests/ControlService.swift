@@ -65,17 +65,21 @@ struct ControlService: RegistrableRPCService {
     router.registerHandler(
       forMethod: MethodDescriptor(fullyQualifiedService: "Control", method: "PeerInfo"),
       deserializer: JSONDeserializer<String>(),
-      serializer: JSONSerializer<String>()
+      serializer: JSONSerializer<PeerInfoResponse>()
     ) { request, context in
       return StreamingServerResponse { response in
-        let responseString = """
-          \(self.serverRemotePeerInfo(context: context))\n
-          \(self.serverLocalPeerInfo(context: context))\n
-          \(self.clientRemotePeerInfo(request: request))\n
-          \(self.clientLocalPeerInfo(request: request))
-          """
+        let peerInfo = PeerInfoResponse(
+          client: PeerInfoResponse.PeerInfo(
+            local: clientLocalPeerInfo(request: request),
+            remote: clientRemotePeerInfo(request: request)
+          ),
+          server: PeerInfoResponse.PeerInfo(
+            local: serverLocalPeerInfo(context: context),
+            remote: serverRemotePeerInfo(context: context)
+          )
+        )
 
-        try await response.write(responseString)
+        try await response.write(peerInfo)
 
         return [:]
       }
@@ -253,6 +257,18 @@ extension ControlService {
         message: "Invalid error code '\(status.code)'"
       )
     }
+  }
+}
+
+extension ControlService {
+  struct PeerInfoResponse: Codable {
+    struct PeerInfo: Codable {
+      var local: String
+      var remote: String
+    }
+
+    var client: PeerInfo
+    var server: PeerInfo
   }
 }
 

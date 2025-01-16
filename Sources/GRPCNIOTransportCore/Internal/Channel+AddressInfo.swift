@@ -32,21 +32,24 @@ extension NIOAsyncChannel {
       return "ipv6:[\(address.host)]:\(remote.port!)"
 
     case .unixDomainSocket:
-      // The pathname will be on the local address.
-      guard let local = self.channel.localAddress else {
-        // UDS but no local address; this shouldn't ever happen but at least note the transport
-        // as being UDS.
-        return "unix:<unknown>"
-      }
+      // '!' is safe, UDS always has a path.
+      if remote.pathname!.isEmpty {
+        guard let local = self.channel.localAddress else {
+          return "unix:<unknown>"
+        }
 
-      switch local {
-      case .unixDomainSocket:
+        switch local {
+        case .unixDomainSocket:
+          // '!' is safe, UDS always has a path.
+          return "unix:\(local.pathname!)"
+
+        case .v4, .v6:
+          // Remote address is UDS but local isn't. This shouldn't ever happen.
+          return "unix:<unknown>"
+        }
+      } else {
         // '!' is safe, UDS always has a path.
-        return "unix:\(local.pathname!)"
-
-      case .v4, .v6:
-        // Remote address is UDS but local isn't. This shouldn't ever happen.
-        return "unix:<unknown>"
+        return "unix:\(remote.pathname!)"
       }
     }
   }
@@ -67,7 +70,24 @@ extension NIOAsyncChannel {
 
     case .unixDomainSocket:
       // '!' is safe, UDS always has a path.
-      return "unix:\(local.pathname!)"
+      if local.pathname!.isEmpty {
+        guard let remote = self.channel.remoteAddress else {
+          return "unix:<unknown>"
+        }
+
+        switch remote {
+        case .unixDomainSocket:
+          // '!' is safe, UDS always has a path.
+          return "unix:\(remote.pathname!)"
+
+        case .v4, .v6:
+          // Remote address is UDS but local isn't. This shouldn't ever happen.
+          return "unix:<unknown>"
+        }
+      } else {
+        // '!' is safe, UDS always has a path.
+        return "unix:\(local.pathname!)"
+      }
     }
   }
 }
