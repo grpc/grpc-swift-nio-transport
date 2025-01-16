@@ -202,10 +202,7 @@ package final class GRPCChannel: ClientTransport {
   package func withStream<T: Sendable>(
     descriptor: MethodDescriptor,
     options: CallOptions,
-    _ closure: (
-      _ stream: RPCStream<ClientTransport.Inbound, ClientTransport.Outbound>,
-      _ context: ClientContext
-    ) async throws -> T
+    _ closure: (_ stream: RPCStream<Inbound, Outbound>, _ context: ClientContext) async throws -> T
   ) async throws -> T {
     // Merge options from the call with those from the service config.
     let methodConfig = self.config(forMethod: descriptor)
