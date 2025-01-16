@@ -1,5 +1,5 @@
 version: 1
 builder:
   configs:
-    - documentation_targets: [GRPCNIOTransportHTTP2, GRPCNIOTransportHTTP2Posix, GRPCNIOTransportHTTP2TransportServices]
+    - documentation_targets: [GRPCNIOTransportCore, GRPCNIOTransportHTTP2, GRPCNIOTransportHTTP2Posix, GRPCNIOTransportHTTP2TransportServices]
       swift_version: 6.0
