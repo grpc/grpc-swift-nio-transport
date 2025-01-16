@@ -353,7 +353,7 @@ final class GRPCChannelTests: XCTestCase {
         await channel.connect()
       }
 
-      try await channel.withStream(descriptor: .echoGet, options: .defaults) { stream in
+      try await channel.withStream(descriptor: .echoGet, options: .defaults) { stream, _ in
         try await stream.outbound.write(.metadata([:]))
 
         var iterator = stream.inbound.makeAsyncIterator()
@@ -441,7 +441,7 @@ final class GRPCChannelTests: XCTestCase {
       // be queued though.
       for _ in 1 ... 100 {
         group.addTask {
-          try await channel.withStream(descriptor: .echoGet, options: .defaults) { stream in
+          try await channel.withStream(descriptor: .echoGet, options: .defaults) { stream, _ in
             try await stream.outbound.write(.metadata([:]))
             await stream.outbound.finish()
 
@@ -510,7 +510,7 @@ final class GRPCChannelTests: XCTestCase {
           options.waitForReady = false
 
           await XCTAssertThrowsErrorAsync(ofType: RPCError.self) {
-            try await channel.withStream(descriptor: .echoGet, options: options) { _ in
+            try await channel.withStream(descriptor: .echoGet, options: options) { _, _ in
               XCTFail("Unexpected stream")
             }
           } errorHandler: { error in
@@ -780,7 +780,7 @@ final class GRPCChannelTests: XCTestCase {
 
           // Try to open a new stream.
           await XCTAssertThrowsErrorAsync(ofType: RPCError.self) {
-            try await channel.withStream(descriptor: .echoGet, options: .defaults) { stream in
+            try await channel.withStream(descriptor: .echoGet, options: .defaults) { stream, _ in
               XCTFail("Unexpected new stream")
             }
           } errorHandler: { error in
@@ -823,7 +823,7 @@ final class GRPCChannelTests: XCTestCase {
       }
 
       func doAnRPC() async throws {
-        try await channel.withStream(descriptor: .echoGet, options: .defaults) { stream in
+        try await channel.withStream(descriptor: .echoGet, options: .defaults) { stream, _ in
           try await stream.outbound.write(.metadata([:]))
           await stream.outbound.finish()
 
@@ -873,7 +873,7 @@ extension GRPCChannel {
     let values: Metadata.StringValues? = try await self.withStream(
       descriptor: .echoGet,
       options: .defaults
-    ) { stream in
+    ) { stream, _ in
       try await stream.outbound.write(.metadata([:]))
       await stream.outbound.finish()
 

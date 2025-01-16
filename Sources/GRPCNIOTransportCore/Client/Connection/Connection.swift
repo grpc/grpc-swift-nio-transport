@@ -202,10 +202,10 @@ package final class Connection: Sendable {
     descriptor: MethodDescriptor,
     options: CallOptions
   ) async throws -> Stream {
-    let (multiplexer, scheme) = try self.state.withLock { state in
+    let (multiplexer, scheme, remotePeer, localPeer) = try self.state.withLock { state in
       switch state {
       case .connected(let connected):
-        return (connected.multiplexer, connected.scheme)
+        return (connected.multiplexer, connected.scheme, connected.remotePeer, connected.localPeer)
       case .notConnected, .closing, .closed:
         throw RPCError(code: .unavailable, message: "subchannel isn't ready")
       }
@@ -246,7 +246,13 @@ package final class Connection: Sendable {
         }
       }
 
-      return Stream(wrapping: stream, descriptor: descriptor)
+      let context = ClientContext(
+        descriptor: descriptor,
+        remotePeer: remotePeer,
+        localPeer: localPeer
+      )
+
+      return Stream(wrapping: stream, context: context)
     } catch {
       throw RPCError(code: .unavailable, message: "subchannel is unavailable", cause: error)
     }
@@ -417,16 +423,16 @@ extension Connection {
       }
     }
 
-    let descriptor: MethodDescriptor
+    let context: ClientContext
 
     private let http2Stream: NIOAsyncChannel<RPCResponsePart, RPCRequestPart>
 
     init(
       wrapping stream: NIOAsyncChannel<RPCResponsePart, RPCRequestPart>,
-      descriptor: MethodDescriptor
+      context: ClientContext
     ) {
       self.http2Stream = stream
-      self.descriptor = descriptor
+      self.context = context
     }
 
     package func execute<T>(
@@ -457,6 +463,10 @@ extension Connection {
     struct Connected: Sendable {
       /// The connection channel.
       var channel: NIOAsyncChannel<ClientConnectionEvent, Void>
+      /// The connection's remote peer information.
+      var remotePeer: String
+      /// The connection's local peer information.
+      var localPeer: String
       /// Multiplexer for creating HTTP/2 streams.
       var multiplexer: NIOHTTP2Handler.AsyncStreamMultiplexer<Void>
       /// Whether the connection is plaintext, `false` implies TLS is being used.
@@ -464,6 +474,8 @@ extension Connection {
 
       init(_ connection: HTTP2Connection) {
         self.channel = connection.channel
+        self.remotePeer = connection.channel.remoteAddressInfo
+        self.localPeer = connection.channel.localAddressInfo
         self.multiplexer = connection.multiplexer
         self.scheme = connection.isPlaintext ? .http : .https
       }
