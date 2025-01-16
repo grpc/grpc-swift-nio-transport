@@ -113,21 +113,19 @@ extension ControlService {
   }
 
   private func serverRemotePeerInfo(context: ServerContext) -> String {
-    "Server's remote peer: \(context.peer)"
+    context.peer
   }
 
   private func serverLocalPeerInfo(context: ServerContext) -> String {
-    "Server's local peer: <not yet implemented>"
+    "<not yet implemented>"
   }
 
   private func clientRemotePeerInfo<T>(request: StreamingServerRequest<T>) -> String {
-    let remotePeer = request.metadata[stringValues: "remotePeer"].first(where: { _ in true })!
-    return "Client's remote peer: \(remotePeer)"
+    request.metadata[stringValues: "remotePeer"].first(where: { _ in true })!
   }
 
   private func clientLocalPeerInfo<T>(request: StreamingServerRequest<T>) -> String {
-    let localPeer = request.metadata[stringValues: "localPeer"].first(where: { _ in true })!
-    return "Client's local peer: \(localPeer)"
+    request.metadata[stringValues: "localPeer"].first(where: { _ in true })!
   }
 
   private func handle(

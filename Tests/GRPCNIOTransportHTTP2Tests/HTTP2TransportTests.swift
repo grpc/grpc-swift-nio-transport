@@ -1633,22 +1633,18 @@ final class HTTP2TransportTests: XCTestCase {
     ) { control, _, _ in
       let peerInfo = try await control.peerInfo()
 
-      let serverRemotePeerMatches = peerInfo.server.remote.wholeMatch(
-        of: /Server's remote peer: ipv4:127.0.0.1:(\d+)/
-      )
+      let serverRemotePeerMatches = peerInfo.server.remote.wholeMatch(of: /ipv4:127\.0\.0\.1:(\d+)/)
       let clientPort = try XCTUnwrap(serverRemotePeerMatches).1
 
       // TODO: Uncomment when server local peer info is implemented
 
-      //      let serverLocalPeerMatches = peerInfo.server.local.wholeMatch(of: /Server's local peer: <not yet implemented>/)
+      //      let serverLocalPeerMatches = peerInfo.server.local.wholeMatch(of: /<not yet implemented>/)
       //      let serverPort = XCTUnwrap(serverLocalPeerMatches).1
 
-      //      let clientRemotePeerMatches = peerInfo.client.remote.wholeMatch(of: /Client's remote peer: ipv4:127.0.0.1:(\d+)/)
+      //      let clientRemotePeerMatches = peerInfo.client.remote.wholeMatch(of: /ipv4:127.0.0.1:(\d+)/)
       //      XCTAssertEqual(try XCTUnwrap(clientRemotePeerMatches).1, serverPort)
 
-      let clientLocalPeerMatches = peerInfo.client.local.wholeMatch(
-        of: /Client's local peer: ipv4:127.0.0.1:(\d+)/
-      )
+      let clientLocalPeerMatches = peerInfo.client.local.wholeMatch(of: /ipv4:127\.0\.0\.1:(\d+)/)
       XCTAssertEqual(try XCTUnwrap(clientLocalPeerMatches).1, clientPort)
     }
   }
@@ -1659,22 +1655,18 @@ final class HTTP2TransportTests: XCTestCase {
     ) { control, _, _ in
       let peerInfo = try await control.peerInfo()
 
-      let serverRemotePeerMatches = peerInfo.server.remote.wholeMatch(
-        of: /Server's remote peer: ipv6:[::1]:(\d+)/
-      )
+      let serverRemotePeerMatches = peerInfo.server.remote.wholeMatch(of: /ipv6:\[::1\]:(\d+)/)
       let clientPort = try XCTUnwrap(serverRemotePeerMatches).1
 
       // TODO: Uncomment when server local peer info is implemented
 
-      //      let serverLocalPeerMatches = peerInfo.server.local.wholeMatch(of: /Server's local peer: <not yet implemented>/)
+      //      let serverLocalPeerMatches = peerInfo.server.local.wholeMatch(of: /<not yet implemented>/)
       //      let serverPort = XCTUnwrap(serverLocalPeerMatches).1
 
-      //      let clientRemotePeerMatches = peerInfo.client.remote.wholeMatch(of: /Client's remote peer: ipv6:[::1]:(\d+)/)
+      //      let clientRemotePeerMatches = peerInfo.client.remote.wholeMatch(of: /ipv6:\[::1\]:(\d+)/)
       //      XCTAssertEqual(try XCTUnwrap(clientRemotePeerMatches).1, serverPort)
 
-      let clientLocalPeerMatches = peerInfo.client.local.wholeMatch(
-        of: /Client's local peer: ipv6:[::1]:(\d+)/
-      )
+      let clientLocalPeerMatches = peerInfo.client.local.wholeMatch(of: /ipv6:\[::1\]:(\d+)/)
       XCTAssertEqual(try XCTUnwrap(clientLocalPeerMatches).1, clientPort)
     }
   }
@@ -1686,25 +1678,11 @@ final class HTTP2TransportTests: XCTestCase {
     ) { control, _, _ in
       let peerInfo = try await control.peerInfo()
 
-      let serverRemotePeerMatches = peerInfo.server.remote.wholeMatch(
-        of: /Server's remote peer: unix:peer-info-uds/
-      )
-      XCTAssertNotNil(serverRemotePeerMatches)
+      XCTAssertNotNil(peerInfo.server.remote.wholeMatch(of: /unix:peer-info-uds/))
+      XCTAssertNotNil(peerInfo.server.local.wholeMatch(of: /<not yet implemented>/))
 
-      let serverLocalPeerMatches = peerInfo.server.local.wholeMatch(
-        of: /Server's local peer: <not yet implemented>/
-      )
-      XCTAssertNotNil(serverLocalPeerMatches)
-
-      let clientRemotePeerMatches = peerInfo.client.remote.wholeMatch(
-        of: /Client's remote peer: unix:peer-info-uds/
-      )
-      XCTAssertNotNil(clientRemotePeerMatches)
-
-      let clientLocalPeerMatches = peerInfo.client.local.wholeMatch(
-        of: /Client's local peer: unix:peer-info-uds/
-      )
-      XCTAssertNotNil(clientLocalPeerMatches)
+      XCTAssertNotNil(peerInfo.client.remote.wholeMatch(of: /unix:peer-info-uds/))
+      XCTAssertNotNil(peerInfo.client.local.wholeMatch(of: /unix:peer-info-uds/))
     }
   }
 }
