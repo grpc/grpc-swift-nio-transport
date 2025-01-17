@@ -17,6 +17,17 @@
 import GRPCCore
 import GRPCNIOTransportHTTP2
 
+enum TransportKind: CaseIterable, Hashable, Sendable {
+  case posix
+  #if canImport(Network)
+  case transportServices
+  #endif
+
+  static var supported: [Self] {
+    Self.allCases
+  }
+}
+
 enum NIOClientTransport: ClientTransport {
   case posix(HTTP2ClientTransport.Posix)
   #if canImport(Network)

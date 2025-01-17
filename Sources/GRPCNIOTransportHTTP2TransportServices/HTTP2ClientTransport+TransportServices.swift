@@ -181,13 +181,17 @@ extension HTTP2ClientTransport.TransportServices {
             channel: channel,
             config: GRPCChannel.Config(transportServices: self.config)
           )
-        }
+        }.runInitializerIfSet(
+          self.config.channelDebuggingCallbacks.onCreateTCPConnection,
+          on: channel
+        )
       }
 
       return HTTP2Connection(
         channel: channel,
         multiplexer: multiplexer,
-        isPlaintext: isPlainText
+        isPlaintext: isPlainText,
+        onCreateHTTP2Stream: self.config.channelDebuggingCallbacks.onCreateHTTP2Stream
       )
     }
   }
@@ -208,6 +212,9 @@ extension HTTP2ClientTransport.TransportServices {
     /// Compression configuration.
     public var compression: HTTP2ClientTransport.Config.Compression
 
+    /// Channel callbacks for debugging.
+    public var channelDebuggingCallbacks: HTTP2ClientTransport.Config.ChannelDebuggingCallbacks
+
     /// Creates a new connection configuration.
     ///
     /// - Parameters:
@@ -215,18 +222,21 @@ extension HTTP2ClientTransport.TransportServices {
     ///   - backoff: Backoff configuration.
     ///   - connection: Connection configuration.
     ///   - compression: Compression configuration.
+    ///   - channelDebuggingCallbacks: Channel callbacks for debugging.
     ///
     /// - SeeAlso: ``defaults(configure:)`` and ``defaults``.
     public init(
       http2: HTTP2ClientTransport.Config.HTTP2,
       backoff: HTTP2ClientTransport.Config.Backoff,
       connection: HTTP2ClientTransport.Config.Connection,
-      compression: HTTP2ClientTransport.Config.Compression
+      compression: HTTP2ClientTransport.Config.Compression,
+      channelDebuggingCallbacks: HTTP2ClientTransport.Config.ChannelDebuggingCallbacks
     ) {
       self.http2 = http2
       self.connection = connection
       self.backoff = backoff
       self.compression = compression
+      self.channelDebuggingCallbacks = channelDebuggingCallbacks
     }
 
     /// Default configuration.
@@ -245,7 +255,8 @@ extension HTTP2ClientTransport.TransportServices {
         http2: .defaults,
         backoff: .defaults,
         connection: .defaults,
-        compression: .defaults
+        compression: .defaults,
+        channelDebuggingCallbacks: .defaults
       )
       configure(&config)
       return config

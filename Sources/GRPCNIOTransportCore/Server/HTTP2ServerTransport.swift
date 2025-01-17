@@ -15,6 +15,7 @@
  */
 
 public import GRPCCore
+public import NIOCore
 internal import NIOHTTP2
 
 /// A namespace for the HTTP/2 server transport.
@@ -183,6 +184,39 @@ extension HTTP2ServerTransport.Config {
     /// Default values. Maximum request payload size defaults to 4MiB.
     public static var defaults: Self {
       Self(maxRequestPayloadSize: 4 * 1024 * 1024)
+    }
+  }
+
+  /// A set of callbacks used for debugging purposes.
+  ///
+  /// The callbacks give you access to the underlying NIO `Channel` after gRPC's initializer has
+  /// run for each `Channel`. These callbacks are intended for debugging purposes.
+  ///
+  /// - Important: You should be very careful when implementing these callbacks as they may have
+  ///   unexpected side effects on your gRPC application.
+  public struct ChannelDebuggingCallbacks: Sendable {
+    /// A callback invoked when the server starts listening for new TCP connections.
+    public var onBindTCPListener: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
+
+    /// A callback invoked with each new accepted TPC connection.
+    public var onAcceptTCPConnection: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
+
+    /// A callback invoked with each accepted HTTP/2 stream.
+    public var onAcceptHTTP2Stream: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
+
+    public init(
+      onBindTCPListener: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?,
+      onAcceptTCPConnection: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?,
+      onAcceptHTTP2Stream: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
+    ) {
+      self.onBindTCPListener = onBindTCPListener
+      self.onAcceptTCPConnection = onAcceptTCPConnection
+      self.onAcceptHTTP2Stream = onAcceptHTTP2Stream
+    }
+
+    /// Default values; no callbacks are set.
+    public static var defaults: Self {
+      Self(onBindTCPListener: nil, onAcceptTCPConnection: nil, onAcceptHTTP2Stream: nil)
     }
   }
 }
