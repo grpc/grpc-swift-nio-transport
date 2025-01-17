@@ -58,6 +58,8 @@ extension HTTP2ClientTransport {
   /// }
   /// ```
   public struct TransportServices: ClientTransport {
+    public typealias Bytes = GRPCNIOTransportBytes
+
     private let channel: GRPCChannel
 
     public var retryThrottle: RetryThrottle? {

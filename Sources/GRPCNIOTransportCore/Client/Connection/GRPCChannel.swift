@@ -19,6 +19,8 @@ package import GRPCCore
 private import Synchronization
 
 package final class GRPCChannel: ClientTransport {
+  package typealias Bytes = GRPCNIOTransportBytes
+
   private enum Input: Sendable {
     /// Close the channel, if possible.
     case close

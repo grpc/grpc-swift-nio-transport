@@ -380,6 +380,7 @@ extension Subchannel {
 }
 
 extension Subchannel {
+  /// ```
   ///            ┌───────────────┐
   ///   ┌───────▶│ NOT CONNECTED │───────────shutDown─────────────┐
   ///   │        └───────────────┘                                │
@@ -404,6 +405,7 @@ extension Subchannel {
   ///   │        ┌───────────────┐      │      ┌───────────────┐  │
   ///   └────────│  GOING AWAY   │──────┘      │   SHUT DOWN   │◀─┘
   ///            └───────────────┘             └───────────────┘
+  /// ```
   private enum State {
     /// Not connected and not actively connecting.
     case notConnected(NotConnected)

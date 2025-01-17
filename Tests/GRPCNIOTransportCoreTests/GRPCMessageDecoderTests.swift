@@ -41,8 +41,8 @@ final class GRPCMessageDecoderTests: XCTestCase {
 
     try ByteToMessageDecoderVerifier.verifyDecoder(
       inputOutputPairs: [
-        (firstMessage, [Array(repeating: UInt8(42), count: 16)]),
-        (secondMessage, [Array(repeating: UInt8(43), count: 8)]),
+        (firstMessage, [ByteBuffer(repeating: UInt8(42), count: 16)]),
+        (secondMessage, [ByteBuffer(repeating: UInt8(43), count: 8)]),
       ]) {
         GRPCMessageDecoder(maxPayloadSize: .max)
       }
@@ -129,19 +129,19 @@ final class GRPCMessageDecoderTests: XCTestCase {
     }
 
     let firstMessage = try {
-      framer.append(Array(repeating: 42, count: 100), promise: nil)
+      framer.append(ByteBuffer(repeating: 42, count: 100), promise: nil)
       return try framer.next(compressor: compressor)!
     }()
 
     let secondMessage = try {
-      framer.append(Array(repeating: 43, count: 110), promise: nil)
+      framer.append(ByteBuffer(repeating: 43, count: 110), promise: nil)
       return try framer.next(compressor: compressor)!
     }()
 
     try ByteToMessageDecoderVerifier.verifyDecoder(
       inputOutputPairs: [
-        (firstMessage.bytes, [Array(repeating: 42, count: 100)]),
-        (secondMessage.bytes, [Array(repeating: 43, count: 110)]),
+        (firstMessage.bytes, [ByteBuffer(repeating: 42, count: 100)]),
+        (secondMessage.bytes, [ByteBuffer(repeating: 43, count: 110)]),
       ]) {
         GRPCMessageDecoder(maxPayloadSize: 1000, decompressor: decompressor)
       }
@@ -164,7 +164,7 @@ final class GRPCMessageDecoderTests: XCTestCase {
       compressor.end()
     }
 
-    framer.append(Array(repeating: 42, count: 100), promise: nil)
+    framer.append(ByteBuffer(repeating: 42, count: 100), promise: nil)
     let framedMessage = try framer.next(compressor: compressor)!
 
     XCTAssertThrowsError(
@@ -195,7 +195,7 @@ final class GRPCMessageDecoderTests: XCTestCase {
       compressor.end()
     }
 
-    framer.append(Array(repeating: 42, count: 101), promise: nil)
+    framer.append(ByteBuffer(repeating: 42, count: 101), promise: nil)
     let framedMessage = try framer.next(compressor: compressor)!
 
     XCTAssertThrowsError(

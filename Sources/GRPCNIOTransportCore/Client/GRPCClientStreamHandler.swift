@@ -20,9 +20,9 @@ internal import NIOHTTP2
 
 final class GRPCClientStreamHandler: ChannelDuplexHandler {
   typealias InboundIn = HTTP2Frame.FramePayload
-  typealias InboundOut = RPCResponsePart
+  typealias InboundOut = RPCResponsePart<GRPCNIOTransportBytes>
 
-  typealias OutboundIn = RPCRequestPart
+  typealias OutboundIn = RPCRequestPart<GRPCNIOTransportBytes>
   typealias OutboundOut = HTTP2Frame.FramePayload
 
   private var stateMachine: GRPCStreamStateMachine
@@ -80,7 +80,8 @@ extension GRPCClientStreamHandler {
             loop: while true {
               switch self.stateMachine.nextInboundMessage() {
               case .receiveMessage(let message):
-                context.fireChannelRead(self.wrapInboundOut(.message(message)))
+                let wrapped = GRPCNIOTransportBytes(message)
+                context.fireChannelRead(self.wrapInboundOut(.message(wrapped)))
               case .awaitMoreMessages:
                 break loop
               case .noMoreMessages:
@@ -193,7 +194,7 @@ extension GRPCClientStreamHandler {
 
     case .message(let message):
       do {
-        try self.stateMachine.send(message: message, promise: promise)
+        try self.stateMachine.send(message: message.buffer, promise: promise)
       } catch let invalidState {
         let error = RPCError(invalidState)
         promise?.fail(error)

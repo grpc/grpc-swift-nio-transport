@@ -25,7 +25,7 @@ struct GRPCMessageDecoder: NIOSingleStepByteToMessageDecoder {
   /// Length of the gRPC message header (1 compression byte, 4 bytes for the length).
   static let metadataLength = 5
 
-  typealias InboundOut = [UInt8]
+  typealias InboundOut = ByteBuffer
 
   private let decompressor: Zlib.Decompressor?
   private let maxPayloadSize: Int
@@ -92,7 +92,7 @@ struct GRPCMessageDecoder: NIOSingleStepByteToMessageDecoder {
       }
       return try decompressor.decompress(&message, limit: self.maxPayloadSize)
     } else {
-      return Array(buffer: message)
+      return message
     }
   }
 
@@ -136,7 +136,7 @@ package struct GRPCMessageDeframer {
     }
   }
 
-  package mutating func decodeNext() throws -> [UInt8]? {
+  package mutating func decodeNext() throws -> ByteBuffer? {
     guard (self.buffer?.readableBytes ?? 0) > 0 else { return nil }
     // Above checks mean this is both non-nil and non-empty.
     let message = try self.decoder.decode(buffer: &self.buffer!)
@@ -145,7 +145,7 @@ package struct GRPCMessageDeframer {
 }
 
 extension GRPCMessageDeframer {
-  mutating func decode(into queue: inout OneOrManyQueue<[UInt8]>) throws {
+  mutating func decode(into queue: inout OneOrManyQueue<ByteBuffer>) throws {
     while let next = try self.decodeNext() {
       queue.append(next)
     }

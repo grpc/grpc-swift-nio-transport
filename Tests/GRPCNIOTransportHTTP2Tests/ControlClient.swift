@@ -16,10 +16,10 @@
 
 import GRPCCore
 
-internal struct ControlClient {
-  internal let client: GRPCCore.GRPCClient
+internal struct ControlClient<Transport> where Transport: ClientTransport {
+  internal let client: GRPCCore.GRPCClient<Transport>
 
-  internal init(wrapping client: GRPCCore.GRPCClient) {
+  internal init(wrapping client: GRPCCore.GRPCClient<Transport>) {
     self.client = client
   }
 

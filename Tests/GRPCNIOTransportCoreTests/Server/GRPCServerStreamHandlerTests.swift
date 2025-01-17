@@ -266,15 +266,17 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     // Make sure we haven't sent back an error response, and that we read the initial metadata
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
     XCTAssertEqual(
-      try channel.readInbound(as: RPCRequestPart.self),
-      RPCRequestPart.metadata(Metadata(headers: clientInitialMetadata))
+      try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self),
+      RPCRequestPart<GRPCNIOTransportBytes>.metadata(Metadata(headers: clientInitialMetadata))
     )
 
     // Write back server's initial metadata
     let headers: HPACKHeaders = [
       "some-custom-header": "some-custom-value"
     ]
-    let serverInitialMetadata = RPCResponsePart.metadata(Metadata(headers: headers))
+    let serverInitialMetadata = RPCResponsePart<GRPCNIOTransportBytes>.metadata(
+      Metadata(headers: headers)
+    )
     XCTAssertNoThrow(try channel.writeOutbound(serverInitialMetadata))
 
     // Make sure we wrote back the initial metadata
@@ -305,7 +307,7 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
 
     // Make sure we haven't sent a response back and that we didn't read the received message
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
-    XCTAssertNil(try channel.readInbound(as: RPCRequestPart.self))
+    XCTAssertNil(try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self))
   }
 
   func testClientEndsStream() throws {
@@ -330,15 +332,17 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     // Make sure we haven't sent back an error response, and that we read the initial metadata
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
     XCTAssertEqual(
-      try channel.readInbound(as: RPCRequestPart.self),
-      RPCRequestPart.metadata(Metadata(headers: clientInitialMetadata))
+      try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self),
+      RPCRequestPart<GRPCNIOTransportBytes>.metadata(Metadata(headers: clientInitialMetadata))
     )
 
     // Write back server's initial metadata
     let headers: HPACKHeaders = [
       "some-custom-header": "some-custom-value"
     ]
-    let serverInitialMetadata = RPCResponsePart.metadata(Metadata(headers: headers))
+    let serverInitialMetadata = RPCResponsePart<GRPCNIOTransportBytes>.metadata(
+      Metadata(headers: headers)
+    )
     XCTAssertNoThrow(try channel.writeOutbound(serverInitialMetadata))
 
     // Make sure we wrote back the initial metadata
@@ -390,15 +394,17 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     // Make sure we haven't sent back an error response, and that we read the initial metadata
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
     XCTAssertEqual(
-      try channel.readInbound(as: RPCRequestPart.self),
-      RPCRequestPart.metadata(Metadata(headers: clientInitialMetadata))
+      try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self),
+      RPCRequestPart<GRPCNIOTransportBytes>.metadata(Metadata(headers: clientInitialMetadata))
     )
 
     // Write back server's initial metadata
     let headers: HPACKHeaders = [
       "some-custom-header": "some-custom-value"
     ]
-    let serverInitialMetadata = RPCResponsePart.metadata(Metadata(headers: headers))
+    let serverInitialMetadata = RPCResponsePart<GRPCNIOTransportBytes>.metadata(
+      Metadata(headers: headers)
+    )
     XCTAssertNoThrow(try channel.writeOutbound(serverInitialMetadata))
 
     // Make sure we wrote back the initial metadata
@@ -424,12 +430,12 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     // Make sure we haven't sent back an error response, and that we read the message properly
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
     XCTAssertEqual(
-      try channel.readInbound(as: RPCRequestPart.self),
-      RPCRequestPart.message([UInt8](repeating: 0, count: 42))
+      try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self),
+      RPCRequestPart.message(GRPCNIOTransportBytes(repeating: 0, count: 42))
     )
 
     // Write back response
-    let serverDataPayload = RPCResponsePart.message([UInt8](repeating: 1, count: 42))
+    let serverDataPayload = RPCResponsePart.message(GRPCNIOTransportBytes(repeating: 1, count: 42))
     XCTAssertNoThrow(try channel.writeOutbound(serverDataPayload))
 
     // Make sure we wrote back the right message
@@ -442,7 +448,7 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     XCTAssertEqual(writtenMessage.data, .byteBuffer(expectedBuffer))
 
     // Send back status to end RPC
-    let trailers = RPCResponsePart.status(
+    let trailers = RPCResponsePart<GRPCNIOTransportBytes>.status(
       .init(code: .dataLoss, message: "Test data loss"),
       ["custom-header": "custom-value"]
     )
@@ -494,15 +500,17 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     // Make sure we haven't sent back an error response, and that we read the initial metadata
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
     XCTAssertEqual(
-      try channel.readInbound(as: RPCRequestPart.self),
-      RPCRequestPart.metadata(Metadata(headers: clientInitialMetadata))
+      try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self),
+      RPCRequestPart<GRPCNIOTransportBytes>.metadata(Metadata(headers: clientInitialMetadata))
     )
 
     // Write back server's initial metadata
     let headers: HPACKHeaders = [
       "some-custom-header": "some-custom-value"
     ]
-    let serverInitialMetadata = RPCResponsePart.metadata(Metadata(headers: headers))
+    let serverInitialMetadata = RPCResponsePart<GRPCNIOTransportBytes>.metadata(
+      Metadata(headers: headers)
+    )
     XCTAssertNoThrow(try channel.writeOutbound(serverInitialMetadata))
 
     // Make sure we wrote back the initial metadata
@@ -523,28 +531,28 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     XCTAssertNoThrow(
       try channel.writeInbound(HTTP2Frame.FramePayload.data(.init(data: .byteBuffer(buffer))))
     )
-    XCTAssertNil(try channel.readInbound(as: RPCRequestPart.self))
+    XCTAssertNil(try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self))
 
     buffer.clear()
     buffer.writeInteger(UInt32(30))  // message length
     XCTAssertNoThrow(
       try channel.writeInbound(HTTP2Frame.FramePayload.data(.init(data: .byteBuffer(buffer))))
     )
-    XCTAssertNil(try channel.readInbound(as: RPCRequestPart.self))
+    XCTAssertNil(try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self))
 
     buffer.clear()
     buffer.writeRepeatingByte(0, count: 10)  // first part of the message
     XCTAssertNoThrow(
       try channel.writeInbound(HTTP2Frame.FramePayload.data(.init(data: .byteBuffer(buffer))))
     )
-    XCTAssertNil(try channel.readInbound(as: RPCRequestPart.self))
+    XCTAssertNil(try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self))
 
     buffer.clear()
     buffer.writeRepeatingByte(1, count: 10)  // second part of the message
     XCTAssertNoThrow(
       try channel.writeInbound(HTTP2Frame.FramePayload.data(.init(data: .byteBuffer(buffer))))
     )
-    XCTAssertNil(try channel.readInbound(as: RPCRequestPart.self))
+    XCTAssertNil(try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self))
 
     buffer.clear()
     buffer.writeRepeatingByte(2, count: 10)  // third part of the message
@@ -552,14 +560,15 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
       try channel.writeInbound(HTTP2Frame.FramePayload.data(.init(data: .byteBuffer(buffer))))
     )
 
+    var expected = ByteBuffer()
+    expected.writeRepeatingByte(0, count: 10)
+    expected.writeRepeatingByte(1, count: 10)
+    expected.writeRepeatingByte(2, count: 10)
     // Make sure we haven't sent back an error response, and that we read the message properly
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
     XCTAssertEqual(
-      try channel.readInbound(as: RPCRequestPart.self),
-      RPCRequestPart.message(
-        [UInt8](repeating: 0, count: 10) + [UInt8](repeating: 1, count: 10)
-          + [UInt8](repeating: 2, count: 10)
-      )
+      try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self),
+      RPCRequestPart.message(GRPCNIOTransportBytes(expected))
     )
   }
 
@@ -620,15 +629,17 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     // Make sure we haven't sent back an error response, and that we read the initial metadata
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
     XCTAssertEqual(
-      try channel.readInbound(as: RPCRequestPart.self),
-      RPCRequestPart.metadata(Metadata(headers: clientInitialMetadata))
+      try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self),
+      RPCRequestPart<GRPCNIOTransportBytes>.metadata(Metadata(headers: clientInitialMetadata))
     )
 
     // Write back server's initial metadata
     let headers: HPACKHeaders = [
       "some-custom-header": "some-custom-value"
     ]
-    let serverInitialMetadata = RPCResponsePart.metadata(Metadata(headers: headers))
+    let serverInitialMetadata = RPCResponsePart<GRPCNIOTransportBytes>.metadata(
+      Metadata(headers: headers)
+    )
     XCTAssertNoThrow(try channel.writeOutbound(serverInitialMetadata))
 
     // Read out the metadata
@@ -639,11 +650,15 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     // until we flush. Once we flush, both messages should be sent in the same ByteBuffer.
 
     // Write back first message and make sure nothing's written in the channel.
-    XCTAssertNoThrow(channel.write(RPCResponsePart.message([UInt8](repeating: 1, count: 4))))
+    XCTAssertNoThrow(
+      channel.write(RPCResponsePart.message(GRPCNIOTransportBytes(repeating: 1, count: 4)))
+    )
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
 
     // Write back second message and make sure nothing's written in the channel.
-    XCTAssertNoThrow(channel.write(RPCResponsePart.message([UInt8](repeating: 2, count: 4))))
+    XCTAssertNoThrow(
+      channel.write(RPCResponsePart.message(GRPCNIOTransportBytes(repeating: 2, count: 4)))
+    )
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
 
     // Now flush and check we *do* write the data.
@@ -693,12 +708,14 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     // Make sure we haven't sent back an error response, and that we read the initial metadata
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
     XCTAssertEqual(
-      try channel.readInbound(as: RPCRequestPart.self),
-      RPCRequestPart.metadata(Metadata(headers: clientInitialMetadata))
+      try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self),
+      RPCRequestPart<GRPCNIOTransportBytes>.metadata(Metadata(headers: clientInitialMetadata))
     )
 
     // Write back server's initial metadata
-    let serverInitialMetadata = RPCResponsePart.metadata(Metadata(headers: [:]))
+    let serverInitialMetadata = RPCResponsePart<GRPCNIOTransportBytes>.metadata(
+      Metadata(headers: [:])
+    )
     XCTAssertNoThrow(try channel.writeOutbound(serverInitialMetadata))
 
     // Read out the metadata
@@ -711,11 +728,17 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     // and trailers won't be written before the messages.
 
     // Write back message and make sure nothing's written in the channel.
-    XCTAssertNoThrow(channel.write(RPCResponsePart.message([UInt8](repeating: 1, count: 4))))
+    XCTAssertNoThrow(
+      channel.write(RPCResponsePart.message(GRPCNIOTransportBytes(repeating: 1, count: 4)))
+    )
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
 
     // Write status + metadata and make sure nothing's written.
-    XCTAssertNoThrow(channel.write(RPCResponsePart.status(.init(code: .ok, message: ""), [:])))
+    XCTAssertNoThrow(
+      channel.write(
+        RPCResponsePart<GRPCNIOTransportBytes>.status(.init(code: .ok, message: ""), [:])
+      )
+    )
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
 
     // Now flush and check we *do* write the data in the right order: message first,
@@ -770,8 +793,8 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     // Make sure we haven't sent back an error response, and that we read the initial metadata
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
     XCTAssertEqual(
-      try channel.readInbound(as: RPCRequestPart.self),
-      RPCRequestPart.metadata(Metadata(headers: clientInitialMetadata))
+      try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self),
+      RPCRequestPart<GRPCNIOTransportBytes>.metadata(Metadata(headers: clientInitialMetadata))
     )
 
     XCTAssertEqual(
@@ -852,8 +875,8 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     // Make sure we haven't sent back an error response, and that we read the initial metadata
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
     XCTAssertEqual(
-      try channel.readInbound(as: RPCRequestPart.self),
-      RPCRequestPart.metadata(Metadata(headers: clientInitialMetadata))
+      try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self),
+      RPCRequestPart<GRPCNIOTransportBytes>.metadata(Metadata(headers: clientInitialMetadata))
     )
 
     // An error is fired down the pipeline
@@ -871,7 +894,7 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     // We should now be closed: check we can't write anymore.
     XCTAssertThrowsError(
       ofType: RPCError.self,
-      try channel.writeOutbound(RPCResponsePart.metadata(Metadata()))
+      try channel.writeOutbound(RPCResponsePart<GRPCNIOTransportBytes>.metadata(Metadata()))
     ) { error in
       XCTAssertEqual(error.code, .internalError)
       XCTAssertEqual(error.message, "Invalid state")
@@ -905,8 +928,8 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     // Make sure we haven't sent back an error response, and that we read the initial metadata
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
     XCTAssertEqual(
-      try channel.readInbound(as: RPCRequestPart.self),
-      RPCRequestPart.metadata(Metadata(headers: clientInitialMetadata))
+      try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self),
+      RPCRequestPart<GRPCNIOTransportBytes>.metadata(Metadata(headers: clientInitialMetadata))
     )
 
     // Channel becomes inactive
@@ -924,7 +947,7 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     // We should now be closed: check we can't write anymore.
     XCTAssertThrowsError(
       ofType: RPCError.self,
-      try channel.writeOutbound(RPCResponsePart.metadata(Metadata()))
+      try channel.writeOutbound(RPCResponsePart<GRPCNIOTransportBytes>.metadata(Metadata()))
     ) { error in
       XCTAssertEqual(error.code, .internalError)
       XCTAssertEqual(error.message, "Invalid state")
@@ -958,8 +981,8 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     // Make sure we haven't sent back an error response, and that we read the initial metadata
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
     XCTAssertEqual(
-      try channel.readInbound(as: RPCRequestPart.self),
-      RPCRequestPart.metadata(Metadata(headers: clientInitialMetadata))
+      try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self),
+      RPCRequestPart<GRPCNIOTransportBytes>.metadata(Metadata(headers: clientInitialMetadata))
     )
 
     // We receive RST_STREAM frame
@@ -977,7 +1000,7 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     // We should now be closed: check we can't write anymore.
     XCTAssertThrowsError(
       ofType: RPCError.self,
-      try channel.writeOutbound(RPCResponsePart.metadata(Metadata()))
+      try channel.writeOutbound(RPCResponsePart<GRPCNIOTransportBytes>.metadata([:]))
     ) { error in
       XCTAssertEqual(error.code, .internalError)
       XCTAssertEqual(error.message, "Invalid state")
@@ -1109,7 +1132,7 @@ struct ServerStreamHandlerTests {
     )
 
     // Now we write back server's initial metadata...
-    let serverInitialMetadata = RPCResponsePart.metadata([:])
+    let serverInitialMetadata = RPCResponsePart<GRPCNIOTransportBytes>.metadata([:])
     try channel.writeOutbound(serverInitialMetadata)
 
     // And this should have updated the FrameStats
@@ -1118,7 +1141,7 @@ struct ServerStreamHandlerTests {
     // Manually reset the FrameStats to make sure that writing data also updates it correctly.
     handlers.connectionHandler.frameStats.reset()
     #expect(!handlers.connectionHandler.frameStats.didWriteHeadersOrData)
-    try channel.writeOutbound(RPCResponsePart.message([42]))
+    try channel.writeOutbound(RPCResponsePart.message(GRPCNIOTransportBytes([42])))
     #expect(handlers.connectionHandler.frameStats.didWriteHeadersOrData)
 
     // Clean up.

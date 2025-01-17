@@ -60,9 +60,9 @@ extension Zlib {
     /// - Parameter output: The `ByteBuffer` into which the compressed message should be written.
     /// - Returns: The number of bytes written into the `output` buffer.
     @discardableResult
-    func compress(_ input: [UInt8], into output: inout ByteBuffer) throws(ZlibError) -> Int {
+    func compress(_ input: ByteBuffer, into output: inout ByteBuffer) throws(ZlibError) -> Int {
       defer { self.reset() }
-      let upperBound = self.stream.deflateBound(inputBytes: input.count)
+      let upperBound = self.stream.deflateBound(inputBytes: input.readableBytes)
       return try self.stream.deflate(input, into: &output, upperBound: upperBound)
     }
 
@@ -110,7 +110,7 @@ extension Zlib {
     /// - Parameters:
     ///   - input: The buffer read compressed bytes from.
     ///   - limit: The largest size a decompressed payload may be.
-    func decompress(_ input: inout ByteBuffer, limit: Int) throws -> [UInt8] {
+    func decompress(_ input: inout ByteBuffer, limit: Int) throws -> ByteBuffer {
       defer { self.reset() }
       return try self.stream.inflate(input: &input, limit: limit)
     }
@@ -302,8 +302,8 @@ extension UnsafeMutablePointer<z_stream> {
     self.pointee.msg.map { String(cString: $0) }
   }
 
-  func inflate(input: inout ByteBuffer, limit: Int) throws -> [UInt8] {
-    return try input.readWithUnsafeMutableReadableBytes { inputPointer in
+  func inflate(input: inout ByteBuffer, limit: Int) throws -> ByteBuffer {
+    return try input.readWithUnsafeMutableReadableBytes { inputPointer -> (Int, ByteBuffer) in
       self.setNextInputBuffer(inputPointer)
       defer {
         self.setNextInputBuffer(nil)
@@ -311,14 +311,20 @@ extension UnsafeMutablePointer<z_stream> {
       }
 
       // Assume the output will be twice as large as the input.
-      var output = [UInt8](repeating: 0, count: min(inputPointer.count * 2, limit))
-      var offset = 0
+      var output = ByteBuffer()
+      var outputSize = min(inputPointer.count * 2, limit)
+      var finished = false
+      var totalBytesWritten = 0
 
       while true {
-        let (finished, written) = try output[offset...].withUnsafeMutableBytes { outPointer in
+        let written = try output.writeWithUnsafeMutableBytes(
+          minimumWritableBytes: outputSize
+        ) { pointer in
+          let outPointer = UnsafeMutableRawBufferPointer(
+            start: pointer.baseAddress,
+            count: min(pointer.count, outputSize)
+          )
           self.setNextOutputBuffer(outPointer)
-
-          let finished: Bool
 
           // Possible return codes:
           // - Z_OK: some progress has been made
@@ -347,29 +353,29 @@ extension UnsafeMutablePointer<z_stream> {
             )
           }
 
-          let size = outPointer.count - self.availableOutputBytes
-          return (finished, size)
+          return outPointer.count - self.availableOutputBytes
         }
 
         if finished {
-          output.removeLast(output.count - self.totalOutputBytes)
           let bytesRead = inputPointer.count - self.availableInputBytes
           return (bytesRead, output)
         } else {
-          offset += written
-          let newSize = min(output.count * 2, limit)
-          if newSize == output.count {
+          // There are still more bytes to decompress. Increase the size of the extra space in the
+          // buffer we're writing into.
+          totalBytesWritten += written
+          let newSize = min(outputSize * 2, limit - totalBytesWritten)
+          if newSize <= 0 {
+            assert(newSize == 0)
             throw RPCError(code: .resourceExhausted, message: "Message is too large to decompress.")
-          } else {
-            output.append(contentsOf: repeatElement(0, count: newSize - output.count))
           }
+          outputSize = newSize
         }
       }
     }
   }
 
   func deflate(
-    _ input: [UInt8],
+    _ input: ByteBuffer,
     into output: inout ByteBuffer,
     upperBound: Int
   ) throws(ZlibError) -> Int {
@@ -380,7 +386,7 @@ extension UnsafeMutablePointer<z_stream> {
 
     do {
       var input = input
-      return try input.withUnsafeMutableBytes { input in
+      return try input.withUnsafeMutableReadableBytes { input in
         self.setNextInputBuffer(input)
 
         return try output.writeWithUnsafeMutableBytes(minimumWritableBytes: upperBound) { output in

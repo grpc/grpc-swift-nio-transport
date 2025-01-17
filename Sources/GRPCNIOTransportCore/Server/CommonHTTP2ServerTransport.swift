@@ -26,6 +26,8 @@ private import Synchronization
 package final class CommonHTTP2ServerTransport<
   ListenerFactory: HTTP2ListenerFactory
 >: ServerTransport, ListeningServerTransport {
+  package typealias Bytes = GRPCNIOTransportBytes
+
   private let eventLoopGroup: any EventLoopGroup
   private let address: SocketAddress
   private let listeningAddressState: Mutex<State>
@@ -199,7 +201,8 @@ package final class CommonHTTP2ServerTransport<
       _ context: ServerContext
     ) async -> Void
   ) async throws {
-    let peer = connection.remoteAddressInfo
+    let remotePeer = connection.remoteAddressInfo
+    let localPeer = connection.localAddressInfo
     try await connection.executeThenClose { inbound, _ in
       await withDiscardingTaskGroup { group in
         group.addTask {
@@ -218,7 +221,8 @@ package final class CommonHTTP2ServerTransport<
                 stream,
                 handler: streamHandler,
                 descriptor: descriptor,
-                peer: peer
+                remotePeer: remotePeer,
+                localPeer: localPeer
               )
             }
           }
@@ -230,13 +234,14 @@ package final class CommonHTTP2ServerTransport<
   }
 
   private func handleStream(
-    _ stream: NIOAsyncChannel<RPCRequestPart, RPCResponsePart>,
+    _ stream: NIOAsyncChannel<RPCRequestPart<Bytes>, RPCResponsePart<Bytes>>,
     handler streamHandler: @escaping @Sendable (
       _ stream: RPCStream<Inbound, Outbound>,
       _ context: ServerContext
     ) async -> Void,
     descriptor: EventLoopFuture<MethodDescriptor>,
-    peer: String
+    remotePeer: String,
+    localPeer: String
   ) async {
     // It's okay to ignore these errors:
     // - If we get an error because the http2Stream failed to close, then there's nothing we can do
@@ -274,7 +279,12 @@ package final class CommonHTTP2ServerTransport<
           )
         )
 
-        let context = ServerContext(descriptor: descriptor, peer: peer, cancellation: handle)
+        let context = ServerContext(
+          descriptor: descriptor,
+          remotePeer: remotePeer,
+          localPeer: localPeer,
+          cancellation: handle
+        )
         await streamHandler(rpcStream, context)
       }
     }

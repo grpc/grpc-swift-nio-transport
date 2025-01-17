@@ -18,7 +18,7 @@ import Foundation
 import GRPCCore
 
 struct ControlService: RegistrableRPCService {
-  func registerMethods(with router: inout RPCRouter) {
+  func registerMethods<Transport: ServerTransport>(with router: inout RPCRouter<Transport>) {
     router.registerHandler(
       forMethod: MethodDescriptor(fullyQualifiedService: "Control", method: "Unary"),
       deserializer: JSONDeserializer<ControlInput>(),
@@ -113,19 +113,19 @@ extension ControlService {
   }
 
   private func serverRemotePeerInfo(context: ServerContext) -> String {
-    context.peer
+    context.remotePeer
   }
 
   private func serverLocalPeerInfo(context: ServerContext) -> String {
-    "<not yet implemented>"
+    context.localPeer
   }
 
   private func clientRemotePeerInfo<T>(request: StreamingServerRequest<T>) -> String {
-    request.metadata[stringValues: "remotePeer"].first(where: { _ in true })!
+    request.metadata[stringValues: "remotePeer"].first(where: { _ in true }) ?? "<missing>"
   }
 
   private func clientLocalPeerInfo<T>(request: StreamingServerRequest<T>) -> String {
-    request.metadata[stringValues: "localPeer"].first(where: { _ in true })!
+    request.metadata[stringValues: "localPeer"].first(where: { _ in true }) ?? "<missing>"
   }
 
   private func handle(

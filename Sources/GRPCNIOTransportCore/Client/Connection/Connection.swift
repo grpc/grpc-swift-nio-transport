@@ -239,8 +239,8 @@ package final class Connection: Sendable {
             wrappingChannelSynchronously: channel,
             configuration: NIOAsyncChannel.Configuration(
               isOutboundHalfClosureEnabled: true,
-              inboundType: RPCResponsePart.self,
-              outboundType: RPCRequestPart.self
+              inboundType: RPCResponsePart<GRPCNIOTransportBytes>.self,
+              outboundType: RPCRequestPart<GRPCNIOTransportBytes>.self
             )
           )
         }
@@ -389,23 +389,32 @@ package final class Connection: Sendable {
 
 extension Connection {
   package struct Stream {
-    package typealias Inbound = NIOAsyncChannelInboundStream<RPCResponsePart>
+    package typealias Inbound = NIOAsyncChannelInboundStream<RPCResponsePart<GRPCNIOTransportBytes>>
+
+    typealias RequestWriter = NIOAsyncChannelOutboundWriter<
+      RPCRequestPart<GRPCNIOTransportBytes>
+    >
+
+    typealias HTTP2Stream = NIOAsyncChannel<
+      RPCResponsePart<GRPCNIOTransportBytes>,
+      RPCRequestPart<GRPCNIOTransportBytes>
+    >
 
     package struct Outbound: ClosableRPCWriterProtocol {
-      package typealias Element = RPCRequestPart
+      package typealias Element = RPCRequestPart<GRPCNIOTransportBytes>
 
-      private let requestWriter: NIOAsyncChannelOutboundWriter<RPCRequestPart>
-      private let http2Stream: NIOAsyncChannel<RPCResponsePart, RPCRequestPart>
+      private let requestWriter: RequestWriter
+      private let http2Stream: HTTP2Stream
 
       fileprivate init(
-        requestWriter: NIOAsyncChannelOutboundWriter<RPCRequestPart>,
-        http2Stream: NIOAsyncChannel<RPCResponsePart, RPCRequestPart>
+        requestWriter: RequestWriter,
+        http2Stream: HTTP2Stream
       ) {
         self.requestWriter = requestWriter
         self.http2Stream = http2Stream
       }
 
-      package func write(_ element: RPCRequestPart) async throws {
+      package func write(_ element: RPCRequestPart<GRPCNIOTransportBytes>) async throws {
         try await self.requestWriter.write(element)
       }
 
@@ -425,10 +434,10 @@ extension Connection {
 
     let context: ClientContext
 
-    private let http2Stream: NIOAsyncChannel<RPCResponsePart, RPCRequestPart>
+    private let http2Stream: HTTP2Stream
 
     init(
-      wrapping stream: NIOAsyncChannel<RPCResponsePart, RPCRequestPart>,
+      wrapping stream: HTTP2Stream,
       context: ClientContext
     ) {
       self.http2Stream = stream
