@@ -113,11 +113,11 @@ extension ControlService {
   }
 
   private func serverRemotePeerInfo(context: ServerContext) -> String {
-    context.peer
+    context.remotePeer
   }
 
   private func serverLocalPeerInfo(context: ServerContext) -> String {
-    "<not yet implemented>"
+    context.localPeer
   }
 
   private func clientRemotePeerInfo<T>(request: StreamingServerRequest<T>) -> String {

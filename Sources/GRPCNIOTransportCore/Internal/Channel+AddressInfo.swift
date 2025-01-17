@@ -18,67 +18,47 @@ internal import NIOCore
 
 extension NIOAsyncChannel {
   var remoteAddressInfo: String {
-    guard let remote = self.channel.remoteAddress else {
-      return "<unknown>"
-    }
-
-    switch remote {
-    case .v4(let address):
-      // '!' is safe, v4 always has a port.
-      return "ipv4:\(address.host):\(remote.port!)"
-
-    case .v6(let address):
-      // '!' is safe, v6 always has a port.
-      return "ipv6:[\(address.host)]:\(remote.port!)"
-
-    case .unixDomainSocket:
-      // '!' is safe, UDS always has a path.
-      if remote.pathname!.isEmpty {
-        guard let local = self.channel.localAddress else {
-          return "unix:<unknown>"
-        }
-
-        switch local {
-        case .unixDomainSocket:
-          // '!' is safe, UDS always has a path.
-          return "unix:\(local.pathname!)"
-
-        case .v4, .v6:
-          // Remote address is UDS but local isn't. This shouldn't ever happen.
-          return "unix:<unknown>"
-        }
-      } else {
-        // '!' is safe, UDS always has a path.
-        return "unix:\(remote.pathname!)"
-      }
-    }
+    getAddressInfoWithFallbackIfUDS(
+      address: self.channel.remoteAddress,
+      udsFallback: self.channel.localAddress
+    )
   }
 
   var localAddressInfo: String {
-    guard let local = self.channel.localAddress else {
+    getAddressInfoWithFallbackIfUDS(
+      address: self.channel.localAddress,
+      udsFallback: self.channel.remoteAddress
+    )
+  }
+
+  private func getAddressInfoWithFallbackIfUDS(
+    address: NIOCore.SocketAddress?,
+    udsFallback: NIOCore.SocketAddress?
+  ) -> String {
+    guard let address else {
       return "<unknown>"
     }
 
-    switch local {
-    case .v4(let address):
+    switch address {
+    case .v4(let ipv4Address):
       // '!' is safe, v4 always has a port.
-      return "ipv4:\(address.host):\(local.port!)"
+      return "ipv4:\(ipv4Address.host):\(address.port!)"
 
-    case .v6(let address):
+    case .v6(let ipv6Address):
       // '!' is safe, v6 always has a port.
-      return "ipv6:[\(address.host)]:\(local.port!)"
+      return "ipv6:[\(ipv6Address.host)]:\(address.port!)"
 
     case .unixDomainSocket:
       // '!' is safe, UDS always has a path.
-      if local.pathname!.isEmpty {
-        guard let remote = self.channel.remoteAddress else {
+      if address.pathname!.isEmpty {
+        guard let udsFallback else {
           return "unix:<unknown>"
         }
 
-        switch remote {
+        switch udsFallback {
         case .unixDomainSocket:
           // '!' is safe, UDS always has a path.
-          return "unix:\(remote.pathname!)"
+          return "unix:\(udsFallback.pathname!)"
 
         case .v4, .v6:
           // Remote address is UDS but local isn't. This shouldn't ever happen.
@@ -86,7 +66,7 @@ extension NIOAsyncChannel {
         }
       } else {
         // '!' is safe, UDS always has a path.
-        return "unix:\(local.pathname!)"
+        return "unix:\(address.pathname!)"
       }
     }
   }
