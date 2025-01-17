@@ -85,7 +85,7 @@ final class SubchannelTests: XCTestCase {
           let stream = try await subchannel.makeStream(descriptor: .echoGet, options: .defaults)
           try await stream.execute { inbound, outbound in
             try await outbound.write(.metadata([:]))
-            try await outbound.write(.message([0, 1, 2]))
+            try await outbound.write(.message(GRPCNIOTransportBytes([0, 1, 2])))
             outbound.finish()
 
             for try await part in inbound {
@@ -93,7 +93,7 @@ final class SubchannelTests: XCTestCase {
               case .metadata:
                 ()  // Don't validate, contains http/2 specific metadata too.
               case .message(let message):
-                XCTAssertEqual(message, [0, 1, 2])
+                XCTAssertEqual(message, GRPCNIOTransportBytes([0, 1, 2]))
               case .status(let status, _):
                 XCTAssertEqual(status.code, .ok)
                 XCTAssertEqual(status.message, "")

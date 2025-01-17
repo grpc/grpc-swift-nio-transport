@@ -23,7 +23,7 @@ import XCTest
 final class GRPCMessageFramerTests: XCTestCase {
   func testSingleWrite() throws {
     var framer = GRPCMessageFramer()
-    framer.append(Array(repeating: 42, count: 128), promise: nil)
+    framer.append(ByteBuffer(repeating: 42, count: 128), promise: nil)
 
     var buffer = try XCTUnwrap(framer.next()).bytes
     let (compressed, length) = try XCTUnwrap(buffer.readMessageHeader())
@@ -43,7 +43,7 @@ final class GRPCMessageFramerTests: XCTestCase {
     }
     var framer = GRPCMessageFramer()
 
-    let message = [UInt8](repeating: 42, count: 128)
+    let message = ByteBuffer(repeating: 42, count: 128)
     framer.append(message, promise: nil)
 
     var buffer = ByteBuffer()
@@ -84,7 +84,7 @@ final class GRPCMessageFramerTests: XCTestCase {
     for _ in 0 ..< messagesCount {
       let promise = eventLoop.makePromise(of: Void.self)
       promises.append(promise)
-      framer.append(Array(repeating: 42, count: 128), promise: promise)
+      framer.append(ByteBuffer(repeating: 42, count: 128), promise: promise)
     }
 
     let nextFrame = try XCTUnwrap(framer.next())

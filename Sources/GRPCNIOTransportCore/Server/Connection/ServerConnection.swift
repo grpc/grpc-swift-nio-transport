@@ -20,20 +20,30 @@ package import NIOCore
 public enum ServerConnection {
   public enum Stream {
     package struct Outbound: ClosableRPCWriterProtocol {
-      package typealias Element = RPCResponsePart
+      package typealias Element = RPCResponsePart<GRPCNIOTransportBytes>
 
-      private let responseWriter: NIOAsyncChannelOutboundWriter<RPCResponsePart>
-      private let http2Stream: NIOAsyncChannel<RPCRequestPart, RPCResponsePart>
+      private let responseWriter:
+        NIOAsyncChannelOutboundWriter<
+          RPCResponsePart<GRPCNIOTransportBytes>
+        >
+      private let http2Stream:
+        NIOAsyncChannel<
+          RPCRequestPart<GRPCNIOTransportBytes>,
+          RPCResponsePart<GRPCNIOTransportBytes>
+        >
 
       package init(
-        responseWriter: NIOAsyncChannelOutboundWriter<RPCResponsePart>,
-        http2Stream: NIOAsyncChannel<RPCRequestPart, RPCResponsePart>
+        responseWriter: NIOAsyncChannelOutboundWriter<RPCResponsePart<GRPCNIOTransportBytes>>,
+        http2Stream: NIOAsyncChannel<
+          RPCRequestPart<GRPCNIOTransportBytes>,
+          RPCResponsePart<GRPCNIOTransportBytes>
+        >
       ) {
         self.responseWriter = responseWriter
         self.http2Stream = http2Stream
       }
 
-      package func write(_ element: RPCResponsePart) async throws {
+      package func write(_ element: RPCResponsePart<GRPCNIOTransportBytes>) async throws {
         try await self.responseWriter.write(element)
       }
 

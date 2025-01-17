@@ -26,6 +26,8 @@ private import Synchronization
 package final class CommonHTTP2ServerTransport<
   ListenerFactory: HTTP2ListenerFactory
 >: ServerTransport, ListeningServerTransport {
+  package typealias Bytes = GRPCNIOTransportBytes
+
   private let eventLoopGroup: any EventLoopGroup
   private let address: SocketAddress
   private let listeningAddressState: Mutex<State>
@@ -232,7 +234,7 @@ package final class CommonHTTP2ServerTransport<
   }
 
   private func handleStream(
-    _ stream: NIOAsyncChannel<RPCRequestPart, RPCResponsePart>,
+    _ stream: NIOAsyncChannel<RPCRequestPart<Bytes>, RPCResponsePart<Bytes>>,
     handler streamHandler: @escaping @Sendable (
       _ stream: RPCStream<Inbound, Outbound>,
       _ context: ServerContext
