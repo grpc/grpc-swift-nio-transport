@@ -19,6 +19,8 @@ package import GRPCCore
 private import Synchronization
 
 package final class GRPCChannel: ClientTransport {
+  package typealias Bytes = GRPCNIOTransportBytes
+
   private enum Input: Sendable {
     /// Close the channel, if possible.
     case close
@@ -198,11 +200,11 @@ package final class GRPCChannel: ClientTransport {
     self.input.continuation.yield(.close)
   }
 
-  /// Opens a stream using the transport, and uses it as input into a user-provided closure.
+  /// Opens a stream using the transport, and uses it as input into a user-provided closure, alongside the client's context.
   package func withStream<T: Sendable>(
     descriptor: MethodDescriptor,
     options: CallOptions,
-    _ closure: (_ stream: RPCStream<Inbound, Outbound>) async throws -> T
+    _ closure: (_ stream: RPCStream<Inbound, Outbound>, _ context: ClientContext) async throws -> T
   ) async throws -> T {
     // Merge options from the call with those from the service config.
     let methodConfig = self.config(forMethod: descriptor)
@@ -214,11 +216,11 @@ package final class GRPCChannel: ClientTransport {
       case .created(let stream):
         return try await stream.execute { inbound, outbound in
           let rpcStream = RPCStream(
-            descriptor: stream.descriptor,
+            descriptor: stream.context.descriptor,
             inbound: RPCAsyncSequence<RPCResponsePart, any Error>(wrapping: inbound),
             outbound: RPCWriter.Closable(wrapping: outbound)
           )
-          return try await closure(rpcStream)
+          return try await closure(rpcStream, stream.context)
         }
 
       case .tryAgain(let error):

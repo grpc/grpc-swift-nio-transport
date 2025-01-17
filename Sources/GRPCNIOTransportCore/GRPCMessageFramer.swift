@@ -33,7 +33,7 @@ struct GRPCMessageFramer {
   /// reserves capacity in powers of 2. This way, we can take advantage of the whole buffer.
   static let maxWriteBufferLength = 65_536
 
-  private var pendingMessages: OneOrManyQueue<(bytes: [UInt8], promise: EventLoopPromise<Void>?)>
+  private var pendingMessages: OneOrManyQueue<(bytes: ByteBuffer, promise: EventLoopPromise<Void>?)>
 
   private var writeBuffer: ByteBuffer
 
@@ -45,7 +45,7 @@ struct GRPCMessageFramer {
 
   /// Queue the given bytes to be framed and potentially coalesced alongside other messages in a `ByteBuffer`.
   /// The resulting data will be returned when calling ``GRPCMessageFramer/next()``.
-  mutating func append(_ bytes: [UInt8], promise: EventLoopPromise<Void>?) {
+  mutating func append(_ bytes: ByteBuffer, promise: EventLoopPromise<Void>?) {
     self.pendingMessages.append((bytes, promise))
   }
 
@@ -72,7 +72,7 @@ struct GRPCMessageFramer {
 
     var requiredCapacity = 0
     for message in self.pendingMessages {
-      requiredCapacity += message.bytes.count + Self.metadataLength
+      requiredCapacity += message.bytes.readableBytes + Self.metadataLength
     }
     self.writeBuffer.clear(minimumCapacity: requiredCapacity)
 
@@ -90,7 +90,10 @@ struct GRPCMessageFramer {
     return (result: .success(self.writeBuffer), promise: pendingWritePromise)
   }
 
-  private mutating func encode(_ message: [UInt8], compressor: Zlib.Compressor?) throws(RPCError) {
+  private mutating func encode(
+    _ message: ByteBuffer,
+    compressor: Zlib.Compressor?
+  ) throws(RPCError) {
     if let compressor {
       self.writeBuffer.writeInteger(UInt8(1))  // Set compression flag
 
@@ -108,9 +111,9 @@ struct GRPCMessageFramer {
     } else {
       self.writeBuffer.writeMultipleIntegers(
         UInt8(0),  // Clear compression flag
-        UInt32(message.count)  // Set message length
+        UInt32(message.readableBytes)  // Set message length
       )
-      self.writeBuffer.writeBytes(message)
+      self.writeBuffer.writeImmutableBuffer(message)
     }
   }
 }

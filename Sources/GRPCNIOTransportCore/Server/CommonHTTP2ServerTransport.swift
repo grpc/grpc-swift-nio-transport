@@ -26,6 +26,8 @@ private import Synchronization
 package final class CommonHTTP2ServerTransport<
   ListenerFactory: HTTP2ListenerFactory
 >: ServerTransport, ListeningServerTransport {
+  package typealias Bytes = GRPCNIOTransportBytes
+
   private let eventLoopGroup: any EventLoopGroup
   private let address: SocketAddress
   private let listeningAddressState: Mutex<State>
@@ -191,40 +193,6 @@ package final class CommonHTTP2ServerTransport<
     }
   }
 
-  private func peerInfo(channel: any Channel) -> String {
-    guard let remote = channel.remoteAddress else {
-      return "<unknown>"
-    }
-
-    switch remote {
-    case .v4(let address):
-      // '!' is safe, v4 always has a port.
-      return "ipv4:\(address.host):\(remote.port!)"
-
-    case .v6(let address):
-      // '!' is safe, v6 always has a port.
-      return "ipv6:[\(address.host)]:\(remote.port!)"
-
-    case .unixDomainSocket:
-      // The pathname will be on the local address.
-      guard let local = channel.localAddress else {
-        // UDS but no local address; this shouldn't ever happen but at least note the transport
-        // as being UDS.
-        return "unix:<unknown>"
-      }
-
-      switch local {
-      case .unixDomainSocket:
-        // '!' is safe, UDS always has a path.
-        return "unix:\(local.pathname!)"
-
-      case .v4, .v6:
-        // Remote address is UDS but local isn't. This shouldn't ever happen.
-        return "unix:<unknown>"
-      }
-    }
-  }
-
   private func handleConnection(
     _ connection: NIOAsyncChannel<HTTP2Frame, HTTP2Frame>,
     multiplexer: ChannelPipeline.SynchronousOperations.HTTP2StreamMultiplexer,
@@ -233,7 +201,8 @@ package final class CommonHTTP2ServerTransport<
       _ context: ServerContext
     ) async -> Void
   ) async throws {
-    let peer = self.peerInfo(channel: connection.channel)
+    let remotePeer = connection.remoteAddressInfo
+    let localPeer = connection.localAddressInfo
     try await connection.executeThenClose { inbound, _ in
       await withDiscardingTaskGroup { group in
         group.addTask {
@@ -252,7 +221,8 @@ package final class CommonHTTP2ServerTransport<
                 stream,
                 handler: streamHandler,
                 descriptor: descriptor,
-                peer: peer
+                remotePeer: remotePeer,
+                localPeer: localPeer
               )
             }
           }
@@ -264,13 +234,14 @@ package final class CommonHTTP2ServerTransport<
   }
 
   private func handleStream(
-    _ stream: NIOAsyncChannel<RPCRequestPart, RPCResponsePart>,
+    _ stream: NIOAsyncChannel<RPCRequestPart<Bytes>, RPCResponsePart<Bytes>>,
     handler streamHandler: @escaping @Sendable (
       _ stream: RPCStream<Inbound, Outbound>,
       _ context: ServerContext
     ) async -> Void,
     descriptor: EventLoopFuture<MethodDescriptor>,
-    peer: String
+    remotePeer: String,
+    localPeer: String
   ) async {
     // It's okay to ignore these errors:
     // - If we get an error because the http2Stream failed to close, then there's nothing we can do
@@ -308,7 +279,12 @@ package final class CommonHTTP2ServerTransport<
           )
         )
 
-        let context = ServerContext(descriptor: descriptor, peer: peer, cancellation: handle)
+        let context = ServerContext(
+          descriptor: descriptor,
+          remotePeer: remotePeer,
+          localPeer: localPeer,
+          cancellation: handle
+        )
         await streamHandler(rpcStream, context)
       }
     }

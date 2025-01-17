@@ -180,10 +180,10 @@ extension ConnectionTest {
   }
 
   final class EchoHandler: ChannelInboundHandler {
-    typealias InboundIn = RPCRequestPart
-    typealias OutboundOut = RPCResponsePart
+    typealias InboundIn = RPCRequestPart<GRPCNIOTransportBytes>
+    typealias OutboundOut = RPCResponsePart<GRPCNIOTransportBytes>
 
-    private var received: Deque<RPCRequestPart> = []
+    private var received: Deque<RPCRequestPart<GRPCNIOTransportBytes>> = []
     private var receivedEnd = false
 
     func userInboundEventTriggered(context: ChannelHandlerContext, event: Any) {

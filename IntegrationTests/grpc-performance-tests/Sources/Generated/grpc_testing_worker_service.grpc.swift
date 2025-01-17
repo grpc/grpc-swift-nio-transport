@@ -26,7 +26,6 @@
 
 import GRPCCore
 import GRPCProtobuf
-import SwiftProtobuf
 
 // MARK: - grpc.testing.WorkerService
 
@@ -381,7 +380,7 @@ extension Grpc_Testing_WorkerService {
 
 // Default implementation of 'registerMethods(with:)'.
 extension Grpc_Testing_WorkerService.StreamingServiceProtocol {
-    internal func registerMethods(with router: inout GRPCCore.RPCRouter) {
+    internal func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
         router.registerHandler(
             forMethod: Grpc_Testing_WorkerService.Method.RunServer.descriptor,
             deserializer: GRPCProtobuf.ProtobufDeserializer<Grpc_Testing_ServerArgs>(),

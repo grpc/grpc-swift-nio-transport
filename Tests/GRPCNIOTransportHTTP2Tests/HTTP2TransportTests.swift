@@ -52,7 +52,11 @@ final class HTTP2TransportTests: XCTestCase {
     clientCompression: CompressionAlgorithm = .none,
     clientEnabledCompression: CompressionAlgorithmSet = .none,
     serverCompression: CompressionAlgorithmSet = .none,
-    _ execute: (ControlClient, GRPCServer, Transport) async throws -> Void
+    _ execute: (
+      ControlClient<NIOClientTransport>,
+      GRPCServer<NIOServerTransport>,
+      Transport
+    ) async throws -> Void
   ) async throws {
     for pair in transport {
       try await withThrowingTaskGroup(of: Void.self) { group in
@@ -84,7 +88,7 @@ final class HTTP2TransportTests: XCTestCase {
         )
 
         group.addTask {
-          try await client.run()
+          try await client.runConnections()
         }
 
         do {
@@ -102,7 +106,7 @@ final class HTTP2TransportTests: XCTestCase {
 
   func forEachClientAndHTTPStatusCodeServer(
     _ kind: [Transport.Kind] = [.posix, .niots],
-    _ execute: (ControlClient, Transport.Kind) async throws -> Void
+    _ execute: (ControlClient<NIOClientTransport>, Transport.Kind) async throws -> Void
   ) async throws {
     for clientKind in kind {
       try await withThrowingTaskGroup(of: Void.self) { group in
@@ -119,7 +123,7 @@ final class HTTP2TransportTests: XCTestCase {
           enabledCompression: .none
         )
         group.addTask {
-          try await client.run()
+          try await client.runConnections()
         }
 
         do {
@@ -140,18 +144,20 @@ final class HTTP2TransportTests: XCTestCase {
     kind: Transport.Kind,
     enableControlService: Bool,
     compression: CompressionAlgorithmSet
-  ) async throws -> (GRPCServer, GRPCNIOTransportCore.SocketAddress) {
+  ) async throws -> (GRPCServer<NIOServerTransport>, GRPCNIOTransportCore.SocketAddress) {
     let services = enableControlService ? [ControlService()] : []
 
     switch kind {
     case .posix:
       let server = GRPCServer(
-        transport: .http2NIOPosix(
-          address: address,
-          transportSecurity: .plaintext,
-          config: .defaults {
-            $0.compression.enabledAlgorithms = compression
-          }
+        transport: NIOServerTransport(
+          .http2NIOPosix(
+            address: address,
+            transportSecurity: .plaintext,
+            config: .defaults {
+              $0.compression.enabledAlgorithms = compression
+            }
+          )
         ),
         services: services
       )
@@ -166,12 +172,14 @@ final class HTTP2TransportTests: XCTestCase {
     case .niots:
       #if canImport(Network)
       let server = GRPCServer(
-        transport: .http2NIOTS(
-          address: address,
-          transportSecurity: .plaintext,
-          config: .defaults {
-            $0.compression.enabledAlgorithms = compression
-          }
+        transport: NIOServerTransport(
+          .http2NIOTS(
+            address: address,
+            transportSecurity: .plaintext,
+            config: .defaults {
+              $0.compression.enabledAlgorithms = compression
+            }
+          )
         ),
         services: services
       )
@@ -193,14 +201,14 @@ final class HTTP2TransportTests: XCTestCase {
     target: any ResolvableTarget,
     compression: CompressionAlgorithm,
     enabledCompression: CompressionAlgorithmSet
-  ) throws -> GRPCClient {
-    let transport: any ClientTransport
+  ) throws -> GRPCClient<NIOClientTransport> {
+    let transport: NIOClientTransport
 
     switch kind {
     case .posix:
       var serviceConfig = ServiceConfig()
       serviceConfig.loadBalancingConfig = [.roundRobin]
-      transport = try HTTP2ClientTransport.Posix(
+      let posix = try HTTP2ClientTransport.Posix(
         target: target,
         transportSecurity: .plaintext,
         config: .defaults {
@@ -209,12 +217,13 @@ final class HTTP2TransportTests: XCTestCase {
         },
         serviceConfig: serviceConfig
       )
+      transport = NIOClientTransport(posix)
 
     case .niots:
       #if canImport(Network)
       var serviceConfig = ServiceConfig()
       serviceConfig.loadBalancingConfig = [.roundRobin]
-      transport = try HTTP2ClientTransport.TransportServices(
+      let transportServices = try HTTP2ClientTransport.TransportServices(
         target: target,
         transportSecurity: .plaintext,
         config: .defaults {
@@ -223,12 +232,13 @@ final class HTTP2TransportTests: XCTestCase {
         },
         serviceConfig: serviceConfig
       )
+      transport = NIOClientTransport(transportServices)
       #else
       throw XCTSkip("Transport not supported on this platform")
       #endif
     }
 
-    return GRPCClient(transport: transport)
+    return GRPCClient(transport: transport, interceptors: [PeerInfoClientInterceptor()])
   }
 
   func testUnaryOK() async throws {
@@ -793,7 +803,7 @@ final class HTTP2TransportTests: XCTestCase {
   private func testUnaryCompression(
     client: CompressionAlgorithm,
     server: CompressionAlgorithm,
-    control: ControlClient,
+    control: ControlClient<NIOClientTransport>,
     pair: Transport
   ) async throws {
     let message = ControlInput.with {
@@ -843,7 +853,7 @@ final class HTTP2TransportTests: XCTestCase {
   private func testClientStreamingCompression(
     client: CompressionAlgorithm,
     server: CompressionAlgorithm,
-    control: ControlClient,
+    control: ControlClient<NIOClientTransport>,
     pair: Transport
   ) async throws {
     let request = StreamingClientRequest(of: ControlInput.self) { writer in
@@ -888,7 +898,7 @@ final class HTTP2TransportTests: XCTestCase {
   private func testServerStreamingCompression(
     client: CompressionAlgorithm,
     server: CompressionAlgorithm,
-    control: ControlClient,
+    control: ControlClient<NIOClientTransport>,
     pair: Transport
   ) async throws {
     let message = ControlInput.with {
@@ -939,7 +949,7 @@ final class HTTP2TransportTests: XCTestCase {
   private func testBidiStreamingCompression(
     client: CompressionAlgorithm,
     server: CompressionAlgorithm,
-    control: ControlClient,
+    control: ControlClient<NIOClientTransport>,
     pair: Transport
   ) async throws {
     let request = StreamingClientRequest(of: ControlInput.self) { writer in
@@ -1489,7 +1499,10 @@ final class HTTP2TransportTests: XCTestCase {
     }
   }
 
-  private func checkAuthority(client: GRPCClient, expected: String) async throws {
+  private func checkAuthority(
+    client: GRPCClient<NIOClientTransport>,
+    expected: String
+  ) async throws {
     let control = ControlClient(wrapping: client)
     let input = ControlInput.with {
       $0.echoMetadataInHeaders = true
@@ -1527,12 +1540,14 @@ final class HTTP2TransportTests: XCTestCase {
 
       let target = clientTarget(listeningAddress)
       try await withGRPCClient(
-        transport: .http2NIOPosix(
-          target: target,
-          transportSecurity: .plaintext,
-          config: .defaults {
-            $0.http2.authority = override
-          }
+        transport: NIOClientTransport(
+          .http2NIOPosix(
+            target: target,
+            transportSecurity: .plaintext,
+            config: .defaults {
+              $0.http2.authority = override
+            }
+          )
         )
       ) { client in
         try await self.checkAuthority(client: client, expected: expectedAuthority(listeningAddress))
@@ -1632,8 +1647,18 @@ final class HTTP2TransportTests: XCTestCase {
       serverAddress: .ipv4(host: "127.0.0.1", port: 0)
     ) { control, _, _ in
       let peerInfo = try await control.peerInfo()
-      let matches = peerInfo.matches(of: /ipv4:127.0.0.1:\d+/)
-      XCTAssertNotNil(matches)
+
+      let serverRemotePeerMatches = peerInfo.server.remote.wholeMatch(of: /ipv4:127\.0\.0\.1:(\d+)/)
+      let clientPort = try XCTUnwrap(serverRemotePeerMatches).1
+
+      let serverLocalPeerMatches = peerInfo.server.local.wholeMatch(of: /ipv4:127.0.0.1:(\d+)/)
+      let serverPort = try XCTUnwrap(serverLocalPeerMatches).1
+
+      let clientRemotePeerMatches = peerInfo.client.remote.wholeMatch(of: /ipv4:127.0.0.1:(\d+)/)
+      XCTAssertEqual(try XCTUnwrap(clientRemotePeerMatches).1, serverPort)
+
+      let clientLocalPeerMatches = peerInfo.client.local.wholeMatch(of: /ipv4:127\.0\.0\.1:(\d+)/)
+      XCTAssertEqual(try XCTUnwrap(clientLocalPeerMatches).1, clientPort)
     }
   }
 
@@ -1642,8 +1667,18 @@ final class HTTP2TransportTests: XCTestCase {
       serverAddress: .ipv6(host: "::1", port: 0)
     ) { control, _, _ in
       let peerInfo = try await control.peerInfo()
-      let matches = peerInfo.matches(of: /ipv6:[::1]:\d+/)
-      XCTAssertNotNil(matches)
+
+      let serverRemotePeerMatches = peerInfo.server.remote.wholeMatch(of: /ipv6:\[::1\]:(\d+)/)
+      let clientPort = try XCTUnwrap(serverRemotePeerMatches).1
+
+      let serverLocalPeerMatches = peerInfo.server.local.wholeMatch(of: /ipv6:\[::1\]:(\d+)/)
+      let serverPort = try XCTUnwrap(serverLocalPeerMatches).1
+
+      let clientRemotePeerMatches = peerInfo.client.remote.wholeMatch(of: /ipv6:\[::1\]:(\d+)/)
+      XCTAssertEqual(try XCTUnwrap(clientRemotePeerMatches).1, serverPort)
+
+      let clientLocalPeerMatches = peerInfo.client.local.wholeMatch(of: /ipv6:\[::1\]:(\d+)/)
+      XCTAssertEqual(try XCTUnwrap(clientLocalPeerMatches).1, clientPort)
     }
   }
 
@@ -1653,7 +1688,12 @@ final class HTTP2TransportTests: XCTestCase {
       serverAddress: .unixDomainSocket(path: path)
     ) { control, _, _ in
       let peerInfo = try await control.peerInfo()
-      XCTAssertEqual(peerInfo, "unix:peer-info-uds")
+
+      XCTAssertNotNil(peerInfo.server.remote.wholeMatch(of: /unix:peer-info-uds/))
+      XCTAssertNotNil(peerInfo.server.local.wholeMatch(of: /unix:peer-info-uds/))
+
+      XCTAssertNotNil(peerInfo.client.remote.wholeMatch(of: /unix:peer-info-uds/))
+      XCTAssertNotNil(peerInfo.client.local.wholeMatch(of: /unix:peer-info-uds/))
     }
   }
 }
