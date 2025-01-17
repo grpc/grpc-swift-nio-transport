@@ -61,25 +61,32 @@ extension HTTP2ServerTransport {
           try await bootstrap
           .serverChannelOption(.socketOption(.so_reuseaddr), value: 1)
           .serverChannelInitializer { channel in
-            return channel.eventLoop.makeCompletedFuture {
+            channel.eventLoop.makeCompletedFuture {
               let quiescingHandler = serverQuiescingHelper.makeServerChannelHandler(
                 channel: channel
               )
-              return try channel.pipeline.syncOperations.addHandler(quiescingHandler)
-            }
+              try channel.pipeline.syncOperations.addHandler(quiescingHandler)
+            }.runInitializerIfSet(
+              self.config.channelDebuggingCallbacks.onBindTCPListener,
+              on: channel
+            )
           }
           .bind(to: address) { channel in
-            channel.eventLoop.makeCompletedFuture {
-              return try channel.pipeline.syncOperations.configureGRPCServerPipeline(
+            return channel.eventLoop.makeCompletedFuture {
+              try channel.pipeline.syncOperations.configureGRPCServerPipeline(
                 channel: channel,
                 compressionConfig: self.config.compression,
                 connectionConfig: self.config.connection,
                 http2Config: self.config.http2,
                 rpcConfig: self.config.rpc,
+                debugConfig: self.config.channelDebuggingCallbacks,
                 requireALPN: requireALPN,
                 scheme: scheme
               )
-            }
+            }.runInitializerIfSet(
+              self.config.channelDebuggingCallbacks.onAcceptTCPConnection,
+              on: channel
+            )
           }
 
         return serverChannel
@@ -154,22 +161,30 @@ extension HTTP2ServerTransport.TransportServices {
     /// RPC configuration.
     public var rpc: HTTP2ServerTransport.Config.RPC
 
+    /// Channel callbacks for debugging.
+    public var channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
+
     /// Construct a new `Config`.
     /// - Parameters:
     ///   - compression: Compression configuration.
     ///   - connection: Connection configuration.
     ///   - http2: HTTP2 configuration.
     ///   - rpc: RPC configuration.
+    ///   - channelDebuggingCallbacks: Channel callbacks for debugging.
+    ///
+    /// - SeeAlso: ``defaults(configure:)`` and ``defaults``.
     public init(
       compression: HTTP2ServerTransport.Config.Compression,
       connection: HTTP2ServerTransport.Config.Connection,
       http2: HTTP2ServerTransport.Config.HTTP2,
-      rpc: HTTP2ServerTransport.Config.RPC
+      rpc: HTTP2ServerTransport.Config.RPC,
+      channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
     ) {
       self.compression = compression
       self.connection = connection
       self.http2 = http2
       self.rpc = rpc
+      self.channelDebuggingCallbacks = channelDebuggingCallbacks
     }
 
     public static var defaults: Self {
@@ -187,7 +202,8 @@ extension HTTP2ServerTransport.TransportServices {
         compression: .defaults,
         connection: .defaults,
         http2: .defaults,
-        rpc: .defaults
+        rpc: .defaults,
+        channelDebuggingCallbacks: .defaults
       )
       configure(&config)
       return config

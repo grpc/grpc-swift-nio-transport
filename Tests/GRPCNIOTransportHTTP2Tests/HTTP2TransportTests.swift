@@ -23,22 +23,8 @@ import XCTest
 final class HTTP2TransportTests: XCTestCase {
   // A combination of client and server transport kinds.
   struct Transport: Sendable, CustomStringConvertible {
-    var server: Kind
-    var client: Kind
-
-    enum Kind: Sendable, CustomStringConvertible {
-      case posix
-      case niots
-
-      var description: String {
-        switch self {
-        case .posix:
-          return "NIOPosix"
-        case .niots:
-          return "NIOTS"
-        }
-      }
-    }
+    var server: TransportKind
+    var client: TransportKind
 
     var description: String {
       "server=\(self.server) client=\(self.client)"
@@ -105,8 +91,8 @@ final class HTTP2TransportTests: XCTestCase {
   }
 
   func forEachClientAndHTTPStatusCodeServer(
-    _ kind: [Transport.Kind] = [.posix, .niots],
-    _ execute: (ControlClient<NIOClientTransport>, Transport.Kind) async throws -> Void
+    _ kind: [TransportKind] = TransportKind.supported,
+    _ execute: (ControlClient<NIOClientTransport>, TransportKind) async throws -> Void
   ) async throws {
     for clientKind in kind {
       try await withThrowingTaskGroup(of: Void.self) { group in
@@ -141,7 +127,7 @@ final class HTTP2TransportTests: XCTestCase {
   private func runServer(
     in group: inout ThrowingTaskGroup<Void, any Error>,
     address: SocketAddress,
-    kind: Transport.Kind,
+    kind: TransportKind,
     enableControlService: Bool,
     compression: CompressionAlgorithmSet
   ) async throws -> (GRPCServer<NIOServerTransport>, GRPCNIOTransportCore.SocketAddress) {
@@ -169,8 +155,8 @@ final class HTTP2TransportTests: XCTestCase {
       let address = try await server.listeningAddress!
       return (server, address)
 
-    case .niots:
-      #if canImport(Network)
+    #if canImport(Network)
+    case .transportServices:
       let server = GRPCServer(
         transport: NIOServerTransport(
           .http2NIOTS(
@@ -190,14 +176,12 @@ final class HTTP2TransportTests: XCTestCase {
 
       let address = try await server.listeningAddress!
       return (server, address)
-      #else
-      throw XCTSkip("Transport not supported on this platform")
-      #endif
+    #endif
     }
   }
 
   private func makeClient(
-    kind: Transport.Kind,
+    kind: TransportKind,
     target: any ResolvableTarget,
     compression: CompressionAlgorithm,
     enabledCompression: CompressionAlgorithmSet
@@ -219,8 +203,8 @@ final class HTTP2TransportTests: XCTestCase {
       )
       transport = NIOClientTransport(posix)
 
-    case .niots:
-      #if canImport(Network)
+    #if canImport(Network)
+    case .transportServices:
       var serviceConfig = ServiceConfig()
       serviceConfig.loadBalancingConfig = [.roundRobin]
       let transportServices = try HTTP2ClientTransport.TransportServices(
@@ -233,9 +217,7 @@ final class HTTP2TransportTests: XCTestCase {
         serviceConfig: serviceConfig
       )
       transport = NIOClientTransport(transportServices)
-      #else
-      throw XCTSkip("Transport not supported on this platform")
-      #endif
+    #endif
     }
 
     return GRPCClient(transport: transport, interceptors: [PeerInfoClientInterceptor()])
@@ -1699,12 +1681,11 @@ final class HTTP2TransportTests: XCTestCase {
 }
 
 extension [HTTP2TransportTests.Transport] {
-  static let supported = [
-    HTTP2TransportTests.Transport(server: .posix, client: .posix),
-    HTTP2TransportTests.Transport(server: .niots, client: .niots),
-    HTTP2TransportTests.Transport(server: .niots, client: .posix),
-    HTTP2TransportTests.Transport(server: .posix, client: .niots),
-  ]
+  static let supported: [HTTP2TransportTests.Transport] = TransportKind.allCases.flatMap { server in
+    TransportKind.allCases.map { client in
+      HTTP2TransportTests.Transport(server: server, client: client)
+    }
+  }
 }
 
 extension ControlInput {

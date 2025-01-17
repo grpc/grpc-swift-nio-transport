@@ -135,7 +135,12 @@ struct NIOPosixConnector: HTTP2Connector {
           wrappingChannelSynchronously: channel
         )
 
-        return HTTP2Connection(channel: asyncChannel, multiplexer: multiplexer, isPlaintext: true)
+        return HTTP2Connection(
+          channel: asyncChannel,
+          multiplexer: multiplexer,
+          isPlaintext: true,
+          onCreateHTTP2Stream: nil
+        )
       }
     }
   }

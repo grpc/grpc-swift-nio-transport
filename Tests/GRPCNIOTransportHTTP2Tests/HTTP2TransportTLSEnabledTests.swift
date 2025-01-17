@@ -233,21 +233,6 @@ struct HTTP2TransportTLSEnabledTests {
     case clientError(cause: any Error)
   }
 
-  enum TransportKind: Sendable {
-    case posix
-    #if canImport(Network)
-    case transportServices
-    #endif
-
-    static var supported: [TransportKind] {
-      #if canImport(Network)
-      return [.posix, .transportServices]
-      #else
-      return [.posix]
-      #endif
-    }
-  }
-
   struct Config<Transport, Security> {
     var security: Security
     var transport: Transport
