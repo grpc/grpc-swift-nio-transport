@@ -111,7 +111,10 @@ struct InteroperabilityTestsExecutable: AsyncParsableCommand {
       }
     }
 
-    private func buildClient(host: String, port: Int) throws -> GRPCClient<HTTP2ClientTransport.Posix> {
+    private func buildClient(
+      host: String,
+      port: Int
+    ) throws -> GRPCClient<HTTP2ClientTransport.Posix> {
       let serviceConfig = ServiceConfig(loadBalancingConfig: [.roundRobin])
       return GRPCClient(
         transport: try .http2NIOPosix(
