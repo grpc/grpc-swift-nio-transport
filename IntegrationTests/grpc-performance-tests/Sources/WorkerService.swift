@@ -37,7 +37,7 @@ final class WorkerService: Sendable {
     }
 
     struct Server {
-      var server: GRPCServer
+      var server: GRPCServer<HTTP2ServerTransport.Posix>
       var stats: ServerStats
       var eventLoopGroup: MultiThreadedEventLoopGroup
     }
@@ -96,7 +96,7 @@ final class WorkerService: Sendable {
     }
 
     mutating func startedServer(
-      _ server: GRPCServer,
+      _ server: GRPCServer<HTTP2ServerTransport.Posix>,
       stats: ServerStats,
       eventLoopGroup: MultiThreadedEventLoopGroup
     ) -> OnStartedServer {
@@ -167,7 +167,7 @@ final class WorkerService: Sendable {
     }
 
     enum OnStopListening {
-      case stopListening(GRPCServer)
+      case stopListening(GRPCServer<HTTP2ServerTransport.Posix>)
       case nothing
     }
 
@@ -200,7 +200,7 @@ final class WorkerService: Sendable {
     }
 
     enum OnQuitWorker {
-      case shutDownServer(GRPCServer)
+      case shutDownServer(GRPCServer<HTTP2ServerTransport.Posix>)
       case shutDownClients([BenchmarkClient])
       case nothing
     }
@@ -377,7 +377,7 @@ extension WorkerService: Grpc_Testing_WorkerService.ServiceProtocol {
 extension WorkerService {
   private func startServer(
     _ serverConfig: Grpc_Testing_ServerConfig
-  ) async throws -> (GRPCServer, HTTP2ServerTransport.Posix) {
+  ) async throws -> (GRPCServer<HTTP2ServerTransport.Posix>, HTTP2ServerTransport.Posix) {
     // Prepare an ELG, the test might require more than the default of one.
     let numberOfThreads: Int
     if serverConfig.asyncServerThreads > 0 {

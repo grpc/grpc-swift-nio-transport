@@ -16,6 +16,7 @@
 
 import Foundation
 import GRPCCore
+import GRPCNIOTransportHTTP2
 import NIOConcurrencyHelpers
 import Synchronization
 
@@ -29,7 +30,7 @@ final class BenchmarkClient: Sendable {
   }
 
   /// The underlying client.
-  private let client: GRPCClient
+  private let client: GRPCClient<HTTP2ClientTransport.Posix>
 
   /// The number of concurrent RPCs to run.
   private let concurrentRPCs: Int
@@ -49,7 +50,7 @@ final class BenchmarkClient: Sendable {
   private let rpcStats: NIOLockedValueBox<RPCStats>
 
   init(
-    client: GRPCClient,
+    client: GRPCClient<HTTP2ClientTransport.Posix>,
     concurrentRPCs: Int,
     rpcType: RPCType,
     messagesPerStream: Int,
@@ -96,7 +97,7 @@ final class BenchmarkClient: Sendable {
     return try await withThrowingTaskGroup(of: Void.self) { clientGroup in
       // Start the client.
       clientGroup.addTask {
-        try await self.client.run()
+        try await self.client.runConnections()
       }
 
       try await withThrowingTaskGroup(of: Void.self) { rpcsGroup in
@@ -148,7 +149,9 @@ final class BenchmarkClient: Sendable {
     return (result, nanoseconds: Double(endTime - startTime))
   }
 
-  private func unary(benchmark: Grpc_Testing_BenchmarkService.Client) async {
+  private func unary(
+    benchmark: Grpc_Testing_BenchmarkService.Client<HTTP2ClientTransport.Posix>
+  ) async {
     let (errorCode, nanoseconds): (RPCError.Code?, Double) = await self.timeIt {
       do {
         try await benchmark.unaryCall(request: ClientRequest(message: self.message)) {
@@ -165,7 +168,9 @@ final class BenchmarkClient: Sendable {
     self.record(latencyNanos: nanoseconds, errorCode: errorCode)
   }
 
-  private func streaming(benchmark: Grpc_Testing_BenchmarkService.Client) async {
+  private func streaming(
+    benchmark: Grpc_Testing_BenchmarkService.Client<HTTP2ClientTransport.Posix>
+  ) async {
     // Streaming RPCs ping-pong messages back and forth. To achieve this the response message
     // stream is sent to the request closure, and the request closure indicates the outcome back
     // to the response handler to keep the RPC alive for the appropriate amount of time.
