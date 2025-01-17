@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-internal import CGRPCZlib
+internal import CGRPCNIOTransportZlib
 internal import GRPCCore
 internal import NIOCore
 
@@ -60,9 +60,9 @@ extension Zlib {
     /// - Parameter output: The `ByteBuffer` into which the compressed message should be written.
     /// - Returns: The number of bytes written into the `output` buffer.
     @discardableResult
-    func compress(_ input: [UInt8], into output: inout ByteBuffer) throws(ZlibError) -> Int {
+    func compress(_ input: ByteBuffer, into output: inout ByteBuffer) throws(ZlibError) -> Int {
       defer { self.reset() }
-      let upperBound = self.stream.deflateBound(inputBytes: input.count)
+      let upperBound = self.stream.deflateBound(inputBytes: input.readableBytes)
       return try self.stream.deflate(input, into: &output, upperBound: upperBound)
     }
 
@@ -110,7 +110,7 @@ extension Zlib {
     /// - Parameters:
     ///   - input: The buffer read compressed bytes from.
     ///   - limit: The largest size a decompressed payload may be.
-    func decompress(_ input: inout ByteBuffer, limit: Int) throws -> [UInt8] {
+    func decompress(_ input: inout ByteBuffer, limit: Int) throws -> ByteBuffer {
       defer { self.reset() }
       return try self.stream.inflate(input: &input, limit: limit)
     }
@@ -152,7 +152,7 @@ extension UnsafeMutablePointer<z_stream> {
     self.pointee.zalloc = nil
     self.pointee.opaque = nil
 
-    let rc = CGRPCZlib_inflateInit2(self, windowBits)
+    let rc = CGRPCNIOTransportZlib_inflateInit2(self, windowBits)
     // Possible return codes:
     // - Z_OK
     // - Z_MEM_ERROR: not enough memory
@@ -163,7 +163,7 @@ extension UnsafeMutablePointer<z_stream> {
   }
 
   func inflateReset() throws {
-    let rc = CGRPCZlib_inflateReset(self)
+    let rc = CGRPCNIOTransportZlib_inflateReset(self)
 
     // Possible return codes:
     // - Z_OK
@@ -179,7 +179,7 @@ extension UnsafeMutablePointer<z_stream> {
   }
 
   func inflateEnd() {
-    _ = CGRPCZlib_inflateEnd(self)
+    _ = CGRPCNIOTransportZlib_inflateEnd(self)
   }
 
   func deflateInit(windowBits: Int32) {
@@ -187,7 +187,7 @@ extension UnsafeMutablePointer<z_stream> {
     self.pointee.zalloc = nil
     self.pointee.opaque = nil
 
-    let rc = CGRPCZlib_deflateInit2(
+    let rc = CGRPCNIOTransportZlib_deflateInit2(
       self,
       Z_DEFAULT_COMPRESSION,  // compression level
       Z_DEFLATED,  // compression method (this must be Z_DEFLATED)
@@ -207,7 +207,7 @@ extension UnsafeMutablePointer<z_stream> {
   }
 
   func deflateReset() throws {
-    let rc = CGRPCZlib_deflateReset(self)
+    let rc = CGRPCNIOTransportZlib_deflateReset(self)
 
     // Possible return codes:
     // - Z_OK
@@ -223,11 +223,11 @@ extension UnsafeMutablePointer<z_stream> {
   }
 
   func deflateEnd() {
-    _ = CGRPCZlib_deflateEnd(self)
+    _ = CGRPCNIOTransportZlib_deflateEnd(self)
   }
 
   func deflateBound(inputBytes: Int) -> Int {
-    let bound = CGRPCZlib_deflateBound(self, UInt(inputBytes))
+    let bound = CGRPCNIOTransportZlib_deflateBound(self, UInt(inputBytes))
     return Int(bound)
   }
 
@@ -243,7 +243,7 @@ extension UnsafeMutablePointer<z_stream> {
 
   func setNextInputBuffer(_ buffer: UnsafeMutableRawBufferPointer?) {
     if let buffer = buffer, let baseAddress = buffer.baseAddress {
-      self.pointee.next_in = CGRPCZlib_castVoidToBytefPointer(baseAddress)
+      self.pointee.next_in = CGRPCNIOTransportZlib_castVoidToBytefPointer(baseAddress)
       self.pointee.avail_in = UInt32(buffer.count)
     } else {
       self.pointee.next_in = nil
@@ -263,7 +263,7 @@ extension UnsafeMutablePointer<z_stream> {
 
   func setNextOutputBuffer(_ buffer: UnsafeMutableRawBufferPointer?) {
     if let buffer = buffer, let baseAddress = buffer.baseAddress {
-      self.pointee.next_out = CGRPCZlib_castVoidToBytefPointer(baseAddress)
+      self.pointee.next_out = CGRPCNIOTransportZlib_castVoidToBytefPointer(baseAddress)
       self.pointee.avail_out = UInt32(buffer.count)
     } else {
       self.pointee.next_out = nil
@@ -302,8 +302,8 @@ extension UnsafeMutablePointer<z_stream> {
     self.pointee.msg.map { String(cString: $0) }
   }
 
-  func inflate(input: inout ByteBuffer, limit: Int) throws -> [UInt8] {
-    return try input.readWithUnsafeMutableReadableBytes { inputPointer in
+  func inflate(input: inout ByteBuffer, limit: Int) throws -> ByteBuffer {
+    return try input.readWithUnsafeMutableReadableBytes { inputPointer -> (Int, ByteBuffer) in
       self.setNextInputBuffer(inputPointer)
       defer {
         self.setNextInputBuffer(nil)
@@ -311,14 +311,20 @@ extension UnsafeMutablePointer<z_stream> {
       }
 
       // Assume the output will be twice as large as the input.
-      var output = [UInt8](repeating: 0, count: min(inputPointer.count * 2, limit))
-      var offset = 0
+      var output = ByteBuffer()
+      var outputSize = min(inputPointer.count * 2, limit)
+      var finished = false
+      var totalBytesWritten = 0
 
       while true {
-        let (finished, written) = try output[offset...].withUnsafeMutableBytes { outPointer in
+        let written = try output.writeWithUnsafeMutableBytes(
+          minimumWritableBytes: outputSize
+        ) { pointer in
+          let outPointer = UnsafeMutableRawBufferPointer(
+            start: pointer.baseAddress,
+            count: min(pointer.count, outputSize)
+          )
           self.setNextOutputBuffer(outPointer)
-
-          let finished: Bool
 
           // Possible return codes:
           // - Z_OK: some progress has been made
@@ -333,7 +339,7 @@ extension UnsafeMutablePointer<z_stream> {
           //
           // Note that Z_OK is not okay here since we always flush with Z_FINISH and therefore
           // use Z_STREAM_END as our success criteria.
-          let rc = CGRPCZlib_inflate(self, Z_FINISH)
+          let rc = CGRPCNIOTransportZlib_inflate(self, Z_FINISH)
           switch rc {
           case Z_STREAM_END:
             finished = true
@@ -347,29 +353,29 @@ extension UnsafeMutablePointer<z_stream> {
             )
           }
 
-          let size = outPointer.count - self.availableOutputBytes
-          return (finished, size)
+          return outPointer.count - self.availableOutputBytes
         }
 
         if finished {
-          output.removeLast(output.count - self.totalOutputBytes)
           let bytesRead = inputPointer.count - self.availableInputBytes
           return (bytesRead, output)
         } else {
-          offset += written
-          let newSize = min(output.count * 2, limit)
-          if newSize == output.count {
+          // There are still more bytes to decompress. Increase the size of the extra space in the
+          // buffer we're writing into.
+          totalBytesWritten += written
+          let newSize = min(outputSize * 2, limit - totalBytesWritten)
+          if newSize <= 0 {
+            assert(newSize == 0)
             throw RPCError(code: .resourceExhausted, message: "Message is too large to decompress.")
-          } else {
-            output.append(contentsOf: repeatElement(0, count: newSize - output.count))
           }
+          outputSize = newSize
         }
       }
     }
   }
 
   func deflate(
-    _ input: [UInt8],
+    _ input: ByteBuffer,
     into output: inout ByteBuffer,
     upperBound: Int
   ) throws(ZlibError) -> Int {
@@ -380,13 +386,13 @@ extension UnsafeMutablePointer<z_stream> {
 
     do {
       var input = input
-      return try input.withUnsafeMutableBytes { input in
+      return try input.withUnsafeMutableReadableBytes { input in
         self.setNextInputBuffer(input)
 
         return try output.writeWithUnsafeMutableBytes(minimumWritableBytes: upperBound) { output in
           self.setNextOutputBuffer(output)
 
-          let rc = CGRPCZlib_deflate(self, Z_FINISH)
+          let rc = CGRPCNIOTransportZlib_deflate(self, Z_FINISH)
 
           // Possible return codes:
           // - Z_OK: some progress has been made

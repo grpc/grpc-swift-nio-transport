@@ -29,6 +29,8 @@ private import Synchronization
 extension HTTP2ServerTransport {
   /// A NIO Transport Services-backed implementation of a server transport.
   public struct TransportServices: ServerTransport, ListeningServerTransport {
+    public typealias Bytes = GRPCNIOTransportBytes
+
     private struct ListenerFactory: HTTP2ListenerFactory {
       let config: Config
       let transportSecurity: TransportSecurity

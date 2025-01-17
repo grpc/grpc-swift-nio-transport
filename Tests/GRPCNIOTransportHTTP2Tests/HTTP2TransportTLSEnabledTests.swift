@@ -475,7 +475,7 @@ struct HTTP2TransportTLSEnabledTests {
   func withClientAndServer(
     clientConfig: ClientConfig,
     serverConfig: ServerConfig,
-    _ test: (ControlClient) async throws -> Void
+    _ test: (ControlClient<NIOClientTransport>) async throws -> Void
   ) async throws {
     try await withThrowingDiscardingTaskGroup { group in
       let server = self.makeServer(config: serverConfig)
@@ -497,7 +497,7 @@ struct HTTP2TransportTLSEnabledTests {
 
       group.addTask {
         do {
-          try await client.run()
+          try await client.runConnections()
         } catch {
           throw TLSEnabledTestsError.clientError(cause: error)
         }
@@ -511,16 +511,18 @@ struct HTTP2TransportTLSEnabledTests {
     }
   }
 
-  private func makeServer(config: ServerConfig) -> GRPCServer {
+  private func makeServer(config: ServerConfig) -> GRPCServer<NIOServerTransport> {
     let services = [ControlService()]
 
     switch config {
     case .posix(let config):
       return GRPCServer(
-        transport: .http2NIOPosix(
-          address: .ipv4(host: "127.0.0.1", port: 0),
-          transportSecurity: config.security,
-          config: config.transport
+        transport: NIOServerTransport(
+          .http2NIOPosix(
+            address: .ipv4(host: "127.0.0.1", port: 0),
+            transportSecurity: config.security,
+            config: config.transport
+          )
         ),
         services: services
       )
@@ -528,10 +530,12 @@ struct HTTP2TransportTLSEnabledTests {
     #if canImport(Network)
     case .transportServices(let config):
       return GRPCServer(
-        transport: .http2NIOTS(
-          address: .ipv4(host: "127.0.0.1", port: 0),
-          transportSecurity: config.security,
-          config: config.transport
+        transport: NIOServerTransport(
+          .http2NIOTS(
+            address: .ipv4(host: "127.0.0.1", port: 0),
+            transportSecurity: config.security,
+            config: config.transport
+          )
         ),
         services: services
       )
@@ -542,33 +546,32 @@ struct HTTP2TransportTLSEnabledTests {
   private func makeClient(
     config: ClientConfig,
     target: any ResolvableTarget
-  ) throws -> GRPCClient {
-    let transport: any ClientTransport
-
+  ) throws -> GRPCClient<NIOClientTransport> {
     switch config {
     case .posix(let config):
-      transport = try HTTP2ClientTransport.Posix(
+      let transport = try HTTP2ClientTransport.Posix(
         target: target,
         transportSecurity: config.security,
         config: config.transport,
         serviceConfig: ServiceConfig()
       )
+      return GRPCClient(transport: NIOClientTransport(transport))
 
     #if canImport(Network)
     case .transportServices(let config):
-      transport = try HTTP2ClientTransport.TransportServices(
+      let transport = try HTTP2ClientTransport.TransportServices(
         target: target,
         transportSecurity: config.security,
         config: config.transport,
         serviceConfig: ServiceConfig()
       )
+      return GRPCClient(transport: NIOClientTransport(transport))
     #endif
     }
 
-    return GRPCClient(transport: transport)
   }
 
-  private func executeUnaryRPC(control: ControlClient) async throws {
+  private func executeUnaryRPC(control: ControlClient<NIOClientTransport>) async throws {
     let input = ControlInput.with { $0.numberOfMessages = 1 }
     let request = ClientRequest(message: input)
     try await control.unary(request: request) { response in

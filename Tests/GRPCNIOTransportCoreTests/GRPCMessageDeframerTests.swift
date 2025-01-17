@@ -43,7 +43,7 @@ final class GRPCMessageDeframerTests: XCTestCase {
       0x0, 0x0, 0x0, 0x0,  // Length (0)
     ]
     deframer.append(ByteBuffer(bytes: bytes))
-    XCTAssertEqual(try deframer.decodeNext(), [])
+    XCTAssertEqual(try deframer.decodeNext(), ByteBuffer())
   }
 
   func testDecodeMessage() {
@@ -54,7 +54,7 @@ final class GRPCMessageDeframerTests: XCTestCase {
       0xf,  // Payload
     ]
     deframer.append(ByteBuffer(bytes: bytes))
-    XCTAssertEqual(try deframer.decodeNext(), [0xf])
+    XCTAssertEqual(try deframer.decodeNext(), ByteBuffer(bytes: [0xf]))
   }
 
   func testDripFeedAndDecode() {
@@ -71,7 +71,7 @@ final class GRPCMessageDeframerTests: XCTestCase {
 
     // Drip feed the last byte.
     deframer.append(ByteBuffer(bytes: [0xf]))
-    XCTAssertEqual(try deframer.decodeNext(), [0xf])
+    XCTAssertEqual(try deframer.decodeNext(), ByteBuffer(bytes: [0xf]))
   }
 
   func testReadBytesAreDiscarded() throws {
@@ -90,7 +90,7 @@ final class GRPCMessageDeframerTests: XCTestCase {
     XCTAssertEqual(deframer._readerIndex, 0)
 
     let message1 = try deframer.decodeNext()
-    XCTAssertEqual(message1, Array(repeating: 42, count: 1024))
+    XCTAssertEqual(message1, ByteBuffer(repeating: 42, count: 1024))
     XCTAssertNotEqual(deframer._readerIndex, 0)
 
     // Append the final byte. This should discard any read bytes and set the reader index back
@@ -100,7 +100,7 @@ final class GRPCMessageDeframerTests: XCTestCase {
 
     // Read the message
     let message2 = try deframer.decodeNext()
-    XCTAssertEqual(message2, Array(repeating: 43, count: 1024))
+    XCTAssertEqual(message2, ByteBuffer(repeating: 43, count: 1024))
     XCTAssertNotEqual(deframer._readerIndex, 0)
   }
 }

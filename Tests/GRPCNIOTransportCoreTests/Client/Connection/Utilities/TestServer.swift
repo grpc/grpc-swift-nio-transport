@@ -25,13 +25,15 @@ import XCTest
 
 final class TestServer: Sendable {
   private let eventLoopGroup: any EventLoopGroup
-  private typealias Stream = NIOAsyncChannel<RPCRequestPart, RPCResponsePart>
+  private typealias Stream = NIOAsyncChannel<
+    RPCRequestPart<GRPCNIOTransportBytes>, RPCResponsePart<GRPCNIOTransportBytes>
+  >
   private typealias Multiplexer = NIOHTTP2AsyncSequence<Stream>
 
   private let connected: Mutex<[any Channel]>
 
-  typealias Inbound = NIOAsyncChannelInboundStream<RPCRequestPart>
-  typealias Outbound = NIOAsyncChannelOutboundWriter<RPCResponsePart>
+  typealias Inbound = NIOAsyncChannelInboundStream<RPCRequestPart<GRPCNIOTransportBytes>>
+  typealias Outbound = NIOAsyncChannelOutboundWriter<RPCResponsePart<GRPCNIOTransportBytes>>
 
   private let server: Mutex<NIOAsyncChannel<Multiplexer, Never>?>
 
@@ -94,8 +96,8 @@ final class TestServer: Sendable {
             return try NIOAsyncChannel(
               wrappingChannelSynchronously: stream,
               configuration: .init(
-                inboundType: RPCRequestPart.self,
-                outboundType: RPCResponsePart.self
+                inboundType: RPCRequestPart<GRPCNIOTransportBytes>.self,
+                outboundType: RPCResponsePart<GRPCNIOTransportBytes>.self
               )
             )
           }

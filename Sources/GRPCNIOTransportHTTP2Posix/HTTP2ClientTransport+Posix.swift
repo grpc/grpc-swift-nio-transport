@@ -56,6 +56,8 @@ extension HTTP2ClientTransport {
   /// }
   /// ```
   public struct Posix: ClientTransport {
+    public typealias Bytes = GRPCNIOTransportBytes
+
     private let channel: GRPCChannel
 
     /// Creates a new NIOPosix-based HTTP/2 client transport.
@@ -105,7 +107,7 @@ extension HTTP2ClientTransport {
       self.channel.retryThrottle
     }
 
-    public func connect() async {
+    public func connect() async throws {
       await self.channel.connect()
     }
 
@@ -120,7 +122,7 @@ extension HTTP2ClientTransport {
     public func withStream<T: Sendable>(
       descriptor: MethodDescriptor,
       options: CallOptions,
-      _ closure: (RPCStream<Inbound, Outbound>) async throws -> T
+      _ closure: (RPCStream<Inbound, Outbound>, ClientContext) async throws -> T
     ) async throws -> T {
       try await self.channel.withStream(descriptor: descriptor, options: options, closure)
     }

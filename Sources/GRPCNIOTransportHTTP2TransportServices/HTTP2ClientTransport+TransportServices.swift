@@ -58,6 +58,8 @@ extension HTTP2ClientTransport {
   /// }
   /// ```
   public struct TransportServices: ClientTransport {
+    public typealias Bytes = GRPCNIOTransportBytes
+
     private let channel: GRPCChannel
 
     public var retryThrottle: RetryThrottle? {
@@ -118,7 +120,7 @@ extension HTTP2ClientTransport {
     public func withStream<T: Sendable>(
       descriptor: MethodDescriptor,
       options: CallOptions,
-      _ closure: (RPCStream<Inbound, Outbound>) async throws -> T
+      _ closure: (RPCStream<Inbound, Outbound>, ClientContext) async throws -> T
     ) async throws -> T {
       try await self.channel.withStream(descriptor: descriptor, options: options, closure)
     }

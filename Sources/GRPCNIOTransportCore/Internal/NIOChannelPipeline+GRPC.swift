@@ -22,7 +22,13 @@ package import NIOHTTP2
 extension ChannelPipeline.SynchronousOperations {
   package typealias HTTP2ConnectionChannel = NIOAsyncChannel<HTTP2Frame, HTTP2Frame>
   package typealias HTTP2StreamMultiplexer = NIOHTTP2Handler.AsyncStreamMultiplexer<
-    (NIOAsyncChannel<RPCRequestPart, RPCResponsePart>, EventLoopFuture<MethodDescriptor>)
+    (
+      NIOAsyncChannel<
+        RPCRequestPart<GRPCNIOTransportBytes>,
+        RPCResponsePart<GRPCNIOTransportBytes>
+      >,
+      EventLoopFuture<MethodDescriptor>
+    )
   >
 
   package func configureGRPCServerPipeline(
@@ -96,8 +102,12 @@ extension ChannelPipeline.SynchronousOperations {
         )
         try streamChannel.pipeline.syncOperations.addHandler(streamHandler)
 
-        let asyncStreamChannel = try NIOAsyncChannel<RPCRequestPart, RPCResponsePart>(
-          wrappingChannelSynchronously: streamChannel
+        let asyncStreamChannel = try NIOAsyncChannel(
+          wrappingChannelSynchronously: streamChannel,
+          configuration: NIOAsyncChannel.Configuration(
+            inboundType: RPCRequestPart<GRPCNIOTransportBytes>.self,
+            outboundType: RPCResponsePart<GRPCNIOTransportBytes>.self
+          )
         )
         return (asyncStreamChannel, methodDescriptorPromise.futureResult)
       }.runCallbackIfSet(

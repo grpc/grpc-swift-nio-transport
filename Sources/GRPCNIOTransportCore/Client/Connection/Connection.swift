@@ -202,10 +202,16 @@ package final class Connection: Sendable {
     descriptor: MethodDescriptor,
     options: CallOptions
   ) async throws -> Stream {
-    let (multiplexer, scheme, onCreateStream) = try self.state.withLock { state in
+    let (multiplexer, scheme, remotePeer, localPeer, onCreateStream) = try self.state.withLock { state in
       switch state {
       case .connected(let connected):
-        return (connected.multiplexer, connected.scheme, connected.onCreateHTTP2Stream)
+        return (
+          connected.multiplexer,
+          connected.scheme,
+          connected.remotePeer,
+          connected.localPeer,
+          connected.onCreateHTTP2Stream
+        )
       case .notConnected, .closing, .closed:
         throw RPCError(code: .unavailable, message: "subchannel isn't ready")
       }
@@ -239,8 +245,8 @@ package final class Connection: Sendable {
             wrappingChannelSynchronously: channel,
             configuration: NIOAsyncChannel.Configuration(
               isOutboundHalfClosureEnabled: true,
-              inboundType: RPCResponsePart.self,
-              outboundType: RPCRequestPart.self
+              inboundType: RPCResponsePart<GRPCNIOTransportBytes>.self,
+              outboundType: RPCRequestPart<GRPCNIOTransportBytes>.self
             )
           )
         }.runCallbackIfSet(
@@ -249,7 +255,13 @@ package final class Connection: Sendable {
         )
       }
 
-      return Stream(wrapping: stream, descriptor: descriptor)
+      let context = ClientContext(
+        descriptor: descriptor,
+        remotePeer: remotePeer,
+        localPeer: localPeer
+      )
+
+      return Stream(wrapping: stream, context: context)
     } catch {
       throw RPCError(code: .unavailable, message: "subchannel is unavailable", cause: error)
     }
@@ -386,23 +398,32 @@ package final class Connection: Sendable {
 
 extension Connection {
   package struct Stream {
-    package typealias Inbound = NIOAsyncChannelInboundStream<RPCResponsePart>
+    package typealias Inbound = NIOAsyncChannelInboundStream<RPCResponsePart<GRPCNIOTransportBytes>>
+
+    typealias RequestWriter = NIOAsyncChannelOutboundWriter<
+      RPCRequestPart<GRPCNIOTransportBytes>
+    >
+
+    typealias HTTP2Stream = NIOAsyncChannel<
+      RPCResponsePart<GRPCNIOTransportBytes>,
+      RPCRequestPart<GRPCNIOTransportBytes>
+    >
 
     package struct Outbound: ClosableRPCWriterProtocol {
-      package typealias Element = RPCRequestPart
+      package typealias Element = RPCRequestPart<GRPCNIOTransportBytes>
 
-      private let requestWriter: NIOAsyncChannelOutboundWriter<RPCRequestPart>
-      private let http2Stream: NIOAsyncChannel<RPCResponsePart, RPCRequestPart>
+      private let requestWriter: RequestWriter
+      private let http2Stream: HTTP2Stream
 
       fileprivate init(
-        requestWriter: NIOAsyncChannelOutboundWriter<RPCRequestPart>,
-        http2Stream: NIOAsyncChannel<RPCResponsePart, RPCRequestPart>
+        requestWriter: RequestWriter,
+        http2Stream: HTTP2Stream
       ) {
         self.requestWriter = requestWriter
         self.http2Stream = http2Stream
       }
 
-      package func write(_ element: RPCRequestPart) async throws {
+      package func write(_ element: RPCRequestPart<GRPCNIOTransportBytes>) async throws {
         try await self.requestWriter.write(element)
       }
 
@@ -420,16 +441,16 @@ extension Connection {
       }
     }
 
-    let descriptor: MethodDescriptor
+    let context: ClientContext
 
-    private let http2Stream: NIOAsyncChannel<RPCResponsePart, RPCRequestPart>
+    private let http2Stream: HTTP2Stream
 
     init(
-      wrapping stream: NIOAsyncChannel<RPCResponsePart, RPCRequestPart>,
-      descriptor: MethodDescriptor
+      wrapping stream: HTTP2Stream,
+      context: ClientContext
     ) {
       self.http2Stream = stream
-      self.descriptor = descriptor
+      self.context = context
     }
 
     package func execute<T>(
@@ -460,6 +481,10 @@ extension Connection {
     struct Connected: Sendable {
       /// The connection channel.
       var channel: NIOAsyncChannel<ClientConnectionEvent, Void>
+      /// The connection's remote peer information.
+      var remotePeer: String
+      /// The connection's local peer information.
+      var localPeer: String
       /// Multiplexer for creating HTTP/2 streams.
       var multiplexer: NIOHTTP2Handler.AsyncStreamMultiplexer<Void>
       /// Whether the connection is plaintext, `false` implies TLS is being used.
@@ -469,6 +494,8 @@ extension Connection {
 
       init(_ connection: HTTP2Connection) {
         self.channel = connection.channel
+        self.remotePeer = connection.channel.remoteAddressInfo
+        self.localPeer = connection.channel.localAddressInfo
         self.multiplexer = connection.multiplexer
         self.scheme = connection.isPlaintext ? .http : .https
         self.onCreateHTTP2Stream = connection.onCreateHTTP2Stream

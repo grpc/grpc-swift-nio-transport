@@ -26,7 +26,6 @@
 
 import GRPCCore
 import GRPCProtobuf
-import SwiftProtobuf
 
 // MARK: - grpc.testing.BenchmarkService
 
@@ -437,7 +436,7 @@ extension Grpc_Testing_BenchmarkService {
 
 // Default implementation of 'registerMethods(with:)'.
 extension Grpc_Testing_BenchmarkService.StreamingServiceProtocol {
-    internal func registerMethods(with router: inout GRPCCore.RPCRouter) {
+    internal func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
         router.registerHandler(
             forMethod: Grpc_Testing_BenchmarkService.Method.UnaryCall.descriptor,
             deserializer: GRPCProtobuf.ProtobufDeserializer<Grpc_Testing_SimpleRequest>(),
@@ -747,14 +746,14 @@ extension Grpc_Testing_BenchmarkService {
     /// The ``Client`` provides an implementation of ``ClientProtocol`` which wraps
     /// a `GRPCCore.GRPCCClient`. The underlying `GRPCClient` provides the long-lived
     /// means of communication with the remote peer.
-    internal struct Client: ClientProtocol {
-        private let client: GRPCCore.GRPCClient
+    internal struct Client<Transport>: ClientProtocol where Transport: GRPCCore.ClientTransport {
+        private let client: GRPCCore.GRPCClient<Transport>
 
         /// Creates a new client wrapping the provided `GRPCCore.GRPCClient`.
         ///
         /// - Parameters:
         ///   - client: A `GRPCCore.GRPCClient` providing a communication channel to the service.
-        internal init(wrapping client: GRPCCore.GRPCClient) {
+        internal init(wrapping client: GRPCCore.GRPCClient<Transport>) {
             self.client = client
         }
 

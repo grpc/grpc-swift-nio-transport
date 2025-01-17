@@ -35,11 +35,11 @@ let products: [Product] = [
 let dependencies: [Package.Dependency] = [
   .package(
     url: "https://github.com/grpc/grpc-swift.git",
-    exact: "2.0.0-beta.2"
+    branch: "main"
   ),
   .package(
     url: "https://github.com/apple/swift-nio.git",
-    from: "2.75.0"
+    from: "2.78.0"
   ),
   .package(
     url: "https://github.com/apple/swift-nio-http2.git",
@@ -73,7 +73,7 @@ let defaultSwiftSettings: [SwiftSetting] = [
 let targets: [Target] = [
   // C-module for z-lib shims
   .target(
-    name: "CGRPCZlib",
+    name: "CGRPCNIOTransportZlib",
     dependencies: [],
     linkerSettings: [
       .linkedLibrary("z")
@@ -88,7 +88,7 @@ let targets: [Target] = [
       .product(name: "NIOCore", package: "swift-nio"),
       .product(name: "NIOHTTP2", package: "swift-nio-http2"),
       .product(name: "NIOExtras", package: "swift-nio-extras"),
-      .target(name: "CGRPCZlib"),
+      .target(name: "CGRPCNIOTransportZlib"),
     ],
     swiftSettings: defaultSwiftSettings
   ),

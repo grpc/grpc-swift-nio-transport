@@ -133,10 +133,10 @@ final class ConnectionTests: XCTestCase {
         )
         try await stream.execute { inbound, outbound in
           try await outbound.write(.metadata(["foo": "bar", "bar": "baz"]))
-          try await outbound.write(.message([0, 1, 2]))
+          try await outbound.write(.message(GRPCNIOTransportBytes([0, 1, 2])))
           outbound.finish()
 
-          var parts = [RPCResponsePart]()
+          var parts = [RPCResponsePart<GRPCNIOTransportBytes>]()
           for try await part in inbound {
             switch part {
             case .metadata(let metadata):
@@ -147,9 +147,9 @@ final class ConnectionTests: XCTestCase {
             }
           }
 
-          let expected: [RPCResponsePart] = [
+          let expected: [RPCResponsePart<GRPCNIOTransportBytes>] = [
             .metadata(["foo": "bar", "bar": "baz"]),
-            .message([0, 1, 2]),
+            .message(GRPCNIOTransportBytes([0, 1, 2])),
             .status(Status(code: .ok, message: ""), [:]),
           ]
           XCTAssertEqual(parts, expected)
