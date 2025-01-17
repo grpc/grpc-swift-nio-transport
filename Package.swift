@@ -73,7 +73,7 @@ let defaultSwiftSettings: [SwiftSetting] = [
 let targets: [Target] = [
   // C-module for z-lib shims
   .target(
-    name: "CGRPCZlib",
+    name: "CGRPCNIOTransportZlib",
     dependencies: [],
     linkerSettings: [
       .linkedLibrary("z")
@@ -88,7 +88,7 @@ let targets: [Target] = [
       .product(name: "NIOCore", package: "swift-nio"),
       .product(name: "NIOHTTP2", package: "swift-nio-http2"),
       .product(name: "NIOExtras", package: "swift-nio-extras"),
-      .target(name: "CGRPCZlib"),
+      .target(name: "CGRPCNIOTransportZlib"),
     ],
     swiftSettings: defaultSwiftSettings
   ),

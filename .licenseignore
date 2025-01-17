@@ -38,5 +38,5 @@ dev/version-bump.commit.template
 IntegrationTests/grpc-performance-tests/Sources/Generated/*
 LICENSE
 **/*.swift
-Sources/CGRPCZlib/*
+Sources/CGRPCNIOTransportZlib/*
 dev/protos/**/*.proto
