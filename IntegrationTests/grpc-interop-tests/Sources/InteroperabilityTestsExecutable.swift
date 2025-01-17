@@ -96,7 +96,7 @@ struct InteroperabilityTestsExecutable: AsyncParsableCommand {
 
       try await withThrowingDiscardingTaskGroup { group in
         group.addTask {
-          try await client.run()
+          try await client.runConnections()
         }
 
         for testName in testNames {
@@ -111,7 +111,7 @@ struct InteroperabilityTestsExecutable: AsyncParsableCommand {
       }
     }
 
-    private func buildClient(host: String, port: Int) throws -> GRPCClient {
+    private func buildClient(host: String, port: Int) throws -> GRPCClient<HTTP2ClientTransport.Posix> {
       let serviceConfig = ServiceConfig(loadBalancingConfig: [.roundRobin])
       return GRPCClient(
         transport: try .http2NIOPosix(
@@ -127,7 +127,7 @@ struct InteroperabilityTestsExecutable: AsyncParsableCommand {
 
     private func runTest(
       _ testCase: InteroperabilityTestCase,
-      using client: GRPCClient
+      using client: GRPCClient<HTTP2ClientTransport.Posix>
     ) async {
       print("Running '\(testCase.name)' ... ", terminator: "")
       do {
