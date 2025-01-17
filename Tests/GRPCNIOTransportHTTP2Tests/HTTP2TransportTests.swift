@@ -84,7 +84,7 @@ final class HTTP2TransportTests: XCTestCase {
         )
 
         group.addTask {
-          try await client.run()
+          try await client.runConnections()
         }
 
         do {
@@ -119,7 +119,7 @@ final class HTTP2TransportTests: XCTestCase {
           enabledCompression: .none
         )
         group.addTask {
-          try await client.run()
+          try await client.runConnections()
         }
 
         do {
