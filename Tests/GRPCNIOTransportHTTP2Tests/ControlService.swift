@@ -65,11 +65,22 @@ struct ControlService: RegistrableRPCService {
     router.registerHandler(
       forMethod: MethodDescriptor(fullyQualifiedService: "Control", method: "PeerInfo"),
       deserializer: JSONDeserializer<String>(),
-      serializer: JSONSerializer<String>()
+      serializer: JSONSerializer<PeerInfoResponse>()
     ) { request, context in
       return StreamingServerResponse { response in
-        let info = try await self.peerInfo(context: context)
-        try await response.write(info)
+        let peerInfo = PeerInfoResponse(
+          client: PeerInfoResponse.PeerInfo(
+            local: clientLocalPeerInfo(request: request),
+            remote: clientRemotePeerInfo(request: request)
+          ),
+          server: PeerInfoResponse.PeerInfo(
+            local: serverLocalPeerInfo(context: context),
+            remote: serverRemotePeerInfo(context: context)
+          )
+        )
+
+        try await response.write(peerInfo)
+
         return [:]
       }
     }
@@ -101,8 +112,20 @@ extension ControlService {
     }
   }
 
-  private func peerInfo(context: ServerContext) async throws -> String {
-    return context.peer
+  private func serverRemotePeerInfo(context: ServerContext) -> String {
+    context.remotePeer
+  }
+
+  private func serverLocalPeerInfo(context: ServerContext) -> String {
+    context.localPeer
+  }
+
+  private func clientRemotePeerInfo<T>(request: StreamingServerRequest<T>) -> String {
+    request.metadata[stringValues: "remotePeer"].first(where: { _ in true })!
+  }
+
+  private func clientLocalPeerInfo<T>(request: StreamingServerRequest<T>) -> String {
+    request.metadata[stringValues: "localPeer"].first(where: { _ in true })!
   }
 
   private func handle(
@@ -235,6 +258,18 @@ extension ControlService {
   }
 }
 
+extension ControlService {
+  struct PeerInfoResponse: Codable {
+    struct PeerInfo: Codable {
+      var local: String
+      var remote: String
+    }
+
+    var client: PeerInfo
+    var server: PeerInfo
+  }
+}
+
 extension Metadata {
   fileprivate func echo() -> Self {
     var copy = Metadata()
@@ -264,3 +299,19 @@ private struct UnsafeTransfer<Wrapped> {
 }
 
 extension UnsafeTransfer: @unchecked Sendable {}
+
+struct PeerInfoClientInterceptor: ClientInterceptor {
+  func intercept<Input, Output>(
+    request: StreamingClientRequest<Input>,
+    context: ClientContext,
+    next: (
+      StreamingClientRequest<Input>,
+      ClientContext
+    ) async throws -> StreamingClientResponse<Output>
+  ) async throws -> StreamingClientResponse<Output> where Input: Sendable, Output: Sendable {
+    var request = request
+    request.metadata.addString(context.localPeer, forKey: "localPeer")
+    request.metadata.addString(context.remotePeer, forKey: "remotePeer")
+    return try await next(request, context)
+  }
+}
