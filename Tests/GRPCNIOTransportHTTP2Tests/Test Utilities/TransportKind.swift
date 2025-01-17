@@ -71,7 +71,7 @@ enum NIOClientTransport: ClientTransport {
   func withStream<T: Sendable>(
     descriptor: MethodDescriptor,
     options: CallOptions,
-    _ closure: (RPCStream<Inbound, Outbound>) async throws -> T
+    _ closure: (_ stream: RPCStream<Inbound, Outbound>, _ context: ClientContext) async throws -> T
   ) async throws -> T {
     switch self {
     case .posix(let transport):

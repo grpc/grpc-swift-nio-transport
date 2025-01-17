@@ -512,7 +512,7 @@ struct HTTP2TransportTLSEnabledTests {
 
       group.addTask {
         do {
-          try await client.run()
+          try await client.runConnections()
         } catch {
           throw TLSEnabledTestsError.clientError(cause: error)
         }
