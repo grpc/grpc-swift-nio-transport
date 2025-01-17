@@ -121,11 +121,11 @@ extension ControlService {
   }
 
   private func clientRemotePeerInfo<T>(request: StreamingServerRequest<T>) -> String {
-    request.metadata[stringValues: "remotePeer"].first(where: { _ in true })!
+    request.metadata[stringValues: "remotePeer"].first(where: { _ in true }) ?? "<missing>"
   }
 
   private func clientLocalPeerInfo<T>(request: StreamingServerRequest<T>) -> String {
-    request.metadata[stringValues: "localPeer"].first(where: { _ in true })!
+    request.metadata[stringValues: "localPeer"].first(where: { _ in true }) ?? "<missing>"
   }
 
   private func handle(

@@ -202,11 +202,13 @@ final class HTTP2TransportTests: XCTestCase {
     compression: CompressionAlgorithm,
     enabledCompression: CompressionAlgorithmSet
   ) throws -> GRPCClient<NIOClientTransport> {
+    let transport: NIOClientTransport
+
     switch kind {
     case .posix:
       var serviceConfig = ServiceConfig()
       serviceConfig.loadBalancingConfig = [.roundRobin]
-      let transport = try HTTP2ClientTransport.Posix(
+      let posix = try HTTP2ClientTransport.Posix(
         target: target,
         transportSecurity: .plaintext,
         config: .defaults {
@@ -215,13 +217,13 @@ final class HTTP2TransportTests: XCTestCase {
         },
         serviceConfig: serviceConfig
       )
-      return GRPCClient(transport: NIOClientTransport(transport))
+      transport = NIOClientTransport(posix)
 
     case .niots:
       #if canImport(Network)
       var serviceConfig = ServiceConfig()
       serviceConfig.loadBalancingConfig = [.roundRobin]
-      let transport = try HTTP2ClientTransport.TransportServices(
+      let transportServices = try HTTP2ClientTransport.TransportServices(
         target: target,
         transportSecurity: .plaintext,
         config: .defaults {
@@ -230,11 +232,13 @@ final class HTTP2TransportTests: XCTestCase {
         },
         serviceConfig: serviceConfig
       )
-      return GRPCClient(transport: NIOClientTransport(transport))
+      transport = NIOClientTransport(transportServices)
       #else
       throw XCTSkip("Transport not supported on this platform")
       #endif
     }
+
+    return GRPCClient(transport: transport, interceptors: [PeerInfoClientInterceptor()])
   }
 
   func testUnaryOK() async throws {
