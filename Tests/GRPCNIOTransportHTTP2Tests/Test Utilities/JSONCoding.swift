@@ -27,15 +27,17 @@ import class Foundation.JSONDecoder
 #endif
 
 struct JSONCoder<Message: Codable>: MessageSerializer, MessageDeserializer {
-  func serialize(_ message: Message) throws -> [UInt8] {
+  func serialize<Bytes: GRPCContiguousBytes>(_ message: Message) throws -> Bytes {
     let json = JSONEncoder()
-    let bytes = try json.encode(message)
-    return Array(bytes)
+    let data = try json.encode(message)
+    return Bytes(data)
   }
 
-  func deserialize(_ serializedMessageBytes: [UInt8]) throws -> Message {
+  func deserialize<Bytes: GRPCContiguousBytes>(_ serializedMessageBytes: Bytes) throws -> Message {
     let json = JSONDecoder()
-    let data = Data(serializedMessageBytes)
+    let data = serializedMessageBytes.withUnsafeBytes {
+      Data($0)
+    }
     return try json.decode(Message.self, from: data)
   }
 }

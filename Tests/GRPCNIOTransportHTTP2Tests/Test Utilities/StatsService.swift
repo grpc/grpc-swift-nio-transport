@@ -63,7 +63,7 @@ struct StatsService {
 }
 
 extension StatsService: RegistrableRPCService {
-  func registerMethods(with router: inout RPCRouter) {
+  func registerMethods<Transport: ServerTransport>(with router: inout RPCRouter<Transport>) {
     router.registerHandler(
       forMethod: .getStats,
       deserializer: JSONCoder<GetStatsRequest>(),
@@ -79,10 +79,10 @@ extension StatsService: RegistrableRPCService {
   }
 }
 
-struct StatsClient {
-  private let underlying: GRPCClient
+struct StatsClient<Transport: ClientTransport> {
+  private let underlying: GRPCClient<Transport>
 
-  init(wrapping underlying: GRPCClient) {
+  init(wrapping underlying: GRPCClient<Transport>) {
     self.underlying = underlying
   }
 

@@ -93,24 +93,28 @@ struct ChannelDebugCallbackTests {
     kind: TransportKind,
     address: SocketAddress,
     debug: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
-  ) -> any ServerTransport {
+  ) -> NIOServerTransport {
     switch kind {
     case .posix:
-      return .http2NIOPosix(
-        address: address,
-        transportSecurity: .plaintext,
-        config: .defaults {
-          $0.channelDebuggingCallbacks = debug
-        }
+      return NIOServerTransport(
+        .http2NIOPosix(
+          address: address,
+          transportSecurity: .plaintext,
+          config: .defaults {
+            $0.channelDebuggingCallbacks = debug
+          }
+        )
       )
     #if canImport(Network)
     case .transportServices:
-      return .http2NIOTS(
-        address: address,
-        transportSecurity: .plaintext,
-        config: .defaults {
-          $0.channelDebuggingCallbacks = debug
-        }
+      return NIOServerTransport(
+        .http2NIOTS(
+          address: address,
+          transportSecurity: .plaintext,
+          config: .defaults {
+            $0.channelDebuggingCallbacks = debug
+          }
+        )
       )
     #endif
     }
@@ -120,24 +124,28 @@ struct ChannelDebugCallbackTests {
     kind: TransportKind,
     target: any ResolvableTarget,
     debug: HTTP2ClientTransport.Config.ChannelDebuggingCallbacks
-  ) throws -> any ClientTransport {
+  ) throws -> NIOClientTransport {
     switch kind {
     case .posix:
-      return try .http2NIOPosix(
-        target: target,
-        transportSecurity: .plaintext,
-        config: .defaults {
-          $0.channelDebuggingCallbacks = debug
-        }
+      return NIOClientTransport(
+        try .http2NIOPosix(
+          target: target,
+          transportSecurity: .plaintext,
+          config: .defaults {
+            $0.channelDebuggingCallbacks = debug
+          }
+        )
       )
     #if canImport(Network)
     case .transportServices:
-      return try .http2NIOTS(
-        target: target,
-        transportSecurity: .plaintext,
-        config: .defaults {
-          $0.channelDebuggingCallbacks = debug
-        }
+      return NIOClientTransport(
+        try .http2NIOTS(
+          target: target,
+          transportSecurity: .plaintext,
+          config: .defaults {
+            $0.channelDebuggingCallbacks = debug
+          }
+        )
       )
     #endif
     }
