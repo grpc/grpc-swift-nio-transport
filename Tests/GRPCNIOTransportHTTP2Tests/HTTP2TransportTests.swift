@@ -230,10 +230,10 @@ final class HTTP2TransportTests: XCTestCase {
         },
         serviceConfig: serviceConfig
       )
+      return GRPCClient(transport: NIOClientTransport(transport))
       #else
       throw XCTSkip("Transport not supported on this platform")
       #endif
-      return GRPCClient(transport: NIOClientTransport(transport))
     }
   }
 
