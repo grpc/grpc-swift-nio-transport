@@ -175,14 +175,14 @@ extension HTTP2ClientTransport.Config {
   ///   unexpected side effects on your gRPC application.
   public struct ChannelDebuggingCallbacks: Sendable {
     /// A callback invoked with each new TCP connection.
-    public var onCreateTCPConnection: (@Sendable (_ channel: any Channel) async throws -> Void)?
+    public var onCreateTCPConnection: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
 
     /// A callback invoked with each new HTTP/2 stream.
-    public var onCreateHTTP2Stream: (@Sendable (_ channel: any Channel) async throws -> Void)?
+    public var onCreateHTTP2Stream: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
 
     public init(
-      onCreateTCPConnection: (@Sendable (_ channel: any Channel) async throws -> Void)?,
-      onCreateHTTP2Stream: (@Sendable (_ channel: any Channel) async throws -> Void)?
+      onCreateTCPConnection: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?,
+      onCreateHTTP2Stream: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
     ) {
       self.onCreateTCPConnection = onCreateTCPConnection
       self.onCreateHTTP2Stream = onCreateHTTP2Stream

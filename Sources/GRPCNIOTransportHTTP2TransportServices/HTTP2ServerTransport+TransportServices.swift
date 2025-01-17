@@ -66,9 +66,9 @@ extension HTTP2ServerTransport {
                 channel: channel
               )
               try channel.pipeline.syncOperations.addHandler(quiescingHandler)
-            }.runCallbackIfSet(
-              on: channel,
-              callback: self.config.channelDebuggingCallbacks.onBindTCPListener
+            }.runInitializerIfSet(
+              self.config.channelDebuggingCallbacks.onBindTCPListener,
+              on: channel
             )
           }
           .bind(to: address) { channel in
@@ -83,9 +83,9 @@ extension HTTP2ServerTransport {
                 requireALPN: requireALPN,
                 scheme: scheme
               )
-            }.runCallbackIfSet(
-              on: channel,
-              callback: self.config.channelDebuggingCallbacks.onAcceptTCPConnection
+            }.runInitializerIfSet(
+              self.config.channelDebuggingCallbacks.onAcceptTCPConnection,
+              on: channel
             )
           }
 

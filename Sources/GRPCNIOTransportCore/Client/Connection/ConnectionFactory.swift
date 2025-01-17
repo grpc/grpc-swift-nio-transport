@@ -38,7 +38,7 @@ package struct HTTP2Connection: Sendable {
   var multiplexer: NIOHTTP2Handler.AsyncStreamMultiplexer<Void>
 
   /// A callback which is invoked when creating an HTTP/2 stream.
-  var onCreateHTTP2Stream: (@Sendable (any Channel) async throws -> Void)?
+  var onCreateHTTP2Stream: (@Sendable (any Channel) -> EventLoopFuture<Void>)?
 
   /// Whether the connection is insecure (i.e. plaintext).
   var isPlaintext: Bool
@@ -47,7 +47,7 @@ package struct HTTP2Connection: Sendable {
     channel: NIOAsyncChannel<ClientConnectionEvent, Void>,
     multiplexer: NIOHTTP2Handler.AsyncStreamMultiplexer<Void>,
     isPlaintext: Bool,
-    onCreateHTTP2Stream: (@Sendable (any Channel) async throws -> Void)?
+    onCreateHTTP2Stream: (@Sendable (any Channel) -> EventLoopFuture<Void>)?
   ) {
     self.channel = channel
     self.multiplexer = multiplexer

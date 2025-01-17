@@ -28,23 +28,28 @@ struct ChannelDebugCallbackTests {
 
     let stats = DebugCallbackStats()
     let serverDebug = HTTP2ServerTransport.Config.ChannelDebuggingCallbacks(
-      onBindTCPListener: { _ in
+      onBindTCPListener: { channel in
         stats.tcpListenersBound.add(1, ordering: .sequentiallyConsistent)
+        return channel.eventLoop.makeSucceededVoidFuture()
       },
-      onAcceptTCPConnection: { _ in
+      onAcceptTCPConnection: { channel in
         stats.tcpConnectionsAccepted.add(1, ordering: .sequentiallyConsistent)
+        return channel.eventLoop.makeSucceededVoidFuture()
       },
-      onAcceptHTTP2Stream: { _ in
+      onAcceptHTTP2Stream: { channel in
         stats.http2StreamsAccepted.add(1, ordering: .sequentiallyConsistent)
+        return channel.eventLoop.makeSucceededVoidFuture()
       }
     )
 
     let clientDebug = HTTP2ClientTransport.Config.ChannelDebuggingCallbacks(
-      onCreateTCPConnection: { _ in
+      onCreateTCPConnection: { channel in
         stats.tcpConnectionsCreated.add(1, ordering: .sequentiallyConsistent)
+        return channel.eventLoop.makeSucceededVoidFuture()
       },
-      onCreateHTTP2Stream: { _ in
+      onCreateHTTP2Stream: { channel in
         stats.http2StreamsCreated.add(1, ordering: .sequentiallyConsistent)
+        return channel.eventLoop.makeSucceededVoidFuture()
       }
     )
 

@@ -181,9 +181,9 @@ extension HTTP2ClientTransport.TransportServices {
             channel: channel,
             config: GRPCChannel.Config(transportServices: self.config)
           )
-        }.runCallbackIfSet(
-          on: channel,
-          callback: self.config.channelDebuggingCallbacks.onCreateTCPConnection
+        }.runInitializerIfSet(
+          self.config.channelDebuggingCallbacks.onCreateTCPConnection,
+          on: channel
         )
       }
 

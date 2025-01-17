@@ -17,40 +17,14 @@
 package import NIOCore
 
 extension EventLoopFuture where Value: Sendable {
-  package func runCallbackIfSet(
-    on channel: any Channel,
-    callback: (@Sendable (any Channel) async throws -> Void)?
+  package func runInitializerIfSet(
+    _ initializer: (@Sendable (any Channel) -> EventLoopFuture<Void>)?,
+    on channel: any Channel
   ) -> EventLoopFuture<Value> {
-    guard let initializer = callback else { return self }
+    guard let initializer = initializer else { return self }
 
-    // The code below code is equivalent to the following but avoids allocating an extra future.
-    //
-    //   return self.flatMap { value in
-    //     self.eventLoop.makeFutureWithTask {
-    //       try await userInitializer(channel)
-    //     }.map {
-    //       value
-    //     }
-    //   }
-    //
-    let promise = self.eventLoop.makePromise(of: Value.self)
-    self.whenComplete { result in
-      switch result {
-      case .success(let value):
-        Task {
-          do {
-            try await initializer(channel)
-            promise.succeed(value)
-          } catch {
-            promise.fail(error)
-          }
-        }
-
-      case .failure(let error):
-        promise.fail(error)
-      }
+    return self.flatMap { value in
+      initializer(channel).map { value }
     }
-
-    return promise.futureResult
   }
 }

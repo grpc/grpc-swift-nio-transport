@@ -110,10 +110,7 @@ extension ChannelPipeline.SynchronousOperations {
           )
         )
         return (asyncStreamChannel, methodDescriptorPromise.futureResult)
-      }.runCallbackIfSet(
-        on: streamChannel,
-        callback: debugConfig.onAcceptHTTP2Stream
-      )
+      }.runInitializerIfSet(debugConfig.onAcceptHTTP2Stream, on: streamChannel)
     }
 
     try self.addHandler(serverConnectionHandler)

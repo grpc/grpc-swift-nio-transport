@@ -196,18 +196,18 @@ extension HTTP2ServerTransport.Config {
   ///   unexpected side effects on your gRPC application.
   public struct ChannelDebuggingCallbacks: Sendable {
     /// A callback invoked when the server starts listening for new TCP connections.
-    public var onBindTCPListener: (@Sendable (_ channel: any Channel) async throws -> Void)?
+    public var onBindTCPListener: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
 
     /// A callback invoked with each new accepted TPC connection.
-    public var onAcceptTCPConnection: (@Sendable (_ channel: any Channel) async throws -> Void)?
+    public var onAcceptTCPConnection: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
 
     /// A callback invoked with each accepted HTTP/2 stream.
-    public var onAcceptHTTP2Stream: (@Sendable (_ channel: any Channel) async throws -> Void)?
+    public var onAcceptHTTP2Stream: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
 
     public init(
-      onBindTCPListener: (@Sendable (_ channel: any Channel) async throws -> Void)?,
-      onAcceptTCPConnection: (@Sendable (_ channel: any Channel) async throws -> Void)?,
-      onAcceptHTTP2Stream: (@Sendable (_ channel: any Channel) async throws -> Void)?
+      onBindTCPListener: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?,
+      onAcceptTCPConnection: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?,
+      onAcceptHTTP2Stream: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
     ) {
       self.onBindTCPListener = onBindTCPListener
       self.onAcceptTCPConnection = onAcceptTCPConnection

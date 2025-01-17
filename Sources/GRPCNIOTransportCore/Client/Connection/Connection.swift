@@ -202,16 +202,10 @@ package final class Connection: Sendable {
     descriptor: MethodDescriptor,
     options: CallOptions
   ) async throws -> Stream {
-    let (multiplexer, scheme, remotePeer, localPeer, onCreateStream) = try self.state.withLock { state in
+    let connected = try self.state.withLock { state in
       switch state {
       case .connected(let connected):
-        return (
-          connected.multiplexer,
-          connected.scheme,
-          connected.remotePeer,
-          connected.localPeer,
-          connected.onCreateHTTP2Stream
-        )
+        return connected
       case .notConnected, .closing, .closed:
         throw RPCError(code: .unavailable, message: "subchannel isn't ready")
       }
@@ -227,11 +221,11 @@ package final class Connection: Sendable {
     let maxRequestSize = options.maxRequestMessageBytes ?? Self.defaultMaxRequestMessageSizeBytes
 
     do {
-      let stream = try await multiplexer.openStream { channel in
+      let stream = try await connected.multiplexer.openStream { channel in
         channel.eventLoop.makeCompletedFuture {
           let streamHandler = GRPCClientStreamHandler(
             methodDescriptor: descriptor,
-            scheme: scheme,
+            scheme: connected.scheme,
             // The value of authority here is being used for the ":authority" pseudo-header. Derive
             // one from the address if we don't already have one.
             authority: self.authority ?? self.address.authority,
@@ -249,16 +243,13 @@ package final class Connection: Sendable {
               outboundType: RPCRequestPart<GRPCNIOTransportBytes>.self
             )
           )
-        }.runCallbackIfSet(
-          on: channel,
-          callback: onCreateStream
-        )
+        }.runInitializerIfSet(connected.onCreateHTTP2Stream, on: channel)
       }
 
       let context = ClientContext(
         descriptor: descriptor,
-        remotePeer: remotePeer,
-        localPeer: localPeer
+        remotePeer: connected.remotePeer,
+        localPeer: connected.localPeer
       )
 
       return Stream(wrapping: stream, context: context)
@@ -490,7 +481,7 @@ extension Connection {
       /// Whether the connection is plaintext, `false` implies TLS is being used.
       var scheme: Scheme
       /// A user-provided callback to call after creating the stream.
-      var onCreateHTTP2Stream: (@Sendable (any Channel) async throws -> Void)?
+      var onCreateHTTP2Stream: (@Sendable (any Channel) -> EventLoopFuture<Void>)?
 
       init(_ connection: HTTP2Connection) {
         self.channel = connection.channel

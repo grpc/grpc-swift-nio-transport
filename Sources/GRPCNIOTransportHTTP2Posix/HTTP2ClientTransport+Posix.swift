@@ -184,9 +184,9 @@ extension HTTP2ClientTransport.Posix {
             channel: channel,
             config: GRPCChannel.Config(posix: self.config)
           )
-        }.runCallbackIfSet(
-          on: channel,
-          callback: self.config.channelDebuggingCallbacks.onCreateTCPConnection
+        }.runInitializerIfSet(
+          self.config.channelDebuggingCallbacks.onCreateTCPConnection,
+          on: channel
         )
       }
 
