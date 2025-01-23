@@ -21,7 +21,9 @@ internal import NIOExtras
 internal import NIOHTTP2
 public import NIOPosix  // has to be public because of default argument value in init
 private import NIOSSL
+private import SwiftASN1
 private import Synchronization
+public import X509
 
 extension HTTP2ServerTransport {
   /// A `ServerTransport` using HTTP/2 built on top of `NIOPosix`.
@@ -167,7 +169,18 @@ extension HTTP2ServerTransport {
         eventLoopGroup: eventLoopGroup,
         quiescingHelper: helper,
         listenerFactory: factory
-      )
+      ) { channel in
+        var context = HTTP2ServerTransport.Posix.Context()
+        do {
+          if let peerCert = try await channel.nioSSL_peerCertificate().get() {
+            let serialized = try peerCert.toDERBytes()
+            let swiftCert = try Certificate(derEncoded: serialized)
+            context.peerCertificate = swiftCert
+          }
+        } catch {}
+
+        return context
+      }
     }
 
     public func listen(
@@ -186,6 +199,15 @@ extension HTTP2ServerTransport {
 }
 
 extension HTTP2ServerTransport.Posix {
+  /// Context for Posix TransportSpecific
+  public struct Context: ServerContext.TransportSpecific {
+    /// The peer certificate (if any) from the mTLS handshake
+    public var peerCertificate: Certificate?
+
+    public init() {
+    }
+  }
+
   /// Config for the `Posix` transport.
   public struct Config: Sendable {
     /// Compression configuration.
