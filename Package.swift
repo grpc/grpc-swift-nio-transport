@@ -35,7 +35,7 @@ let products: [Product] = [
 let dependencies: [Package.Dependency] = [
   .package(
     url: "https://github.com/grpc/grpc-swift.git",
-    exact: "2.0.0-beta.3"
+    exact: "2.0.0-rc.1"
   ),
   .package(
     url: "https://github.com/apple/swift-nio.git",
