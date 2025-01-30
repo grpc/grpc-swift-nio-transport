@@ -24,11 +24,11 @@ let package = Package(
     .package(path: "../.."),
     .package(
       url: "https://github.com/grpc/grpc-swift-protobuf",
-      branch: "main"
+      exact: "1.0.0-rc.1"
     ),
     .package(
       url: "https://github.com/grpc/grpc-swift-extras",
-      branch: "main"
+      exact: "1.0.0-rc.1"
     ),
     .package(
       url: "https://github.com/apple/swift-argument-parser",
