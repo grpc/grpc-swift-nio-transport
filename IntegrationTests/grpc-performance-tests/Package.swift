@@ -24,7 +24,7 @@ let package = Package(
     .package(path: "../.."),
     .package(
       url: "https://github.com/grpc/grpc-swift-protobuf",
-      exact: "1.0.0-rc.1"
+      from: "1.0.0"
     ),
     .package(
       url: "https://github.com/apple/swift-argument-parser",
