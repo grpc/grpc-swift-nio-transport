@@ -661,7 +661,7 @@ extension GRPCStreamStateMachine {
       headers.add(name, forKey: .encoding)
     }
 
-    for encoding in acceptedEncodings.elements {
+    for encoding in acceptedEncodings.elements where encoding != .none {
       if let name = encoding.nameIfSupported {
         headers.add(name, forKey: .acceptEncoding)
       }
