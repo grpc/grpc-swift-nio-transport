@@ -657,12 +657,14 @@ extension GRPCStreamStateMachine {
     headers.add(ContentType.grpc.canonicalValue, forKey: .contentType)
     headers.add("trailers", forKey: .te)  // Used to detect incompatible proxies
 
-    if let encoding = outboundEncoding, encoding != .none {
-      headers.add(encoding.name, forKey: .encoding)
+    if let encoding = outboundEncoding, encoding != .none, let name = encoding.nameIfSupported {
+      headers.add(name, forKey: .encoding)
     }
 
-    for encoding in acceptedEncodings.elements.filter({ $0 != .none }) {
-      headers.add(encoding.name, forKey: .acceptEncoding)
+    for encoding in acceptedEncodings.elements where encoding != .none {
+      if let name = encoding.nameIfSupported {
+        headers.add(name, forKey: .acceptEncoding)
+      }
     }
 
     for metadataPair in customMetadata {
@@ -1239,7 +1241,7 @@ extension GRPCStreamStateMachine {
 extension GRPCStreamStateMachine {
   private func formResponseHeaders(
     in headers: inout HPACKHeaders,
-    outboundEncoding: CompressionAlgorithm?,
+    outboundEncoding encoding: CompressionAlgorithm?,
     configuration: GRPCStreamStateMachineConfiguration.ServerConfiguration,
     customMetadata: Metadata
   ) {
@@ -1252,8 +1254,8 @@ extension GRPCStreamStateMachine {
     headers.add("200", forKey: .status)
     headers.add(ContentType.grpc.canonicalValue, forKey: .contentType)
 
-    if let outboundEncoding, outboundEncoding != .none {
-      headers.add(outboundEncoding.name, forKey: .encoding)
+    if let encoding, encoding != .none, let name = encoding.nameIfSupported {
+      headers.add(name, forKey: .encoding)
     }
 
     for metadataPair in customMetadata {
@@ -1495,7 +1497,9 @@ extension GRPCStreamStateMachine {
           )
 
           for acceptedEncoding in configuration.acceptedEncodings.elements {
-            trailers.add(name: GRPCHTTP2Keys.acceptEncoding.rawValue, value: acceptedEncoding.name)
+            if let name = acceptedEncoding.nameIfSupported {
+              trailers.add(name: GRPCHTTP2Keys.acceptEncoding.rawValue, value: name)
+            }
           }
 
           return .rejectRPC_serverOnly(trailers: trailers)
