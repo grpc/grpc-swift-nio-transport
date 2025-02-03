@@ -339,7 +339,8 @@ extension GRPCChannel {
           return
         }
 
-        let (enqueued, loadBalancer) = self.state.withLock { state in
+        // Explicitly adding the types works around: https://github.com/swiftlang/swift/issues/78112
+        let (enqueued, loadBalancer) = self.state.withLock { state -> (Bool, LoadBalancer?) in
           state.enqueue(continuation: continuation, waitForReady: waitForReady, id: id)
         }
 
