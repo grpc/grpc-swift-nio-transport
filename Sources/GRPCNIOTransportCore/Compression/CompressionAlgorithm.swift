@@ -34,14 +34,16 @@ extension CompressionAlgorithm {
     }
   }
 
-  var name: String {
-    switch self.value {
-    case .gzip:
+  /// The name of the algorithm, if supported.
+  var nameIfSupported: String? {
+    if self == .gzip {
       return "gzip"
-    case .deflate:
+    } else if self == .deflate {
       return "deflate"
-    case .none:
+    } else if self == .none {
       return "identity"
+    } else {
+      return nil
     }
   }
 }
