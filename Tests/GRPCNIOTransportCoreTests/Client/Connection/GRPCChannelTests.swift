@@ -16,6 +16,7 @@
 
 import GRPCCore
 import GRPCNIOTransportCore
+import NIOCore
 import NIOHTTP2
 import NIOPosix
 import XCTest
@@ -639,7 +640,7 @@ final class GRPCChannelTests: XCTestCase {
       TestServer(eventLoopGroup: .singletonMultiThreadedEventLoopGroup)
     }
 
-    var addresses = [SocketAddress]()
+    var addresses = [GRPCNIOTransportCore.SocketAddress]()
     for server in servers {
       let address = try await server.bind()
       addresses.append(address)
@@ -863,7 +864,7 @@ extension GRPCChannel.Config {
 }
 
 extension Endpoint {
-  init(_ addresses: SocketAddress...) {
+  init(_ addresses: GRPCNIOTransportCore.SocketAddress...) {
     self.init(addresses: addresses)
   }
 }
