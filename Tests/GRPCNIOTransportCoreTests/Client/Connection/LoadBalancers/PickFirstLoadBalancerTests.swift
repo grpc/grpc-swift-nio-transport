@@ -16,6 +16,7 @@
 
 import GRPCCore
 import GRPCNIOTransportCore
+import NIOCore
 import NIOHTTP2
 import NIOPosix
 import XCTest
