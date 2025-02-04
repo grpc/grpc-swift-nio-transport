@@ -154,7 +154,8 @@ struct HTTP2TransportTLSEnabledTests {
 
   @Test(
     "Error is surfaced when server fails client verification",
-    arguments: [TransportKind.posix], [TransportKind.posix]
+    arguments: TransportKind.supported,
+    TransportKind.supported
   )
   // Verification should fail because the client does not offer a cert that
   // the server can use for mutual verification.
