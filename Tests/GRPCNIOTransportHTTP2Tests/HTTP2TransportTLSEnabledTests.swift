@@ -229,8 +229,6 @@ struct HTTP2TransportTLSEnabledTests {
   enum TLSEnabledTestsError: Error {
     case failedToImportPKCS12
     case unexpectedListeningAddress
-    case serverError(cause: any Error)
-    case clientError(cause: any Error)
   }
 
   struct Config<Transport, Security> {
@@ -477,98 +475,57 @@ struct HTTP2TransportTLSEnabledTests {
     serverConfig: ServerConfig,
     _ test: (ControlClient<NIOClientTransport>) async throws -> Void
   ) async throws {
-    try await withThrowingDiscardingTaskGroup { group in
-      let server = self.makeServer(config: serverConfig)
+    let serverTransport: NIOServerTransport
+    switch serverConfig {
+    case .posix(let posix):
+      serverTransport = NIOServerTransport(
+        .http2NIOPosix(
+          address: .ipv4(host: "127.0.0.1", port: 0),
+          transportSecurity: posix.security,
+          config: posix.transport
+        )
+      )
+    #if canImport(Network)
+    case .transportServices(let config):
+      serverTransport = NIOServerTransport(
+        .http2NIOTS(
+          address: .ipv4(host: "127.0.0.1", port: 0),
+          transportSecurity: config.security,
+          config: config.transport
+        )
+      )
+    #endif
+    }
 
-      group.addTask {
-        do {
-          try await server.serve()
-        } catch {
-          throw TLSEnabledTestsError.serverError(cause: error)
-        }
-      }
-
+    try await withGRPCServer(transport: serverTransport, services: [ControlService()]) { server in
       guard let address = try await server.listeningAddress?.ipv4 else {
         throw TLSEnabledTestsError.unexpectedListeningAddress
       }
 
       let target: any ResolvableTarget = .ipv4(host: address.host, port: address.port)
-      let client = try self.makeClient(config: clientConfig, target: target)
-
-      group.addTask {
-        do {
-          try await client.runConnections()
-        } catch {
-          throw TLSEnabledTestsError.clientError(cause: error)
-        }
+      let clientTransport: NIOClientTransport
+      switch clientConfig {
+      case .posix(let config):
+        clientTransport = try NIOClientTransport(
+          .http2NIOPosix(
+            target: target,
+            transportSecurity: config.security,
+            config: config.transport
+          )
+        )
+      #if canImport(Network)
+      case .transportServices(let config):
+        clientTransport = try NIOClientTransport(
+          .http2NIOTS(target: target, transportSecurity: config.security, config: config.transport)
+        )
+      #endif
       }
 
-      let control = ControlClient(wrapping: client)
-      try await test(control)
-
-      client.beginGracefulShutdown()
-      server.beginGracefulShutdown()
+      try await withGRPCClient(transport: clientTransport) { client in
+        let control = ControlClient(wrapping: client)
+        try await test(control)
+      }
     }
-  }
-
-  private func makeServer(config: ServerConfig) -> GRPCServer<NIOServerTransport> {
-    let services = [ControlService()]
-
-    switch config {
-    case .posix(let config):
-      return GRPCServer(
-        transport: NIOServerTransport(
-          .http2NIOPosix(
-            address: .ipv4(host: "127.0.0.1", port: 0),
-            transportSecurity: config.security,
-            config: config.transport
-          )
-        ),
-        services: services
-      )
-
-    #if canImport(Network)
-    case .transportServices(let config):
-      return GRPCServer(
-        transport: NIOServerTransport(
-          .http2NIOTS(
-            address: .ipv4(host: "127.0.0.1", port: 0),
-            transportSecurity: config.security,
-            config: config.transport
-          )
-        ),
-        services: services
-      )
-    #endif
-    }
-  }
-
-  private func makeClient(
-    config: ClientConfig,
-    target: any ResolvableTarget
-  ) throws -> GRPCClient<NIOClientTransport> {
-    switch config {
-    case .posix(let config):
-      let transport = try HTTP2ClientTransport.Posix(
-        target: target,
-        transportSecurity: config.security,
-        config: config.transport,
-        serviceConfig: ServiceConfig()
-      )
-      return GRPCClient(transport: NIOClientTransport(transport))
-
-    #if canImport(Network)
-    case .transportServices(let config):
-      let transport = try HTTP2ClientTransport.TransportServices(
-        target: target,
-        transportSecurity: config.security,
-        config: config.transport,
-        serviceConfig: ServiceConfig()
-      )
-      return GRPCClient(transport: NIOClientTransport(transport))
-    #endif
-    }
-
   }
 
   private func executeUnaryRPC(control: ControlClient<NIOClientTransport>) async throws {
