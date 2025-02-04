@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import GRPCCore
 import GRPCNIOTransportCore
 import XCTest
 

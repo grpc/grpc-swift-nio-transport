@@ -16,6 +16,7 @@
 
 import NIOCore
 import NIOEmbedded
+import NIOHTTP2
 import XCTest
 
 @testable import GRPCNIOTransportCore

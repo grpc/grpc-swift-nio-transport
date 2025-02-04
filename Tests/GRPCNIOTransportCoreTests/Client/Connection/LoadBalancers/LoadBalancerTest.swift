@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+import GRPCCore
 import GRPCNIOTransportCore
+import NIOPosix
 import XCTest
 
 enum LoadBalancerTest {

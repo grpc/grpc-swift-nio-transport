@@ -16,6 +16,8 @@
 
 import GRPCCore
 import GRPCNIOTransportHTTP2
+import NIOCore
+import Synchronization
 import Testing
 
 @Suite("ChannelDebugCallbacks")
@@ -96,7 +98,7 @@ struct ChannelDebugCallbackTests {
 
   private func makeServerTransport(
     kind: TransportKind,
-    address: SocketAddress,
+    address: GRPCNIOTransportCore.SocketAddress,
     debug: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
   ) -> NIOServerTransport {
     switch kind {
