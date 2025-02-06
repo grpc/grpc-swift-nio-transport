@@ -165,7 +165,7 @@ extension HTTP2ClientTransport.Posix {
 
     func establishConnection(
       to address: GRPCNIOTransportCore.SocketAddress,
-      authority: String?
+      sniServerHostname: String?
     ) async throws -> HTTP2Connection {
       let (channel, multiplexer) = try await ClientBootstrap(
         group: self.eventLoopGroup
@@ -175,7 +175,7 @@ extension HTTP2ClientTransport.Posix {
             try channel.pipeline.syncOperations.addHandler(
               NIOSSLClientHandler(
                 context: sslContext,
-                serverHostname: authority
+                serverHostname: sniServerHostname
               )
             )
           }

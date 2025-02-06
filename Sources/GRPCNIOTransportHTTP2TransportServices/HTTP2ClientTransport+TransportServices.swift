@@ -149,7 +149,7 @@ extension HTTP2ClientTransport.TransportServices {
 
     func establishConnection(
       to address: GRPCNIOTransportCore.SocketAddress,
-      authority: String?
+      sniServerHostname: String?
     ) async throws -> HTTP2Connection {
       let bootstrap: NIOTSConnectionBootstrap
       let isPlainText: Bool
@@ -162,7 +162,7 @@ extension HTTP2ClientTransport.TransportServices {
       case .tls(let tlsConfig):
         isPlainText = false
         do {
-          let options = try NWProtocolTLS.Options(tlsConfig, authority: authority)
+          let options = try NWProtocolTLS.Options(tlsConfig, authority: sniServerHostname)
           bootstrap = NIOTSConnectionBootstrap(group: self.eventLoopGroup)
             .channelOption(NIOTSChannelOptions.waitForActivity, value: false)
             .tlsOptions(options)

@@ -89,6 +89,9 @@ package final class Connection: Sendable {
   /// being connected to.
   private let authority: String?
 
+  /// The name of the server used for the TLS SNI extension, if applicable.
+  private let sniServerHostname: String?
+
   /// The default compression algorithm used for requests.
   private let defaultCompression: CompressionAlgorithm
 
@@ -111,6 +114,20 @@ package final class Connection: Sendable {
     self.event.stream
   }
 
+  private static func sanitizeAuthorityForSNI(_ authority: String) -> String {
+    // Strip off a trailing ":{PORT}". Look for the last non-digit byte, if it's
+    // a colon then keep everything up to that index.
+    let index = authority.utf8.lastIndex { byte in
+      return byte < UInt8(ascii: "0") || byte > UInt8(ascii: "9")
+    }
+
+    if let index = index, authority.utf8[index] == UInt8(ascii: ":") {
+      return String(authority.utf8[..<index])!
+    } else {
+      return authority
+    }
+  }
+
   package init(
     address: SocketAddress,
     authority: String?,
@@ -120,6 +137,7 @@ package final class Connection: Sendable {
   ) {
     self.address = address
     self.authority = authority
+    self.sniServerHostname = authority.map { Self.sanitizeAuthorityForSNI($0) }
     self.defaultCompression = defaultCompression
     self.enabledCompression = enabledCompression
     self.http2Connector = http2Connector
@@ -140,7 +158,7 @@ package final class Connection: Sendable {
           // The authority here is used for the SNI hostname in the TLS handshake (if applicable)
           // where a raw IP address isn't permitted, so fallback to 'address.sniHostname' rather
           // than 'address.authority'.
-          authority: self.authority ?? self.address.sniHostname
+          sniServerHostname: self.sniServerHostname ?? self.address.sniHostname
         )
       } catch let error as RPCError {
         throw error

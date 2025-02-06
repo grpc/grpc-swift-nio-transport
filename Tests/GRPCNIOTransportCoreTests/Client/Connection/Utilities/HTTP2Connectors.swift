@@ -62,7 +62,7 @@ struct ThrowingConnector: HTTP2Connector {
 
   func establishConnection(
     to address: GRPCNIOTransportCore.SocketAddress,
-    authority: String?
+    sniServerHostname: String?
   ) async throws -> HTTP2Connection {
     throw self.error
   }
@@ -71,7 +71,7 @@ struct ThrowingConnector: HTTP2Connector {
 struct NeverConnector: HTTP2Connector {
   func establishConnection(
     to address: GRPCNIOTransportCore.SocketAddress,
-    authority: String?
+    sniServerHostname: String?
   ) async throws -> HTTP2Connection {
     fatalError("\(#function) called unexpectedly")
   }
@@ -103,7 +103,7 @@ struct NIOPosixConnector: HTTP2Connector {
 
   func establishConnection(
     to address: GRPCNIOTransportCore.SocketAddress,
-    authority: String?
+    sniServerHostname: String?
   ) async throws -> HTTP2Connection {
     return try await ClientBootstrap(group: self.eventLoopGroup).connect(to: address) { channel in
       channel.eventLoop.makeCompletedFuture {
