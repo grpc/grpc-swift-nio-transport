@@ -40,10 +40,9 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     let framesToBeIgnored: [HTTP2Frame.FramePayload] = [
       .ping(.init(), ack: false),
       .goAway(lastStreamID: .rootStream, errorCode: .cancel, opaqueData: nil),
-      // TODO: uncomment when it's possible to build a `StreamPriorityData`.
-      // .priority(
-      //   HTTP2Frame.StreamPriorityData(exclusive: false, dependency: .rootStream, weight: 4)
-      // ),
+      .priority(
+        HTTP2Frame.StreamPriorityData(exclusive: false, dependency: .rootStream, weight: 4)
+      ),
       .settings(.ack),
       .pushPromise(.init(pushedStreamID: .maxID, headers: [:])),
       .windowUpdate(windowSizeIncrement: 4),
