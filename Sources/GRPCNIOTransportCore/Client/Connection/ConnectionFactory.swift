@@ -23,10 +23,10 @@ package protocol HTTP2Connector: Sendable {
   ///
   /// - Parameters:
   ///   - address: The address to connect to.
-  ///   - authority: The authority as used for the TLS SNI extension (if applicable).
+  ///   - sniServerHostname: The name of the server used for the TLS SNI extension (if applicable).
   func establishConnection(
     to address: SocketAddress,
-    authority: String?
+    sniServerHostname: String?
   ) async throws -> HTTP2Connection
 }
 

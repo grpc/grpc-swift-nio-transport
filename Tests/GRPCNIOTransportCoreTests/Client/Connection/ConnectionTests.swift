@@ -21,6 +21,7 @@ import NIOCore
 import NIOHPACK
 import NIOHTTP2
 import NIOPosix
+import Synchronization
 import XCTest
 
 final class ConnectionTests: XCTestCase {
@@ -199,6 +200,44 @@ final class ConnectionTests: XCTestCase {
       XCTAssertEqual(error.code, .unavailable)
     }
   }
+
+  private func testAuthorityIsSanitized(authority: String, expected: String) async throws {
+    let recorder = SNIRecordingConnector()
+    let connection = Connection(
+      address: .ipv4(host: "ignored", port: 0),
+      authority: authority,
+      http2Connector: recorder,
+      defaultCompression: .none,
+      enabledCompression: .none
+    )
+
+    // The connect attempt will fail, but as a side effect the SNI hostname
+    // will be recorded.
+    await connection.run()
+    XCTAssertEqual(recorder.sniHostnames, [expected])
+  }
+
+  func testAuthorityIsSanitized() async throws {
+    try await self.testAuthorityIsSanitized(
+      authority: "foo.example.com",
+      expected: "foo.example.com"
+    )
+
+    try await self.testAuthorityIsSanitized(
+      authority: "foo.example.com:31415",
+      expected: "foo.example.com"
+    )
+
+    try await self.testAuthorityIsSanitized(
+      authority: "foo.example-31415",
+      expected: "foo.example-31415"
+    )
+
+    try await self.testAuthorityIsSanitized(
+      authority: "foo.example.com:abc123",
+      expected: "foo.example.com:abc123"
+    )
+  }
 }
 
 extension ClientBootstrap {
@@ -250,5 +289,27 @@ extension Metadata {
     }
 
     self = metadata
+  }
+}
+
+final class SNIRecordingConnector: HTTP2Connector {
+  private let _sniHostnames: Mutex<[String?]>
+
+  var sniHostnames: [String?] {
+    self._sniHostnames.withLock { $0 }
+  }
+
+  init() {
+    self._sniHostnames = Mutex([])
+  }
+
+  func establishConnection(
+    to address: GRPCNIOTransportCore.SocketAddress,
+    sniServerHostname: String?
+  ) async throws -> GRPCNIOTransportCore.HTTP2Connection {
+    self._sniHostnames.withLock {
+      $0.append(sniServerHostname)
+    }
+    throw RPCError(code: .unavailable, message: "Test is expected to throw.")
   }
 }
