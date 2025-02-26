@@ -232,6 +232,11 @@ final class ConnectionTests: XCTestCase {
       authority: "foo.example-31415",
       expected: "foo.example-31415"
     )
+
+    try await self.testAuthorityIsSanitized(
+      authority: "foo.example.com:abc123",
+      expected: "foo.example.com:abc123"
+    )
   }
 }
 
