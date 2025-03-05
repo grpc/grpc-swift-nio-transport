@@ -18,7 +18,10 @@ import GRPCCore
 import GRPCNIOTransportCore
 import GRPCNIOTransportHTTP2Posix
 import GRPCNIOTransportHTTP2TransportServices
+import NIOPosix
 import XCTest
+
+import protocol NIOCore.Channel
 
 final class HTTP2TransportTests: XCTestCase {
   // A combination of client and server transport kinds.
@@ -32,7 +35,7 @@ final class HTTP2TransportTests: XCTestCase {
   }
 
   func forEachTransportPair(
-    _ transport: [Transport] = [.init(server: .posix, client: .posix)],
+    _ transport: [Transport] = .supported,
     serverAddress: SocketAddress = .ipv4(host: "127.0.0.1", port: 0),
     enableControlService: Bool = true,
     clientCompression: CompressionAlgorithm = .none,
@@ -91,7 +94,7 @@ final class HTTP2TransportTests: XCTestCase {
   }
 
   func forEachClientAndHTTPStatusCodeServer(
-    _ kind: [TransportKind] = TransportKind.supported,
+    _ kind: [TransportKind] = TransportKind.clients,
     _ execute: (ControlClient<NIOClientTransport>, TransportKind) async throws -> Void
   ) async throws {
     for clientKind in kind {
@@ -177,6 +180,9 @@ final class HTTP2TransportTests: XCTestCase {
       let address = try await server.listeningAddress!
       return (server, address)
     #endif
+
+    case .wrappedChannel:
+      fatalError("Unsupported")
     }
   }
 
@@ -218,6 +224,35 @@ final class HTTP2TransportTests: XCTestCase {
       )
       transport = NIOClientTransport(transportServices)
     #endif
+
+    case .wrappedChannel:
+      let bootstrap = ClientBootstrap(group: .singletonMultiThreadedEventLoopGroup)
+      let channel: any Channel
+      var config = HTTP2ClientTransport.WrappedChannel.Config.defaults
+      config.compression.algorithm = compression
+      config.compression.enabledAlgorithms = enabledCompression
+
+      if let dns = target as? ResolvableTargets.DNS {
+        channel = try bootstrap.connect(host: dns.host, port: dns.port ?? 443).wait()
+        config.http2.authority = dns.host
+      } else if let ipv4 = target as? ResolvableTargets.IPv4, let address = ipv4.addresses.first {
+        channel = try bootstrap.connect(host: address.host, port: address.port).wait()
+        config.http2.authority = address.host
+      } else if let ipv6 = target as? ResolvableTargets.IPv6, let address = ipv6.addresses.first {
+        channel = try bootstrap.connect(host: address.host, port: address.port).wait()
+        config.http2.authority = address.host
+      } else if let uds = target as? ResolvableTargets.UnixDomainSocket {
+        channel = try bootstrap.connect(unixDomainSocketPath: uds.address.path).wait()
+        config.http2.authority = uds.authority
+      } else {
+        throw RPCError(
+          code: .invalidArgument,
+          message: "Target '\(target)' isn't supported by the tunnel transport."
+        )
+      }
+
+      let wrapped = HTTP2ClientTransport.WrappedChannel(takingOwnershipOf: channel, config: config)
+      transport = NIOClientTransport(wrapped)
     }
 
     return GRPCClient(transport: transport, interceptors: [PeerInfoClientInterceptor()])
@@ -1697,11 +1732,11 @@ final class HTTP2TransportTests: XCTestCase {
 }
 
 extension [HTTP2TransportTests.Transport] {
-  static let supported: [HTTP2TransportTests.Transport] = TransportKind.allCases.flatMap { server in
-    TransportKind.allCases.map { client in
-      HTTP2TransportTests.Transport(server: server, client: client)
-    }
-  }
+   static let supported: [HTTP2TransportTests.Transport] = TransportKind.servers.flatMap { server in
+     TransportKind.clients.map { client in
+       HTTP2TransportTests.Transport(server: server, client: client)
+     }
+   }
 }
 
 extension ControlInput {

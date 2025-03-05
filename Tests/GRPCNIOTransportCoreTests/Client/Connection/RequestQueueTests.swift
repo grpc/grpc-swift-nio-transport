@@ -24,13 +24,13 @@ final class RequestQueueTests: XCTestCase {
   struct AnErrorToAvoidALeak: Error {}
 
   func testPopFirstEmpty() {
-    var queue = RequestQueue()
+    var queue = RequestQueue<Int>()
     XCTAssertNil(queue.popFirst())
   }
 
   func testPopFirstNonEmpty() async {
     _ = try? await withCheckedThrowingContinuation { continuation in
-      var queue = RequestQueue()
+      var queue = RequestQueue<Int>()
       let id = QueueEntryID()
 
       queue.append(continuation: continuation, waitForReady: false, id: id)
@@ -95,7 +95,7 @@ final class RequestQueueTests: XCTestCase {
 
   func testRemoveEntryByID() async {
     _ = try? await withCheckedThrowingContinuation { continuation in
-      var queue = RequestQueue()
+      var queue = RequestQueue<Int>()
       let id = QueueEntryID()
 
       queue.append(continuation: continuation, waitForReady: false, id: id)
@@ -258,13 +258,15 @@ final class RequestQueueTests: XCTestCase {
   }
 
   final class SharedRequestQueue: Sendable {
-    private let protectedQueue: Mutex<RequestQueue>
+    private let protectedQueue: Mutex<RequestQueue<LoadBalancer>>
 
     init() {
       self.protectedQueue = Mutex(RequestQueue())
     }
 
-    func withQueue<T>(_ body: @Sendable (inout RequestQueue) throws -> T) rethrows -> T {
+    func withQueue<T>(
+      _ body: @Sendable (inout RequestQueue<LoadBalancer>) throws -> T
+    ) rethrows -> T {
       try self.protectedQueue.withLock {
         try body(&$0)
       }
