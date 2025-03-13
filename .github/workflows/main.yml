@@ -26,3 +26,8 @@ jobs:
       matrix_linux_5_9_enabled: false
       matrix_linux_5_10_enabled: false
       matrix_linux_command: "./dev/integration_tests.sh"
+
+  static-sdk:
+    name: Static SDK
+    # Workaround https://github.com/nektos/act/issues/1875
+    uses: apple/swift-nio/.github/workflows/static_sdk.yml@main
