@@ -61,7 +61,7 @@ package enum DNSResolver {
     }
 
     var hints = addrinfo()
-    #if os(Linux)
+    #if os(Linux) && canImport(Glibc)
     hints.ai_socktype = CInt(SOCK_STREAM.rawValue)
     #else
     hints.ai_socktype = SOCK_STREAM
