@@ -26,3 +26,7 @@ jobs:
       matrix_linux_5_9_enabled: false
       matrix_linux_5_10_enabled: false
       matrix_linux_command: "./dev/integration_tests.sh"
+
+  static-sdk:
+    name: Static SDK
+    uses: apple/swift-nio/.github/workflows/static_sdk.yml@main
