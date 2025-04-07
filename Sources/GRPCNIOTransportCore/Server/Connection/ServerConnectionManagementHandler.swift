@@ -295,10 +295,20 @@ package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
 
   package func channelInactive(context: ChannelHandlerContext) {
     self.maxIdleTimerHandler?.cancel()
+    self.maxAgeTimerHandler = nil
+
     self.maxAgeTimerHandler?.cancel()
+    self.maxAgeTimerHandler = nil
+
     self.maxGraceTimerHandler?.cancel()
+    self.maxGraceTimerHandler = nil
+
     self.keepaliveTimerHandler?.cancel()
+    self.keepaliveTimerHandler = nil
+
     self.keepaliveTimeoutHandler?.cancel()
+    self.keepaliveTimeoutHandler = nil
+
     context.fireChannelInactive()
   }
 
