@@ -160,7 +160,14 @@ package final class ClientConnectionHandler: ChannelInboundHandler, ChannelOutbo
     }
 
     self.keepaliveTimerHandler?.cancel()
+    self.keepaliveTimerHandler = nil
+
     self.keepaliveTimeoutHandler?.cancel()
+    self.keepaliveTimeoutHandler = nil
+
+    self.maxIdleTimerHandler?.cancel()
+    self.maxIdleTimerHandler = nil
+
     context.fireChannelInactive()
   }
 
