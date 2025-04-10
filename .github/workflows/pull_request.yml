@@ -26,14 +26,30 @@ jobs:
       linux_nightly_next_arguments_override: "--explicit-target-dependency-import-check error -Xswiftc -require-explicit-sendable"
       linux_nightly_main_arguments_override: "--explicit-target-dependency-import-check error -Xswiftc -require-explicit-sendable"
 
+  construct-integration-tests-matrix:
+    name: Construct integration matrix
+    runs-on: ubuntu-latest
+    outputs:
+      integration-tests-matrix: '${{ steps.generate-matrix.outputs.integration-tests-matrix }}'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - id: generate-matrix
+        run: echo "integration-tests-matrix=$(curl -s https://raw.githubusercontent.com/apple/swift-nio/main/scripts/generate_matrix.sh | bash)" >> "$GITHUB_OUTPUT"
+        env:
+          MATRIX_LINUX_COMMAND: ./dev/integration_tests.sh
+          MATRIX_LINUX_5_9_ENABLED: false
+          MATRIX_LINUX_5_10_ENABLED: false
+
   integration-tests:
     name: Integration Tests
-    uses: apple/swift-nio/.github/workflows/swift_matrix.yml@main
+    needs: construct-integration-tests-matrix
+    uses: apple/swift-nio/.github/workflows/swift_test_matrix.yml@main
     with:
       name: "Integration Tests"
-      matrix_linux_5_9_enabled: false
-      matrix_linux_5_10_enabled: false
-      matrix_linux_command: "./dev/integration_tests.sh"
+      matrix_string: '${{ needs.construct-integration-tests-matrix.outputs.integration-tests-matrix }}'
 
   cxx-interop:
     name: Cxx Interop
