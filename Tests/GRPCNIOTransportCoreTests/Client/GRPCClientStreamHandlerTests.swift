@@ -485,6 +485,13 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     let serverDataPayload = HTTP2Frame.FramePayload.Data(data: .byteBuffer(buffer), endStream: true)
     XCTAssertNoThrow(try channel.writeInbound(HTTP2Frame.FramePayload.data(serverDataPayload)))
     XCTAssertNil(try channel.readInbound(as: RPCResponsePart<GRPCNIOTransportBytes>.self))
+
+    // We should also not throw if the server sends trailers again.
+    XCTAssertNoThrow(
+      try channel.writeInbound(
+        HTTP2Frame.FramePayload.headers(.init(headers: serverInitialMetadata, endStream: true))
+      )
+    )
   }
 
   func testNormalFlow() throws {

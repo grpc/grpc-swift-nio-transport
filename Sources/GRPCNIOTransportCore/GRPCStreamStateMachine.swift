@@ -1059,27 +1059,15 @@ extension GRPCStreamStateMachine {
       }
       return try self.validateTrailers(headers)
 
-    case .clientClosedServerClosed:
-      // We could end up here if we received a grpc-status header in a previous
-      // frame (which would have already close the server) and then we receive
-      // an empty frame with EOS set.
-      // We wouldn't want to throw in that scenario, so we just ignore it.
-      // Note that we don't want to ignore it if EOS is not set here though, as
-      // then it would be an invalid payload.
-      if !endStream || headers.count > 0 {
-        try self.invalidState(
-          "Server is closed, nothing could have been sent."
-        )
-      }
+    case .clientOpenServerClosed, .clientClosedServerClosed:
+      // We've transitioned the server to closed: drop any other incoming headers.
       return .doNothing
+
     case .clientIdleServerIdle:
       try self.invalidState(
         "Server cannot have sent metadata if the client is idle."
       )
-    case .clientOpenServerClosed:
-      try self.invalidState(
-        "Server is closed, nothing could have been sent."
-      )
+
     case ._modifying:
       preconditionFailure()
     }
