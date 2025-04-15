@@ -335,6 +335,12 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
           metadata: [":status": "300"]
         )
       )
+
+      // Further attempts from the server to send messages to the client will simply be dropped.
+      XCTAssertEqual(
+        try stateMachine.receive(buffer: .init(), endStream: false),
+        .doNothing
+      )
     }
   }
 
@@ -512,12 +518,9 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
     for targetState in [TargetStateMachineState.clientOpenServerClosed, .clientClosedServerClosed] {
       var stateMachine = self.makeClientStateMachine(targetState: targetState)
 
-      XCTAssertThrowsError(
-        ofType: GRPCStreamStateMachine.InvalidState.self,
-        try stateMachine.receive(headers: .init(), endStream: false)
-      ) { error in
-        XCTAssertEqual(error.message, "Server is closed, nothing could have been sent.")
-      }
+      // We should not throw if the server sends metadata after it's been transitioned to close:
+      // we should just drop these packages.
+      XCTAssertNoThrow(try stateMachine.receive(headers: .init(), endStream: false))
     }
   }
 
@@ -600,13 +603,9 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
   func testReceiveEndTrailerWhenClientOpenAndServerClosed() {
     var stateMachine = self.makeClientStateMachine(targetState: .clientOpenServerClosed)
 
-    // Receive another end trailer
-    XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
-      try stateMachine.receive(headers: .init(), endStream: true)
-    ) { error in
-      XCTAssertEqual(error.message, "Server is closed, nothing could have been sent.")
-    }
+    // We should not throw if the server sends trailers after it's been transitioned to close:
+    // we should just drop these packages.
+    XCTAssertNoThrow(try stateMachine.receive(headers: .init(), endStream: true))
   }
 
   func testReceiveEndTrailerWhenClientClosedAndServerIdle() throws {
@@ -703,16 +702,15 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
     }
   }
 
-  func testReceiveMessageWhenServerClosed() {
+  func testReceiveMessageWhenServerClosed() throws {
     for targetState in [TargetStateMachineState.clientOpenServerClosed, .clientClosedServerClosed] {
       var stateMachine = self.makeClientStateMachine(targetState: targetState)
 
-      XCTAssertThrowsError(
-        ofType: GRPCStreamStateMachine.InvalidState.self,
-        try stateMachine.receive(buffer: .init(), endStream: false)
-      ) { error in
-        XCTAssertEqual(error.message, "Cannot have received anything from a closed server.")
-      }
+      // We should drop the messages if we receive anything once the server's closed.
+      XCTAssertEqual(
+        try stateMachine.receive(buffer: .init(), endStream: false),
+        .doNothing
+      )
     }
   }
 

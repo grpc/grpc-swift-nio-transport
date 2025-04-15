@@ -111,18 +111,36 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     XCTAssertNoThrow(try channel.writeOutbound(request))
 
     // Receive server's initial metadata with 1xx status
-    let serverInitialMetadata: HPACKHeaders = [
+    let invalidServerInitialMetadata: HPACKHeaders = [
       GRPCHTTP2Keys.status.rawValue: "104",
       GRPCHTTP2Keys.contentType.rawValue: ContentType.grpc.canonicalValue,
     ]
 
     XCTAssertNoThrow(
       try channel.writeInbound(
-        HTTP2Frame.FramePayload.headers(.init(headers: serverInitialMetadata))
+        HTTP2Frame.FramePayload.headers(.init(headers: invalidServerInitialMetadata))
       )
     )
 
     XCTAssertNil(try channel.readInbound(as: RPCResponsePart<GRPCNIOTransportBytes>.self))
+
+    // We are still expecting the correct headers after getting a 1xx response, so make sure we
+    // don't fail if we get the metadata twice.
+    let validServerInitialMetadata: HPACKHeaders = [
+      GRPCHTTP2Keys.status.rawValue: "200",
+      GRPCHTTP2Keys.contentType.rawValue: "application/grpc",
+      "some-custom-header": "some-custom-value",
+    ]
+    XCTAssertNoThrow(
+      try channel.writeInbound(
+        HTTP2Frame.FramePayload.headers(.init(headers: validServerInitialMetadata))
+      )
+    )
+
+    XCTAssertEqual(
+      try channel.readInbound(as: RPCResponsePart<GRPCNIOTransportBytes>.self),
+      RPCResponsePart.metadata(Metadata(headers: validServerInitialMetadata))
+    )
   }
 
   func testServerInitialMetadataOtherNon200HTTPStatusCodeResultsInFinishedRPC() throws {
@@ -161,6 +179,16 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
         Metadata(headers: serverInitialMetadata)
       )
     )
+
+    // We should not throw if the server sends another message:
+    // we should drop it, since the server is now closed.
+    var buffer = ByteBuffer()
+    buffer.writeInteger(UInt8(0))  // not compressed
+    buffer.writeInteger(UInt32(42))  // message length
+    buffer.writeRepeatingByte(0, count: 42)  // message
+    let serverDataPayload = HTTP2Frame.FramePayload.Data(data: .byteBuffer(buffer), endStream: true)
+    XCTAssertNoThrow(try channel.writeInbound(HTTP2Frame.FramePayload.data(serverDataPayload)))
+    XCTAssertNil(try channel.readInbound(as: RPCResponsePart<GRPCNIOTransportBytes>.self))
   }
 
   func testServerInitialMetadataMissingContentTypeResultsInFinishedRPC() throws {
@@ -448,19 +476,22 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       )
     )
 
-    // We should throw if the server sends another message, since it's closed the stream already.
+    // We should not throw if the server sends another message:
+    // we should drop it, since the server is now closed.
     var buffer = ByteBuffer()
     buffer.writeInteger(UInt8(0))  // not compressed
     buffer.writeInteger(UInt32(42))  // message length
     buffer.writeRepeatingByte(0, count: 42)  // message
     let serverDataPayload = HTTP2Frame.FramePayload.Data(data: .byteBuffer(buffer), endStream: true)
-    XCTAssertThrowsError(
-      ofType: RPCError.self,
-      try channel.writeInbound(HTTP2Frame.FramePayload.data(serverDataPayload))
-    ) { error in
-      XCTAssertEqual(error.code, .internalError)
-      XCTAssertEqual(error.message, "Invalid state")
-    }
+    XCTAssertNoThrow(try channel.writeInbound(HTTP2Frame.FramePayload.data(serverDataPayload)))
+    XCTAssertNil(try channel.readInbound(as: RPCResponsePart<GRPCNIOTransportBytes>.self))
+
+    // We should also not throw if the server sends trailers again.
+    XCTAssertNoThrow(
+      try channel.writeInbound(
+        HTTP2Frame.FramePayload.headers(.init(headers: serverInitialMetadata, endStream: true))
+      )
+    )
   }
 
   func testNormalFlow() throws {

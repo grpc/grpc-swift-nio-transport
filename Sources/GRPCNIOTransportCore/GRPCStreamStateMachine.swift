@@ -831,6 +831,7 @@ extension GRPCStreamStateMachine {
   private enum ServerHeadersValidationResult {
     case valid
     case invalid(OnMetadataReceived)
+    case skip
   }
 
   private mutating func clientValidateHeadersReceivedFromServer(
@@ -863,7 +864,7 @@ extension GRPCStreamStateMachine {
         // For 1xx status codes, the entire header should be skipped and a
         // subsequent header should be read.
         // See https://github.com/grpc/grpc/blob/7f664c69b2a636386fbf95c16bc78c559734ce0f/doc/http-grpc-status-mapping.md
-        return .invalid(.doNothing)
+        return .skip
       }
 
       // Forward the mapped status code.
@@ -966,22 +967,26 @@ extension GRPCStreamStateMachine {
     switch self.state {
     case .clientOpenServerIdle(let state):
       switch (self.clientValidateHeadersReceivedFromServer(headers), endStream) {
-      case (.invalid(let action), true):
-        // The headers are invalid, but the server signalled that it was
-        // closing the stream, so close both client and server.
+      case (.skip, _):
+        // Headers should be ignored, so do nothing for now.
+        return .doNothing
+
+      case (.invalid(let action), _):
+        // The received headers are invalid, so we can't do anything other than assume this server
+        // is not behaving correctly: transition both client and server to closed.
         self.state = .clientClosedServerClosed(.init(previousState: state))
         return action
-      case (.invalid(let action), false):
-        self.state = .clientClosedServerIdle(.init(previousState: state))
-        return action
+
       case (.valid, true):
         // This is a trailers-only response: close server.
         self.state = .clientOpenServerClosed(.init(previousState: state))
         return try self.validateTrailers(headers)
+
       case (.valid, false):
         switch self.processInboundEncoding(headers: headers, configuration: configuration) {
         case .error(let failure):
           return failure
+
         case .success(let inboundEncoding):
           let decompressor = Zlib.Method(encoding: inboundEncoding)
             .flatMap { Zlib.Decompressor(method: $0) }
@@ -1013,18 +1018,21 @@ extension GRPCStreamStateMachine {
 
     case .clientClosedServerIdle(let state):
       switch (self.clientValidateHeadersReceivedFromServer(headers), endStream) {
-      case (.invalid(let action), true):
-        // The headers are invalid, but the server signalled that it was
-        // closing the stream, so close the server side too.
+      case (.skip, _):
+        // Headers should be ignored, so do nothing for now.
+        return .doNothing
+
+      case (.invalid(let action), _):
+        // The received headers are invalid, so we can't do anything other than assume this server
+        // is not behaving correctly: transition both client and server to closed.
         self.state = .clientClosedServerClosed(.init(previousState: state))
         return action
-      case (.invalid(let action), false):
-        // Client is already closed, so we don't need to update our state.
-        return action
+
       case (.valid, true):
         // This is a trailers-only response: close server.
         self.state = .clientClosedServerClosed(.init(previousState: state))
         return try self.validateTrailers(headers)
+
       case (.valid, false):
         switch self.processInboundEncoding(headers: headers, configuration: configuration) {
         case .error(let failure):
@@ -1051,27 +1059,15 @@ extension GRPCStreamStateMachine {
       }
       return try self.validateTrailers(headers)
 
-    case .clientClosedServerClosed:
-      // We could end up here if we received a grpc-status header in a previous
-      // frame (which would have already close the server) and then we receive
-      // an empty frame with EOS set.
-      // We wouldn't want to throw in that scenario, so we just ignore it.
-      // Note that we don't want to ignore it if EOS is not set here though, as
-      // then it would be an invalid payload.
-      if !endStream || headers.count > 0 {
-        try self.invalidState(
-          "Server is closed, nothing could have been sent."
-        )
-      }
+    case .clientOpenServerClosed, .clientClosedServerClosed:
+      // We've transitioned the server to closed: drop any other incoming headers.
       return .doNothing
+
     case .clientIdleServerIdle:
       try self.invalidState(
         "Server cannot have sent metadata if the client is idle."
       )
-    case .clientOpenServerClosed:
-      try self.invalidState(
-        "Server is closed, nothing could have been sent."
-      )
+
     case ._modifying:
       preconditionFailure()
     }
@@ -1153,9 +1149,13 @@ extension GRPCStreamStateMachine {
       }
 
     case .clientOpenServerClosed, .clientClosedServerClosed:
-      try self.invalidState(
-        "Cannot have received anything from a closed server."
-      )
+      // If the server is closed, it's because it actually closed, or because the client
+      // transitioned it to a close state because it returned invalid headers.
+      // In either case, we will have already surfaced a status + trailers response to the client,
+      // so if we receive further packages, we should just drop them on the floor,
+      // as there's nothing for us to do with them.
+      return .doNothing
+
     case ._modifying:
       preconditionFailure()
     }
