@@ -175,6 +175,8 @@ extension HTTP2ClientTransport.TransportServices {
         }
       }
 
+      config.clientBootstrapNWParametersConfigurator?(bootstrap)
+
       let (channel, multiplexer) = try await bootstrap.connect(to: address) { channel in
         channel.eventLoop.makeCompletedFuture {
           try channel.pipeline.syncOperations.configureGRPCClientPipeline(
@@ -215,6 +217,11 @@ extension HTTP2ClientTransport.TransportServices {
     /// Channel callbacks for debugging.
     public var channelDebuggingCallbacks: HTTP2ClientTransport.Config.ChannelDebuggingCallbacks
 
+    /// Customise the NWParameters used in the NIO Transport Services bootstrap when creating the connection channel.
+    public var clientBootstrapNWParametersConfigurator: (
+      @Sendable (NIOTSConnectionBootstrap) -> Void
+    )?
+
     /// Creates a new connection configuration.
     ///
     /// - Parameters:
@@ -223,6 +230,8 @@ extension HTTP2ClientTransport.TransportServices {
     ///   - connection: Connection configuration.
     ///   - compression: Compression configuration.
     ///   - channelDebuggingCallbacks: Channel callbacks for debugging.
+    ///   - clientBootstrapNWParametersConfigurator: Customise the NWParameters used in the NIO Transport
+    ///   Services bootstrap when creating the connection channel.
     ///
     /// - SeeAlso: ``defaults(configure:)`` and ``defaults``.
     public init(
@@ -230,7 +239,8 @@ extension HTTP2ClientTransport.TransportServices {
       backoff: HTTP2ClientTransport.Config.Backoff,
       connection: HTTP2ClientTransport.Config.Connection,
       compression: HTTP2ClientTransport.Config.Compression,
-      channelDebuggingCallbacks: HTTP2ClientTransport.Config.ChannelDebuggingCallbacks
+      channelDebuggingCallbacks: HTTP2ClientTransport.Config.ChannelDebuggingCallbacks,
+      clientBootstrapNWParametersConfigurator: (@Sendable (NIOTSConnectionBootstrap) -> Void)?
     ) {
       self.http2 = http2
       self.connection = connection
@@ -256,7 +266,8 @@ extension HTTP2ClientTransport.TransportServices {
         backoff: .defaults,
         connection: .defaults,
         compression: .defaults,
-        channelDebuggingCallbacks: .defaults
+        channelDebuggingCallbacks: .defaults,
+        clientBootstrapNWParametersConfigurator: nil
       )
       configure(&config)
       return config

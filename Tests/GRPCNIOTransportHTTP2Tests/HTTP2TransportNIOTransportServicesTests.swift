@@ -20,6 +20,7 @@ import GRPCNIOTransportCore
 import GRPCNIOTransportHTTP2TransportServices
 import XCTest
 import NIOSSL
+import NIOConcurrencyHelpers
 
 final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
   func testGetListeningAddress_IPv4() async throws {
@@ -206,6 +207,65 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
     XCTAssertNil(grpcTLSConfig.identityProvider)
     XCTAssertEqual(grpcTLSConfig.serverCertificateVerification, .fullVerification)
     XCTAssertEqual(grpcTLSConfig.trustRoots, .systemDefault)
+  }
+
+  func testServerNWParametersConfiguratorGetsCalled() async throws {
+    let configuratorCalledCount = NIOLockedValueBox(0)
+    let transport = GRPCNIOTransportCore.HTTP2ServerTransport.TransportServices(
+      address: .ipv4(host: "0.0.0.0", port: 0),
+      transportSecurity: .plaintext,
+      config: .defaults(configure: { config in
+        config.serverBootstrapNWParametersConfigurator = { _ in
+          configuratorCalledCount.withLockedValue { $0 += 1 }
+        }
+      })
+    )
+
+    try await withThrowingDiscardingTaskGroup { group in
+      group.addTask {
+        try await transport.listen { _, _ in }
+      }
+
+      group.addTask {
+        _ = try await transport.listeningAddress
+        XCTAssertEqual(1, configuratorCalledCount.withLockedValue({ $0 }))
+        transport.beginGracefulShutdown()
+      }
+    }
+  }
+
+  func testClientNWParametersConfiguratorGetsCalled() async throws {
+    let (stream, continuation) = AsyncStream.makeStream(of: Void.self)
+
+    let clientTransport = try GRPCNIOTransportCore.HTTP2ClientTransport.TransportServices(
+      target: .ipv4(host: "0.0.0.0", port: 0),
+      transportSecurity: .plaintext,
+      config: .defaults(configure: { config in
+        config.clientBootstrapNWParametersConfigurator = { _ in
+          continuation.finish()
+        }
+      })
+    )
+
+    await withThrowingTaskGroup(of: Void.self) { group in
+      group.addTask {
+        // It doesn't matter if the connection actually fails: the configurator will run before
+        // we attempt to connect anyways.
+        try? await clientTransport.connect()
+      }
+
+      group.addTask {
+        // Timeout after a second if we haven't called the configurator closure.
+        try await Task.sleep(for: .seconds(1))
+        XCTFail("clientBootstrapNWParametersConfigurator was not called.")
+        throw CancellationError()
+      }
+
+      for await _ in stream {
+        // If/when we exit this loop, it means we have called the configurator closure
+      }
+      group.cancelAll()
+    }
   }
 }
 

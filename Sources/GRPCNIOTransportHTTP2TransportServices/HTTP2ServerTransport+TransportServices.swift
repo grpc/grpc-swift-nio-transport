@@ -57,6 +57,8 @@ extension HTTP2ServerTransport {
             .tlsOptions(try NWProtocolTLS.Options(tlsConfig))
         }
 
+        config.serverBootstrapNWParametersConfigurator?(bootstrap)
+
         let serverChannel =
           try await bootstrap
           .serverChannelOption(.socketOption(.so_reuseaddr), value: 1)
@@ -164,6 +166,11 @@ extension HTTP2ServerTransport.TransportServices {
     /// Channel callbacks for debugging.
     public var channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
 
+    /// Customise the NWParameters used in the NIO Transport Services bootstrap when creating the listening channel.
+    public var serverBootstrapNWParametersConfigurator: (
+      @Sendable (NIOTSListenerBootstrap) -> Void
+    )?
+
     /// Construct a new `Config`.
     /// - Parameters:
     ///   - compression: Compression configuration.
@@ -171,6 +178,8 @@ extension HTTP2ServerTransport.TransportServices {
     ///   - http2: HTTP2 configuration.
     ///   - rpc: RPC configuration.
     ///   - channelDebuggingCallbacks: Channel callbacks for debugging.
+    ///   - serverBootstrapNWParametersConfigurator: Customise the NWParameters used in the NIO Transport
+    ///   Services bootstrap when creating the listening channel.
     ///
     /// - SeeAlso: ``defaults(configure:)`` and ``defaults``.
     public init(
@@ -178,13 +187,15 @@ extension HTTP2ServerTransport.TransportServices {
       connection: HTTP2ServerTransport.Config.Connection,
       http2: HTTP2ServerTransport.Config.HTTP2,
       rpc: HTTP2ServerTransport.Config.RPC,
-      channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
+      channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks,
+      serverBootstrapNWParametersConfigurator: (@Sendable (NIOTSListenerBootstrap) -> Void)?
     ) {
       self.compression = compression
       self.connection = connection
       self.http2 = http2
       self.rpc = rpc
       self.channelDebuggingCallbacks = channelDebuggingCallbacks
+      self.serverBootstrapNWParametersConfigurator = serverBootstrapNWParametersConfigurator
     }
 
     public static var defaults: Self {
@@ -203,7 +214,8 @@ extension HTTP2ServerTransport.TransportServices {
         connection: .defaults,
         http2: .defaults,
         rpc: .defaults,
-        channelDebuggingCallbacks: .defaults
+        channelDebuggingCallbacks: .defaults,
+        serverBootstrapNWParametersConfigurator: nil
       )
       configure(&config)
       return config
