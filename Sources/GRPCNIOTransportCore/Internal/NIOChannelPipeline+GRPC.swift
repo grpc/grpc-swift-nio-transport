@@ -205,6 +205,6 @@ extension ChannelPipeline.SynchronousOperations {
 
   /// Window size which mustn't exceed `2^31 - 1` (RFC 9113 § 6.5.2).
   internal func clampTargetWindowSize(_ targetWindowSize: Int) -> Int {
-    min(targetWindowSize, (1 << 31) - 1)
+    min(targetWindowSize, Int(Int32.max))
   }
 }
