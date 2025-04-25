@@ -308,7 +308,7 @@ extension Subchannel {
       )
       group.addTask {
         do {
-          try await Task.sleep(for: duration)
+          try await Task.sleep(for: duration, tolerance: .zero)
           self.input.continuation.yield(.backedOff)
         } catch {
           // Can only be a cancellation error, swallow it. No further connection attempts will be

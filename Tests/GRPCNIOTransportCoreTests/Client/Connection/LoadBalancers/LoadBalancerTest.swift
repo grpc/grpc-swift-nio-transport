@@ -94,7 +94,7 @@ enum LoadBalancerTest {
 
     try await withThrowingTaskGroup(of: TestEvent.self) { group in
       group.addTask {
-        try? await Task.sleep(for: timeout)
+        try? await Task.sleep(for: timeout, tolerance: .zero)
         return .timedOut
       }
 

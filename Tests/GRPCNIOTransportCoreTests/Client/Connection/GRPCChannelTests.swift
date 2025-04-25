@@ -775,7 +775,7 @@ final class GRPCChannelTests: XCTestCase {
           group.addTask {
             // Sleep a little to increase the chances of the stream being queued before the channel
             // reacts to the close.
-            try await Task.sleep(for: .milliseconds(10))
+            try await Task.sleep(for: .milliseconds(10), tolerance: .zero)
             channel.beginGracefulShutdown()
           }
 
@@ -842,7 +842,7 @@ final class GRPCChannelTests: XCTestCase {
       try await doAnRPC()
 
       // Wait for the idle time to pass.
-      try await Task.sleep(for: .milliseconds(100))
+      try await Task.sleep(for: .milliseconds(100), tolerance: .zero)
 
       // Do another RPC.
       try await doAnRPC()
