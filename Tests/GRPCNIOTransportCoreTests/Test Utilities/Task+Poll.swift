@@ -28,7 +28,7 @@ extension Task where Success == Never, Failure == Never {
       if canReturn { return true }
 
       start = start.advanced(by: interval)
-      try await Task.sleep(until: start)
+      try await Task.sleep(until: start, tolerance: .zero)
     }
 
     return false
