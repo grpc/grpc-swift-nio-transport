@@ -18,6 +18,7 @@ public import GRPCCore
 public import NIOCore
 
 /// The contiguous bytes type used by the gRPC's NIO transport.
+@available(gRPCSwiftNIOTransport 1.0, *)
 public struct GRPCNIOTransportBytes: GRPCContiguousBytes, Hashable, Sendable {
   @usableFromInline
   internal var buffer: ByteBuffer

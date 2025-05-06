@@ -18,6 +18,7 @@ private import GRPCCore
 public import NIOCertificateReloading
 public import NIOSSL
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension HTTP2ServerTransport.Posix {
   /// The security configuration for this connection.
   public struct TransportSecurity: Sendable {
@@ -142,6 +143,7 @@ extension HTTP2ServerTransport.Posix {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension HTTP2ServerTransport.Posix.TransportSecurity {
   public struct TLS: Sendable {
     /// The certificates the server will offer during negotiation.
@@ -241,6 +243,7 @@ extension HTTP2ServerTransport.Posix.TransportSecurity {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension HTTP2ClientTransport.Posix {
   /// The security configuration for this connection.
   public struct TransportSecurity: Sendable {
@@ -327,6 +330,7 @@ extension HTTP2ClientTransport.Posix {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension HTTP2ClientTransport.Posix.TransportSecurity {
   public struct TLS: Sendable {
     /// The certificates the client will offer during negotiation.
@@ -419,6 +423,7 @@ extension HTTP2ClientTransport.Posix.TransportSecurity {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.2, *)
 extension TLSConfig.PrivateKeySource {
   /// Creates a key source from a `NIOSSLCustomPrivateKey`.
   ///
@@ -432,12 +437,14 @@ extension TLSConfig.PrivateKeySource {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.2, *)
 extension TLSConfig.CertificateSource {
   internal static func nioSSLCertificateSource(_ wrapped: NIOSSLCertificateSource) -> Self {
     return .transportSpecific(TransportSpecific(wrapped))
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.2, *)
 extension CertificateReloader {
   fileprivate func checkPrimed() throws -> ([NIOSSLCertificateSource], NIOSSLPrivateKeySource) {
     func explain(missingItem item: String) -> String {

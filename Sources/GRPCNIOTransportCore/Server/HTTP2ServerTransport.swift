@@ -19,13 +19,16 @@ public import NIOCore
 internal import NIOHTTP2
 
 /// A namespace for the HTTP/2 server transport.
+@available(gRPCSwiftNIOTransport 1.0, *)
 public enum HTTP2ServerTransport {}
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension HTTP2ServerTransport {
   /// A namespace for HTTP/2 server transport configuration.
   public enum Config {}
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension HTTP2ServerTransport.Config {
   public struct Compression: Sendable, Hashable {
     /// Compression algorithms enabled for inbound messages.

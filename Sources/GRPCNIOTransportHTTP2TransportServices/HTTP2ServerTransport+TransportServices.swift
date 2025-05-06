@@ -26,6 +26,7 @@ private import Network
 
 private import Synchronization
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension HTTP2ServerTransport {
   /// A NIO Transport Services-backed implementation of a server transport.
   public struct TransportServices: ServerTransport, ListeningServerTransport {
@@ -146,6 +147,7 @@ extension HTTP2ServerTransport {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension HTTP2ServerTransport.TransportServices {
   /// Configuration for the `TransportServices` transport.
   public struct Config: Sendable {
@@ -211,6 +213,7 @@ extension HTTP2ServerTransport.TransportServices {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension NIOTSListenerBootstrap {
   fileprivate func bind<Output: Sendable>(
     to address: GRPCNIOTransportCore.SocketAddress,
@@ -233,6 +236,7 @@ extension NIOTSListenerBootstrap {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension ServerTransport where Self == HTTP2ServerTransport.TransportServices {
   /// Create a new `TransportServices` based HTTP/2 server transport.
   ///
@@ -257,6 +261,7 @@ extension ServerTransport where Self == HTTP2ServerTransport.TransportServices {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension NWProtocolTLS.Options {
   convenience init(_ tlsConfig: HTTP2ServerTransport.TransportServices.TLS) throws {
     self.init()

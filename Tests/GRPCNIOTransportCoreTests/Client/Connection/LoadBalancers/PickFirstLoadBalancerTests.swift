@@ -21,6 +21,7 @@ import NIOHTTP2
 import NIOPosix
 import XCTest
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 final class PickFirstLoadBalancerTests: XCTestCase {
   func testPickFirstConnectsToServer() async throws {
     try await LoadBalancerTest.pickFirst(servers: 1, connector: .posix()) { context, event in

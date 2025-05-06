@@ -22,6 +22,7 @@ internal import NIOCore
 /// - It compresses messages using the specified compression algorithm (if configured).
 /// - It coalesces multiple messages (appended into the `Framer` by calling ``append(_:compress:)``)
 /// into a single `ByteBuffer`.
+@available(gRPCSwiftNIOTransport 1.0, *)
 struct GRPCMessageFramer {
   /// Length of the gRPC message header (1 compression byte, 4 bytes for the length).
   static let metadataLength = 5

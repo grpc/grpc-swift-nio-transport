@@ -18,11 +18,13 @@ public import GRPCCore
 
 /// A transport which refines `ServerTransport` to provide the socket address of a listening
 /// server.
+@available(gRPCSwiftNIOTransport 1.0, *)
 public protocol ListeningServerTransport: ServerTransport {
   /// Returns the listening address of the server transport once it has started.
   var listeningAddress: SocketAddress { get async throws }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension GRPCServer {
   /// Returns the listening address of the server transport once it has started.
   ///

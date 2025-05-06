@@ -23,6 +23,7 @@ import XCTest
 
 import protocol NIOCore.Channel
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 final class HTTP2TransportTests: XCTestCase {
   // A combination of client and server transport kinds.
   struct Transport: Sendable, CustomStringConvertible {
@@ -1768,6 +1769,7 @@ final class HTTP2TransportTests: XCTestCase {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension [HTTP2TransportTests.Transport] {
   static let supported: [HTTP2TransportTests.Transport] = TransportKind.servers.flatMap { server in
     TransportKind.clients.map { client in
@@ -1776,6 +1778,7 @@ extension [HTTP2TransportTests.Transport] {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension ControlInput {
   fileprivate static let echoMetadata = Self.with {
     $0.echoMetadataInHeaders = true
@@ -1827,6 +1830,7 @@ extension ControlInput {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension CompressionAlgorithm {
   var name: String {
     switch self {

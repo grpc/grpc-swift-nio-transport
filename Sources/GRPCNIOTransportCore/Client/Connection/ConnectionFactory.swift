@@ -18,6 +18,7 @@ package import NIOCore
 package import NIOHTTP2
 internal import NIOPosix
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 package protocol HTTP2Connector: Sendable {
   /// Attempt to establish a connection to the given address.
   ///
@@ -30,6 +31,7 @@ package protocol HTTP2Connector: Sendable {
   ) async throws -> HTTP2Connection
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 package struct HTTP2Connection: Sendable {
   /// The underlying TCP connection wrapped up for use with gRPC.
   var channel: NIOAsyncChannel<ClientConnectionEvent, Void>

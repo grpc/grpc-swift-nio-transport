@@ -20,6 +20,7 @@ import XCTest
 
 @testable import GRPCNIOTransportCore
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 final class ZlibTests: XCTestCase {
   private let text = """
     Here's to the crazy ones. The misfits. The rebels. The troublemakers. The round pegs in the

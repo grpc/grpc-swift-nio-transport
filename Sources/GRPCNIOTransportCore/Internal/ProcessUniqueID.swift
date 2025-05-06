@@ -17,6 +17,7 @@
 private import Synchronization
 
 /// An ID which is unique within this process.
+@available(gRPCSwiftNIOTransport 1.0, *)
 struct ProcessUniqueID: Hashable, Sendable, CustomStringConvertible {
   private static let source = Atomic(UInt64(0))
   private let rawValue: UInt64
@@ -32,6 +33,7 @@ struct ProcessUniqueID: Hashable, Sendable, CustomStringConvertible {
 }
 
 /// A process-unique ID for a subchannel.
+@available(gRPCSwiftNIOTransport 1.0, *)
 package struct SubchannelID: Hashable, Sendable, CustomStringConvertible {
   private let id = ProcessUniqueID()
   package init() {}
@@ -41,6 +43,7 @@ package struct SubchannelID: Hashable, Sendable, CustomStringConvertible {
 }
 
 /// A process-unique ID for a load-balancer.
+@available(gRPCSwiftNIOTransport 1.0, *)
 struct LoadBalancerID: Hashable, Sendable, CustomStringConvertible {
   private let id = ProcessUniqueID()
   var description: String {
@@ -49,6 +52,7 @@ struct LoadBalancerID: Hashable, Sendable, CustomStringConvertible {
 }
 
 /// A process-unique ID for an entry in a queue.
+@available(gRPCSwiftNIOTransport 1.0, *)
 struct QueueEntryID: Hashable, Sendable, CustomStringConvertible {
   private let id = ProcessUniqueID()
   var description: String {

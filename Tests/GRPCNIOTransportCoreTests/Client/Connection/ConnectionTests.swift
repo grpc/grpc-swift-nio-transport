@@ -24,6 +24,7 @@ import NIOPosix
 import Synchronization
 import XCTest
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 final class ConnectionTests: XCTestCase {
   func testConnectThenClose() async throws {
     try await ConnectionTest.run(connector: .posix()) { context, event in
@@ -240,6 +241,7 @@ final class ConnectionTests: XCTestCase {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension ClientBootstrap {
   func connect<T: Sendable>(
     to address: GRPCNIOTransportCore.SocketAddress,
@@ -276,6 +278,7 @@ extension ClientBootstrap {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension Metadata {
   init(_ sequence: some Sequence<Element>) {
     var metadata = Metadata()
@@ -292,6 +295,7 @@ extension Metadata {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 final class SNIRecordingConnector: HTTP2Connector {
   private let _sniHostnames: Mutex<[String?]>
 

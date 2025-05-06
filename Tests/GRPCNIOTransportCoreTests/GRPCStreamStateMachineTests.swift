@@ -135,6 +135,7 @@ extension HPACKHeaders {
   ]
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 final class GRPCStreamClientStateMachineTests: XCTestCase {
   private func makeClientStateMachine(
     targetState: TargetStateMachineState,
@@ -1330,6 +1331,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 final class GRPCStreamServerStateMachineTests: XCTestCase {
   private func makeServerStateMachine(
     targetState: TargetStateMachineState,
@@ -2797,6 +2799,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension XCTestCase {
   func assertRejectedRPC(
     _ action: GRPCStreamStateMachine.OnMetadataReceived,
@@ -2836,6 +2839,7 @@ extension XCTestCase {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension GRPCStreamStateMachine.OnNextOutboundFrame {
   static func == (
     lhs: GRPCStreamStateMachine.OnNextOutboundFrame,
@@ -2856,4 +2860,5 @@ extension GRPCStreamStateMachine.OnNextOutboundFrame {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension GRPCStreamStateMachine.OnNextOutboundFrame: Equatable {}

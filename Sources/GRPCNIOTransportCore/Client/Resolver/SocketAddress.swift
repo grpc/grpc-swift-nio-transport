@@ -15,6 +15,7 @@
  */
 
 /// An address to which a socket may connect or bind.
+@available(gRPCSwiftNIOTransport 1.0, *)
 public struct SocketAddress: Hashable, Sendable {
   private enum Value: Hashable, Sendable {
     case ipv4(IPv4)
@@ -69,6 +70,7 @@ public struct SocketAddress: Hashable, Sendable {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension SocketAddress {
   package var authority: String {
     let rawValue: String
@@ -98,6 +100,7 @@ extension SocketAddress {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension SocketAddress {
   /// Creates a socket address by wrapping a ``SocketAddress/IPv4-swift.struct``.
   public static func ipv4(_ address: IPv4) -> Self {
@@ -120,6 +123,7 @@ extension SocketAddress {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension SocketAddress {
   /// Creates an IPv4 socket address.
   public static func ipv4(host: String, port: Int) -> Self {
@@ -141,6 +145,7 @@ extension SocketAddress {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension SocketAddress: CustomStringConvertible {
   public var description: String {
     switch self.value {
@@ -156,6 +161,7 @@ extension SocketAddress: CustomStringConvertible {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension SocketAddress {
   public struct IPv4: Hashable, Sendable {
     /// The resolved host address.
@@ -305,36 +311,42 @@ extension SocketAddress {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension SocketAddress.IPv4: CustomStringConvertible {
   public var description: String {
     "[ipv4]\(self.host):\(self.port)"
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension SocketAddress.IPv6: CustomStringConvertible {
   public var description: String {
     "[ipv6]\(self.host):\(self.port)"
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension SocketAddress.UnixDomainSocket: CustomStringConvertible {
   public var description: String {
     "[unix]\(self.path)"
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension SocketAddress.VirtualSocket: CustomStringConvertible {
   public var description: String {
     "[vsock]\(self.contextID):\(self.port)"
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension SocketAddress.VirtualSocket.ContextID: CustomStringConvertible {
   public var description: String {
     self == .any ? "-1" : String(describing: self.rawValue)
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension SocketAddress.VirtualSocket.Port: CustomStringConvertible {
   public var description: String {
     self == .any ? "-1" : String(describing: self.rawValue)

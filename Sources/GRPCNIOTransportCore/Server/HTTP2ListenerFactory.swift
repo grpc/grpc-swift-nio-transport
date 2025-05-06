@@ -20,6 +20,7 @@ package import NIOExtras
 /// A factory to produce `NIOAsyncChannel`s to listen for new HTTP/2 connections.
 ///
 /// - SeeAlso: ``CommonHTTP2ServerTransport``
+@available(gRPCSwiftNIOTransport 1.0, *)
 package protocol HTTP2ListenerFactory: Sendable {
   typealias AcceptedChannel = (
     ChannelPipeline.SynchronousOperations.HTTP2ConnectionChannel,

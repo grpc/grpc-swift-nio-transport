@@ -26,6 +26,7 @@ struct DNSResolverTests {
       ("::1", .ipv6(host: "::1", port: 80)),
     ] as [(String, SocketAddress)]
   )
+  @available(gRPCSwiftNIOTransport 1.0, *)
   func resolve(host: String, expected: SocketAddress) async throws {
     // Note: This test checks the IPv4 and IPv6 addresses separately (instead of
     // `DNSResolver.resolve(host: "localhost", port: 80)`) because the ordering of the resulting

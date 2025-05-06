@@ -17,6 +17,7 @@
 import Foundation
 import GRPCCore
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 struct ControlInput: Codable {
   /// Whether metadata should be echo'd back in the initial metadata.
   ///

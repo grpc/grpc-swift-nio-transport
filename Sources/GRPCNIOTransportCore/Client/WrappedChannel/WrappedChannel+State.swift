@@ -17,6 +17,7 @@
 internal import GRPCCore
 internal import NIOHTTP2
 
+@available(gRPCSwiftNIOTransport 1.2, *)
 extension HTTP2ClientTransport.WrappedChannel {
   enum State: ~Copyable {
     case idle(Idle)
@@ -69,6 +70,7 @@ extension HTTP2ClientTransport.WrappedChannel {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.2, *)
 extension HTTP2ClientTransport.WrappedChannel.State {
   enum ConnectAction {
     case configureChannel

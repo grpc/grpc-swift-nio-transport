@@ -16,6 +16,7 @@
 
 internal import GRPCCore
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension CompressionAlgorithm {
   init?(name: String) {
     self.init(name: name[...])
@@ -48,6 +49,7 @@ extension CompressionAlgorithm {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension CompressionAlgorithmSet {
   var count: Int {
     self.rawValue.nonzeroBitCount

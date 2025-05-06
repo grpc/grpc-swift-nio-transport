@@ -27,6 +27,7 @@ private import Musl
 #endif
 
 /// An asynchronous non-blocking DNS resolver built on top of the libc `getaddrinfo` function.
+@available(gRPCSwiftNIOTransport 1.0, *)
 package enum DNSResolver {
   private static let dispatchQueue = DispatchQueue(
     label: "io.grpc.DNSResolver"
@@ -133,6 +134,7 @@ package enum DNSResolver {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension DNSResolver {
   /// `Error` that may be thrown based on the error code returned by `getaddrinfo`.
   package struct GetAddrInfoError: Error, Hashable, CustomStringConvertible {
@@ -148,6 +150,7 @@ extension DNSResolver {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension DNSResolver {
   /// `Error` that may be thrown based on the system error encountered by `inet_ntop`.
   package struct InetNetworkToPresentationError: Error, Hashable {
@@ -159,6 +162,7 @@ extension DNSResolver {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension SocketAddress.IPv4 {
   fileprivate init(_ address: sockaddr_in) throws {
     let presentationAddress = try withUnsafePointer(to: address.sin_addr) { addressPtr in
@@ -173,6 +177,7 @@ extension SocketAddress.IPv4 {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension SocketAddress.IPv6 {
   fileprivate init(_ address: sockaddr_in6) throws {
     let presentationAddress = try withUnsafePointer(to: address.sin6_addr) { addressPtr in

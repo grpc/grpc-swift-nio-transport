@@ -15,6 +15,7 @@
  */
 
 /// Events emitted by load-balancers.
+@available(gRPCSwiftNIOTransport 1.0, *)
 package enum LoadBalancerEvent: Sendable, Hashable {
   /// The connectivity state of the subchannel changed.
   case connectivityStateChanged(ConnectivityState)

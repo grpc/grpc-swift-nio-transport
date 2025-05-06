@@ -23,6 +23,7 @@ import XCTest
 
 @testable import GRPCNIOTransportCore
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 final class TestServer: Sendable {
   private let eventLoopGroup: any EventLoopGroup
   private typealias Stream = NIOAsyncChannel<
@@ -159,6 +160,7 @@ final class TestServer: Sendable {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension TestServer {
   enum RunHandler {
     case echo

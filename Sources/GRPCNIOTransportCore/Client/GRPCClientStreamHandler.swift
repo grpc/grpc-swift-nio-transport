@@ -18,6 +18,7 @@ internal import GRPCCore
 internal import NIOCore
 internal import NIOHTTP2
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 final class GRPCClientStreamHandler: ChannelDuplexHandler {
   typealias InboundIn = HTTP2Frame.FramePayload
   typealias InboundOut = RPCResponsePart<GRPCNIOTransportBytes>
@@ -58,6 +59,7 @@ final class GRPCClientStreamHandler: ChannelDuplexHandler {
 
 // - MARK: ChannelInboundHandler
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension GRPCClientStreamHandler {
   func channelRead(context: ChannelHandlerContext, data: NIOAny) {
     self.isReading = true
@@ -178,6 +180,7 @@ extension GRPCClientStreamHandler {
 
 // - MARK: ChannelOutboundHandler
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension GRPCClientStreamHandler {
   func write(context: ChannelHandlerContext, data: NIOAny, promise: EventLoopPromise<Void>?) {
     switch self.unwrapOutboundIn(data) {

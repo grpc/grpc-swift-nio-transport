@@ -43,6 +43,7 @@ private import Synchronization
 ///   }
 /// }
 /// ```
+@available(gRPCSwiftNIOTransport 1.0, *)
 package final class Connection: Sendable {
   /// Events which can happen over the lifetime of the connection.
   package enum Event: Sendable {
@@ -405,6 +406,7 @@ package final class Connection: Sendable {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension Connection {
   package struct Stream {
     package typealias Inbound = NIOAsyncChannelInboundStream<RPCResponsePart<GRPCNIOTransportBytes>>
@@ -478,6 +480,7 @@ extension Connection {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension Connection {
   private enum State: Sendable {
     /// The connection is idle or connecting.
