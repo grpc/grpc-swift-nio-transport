@@ -72,13 +72,10 @@ struct HTTP2TransportTLSEnabledTests {
     ) async throws -> GRPCCore.StreamingServerResponse<Output>
     where Input: Sendable, Output: Sendable {
       let transportSpecific = context.transportSpecific
-      #expect(transportSpecific != nil)
-      #expect(transportSpecific is HTTP2ServerTransport.Posix.Context)
       let transportSpecificAsPosixContext = try #require(
         transportSpecific as? HTTP2ServerTransport.Posix.Context
       )
       let peerCertificate = try #require(transportSpecificAsPosixContext.peerCertificate)
-      #expect(transportSpecificAsPosixContext.peerCertificate != nil)
       var derSerializer = DER.Serializer()
       try peerCertificate.serialize(into: &derSerializer)
       #expect(derSerializer.serializedBytes == self.clientCert)
@@ -88,30 +85,28 @@ struct HTTP2TransportTLSEnabledTests {
 
   @Test(
     "Using the mTLS defaults, and with Posix transport, validate we get the peer cert on the server",
-    arguments: TransportKind.supported
+    arguments: [TransportKind.posix]
   )
   func testRPC_mTLS_TransportContext_OK(supportedTransport: TransportKind) async throws {
-    if TransportKind.posix == supportedTransport {
-      let certificateKeyPairs = try SelfSignedCertificateKeyPairs()
-      let clientConfig = self.makeMTLSClientConfig(
-        for: supportedTransport,
-        certificateKeyPairs: certificateKeyPairs,
-        serverHostname: "localhost"
-      )
-      let serverConfig = self.makeMTLSServerConfig(
-        for: supportedTransport,
-        certificateKeyPairs: certificateKeyPairs,
-        includeClientCertificateInTrustRoots: true
-      )
+    let certificateKeyPairs = try SelfSignedCertificateKeyPairs()
+    let clientConfig = self.makeMTLSClientConfig(
+      for: supportedTransport,
+      certificateKeyPairs: certificateKeyPairs,
+      serverHostname: "localhost"
+    )
+    let serverConfig = self.makeMTLSServerConfig(
+      for: supportedTransport,
+      certificateKeyPairs: certificateKeyPairs,
+      includeClientCertificateInTrustRoots: true
+    )
 
-      try await self.withClientAndServer(
-        clientConfig: clientConfig,
-        serverConfig: serverConfig,
-        interceptors: [TransportSpecificInterceptor(certificateKeyPairs.client.certificate)]
-      ) { control in
-        await #expect(throws: Never.self) {
-          try await self.executeUnaryRPC(control: control)
-        }
+    try await self.withClientAndServer(
+      clientConfig: clientConfig,
+      serverConfig: serverConfig,
+      interceptors: [TransportSpecificInterceptor(certificateKeyPairs.client.certificate)]
+    ) { control in
+      await #expect(throws: Never.self) {
+        try await self.executeUnaryRPC(control: control)
       }
     }
   }
