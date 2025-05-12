@@ -1674,6 +1674,50 @@ final class HTTP2TransportTests: XCTestCase {
       XCTAssertNotNil(peerInfo.client.local.wholeMatch(of: /unix:peer-info-uds/))
     }
   }
+
+  enum TestError: Error {
+    case someError
+  }
+
+  func testThrowingInClientStreamWriter() async throws {
+    let server = GRPCServer(
+      transport: .http2NIOPosix(
+        address: .ipv4(host: "127.0.0.1", port: 0),
+        transportSecurity: .plaintext
+      ),
+      services: [ControlService()]
+    )
+
+    try await withThrowingDiscardingTaskGroup { group in
+      group.addTask {
+        try await server.serve()
+      }
+
+      do {
+        try await withGRPCClient(
+          transport: NIOClientTransport(
+            .http2NIOPosix(
+              target: .dns(host: "localhost", port: server.listeningAddress!.ipv4!.port),
+              transportSecurity: .plaintext
+            )
+          )
+        ) { client in
+          let controlClient = ControlClient(wrapping: client)
+          _ = try await controlClient.clientStream(
+            request: .init(producer: { writer in
+              throw TestError.someError
+            })
+          )
+        }
+        XCTFail("Test should have failed")
+      } catch let error as RPCError {
+        XCTAssertEqual(error.code, .unavailable)
+        XCTAssertEqual(error.message, "Stream unexpectedly closed with error.")
+      }
+
+      server.beginGracefulShutdown()
+    }
+  }
 }
 
 extension [HTTP2TransportTests.Transport] {
