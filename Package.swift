@@ -117,7 +117,6 @@ let targets: [Target] = [
       .product(name: "NIOSSL", package: "swift-nio-ssl"),
       .product(name: "X509", package: "swift-certificates"),
       .product(name: "SwiftASN1", package: "swift-asn1"),
-
     ],
     swiftSettings: defaultSwiftSettings
   ),
