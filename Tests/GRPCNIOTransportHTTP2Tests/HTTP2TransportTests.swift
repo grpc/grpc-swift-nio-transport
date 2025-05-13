@@ -1674,6 +1674,26 @@ final class HTTP2TransportTests: XCTestCase {
       XCTAssertNotNil(peerInfo.client.local.wholeMatch(of: /unix:peer-info-uds/))
     }
   }
+
+  enum TestError: Error {
+    case someError
+  }
+
+  func testThrowingInClientStreamWriter() async throws {
+    try await forEachTransportPair { client, server, transport in
+      do {
+        _ = try await client.clientStream(
+          request: .init(producer: { writer in
+            throw TestError.someError
+          })
+        )
+        XCTFail("Test should have failed")
+      } catch let error as RPCError {
+        XCTAssertEqual(error.code, .unavailable)
+        XCTAssertEqual(error.message, "Stream unexpectedly closed with error.")
+      }
+    }
+  }
 }
 
 extension [HTTP2TransportTests.Transport] {
