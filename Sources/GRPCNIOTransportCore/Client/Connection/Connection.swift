@@ -447,6 +447,9 @@ extension Connection {
       package func finish(throwing error: any Error) {
         // Fire the error inbound; this fails the inbound writer.
         self.http2Stream.channel.pipeline.fireErrorCaught(error)
+
+        // Now finish the request writer, to signal we're done writing.
+        self.requestWriter.finish()
       }
     }
 
