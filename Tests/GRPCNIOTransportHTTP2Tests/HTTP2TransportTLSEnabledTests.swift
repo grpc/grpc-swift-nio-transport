@@ -19,6 +19,7 @@ import GRPCCore
 import GRPCNIOTransportHTTP2Posix
 import GRPCNIOTransportHTTP2TransportServices
 import NIOSSL
+import SwiftASN1
 import Testing
 
 #if canImport(Network)
@@ -51,6 +52,58 @@ struct HTTP2TransportTLSEnabledTests {
     try await self.withClientAndServer(
       clientConfig: clientConfig,
       serverConfig: serverConfig
+    ) { control in
+      await #expect(throws: Never.self) {
+        try await self.executeUnaryRPC(control: control)
+      }
+    }
+  }
+
+  final class TransportSpecificInterceptor: ServerInterceptor {
+    let clientCert: [UInt8]
+    init(_ clientCert: [UInt8]) {
+      self.clientCert = clientCert
+    }
+    func intercept<Input, Output>(
+      request: GRPCCore.StreamingServerRequest<Input>,
+      context: GRPCCore.ServerContext,
+      next: @Sendable (GRPCCore.StreamingServerRequest<Input>, GRPCCore.ServerContext) async throws
+        -> GRPCCore.StreamingServerResponse<Output>
+    ) async throws -> GRPCCore.StreamingServerResponse<Output>
+    where Input: Sendable, Output: Sendable {
+      let transportSpecific = context.transportSpecific
+      let transportSpecificAsPosixContext = try #require(
+        transportSpecific as? HTTP2ServerTransport.Posix.Context
+      )
+      let peerCertificate = try #require(transportSpecificAsPosixContext.peerCertificate)
+      var derSerializer = DER.Serializer()
+      try peerCertificate.serialize(into: &derSerializer)
+      #expect(derSerializer.serializedBytes == self.clientCert)
+      return try await next(request, context)
+    }
+  }
+
+  @Test(
+    "Using the mTLS defaults, and with Posix transport, validate we get the peer cert on the server",
+    arguments: [TransportKind.posix]
+  )
+  func testRPC_mTLS_TransportContext_OK(supportedTransport: TransportKind) async throws {
+    let certificateKeyPairs = try SelfSignedCertificateKeyPairs()
+    let clientConfig = self.makeMTLSClientConfig(
+      for: supportedTransport,
+      certificateKeyPairs: certificateKeyPairs,
+      serverHostname: "localhost"
+    )
+    let serverConfig = self.makeMTLSServerConfig(
+      for: supportedTransport,
+      certificateKeyPairs: certificateKeyPairs,
+      includeClientCertificateInTrustRoots: true
+    )
+
+    try await self.withClientAndServer(
+      clientConfig: clientConfig,
+      serverConfig: serverConfig,
+      interceptors: [TransportSpecificInterceptor(certificateKeyPairs.client.certificate)]
     ) { control in
       await #expect(throws: Never.self) {
         try await self.executeUnaryRPC(control: control)
@@ -473,6 +526,7 @@ struct HTTP2TransportTLSEnabledTests {
   func withClientAndServer(
     clientConfig: ClientConfig,
     serverConfig: ServerConfig,
+    interceptors: [any ServerInterceptor] = [],
     _ test: (ControlClient<NIOClientTransport>) async throws -> Void
   ) async throws {
     let serverTransport: NIOServerTransport
@@ -497,7 +551,11 @@ struct HTTP2TransportTLSEnabledTests {
     #endif
     }
 
-    try await withGRPCServer(transport: serverTransport, services: [ControlService()]) { server in
+    try await withGRPCServer(
+      transport: serverTransport,
+      services: [ControlService()],
+      interceptors: interceptors
+    ) { server in
       guard let address = try await server.listeningAddress?.ipv4 else {
         throw TLSEnabledTestsError.unexpectedListeningAddress
       }

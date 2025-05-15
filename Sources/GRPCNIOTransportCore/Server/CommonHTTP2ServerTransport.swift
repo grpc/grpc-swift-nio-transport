@@ -33,6 +33,10 @@ package final class CommonHTTP2ServerTransport<
   private let listeningAddressState: Mutex<State>
   private let serverQuiescingHelper: ServerQuiescingHelper
   private let factory: ListenerFactory
+  private let transportSpecificContext:
+    (
+      @Sendable (any Channel) async -> any ServerContext.TransportSpecific
+    )?
 
   private enum State {
     case idle(EventLoopPromise<SocketAddress>)
@@ -132,7 +136,10 @@ package final class CommonHTTP2ServerTransport<
     address: SocketAddress,
     eventLoopGroup: any EventLoopGroup,
     quiescingHelper: ServerQuiescingHelper,
-    listenerFactory: ListenerFactory
+    listenerFactory: ListenerFactory,
+    transportSpecificContext: (
+      @Sendable (any Channel) async -> any ServerContext.TransportSpecific
+    )? = nil
   ) {
     self.eventLoopGroup = eventLoopGroup
     self.address = address
@@ -142,6 +149,7 @@ package final class CommonHTTP2ServerTransport<
 
     self.factory = listenerFactory
     self.serverQuiescingHelper = quiescingHelper
+    self.transportSpecificContext = transportSpecificContext
   }
 
   package func listen(
@@ -219,6 +227,7 @@ package final class CommonHTTP2ServerTransport<
             group.addTask {
               await self.handleStream(
                 stream,
+                connection,
                 handler: streamHandler,
                 descriptor: descriptor,
                 remotePeer: remotePeer,
@@ -235,6 +244,7 @@ package final class CommonHTTP2ServerTransport<
 
   private func handleStream(
     _ stream: NIOAsyncChannel<RPCRequestPart<Bytes>, RPCResponsePart<Bytes>>,
+    _ connection: NIOAsyncChannel<HTTP2Frame, HTTP2Frame>,
     handler streamHandler: @escaping @Sendable (
       _ stream: RPCStream<Inbound, Outbound>,
       _ context: ServerContext
@@ -279,12 +289,15 @@ package final class CommonHTTP2ServerTransport<
           )
         )
 
-        let context = ServerContext(
+        var context = ServerContext(
           descriptor: descriptor,
           remotePeer: remotePeer,
           localPeer: localPeer,
           cancellation: handle
         )
+        if let transportSpecificContext = self.transportSpecificContext {
+          context.transportSpecific = await transportSpecificContext(connection.channel)
+        }
         await streamHandler(rpcStream, context)
       }
     }

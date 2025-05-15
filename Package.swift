@@ -51,7 +51,7 @@ let dependencies: [Package.Dependency] = [
   ),
   .package(
     url: "https://github.com/apple/swift-nio-ssl.git",
-    from: "2.29.0"
+    from: "2.31.0"
   ),
   .package(
     url: "https://github.com/apple/swift-nio-extras.git",
@@ -60,6 +60,10 @@ let dependencies: [Package.Dependency] = [
   .package(
     url: "https://github.com/apple/swift-certificates.git",
     from: "1.5.0"
+  ),
+  .package(
+    url: "https://github.com/apple/swift-asn1.git",
+    from: "1.0.0"
   ),
 ]
 
@@ -111,6 +115,8 @@ let targets: [Target] = [
       .product(name: "GRPCCore", package: "grpc-swift"),
       .product(name: "NIOPosix", package: "swift-nio"),
       .product(name: "NIOSSL", package: "swift-nio-ssl"),
+      .product(name: "X509", package: "swift-certificates"),
+      .product(name: "SwiftASN1", package: "swift-asn1"),
     ],
     swiftSettings: defaultSwiftSettings
   ),
