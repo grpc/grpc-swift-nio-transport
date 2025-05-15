@@ -15,6 +15,7 @@
  */
 
 import GRPCNIOTransportHTTP2
+import NIOCertificateReloading
 import NIOCore
 import NIOSSL
 import Testing
@@ -61,6 +62,49 @@ struct TLSConfigurationTests {
     let tlsConfig = try TLSConfiguration(tls)
     let privateKey = try #require(tlsConfig.privateKey?.privateKey)
     #expect(privateKey == NIOSSLPrivateKey(customPrivateKey: custom))
+  }
+
+  struct StaticCertLoader: CertificateReloader {
+    var sslContextConfigurationOverride: NIOSSLContextConfigurationOverride {
+      var override = NIOSSLContextConfigurationOverride()
+      override.certificateChain = []
+      override.privateKey = .privateKey(NIOSSLPrivateKey(customPrivateKey: NoOpCustomPrivateKey()))
+      return override
+    }
+  }
+
+  @Test("Client cert reloader is set")
+  func clientCertificateReloader() throws {
+    let config = try HTTP2ClientTransport.Posix.TransportSecurity.mTLS(
+      certificateReloader: StaticCertLoader()
+    )
+    let tls = try #require(config.tls)
+    let tlsConfig = try TLSConfiguration(tls)
+    let privateKey = try #require(tlsConfig.privateKey?.privateKey)
+    #expect(privateKey == NIOSSLPrivateKey(customPrivateKey: NoOpCustomPrivateKey()))
+    #expect(tlsConfig.certificateChain.isEmpty)
+    #expect(tlsConfig.sslContextCallback != nil)
+  }
+
+  @Test("Server cert reloader is set", arguments: [false, true])
+  func serverCertificateReloader(isMTLS: Bool) throws {
+    let config: HTTP2ServerTransport.Posix.TransportSecurity
+    if isMTLS {
+      config = try HTTP2ServerTransport.Posix.TransportSecurity.mTLS(
+        certificateReloader: StaticCertLoader()
+      )
+    } else {
+      config = try HTTP2ServerTransport.Posix.TransportSecurity.tls(
+        certificateReloader: StaticCertLoader()
+      )
+    }
+
+    let tls = try #require(config.tls)
+    let tlsConfig = try TLSConfiguration(tls)
+    let privateKey = try #require(tlsConfig.privateKey?.privateKey)
+    #expect(privateKey == NIOSSLPrivateKey(customPrivateKey: NoOpCustomPrivateKey()))
+    #expect(tlsConfig.certificateChain.isEmpty)
+    #expect(tlsConfig.sslContextCallback != nil)
   }
 }
 

@@ -318,6 +318,9 @@ extension TLSConfig.TrustRootsSource {
 
             case .file(_, let format), .bytes(_, let format):
               fatalError("Certificate format must be DER, but was \(format).")
+
+            case .transportSpecific:
+              fatalError("Certificate format must be DER, but was an unsupported type.")
             }
 
             guard let certificate = SecCertificateCreateWithData(nil, certificateBytes as CFData)

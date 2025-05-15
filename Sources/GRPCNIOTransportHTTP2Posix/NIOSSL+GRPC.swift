@@ -15,6 +15,8 @@
  */
 
 internal import GRPCCore
+internal import GRPCNIOTransportCore
+internal import NIOCertificateReloading
 internal import NIOSSL
 
 extension NIOSSLSerializationFormats {
@@ -59,6 +61,13 @@ extension Sequence<TLSConfig.CertificateSource> {
             NIOSSLCertificateSource.certificate($0)
           }
           certificateSources.append(contentsOf: certificates)
+        }
+
+      case .transportSpecific(let specific):
+        if let source = specific.wrapped as? NIOSSLCertificateSource {
+          certificateSources.append(source)
+        } else {
+          fatalError("Invalid certificate source of type \(type(of: specific.wrapped))")
         }
       }
     }
@@ -134,11 +143,35 @@ extension NIOSSLTrustRoots {
             bytes: bytes,
             format: NIOSSLSerializationFormats(serializationFormat)
           )
+
         case .file(let path, let serializationFormat):
           return try NIOSSLCertificate(
             file: path,
             format: NIOSSLSerializationFormats(serializationFormat)
           )
+
+        case .transportSpecific(let specific):
+          guard let source = specific.wrapped as? NIOSSLCertificateSource else {
+            fatalError("Invalid certificate source of type \(type(of: specific.wrapped))")
+          }
+
+          switch source {
+          case .certificate(let certificate):
+            return certificate
+
+          case .file(let path):
+            switch path.split(separator: ".").last {
+            case "pem":
+              return try NIOSSLCertificate(file: path, format: .pem)
+            case "der":
+              return try NIOSSLCertificate(file: path, format: .der)
+            default:
+              throw RPCError(
+                code: .invalidArgument,
+                message: "Couldn't load certificate from \(path)."
+              )
+            }
+          }
         }
       }
       self = .certificates(certificates)
@@ -178,6 +211,10 @@ extension TLSConfiguration {
     self.certificateVerification = CertificateVerification(tlsConfig.clientCertificateVerification)
     self.trustRoots = try NIOSSLTrustRoots(tlsConfig.trustRoots)
     self.applicationProtocols = ["grpc-exp", "h2"]
+
+    if let reloader = tlsConfig.certificateReloader {
+      self.setCertificateReloader(reloader)
+    }
   }
 
   package init(_ tlsConfig: HTTP2ClientTransport.Posix.TransportSecurity.TLS) throws {
@@ -193,5 +230,9 @@ extension TLSConfiguration {
     self.certificateVerification = CertificateVerification(tlsConfig.serverCertificateVerification)
     self.trustRoots = try NIOSSLTrustRoots(tlsConfig.trustRoots)
     self.applicationProtocols = ["grpc-exp", "h2"]
+
+    if let reloader = tlsConfig.certificateReloader {
+      self.setCertificateReloader(reloader)
+    }
   }
 }

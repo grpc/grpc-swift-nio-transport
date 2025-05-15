@@ -55,7 +55,7 @@ let dependencies: [Package.Dependency] = [
   ),
   .package(
     url: "https://github.com/apple/swift-nio-extras.git",
-    from: "1.4.0"
+    from: "1.27.0"
   ),
   .package(
     url: "https://github.com/apple/swift-certificates.git",
@@ -117,6 +117,7 @@ let targets: [Target] = [
       .product(name: "NIOSSL", package: "swift-nio-ssl"),
       .product(name: "X509", package: "swift-certificates"),
       .product(name: "SwiftASN1", package: "swift-asn1"),
+      .product(name: "NIOCertificateReloading", package: "swift-nio-extras"),
     ],
     swiftSettings: defaultSwiftSettings
   ),
