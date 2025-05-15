@@ -590,7 +590,9 @@ struct HTTP2TransportTLSEnabledTests {
     let input = ControlInput.with { $0.numberOfMessages = 1 }
     let request = ClientRequest(message: input)
     try await control.unary(request: request) { response in
-      #expect(throws: Never.self) { try response.message }
+      _ = #expect(throws: Never.self) {
+        try response.message
+      }
     }
   }
 }
