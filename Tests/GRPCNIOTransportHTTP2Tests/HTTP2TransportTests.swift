@@ -1732,11 +1732,11 @@ final class HTTP2TransportTests: XCTestCase {
 }
 
 extension [HTTP2TransportTests.Transport] {
-   static let supported: [HTTP2TransportTests.Transport] = TransportKind.servers.flatMap { server in
-     TransportKind.clients.map { client in
-       HTTP2TransportTests.Transport(server: server, client: client)
-     }
-   }
+  static let supported: [HTTP2TransportTests.Transport] = TransportKind.servers.flatMap { server in
+    TransportKind.clients.map { client in
+      HTTP2TransportTests.Transport(server: server, client: client)
+    }
+  }
 }
 
 extension ControlInput {
