@@ -604,7 +604,7 @@ extension GRPCChannel {
 
       struct NotRunning {
         /// Queue of requests waiting for a load-balancer.
-        var queue: RequestQueue
+        var queue: RequestQueue<LoadBalancer>
         /// A handle to the name resolver task.
         var nameResolverHandle: CancellableTaskHandle?
 
@@ -624,7 +624,7 @@ extension GRPCChannel {
         /// Previously created load-balancers which are in the process of shutting down.
         var past: [LoadBalancerID: LoadBalancer]
         /// Queue of requests wait for a load-balancer.
-        var queue: RequestQueue
+        var queue: RequestQueue<LoadBalancer>
         /// A handle to the name resolver task.
         var nameResolverHandle: CancellableTaskHandle?
 
@@ -950,8 +950,13 @@ extension GRPCChannel.StateMachine {
 
   enum OnClose {
     case none
-    case cancelAll([RequestQueue.Continuation])
-    case close(LoadBalancer, LoadBalancer?, CancellableTaskHandle?, [RequestQueue.Continuation])
+    case cancelAll([RequestQueue<LoadBalancer>.Continuation])
+    case close(
+      LoadBalancer,
+      LoadBalancer?,
+      CancellableTaskHandle?,
+      [RequestQueue<LoadBalancer>.Continuation]
+    )
   }
 
   mutating func close() -> OnClose {

@@ -209,8 +209,8 @@ package final class CommonHTTP2ServerTransport<
       _ context: ServerContext
     ) async -> Void
   ) async throws {
-    let remotePeer = connection.remoteAddressInfo
-    let localPeer = connection.localAddressInfo
+    let remotePeer = connection.channel.remoteAddressInfo
+    let localPeer = connection.channel.localAddressInfo
     try await connection.executeThenClose { inbound, _ in
       await withDiscardingTaskGroup { group in
         group.addTask {

@@ -16,8 +16,8 @@
 
 internal import DequeModule
 
-struct RequestQueue {
-  typealias Continuation = CheckedContinuation<LoadBalancer, any Error>
+struct RequestQueue<Element> {
+  typealias Continuation = CheckedContinuation<Element, any Error>
 
   private struct QueueEntry {
     var continuation: Continuation

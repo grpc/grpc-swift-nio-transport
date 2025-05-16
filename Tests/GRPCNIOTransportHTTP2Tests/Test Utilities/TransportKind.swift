@@ -18,21 +18,43 @@ import GRPCCore
 import GRPCNIOTransportHTTP2
 
 enum TransportKind: CaseIterable, Hashable, Sendable {
+  case wrappedChannel
   case posix
   #if canImport(Network)
   case transportServices
   #endif
 
-  static var supported: [Self] {
+  static var clients: [Self] {
     Self.allCases
+  }
+
+  static var clientsWithTLS: [Self] {
+    Self.allCases.filter { $0 != .wrappedChannel }
+  }
+
+  static var servers: [Self] {
+    Self.allCases.filter { $0 != .wrappedChannel }
+  }
+
+  static var serversWithTLS: [Self] {
+    Self.allCases.filter { $0 != .wrappedChannel }
+  }
+
+  static var supportsDebugCallbacks: [Self] {
+    Self.allCases.filter { $0 != .wrappedChannel }
   }
 }
 
 enum NIOClientTransport: ClientTransport {
+  case wrappedChannel(HTTP2ClientTransport.WrappedChannel)
   case posix(HTTP2ClientTransport.Posix)
   #if canImport(Network)
   case transportServices(HTTP2ClientTransport.TransportServices)
   #endif
+
+  init(_ transport: HTTP2ClientTransport.WrappedChannel) {
+    self = .wrappedChannel(transport)
+  }
 
   init(_ transport: HTTP2ClientTransport.Posix) {
     self = .posix(transport)
@@ -54,6 +76,8 @@ enum NIOClientTransport: ClientTransport {
     case .transportServices(let transport):
       return transport.retryThrottle
     #endif
+    case .wrappedChannel(let transport):
+      return transport.retryThrottle
     }
   }
 
@@ -65,6 +89,8 @@ enum NIOClientTransport: ClientTransport {
     case .transportServices(let transport):
       try await transport.connect()
     #endif
+    case .wrappedChannel(let transport):
+      try await transport.connect()
     }
   }
 
@@ -76,6 +102,8 @@ enum NIOClientTransport: ClientTransport {
     case .transportServices(let transport):
       transport.beginGracefulShutdown()
     #endif
+    case .wrappedChannel(let transport):
+      transport.beginGracefulShutdown()
     }
   }
 
@@ -91,6 +119,8 @@ enum NIOClientTransport: ClientTransport {
     case .transportServices(let transport):
       return try await transport.withStream(descriptor: descriptor, options: options, closure)
     #endif
+    case .wrappedChannel(let transport):
+      return try await transport.withStream(descriptor: descriptor, options: options, closure)
     }
   }
 
@@ -102,6 +132,8 @@ enum NIOClientTransport: ClientTransport {
     case .transportServices(let transport):
       return transport.config(forMethod: descriptor)
     #endif
+    case .wrappedChannel(let transport):
+      return transport.config(forMethod: descriptor)
     }
   }
 
