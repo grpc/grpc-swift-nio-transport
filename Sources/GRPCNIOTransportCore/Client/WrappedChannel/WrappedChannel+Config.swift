@@ -38,7 +38,7 @@ extension HTTP2ClientTransport.WrappedChannel {
     ///   - compression: Compression configuration.
     ///   - channelDebuggingCallbacks: Channel callbacks for debugging.
     ///
-    /// - SeeAlso: ``defaults(configure:)`` and ``defaults``.
+    /// - SeeAlso: ``defaults(_:)`` and ``defaults``.
     public init(
       http2: HTTP2ClientTransport.Config.HTTP2,
       connection: HTTP2ClientTransport.Config.Connection,
