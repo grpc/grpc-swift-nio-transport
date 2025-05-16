@@ -39,6 +39,10 @@ enum TransportKind: CaseIterable, Hashable, Sendable {
   static var serversWithTLS: [Self] {
     Self.allCases.filter { $0 != .wrappedChannel }
   }
+
+  static var supportsDebugCallbacks: [Self] {
+    Self.allCases.filter { $0 != .wrappedChannel }
+  }
 }
 
 enum NIOClientTransport: ClientTransport {

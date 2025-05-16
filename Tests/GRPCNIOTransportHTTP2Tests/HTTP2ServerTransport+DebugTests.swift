@@ -22,7 +22,7 @@ import Testing
 
 @Suite("ChannelDebugCallbacks")
 struct ChannelDebugCallbackTests {
-  @Test(arguments: TransportKind.allCases, TransportKind.allCases)
+  @Test(arguments: TransportKind.supportsDebugCallbacks, TransportKind.supportsDebugCallbacks)
   func debugCallbacksAreCalled(serverKind: TransportKind, clientKind: TransportKind) async throws {
     // Validates the callbacks are called appropriately by setting up callbacks which increment
     // counters and then returning those stats from a gRPC service. The client's interactions with
