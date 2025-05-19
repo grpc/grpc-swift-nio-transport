@@ -300,6 +300,11 @@ package final class CommonHTTP2ServerTransport<
         }
         await streamHandler(rpcStream, context)
       }
+
+      // Wait for the stream to close (i.e. when the final status has been written or an error
+      // occurs.) This is done to avoid closing too early as 'executeThenClose' may forcefully
+      // close the stream and drop buffered writes.
+      try await stream.channel.closeFuture.get()
     }
   }
 
