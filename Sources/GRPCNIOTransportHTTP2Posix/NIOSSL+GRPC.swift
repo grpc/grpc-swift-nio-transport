@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import NIOSSL
+internal import GRPCCore
+internal import NIOSSL
 
 extension NIOSSLSerializationFormats {
   fileprivate init(_ format: TLSConfig.SerializationFormat) {
@@ -65,21 +66,59 @@ extension Sequence<TLSConfig.CertificateSource> {
   }
 }
 
+extension TLSConfig.PrivateKeySource {
+  enum _NIOSSLPrivateKeySource: TransportSpecific {
+    case customPrivateKey(any (NIOSSLCustomPrivateKey & Hashable))
+    case privateKey(NIOSSLPrivateKeySource)
+  }
+
+  static func nioSSLSpecific(_ source: _NIOSSLPrivateKeySource) -> Self {
+    .transportSpecific(source)
+  }
+}
+
 extension NIOSSLPrivateKey {
-  fileprivate convenience init(
-    privateKey source: TLSConfig.PrivateKeySource
-  ) throws {
+  fileprivate static func makePrivateKey(
+    from source: TLSConfig.PrivateKeySource
+  ) throws -> NIOSSLPrivateKey {
     switch source.wrapped {
     case .file(let path, let serializationFormat):
-      try self.init(
+      return try self.init(
         file: path,
         format: NIOSSLSerializationFormats(serializationFormat)
       )
+
     case .bytes(let bytes, let serializationFormat):
-      try self.init(
+      return try self.init(
         bytes: bytes,
         format: NIOSSLSerializationFormats(serializationFormat)
       )
+
+    case .transportSpecific(let extraSource):
+      guard let source = extraSource as? TLSConfig.PrivateKeySource._NIOSSLPrivateKeySource else {
+        fatalError("Invalid private key source of type \(type(of: extraSource))")
+      }
+
+      switch source {
+      case .customPrivateKey(let privateKey):
+        return self.init(customPrivateKey: privateKey)
+
+      case .privateKey(.privateKey(let key)):
+        return key
+
+      case .privateKey(.file(let path)):
+        switch path.split(separator: ".").last {
+        case "pem":
+          return try NIOSSLPrivateKey(file: path, format: .pem)
+        case "der", "key":
+          return try NIOSSLPrivateKey(file: path, format: .der)
+        default:
+          throw RPCError(
+            code: .invalidArgument,
+            message: "Couldn't load private key from \(path)."
+          )
+        }
+      }
     }
   }
 }
@@ -128,16 +167,15 @@ extension CertificateVerification {
 extension TLSConfiguration {
   package init(_ tlsConfig: HTTP2ServerTransport.Posix.TransportSecurity.TLS) throws {
     let certificateChain = try tlsConfig.certificateChain.sslCertificateSources()
-    let privateKey = try NIOSSLPrivateKey(privateKey: tlsConfig.privateKey)
+    let privateKey = try NIOSSLPrivateKey.makePrivateKey(from: tlsConfig.privateKey)
 
     self = TLSConfiguration.makeServerConfiguration(
       certificateChain: certificateChain,
       privateKey: .privateKey(privateKey)
     )
+
     self.minimumTLSVersion = .tlsv12
-    self.certificateVerification = CertificateVerification(
-      tlsConfig.clientCertificateVerification
-    )
+    self.certificateVerification = CertificateVerification(tlsConfig.clientCertificateVerification)
     self.trustRoots = try NIOSSLTrustRoots(tlsConfig.trustRoots)
     self.applicationProtocols = ["grpc-exp", "h2"]
   }
@@ -147,14 +185,12 @@ extension TLSConfiguration {
     self.certificateChain = try tlsConfig.certificateChain.sslCertificateSources()
 
     if let privateKey = tlsConfig.privateKey {
-      let privateKeySource = try NIOSSLPrivateKey(privateKey: privateKey)
+      let privateKeySource = try NIOSSLPrivateKey.makePrivateKey(from: privateKey)
       self.privateKey = .privateKey(privateKeySource)
     }
 
     self.minimumTLSVersion = .tlsv12
-    self.certificateVerification = CertificateVerification(
-      tlsConfig.serverCertificateVerification
-    )
+    self.certificateVerification = CertificateVerification(tlsConfig.serverCertificateVerification)
     self.trustRoots = try NIOSSLTrustRoots(tlsConfig.trustRoots)
     self.applicationProtocols = ["grpc-exp", "h2"]
   }

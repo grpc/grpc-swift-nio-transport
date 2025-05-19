@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+public import NIOSSL
+
 extension HTTP2ServerTransport.Posix {
   /// The security configuration for this connection.
   public struct TransportSecurity: Sendable {
@@ -306,5 +308,18 @@ extension HTTP2ClientTransport.Posix.TransportSecurity {
       configure(&config)
       return config
     }
+  }
+}
+
+extension TLSConfig.PrivateKeySource {
+  /// Creates a key source from a `NIOSSLCustomPrivateKey`.
+  ///
+  /// This private key source is only applicable to the NIOPosix based transports. Using one
+  /// with a NIOTransportServices based transport is a programmer error.
+  ///
+  /// - Parameter key: The custom private key.
+  /// - Returns: A private key source wrapping the custom private key.
+  public static func customPrivateKey(_ key: any (NIOSSLCustomPrivateKey & Hashable)) -> Self {
+    .nioSSLSpecific(.customPrivateKey(key))
   }
 }
