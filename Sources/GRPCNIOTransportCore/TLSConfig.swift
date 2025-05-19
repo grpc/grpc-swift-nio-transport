@@ -63,6 +63,7 @@ public enum TLSConfig: Sendable {
     package enum Wrapped {
       case file(path: String, format: SerializationFormat)
       case bytes(bytes: [UInt8], format: SerializationFormat)
+      case transportSpecific(any TransportSpecific)
     }
 
     package let wrapped: Wrapped
