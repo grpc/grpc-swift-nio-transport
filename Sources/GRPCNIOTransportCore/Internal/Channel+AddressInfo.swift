@@ -16,18 +16,18 @@
 
 internal import NIOCore
 
-extension NIOAsyncChannel {
+extension Channel {
   var remoteAddressInfo: String {
     self.getAddressInfoWithFallbackIfUDS(
-      address: self.channel.remoteAddress,
-      udsFallback: self.channel.localAddress
+      address: self.remoteAddress,
+      udsFallback: self.localAddress
     )
   }
 
   var localAddressInfo: String {
     self.getAddressInfoWithFallbackIfUDS(
-      address: self.channel.localAddress,
-      udsFallback: self.channel.remoteAddress
+      address: self.localAddress,
+      udsFallback: self.remoteAddress
     )
   }
 

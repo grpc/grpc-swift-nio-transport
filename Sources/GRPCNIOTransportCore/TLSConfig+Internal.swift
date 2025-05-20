@@ -26,3 +26,34 @@ extension TLSConfig.PrivateKeySource {
     Self(wrapped: .transportSpecific(source))
   }
 }
+
+extension TLSConfig.CertificateSource {
+  /// A type-erased transport specific certificate source.
+  ///
+  /// `TLSConfig.CertificateSource` is from the core module which means it can't take a NIOSSL
+  /// or NIOTransportServices dependency. In order to support more sources a transport-specific
+  /// erased source is provided as non-public API.
+  package struct TransportSpecific: Sendable, Equatable {
+    package var wrapped: any Sendable
+    private let isEqualTo: @Sendable (TransportSpecific) -> Bool
+
+    package init<Value: Sendable & Equatable>(_ wrapped: Value) {
+      self.wrapped = wrapped
+      self.isEqualTo = { other in
+        if let otherValue = other.wrapped as? Value {
+          return otherValue == wrapped
+        } else {
+          return false
+        }
+      }
+    }
+
+    package static func == (lhs: Self, rhs: Self) -> Bool {
+      lhs.isEqualTo(rhs)
+    }
+  }
+
+  package static func transportSpecific(_ value: TransportSpecific) -> Self {
+    return Self(wrapped: .transportSpecific(value))
+  }
+}
