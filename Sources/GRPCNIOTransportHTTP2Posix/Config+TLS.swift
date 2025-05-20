@@ -58,7 +58,7 @@ extension HTTP2ServerTransport.Posix {
     /// Create a new TLS config using a certificate reloader to provide the certificate chain
     /// and private key.
     ///
-    /// The reloader must provide an initial certificate chain and private key. If you have already
+    /// The reloader must provide an initial certificate chain and private key. If you already
     /// have an initial certificate chain and private key you can use
     /// ``tls(certificateChain:privateKey:configure:)`` and set the certificate reloader via
     /// the `configure` callback.
@@ -110,7 +110,7 @@ extension HTTP2ServerTransport.Posix {
     /// Create a new TLS config suitable for mTLS using a certificate reloader to provide the
     /// certificate chain and private key.
     ///
-    /// The reloader must provide an initial certificate chain and private key. If you have already
+    /// The reloader must provide an initial certificate chain and private key. If you already
     /// have an initial certificate chain and private key you can use
     /// ``mTLS(certificateChain:privateKey:configure:)`` and set the certificate reloader via
     /// the `configure` callback.
