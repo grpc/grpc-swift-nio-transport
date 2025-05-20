@@ -259,7 +259,11 @@ final class HTTP2TransportTests: XCTestCase {
         )
       }
 
-      let wrapped = HTTP2ClientTransport.WrappedChannel(takingOwnershipOf: channel, config: config)
+      let wrapped = HTTP2ClientTransport.WrappedChannel(
+        takingOwnershipOf: channel,
+        config: config,
+        serviceConfig: serviceConfig
+      )
       transport = NIOClientTransport(wrapped)
     }
 
