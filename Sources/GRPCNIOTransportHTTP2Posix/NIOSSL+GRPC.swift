@@ -15,7 +15,7 @@
  */
 
 internal import GRPCCore
-internal import GRPCNIOTransportCore
+package import GRPCNIOTransportCore
 internal import NIOCertificateReloading
 internal import NIOSSL
 
