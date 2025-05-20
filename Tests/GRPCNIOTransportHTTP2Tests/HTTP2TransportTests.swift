@@ -145,6 +145,7 @@ final class HTTP2TransportTests: XCTestCase {
             transportSecurity: .plaintext,
             config: .defaults {
               $0.compression.enabledAlgorithms = compression
+              $0.rpc.maxRequestPayloadSize = .max
             }
           )
         ),
@@ -167,6 +168,7 @@ final class HTTP2TransportTests: XCTestCase {
             transportSecurity: .plaintext,
             config: .defaults {
               $0.compression.enabledAlgorithms = compression
+              $0.rpc.maxRequestPayloadSize = .max
             }
           )
         ),
@@ -193,11 +195,19 @@ final class HTTP2TransportTests: XCTestCase {
     enabledCompression: CompressionAlgorithmSet
   ) throws -> GRPCClient<NIOClientTransport> {
     let transport: NIOClientTransport
+    var serviceConfig = ServiceConfig()
+    serviceConfig.loadBalancingConfig = [.roundRobin]
+    serviceConfig.methodConfig = [
+      MethodConfig(
+        // Applies to all RPCs
+        names: [MethodConfig.Name(service: "", method: "")],
+        maxRequestMessageBytes: .max,
+        maxResponseMessageBytes: .max
+      )
+    ]
 
     switch kind {
     case .posix:
-      var serviceConfig = ServiceConfig()
-      serviceConfig.loadBalancingConfig = [.roundRobin]
       let posix = try HTTP2ClientTransport.Posix(
         target: target,
         transportSecurity: .plaintext,
@@ -211,8 +221,6 @@ final class HTTP2TransportTests: XCTestCase {
 
     #if canImport(Network)
     case .transportServices:
-      var serviceConfig = ServiceConfig()
-      serviceConfig.loadBalancingConfig = [.roundRobin]
       let transportServices = try HTTP2ClientTransport.TransportServices(
         target: target,
         transportSecurity: .plaintext,
@@ -251,7 +259,11 @@ final class HTTP2TransportTests: XCTestCase {
         )
       }
 
-      let wrapped = HTTP2ClientTransport.WrappedChannel(takingOwnershipOf: channel, config: config)
+      let wrapped = HTTP2ClientTransport.WrappedChannel(
+        takingOwnershipOf: channel,
+        config: config,
+        serviceConfig: serviceConfig
+      )
       transport = NIOClientTransport(wrapped)
     }
 
@@ -1726,6 +1738,31 @@ final class HTTP2TransportTests: XCTestCase {
       } catch let error as RPCError {
         XCTAssertEqual(error.code, .unavailable)
         XCTAssertEqual(error.message, "Stream unexpectedly closed with error.")
+      }
+    }
+  }
+
+  func testLargeResponse() async throws {
+    let sizeInMiB = 8
+    let sizeInBytes = sizeInMiB * 1024 * 1024
+
+    try await self.forEachTransportPair { control, _, pair in
+      let input = ControlInput.with {
+        $0.echoMetadataInHeaders = false
+        $0.echoMetadataInTrailers = false
+        $0.numberOfMessages = 1
+        $0.payloadParameters = .with {
+          $0.content = 0
+          $0.size = sizeInBytes
+        }
+      }
+
+      let metadata: Metadata = ["test-key": "test-value"]
+      let request = ClientRequest(message: input, metadata: metadata)
+
+      try await control.unary(request: request) { response in
+        let message = try response.message
+        XCTAssertEqual(message.payload, Data(repeating: 0, count: sizeInBytes), "\(pair)")
       }
     }
   }
