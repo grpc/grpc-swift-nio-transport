@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+private import GRPCCore
+public import NIOCertificateReloading
 public import NIOSSL
 
 extension HTTP2ServerTransport.Posix {
@@ -53,6 +55,39 @@ extension HTTP2ServerTransport.Posix {
       return .tls(tlsConfig)
     }
 
+    /// Create a new TLS config using a certificate reloader to provide the certificate chain
+    /// and private key.
+    ///
+    /// The reloader must provide an initial certificate chain and private key. If you already
+    /// have an initial certificate chain and private key you can use
+    /// ``tls(certificateChain:privateKey:configure:)`` and set the certificate reloader via
+    /// the `configure` callback.
+    ///
+    /// The defaults include setting:
+    /// - `clientCertificateVerificationMode` to `doNotVerify`,
+    /// - `trustRoots` to `systemDefault`, and
+    /// - `requireALPN` to `false`.
+    ///
+    /// - Parameters:
+    ///   - reloader: A certificate reloader which has been primed with an initial certificate chain
+    ///       and private key.
+    ///   - configure: A closure which allows you to modify the defaults before returning them.
+    /// - Throws: If the reloader doesn't provide an initial certificate chain or private key.
+    /// - Returns: A new HTTP2 NIO Posix transport TLS config.
+    public static func tls(
+      certificateReloader reloader: any CertificateReloader,
+      configure: (_ config: inout TLS) -> Void = { _ in }
+    ) throws -> Self {
+      let (certificateChain, privateKey) = try reloader.checkPrimed()
+      return .tls(
+        certificateChain: certificateChain.map { source in .nioSSLCertificateSource(source) },
+        privateKey: .nioSSLSpecific(.privateKey(privateKey))
+      ) { config in
+        config.certificateReloader = reloader
+        configure(&config)
+      }
+    }
+
     /// Secure the connection with mutual TLS.
     ///
     /// - Parameters:
@@ -70,6 +105,39 @@ extension HTTP2ServerTransport.Posix {
         configure: configure
       )
       return .tls(tlsConfig)
+    }
+
+    /// Create a new TLS config suitable for mTLS using a certificate reloader to provide the
+    /// certificate chain and private key.
+    ///
+    /// The reloader must provide an initial certificate chain and private key. If you already
+    /// have an initial certificate chain and private key you can use
+    /// ``mTLS(certificateChain:privateKey:configure:)`` and set the certificate reloader via
+    /// the `configure` callback.
+    ///
+    /// The defaults include setting:
+    /// - `clientCertificateVerificationMode` to `noHostnameVerification`,
+    /// - `trustRoots` to `systemDefault`, and
+    /// - `requireALPN` to `false`.
+    ///
+    /// - Parameters:
+    ///   - reloader: A certificate reloader which has been primed with an initial certificate chain
+    ///       and private key.
+    ///   - configure: A closure which allows you to modify the defaults before returning them.
+    /// - Throws: If the reloader doesn't provide an initial certificate chain or private key.
+    /// - Returns: A new HTTP2 NIO Posix transport TLS config.
+    public static func mTLS(
+      certificateReloader reloader: any CertificateReloader,
+      configure: (_ config: inout TLS) -> Void = { _ in }
+    ) throws -> Self {
+      let (certificateChain, privateKey) = try reloader.checkPrimed()
+      return .mTLS(
+        certificateChain: certificateChain.map { source in .nioSSLCertificateSource(source) },
+        privateKey: .nioSSLSpecific(.privateKey(privateKey))
+      ) { config in
+        config.certificateReloader = reloader
+        configure(&config)
+      }
     }
   }
 }
@@ -92,6 +160,10 @@ extension HTTP2ServerTransport.Posix.TransportSecurity {
     ///
     /// If this is set to `true` but the client does not support ALPN, then the connection will be rejected.
     public var requireALPN: Bool
+
+    /// A certificate reloader providing the current certificate chain and private key to
+    /// use at that point in time.
+    public var certificateReloader: (any CertificateReloader)?
 
     /// Create a new HTTP2 NIO Posix server transport TLS config.
     /// - Parameters:
@@ -220,6 +292,38 @@ extension HTTP2ClientTransport.Posix {
       )
       return .tls(tlsConfig)
     }
+
+    /// Create a new TLS config suitable for mTLS using a certificate reloader to provide the
+    /// certificate chain and private key.
+    ///
+    /// The reloader must provide an initial certificate chain and private key. If you have already
+    /// have an initial certificate chain and private key you can use
+    /// ``mTLS(certificateChain:privateKey:configure:)`` and set the certificate reloader via
+    /// the `configure` callback.
+    ///
+    /// The defaults include setting:
+    /// - `trustRoots` to `systemDefault`, and
+    /// - `serverCertificateVerification` to `fullVerification`.
+    ///
+    /// - Parameters:
+    ///   - reloader: A certificate reloader which has been primed with an initial certificate chain
+    ///       and private key.
+    ///   - configure: A closure which allows you to modify the defaults before returning them.
+    /// - Throws: If the reloader doesn't provide an initial certificate chain or private key.
+    /// - Returns: A new HTTP2 NIO Posix transport TLS config.
+    public static func mTLS(
+      certificateReloader reloader: any CertificateReloader,
+      configure: (_ config: inout TLS) -> Void = { _ in }
+    ) throws -> Self {
+      let (certificateChain, privateKey) = try reloader.checkPrimed()
+      return .mTLS(
+        certificateChain: certificateChain.map { source in .nioSSLCertificateSource(source) },
+        privateKey: .nioSSLSpecific(.privateKey(privateKey))
+      ) { config in
+        config.certificateReloader = reloader
+        configure(&config)
+      }
+    }
   }
 }
 
@@ -236,6 +340,10 @@ extension HTTP2ClientTransport.Posix.TransportSecurity {
 
     /// The trust roots to be used when verifying server certificates.
     public var trustRoots: TLSConfig.TrustRootsSource
+
+    /// A certificate reloader providing the current certificate chain and private key to
+    /// use at that point in time.
+    public var certificateReloader: (any CertificateReloader)?
 
     /// Create a new HTTP2 NIO Posix client transport TLS config.
     /// - Parameters:
@@ -321,5 +429,35 @@ extension TLSConfig.PrivateKeySource {
   /// - Returns: A private key source wrapping the custom private key.
   public static func customPrivateKey(_ key: any (NIOSSLCustomPrivateKey & Hashable)) -> Self {
     .nioSSLSpecific(.customPrivateKey(key))
+  }
+}
+
+extension TLSConfig.CertificateSource {
+  internal static func nioSSLCertificateSource(_ wrapped: NIOSSLCertificateSource) -> Self {
+    return .transportSpecific(TransportSpecific(wrapped))
+  }
+}
+
+extension CertificateReloader {
+  fileprivate func checkPrimed() throws -> ([NIOSSLCertificateSource], NIOSSLPrivateKeySource) {
+    func explain(missingItem item: String) -> String {
+      return """
+        No \(item) available. The reloader must provide a certificate chain and private key when \
+        creating a TLS config from a reloader. Ensure the reloader is ready or create a config \
+        with a certificate chain and private key manually and set the certificate reloader \
+        separately.
+        """
+    }
+
+    let override = self.sslContextConfigurationOverride
+    guard let certificateChain = override.certificateChain else {
+      throw RPCError(code: .invalidArgument, message: explain(missingItem: "certificate chain"))
+    }
+
+    guard let privateKey = override.privateKey else {
+      throw RPCError(code: .invalidArgument, message: explain(missingItem: "private key"))
+    }
+
+    return (certificateChain, privateKey)
   }
 }
