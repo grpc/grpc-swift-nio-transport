@@ -58,7 +58,7 @@ extension HTTP2ClientTransport {
       4 * 1024 * 1024
     }
 
-    /// Create a new wrapping client transport from an already connection NIO `Channel`.
+    /// Create a new wrapping client transport from an already connected NIO `Channel`.
     ///
     /// - Parameters:
     ///   - channel: The channel to wrap. The transport takes ownership of the lifetime of the channel
@@ -154,7 +154,7 @@ extension HTTP2ClientTransport {
       switch self.state.withLock({ $0.beginGracefulShutdown() }) {
       case .emitGracefulShutdownEvent:
         // Fire an event into the channel. At this point it will have been configured for gRPC
-        // and an appropriate channel handler will consumer it to start the graceful shutdown
+        // and an appropriate channel handler will consume it to start the graceful shutdown
         // flow.
         let event = ClientConnectionHandler.OutboundEvent.closeGracefully
         self.channel.triggerUserOutboundEvent(event, promise: nil)
