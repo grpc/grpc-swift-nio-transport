@@ -506,8 +506,8 @@ extension Connection {
 
       init(_ connection: HTTP2Connection) {
         self.channel = connection.channel
-        self.remotePeer = connection.channel.remoteAddressInfo
-        self.localPeer = connection.channel.localAddressInfo
+        self.remotePeer = connection.channel.channel.remoteAddressInfo
+        self.localPeer = connection.channel.channel.localAddressInfo
         self.multiplexer = connection.multiplexer
         self.scheme = connection.isPlaintext ? .http : .https
         self.onCreateHTTP2Stream = connection.onCreateHTTP2Stream
