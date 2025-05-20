@@ -60,7 +60,7 @@ extension HTTP2ServerTransport.Posix {
     ///
     /// The reloader must provide an initial certificate chain and private key. If you have already
     /// have an initial certificate chain and private key you can use
-    /// ``defaults(certificateChain:privateKey:configure:)`` and set the certificate reloader via
+    /// ``tls(certificateChain:privateKey:configure:)`` and set the certificate reloader via
     /// the `configure` callback.
     ///
     /// The defaults include setting:
