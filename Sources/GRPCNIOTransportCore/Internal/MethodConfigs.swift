@@ -24,7 +24,7 @@ package import GRPCCore
 /// service, or set a default configuration for all methods by calling ``setDefaultConfig(_:)``.
 ///
 /// Use the subscript to get and set configurations for specific methods.
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 package struct MethodConfigs: Sendable, Hashable {
   private var elements: [MethodConfig.Name: MethodConfig]
 

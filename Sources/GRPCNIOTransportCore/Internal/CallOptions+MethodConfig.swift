@@ -16,7 +16,7 @@
 
 package import GRPCCore
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension CallOptions {
   package mutating func formUnion(with methodConfig: MethodConfig?) {
     guard let methodConfig = methodConfig else { return }

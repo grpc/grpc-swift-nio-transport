@@ -23,7 +23,7 @@ import NIOPosix
 /// An HTTP/2 test server which only responds to request headers by sending response headers and
 /// then closing. Each stream will be closed with the ":status" set to the value of the
 /// "response-status" header field in the request headers.
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 final class HTTP2StatusCodeServer: Sendable {
   private let address: EventLoopPromise<GRPCNIOTransportCore.SocketAddress.IPv4>
   private let eventLoopGroup: MultiThreadedEventLoopGroup

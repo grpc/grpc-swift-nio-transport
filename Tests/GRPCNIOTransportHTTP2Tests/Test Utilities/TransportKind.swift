@@ -45,7 +45,7 @@ enum TransportKind: CaseIterable, Hashable, Sendable {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 enum NIOClientTransport: ClientTransport {
   case wrappedChannel(HTTP2ClientTransport.WrappedChannel)
   case posix(HTTP2ClientTransport.Posix)
@@ -140,7 +140,7 @@ enum NIOClientTransport: ClientTransport {
 
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 enum NIOServerTransport: ServerTransport, ListeningServerTransport {
   case posix(HTTP2ServerTransport.Posix)
   #if canImport(Network)

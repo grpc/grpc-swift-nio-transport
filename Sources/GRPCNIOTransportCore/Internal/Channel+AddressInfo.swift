@@ -16,7 +16,7 @@
 
 internal import NIOCore
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension Channel {
   var remoteAddressInfo: String {
     self.getAddressInfoWithFallbackIfUDS(

@@ -8,11 +8,11 @@ implementations for [gRPC Swift][gh-grpc-swift] built on top of
 - 🎓 **Tutorials** are available in the documentation for `grpc/grpc-swift` on
   the [Swift Package Index][spi-grpc-swift].
 - 💻 **Examples** are available in the `Examples` directory of the
-  [`grpc/grpc-swift`](https://github.com/grpc/grpc-swift) repository
+  [`grpc/grpc-swift`](https://github.com/grpc/grpc-swift-2) repository
 - 🚀 **Contributions** are welcome, please see [CONTRIBUTING.md](CONTRIBUTING.md)
 - 🪪 **License** is Apache 2.0, repeated in [LICENSE](License)
 - 🔒 **Security** issues should be reported via the process in [SECURITY.md](SECURITY.md)
 
 [gh-swift-nio]: https://github.com/apple/swift-nio
-[gh-grpc-swift]: https://github.com/grpc/grpc-swift
+[gh-grpc-swift]: https://github.com/grpc/grpc-swift-2
 [spi-grpc-swift-nio-transport]: https://swiftpackageindex.com/grpc/grpc-swift-nio-transport/documentation

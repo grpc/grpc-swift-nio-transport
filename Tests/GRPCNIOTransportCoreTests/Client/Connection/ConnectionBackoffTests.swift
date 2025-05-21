@@ -18,7 +18,7 @@ import XCTest
 
 @testable import GRPCNIOTransportCore
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 final class ConnectionBackoffTests: XCTestCase {
   func testUnjitteredBackoff() {
     let backoff = ConnectionBackoff(

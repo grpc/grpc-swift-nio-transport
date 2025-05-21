@@ -20,7 +20,7 @@ public import NIOCore  // has to be public because of EventLoopGroup param in in
 public import NIOPosix  // has to be public because of default argument value in init
 private import NIOSSL
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport {
   /// A `ClientTransport` using HTTP/2 built on top of `NIOPosix`.
   ///
@@ -130,7 +130,7 @@ extension HTTP2ClientTransport {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport.Posix {
   struct Connector: HTTP2Connector {
     private let config: HTTP2ClientTransport.Posix.Config
@@ -202,7 +202,7 @@ extension HTTP2ClientTransport.Posix {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport.Posix {
   public struct Config: Sendable {
     /// Configuration for HTTP/2 connections.
@@ -269,7 +269,7 @@ extension HTTP2ClientTransport.Posix {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCChannel.Config {
   init(posix: HTTP2ClientTransport.Posix.Config) {
     self.init(
@@ -281,7 +281,7 @@ extension GRPCChannel.Config {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ClientTransport where Self == HTTP2ClientTransport.Posix {
   /// Creates a new Posix based HTTP/2 client transport.
   ///

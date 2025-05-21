@@ -21,7 +21,7 @@ import XCTest
 
 @testable import GRPCNIOTransportCore
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 final class GRPCMessageDecoderTests: XCTestCase {
   func testReadMultipleMessagesWithoutCompression() throws {
     let firstMessage = {
@@ -219,7 +219,7 @@ final class GRPCMessageDecoderTests: XCTestCase {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCMessageFramer {
   mutating func next(
     compressor: Zlib.Compressor? = nil

@@ -16,7 +16,7 @@
 
 private import GRPCCore
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ResolvableTargets {
   /// A resolvable target for addresses which can be resolved via DNS.
   ///
@@ -42,7 +42,7 @@ extension ResolvableTargets {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ResolvableTarget where Self == ResolvableTargets.DNS {
   /// Creates a new resolvable DNS target.
   /// - Parameters:
@@ -54,7 +54,7 @@ extension ResolvableTarget where Self == ResolvableTargets.DNS {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension NameResolvers {
   /// A ``NameResolverFactory`` for ``ResolvableTargets/DNS`` targets.
   public struct DNS: NameResolverFactory {
@@ -77,7 +77,7 @@ extension NameResolvers {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension NameResolvers.DNS {
   struct Resolver: Sendable {
     var target: ResolvableTargets.DNS
@@ -111,7 +111,7 @@ extension NameResolvers.DNS {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension NameResolvers.DNS.Resolver: AsyncSequence {
   typealias Element = NameResolutionResult
 

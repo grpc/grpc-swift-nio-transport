@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 package enum LoadBalancer: Sendable {
   case roundRobin(RoundRobinLoadBalancer)
   case pickFirst(PickFirstLoadBalancer)
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension LoadBalancer {
   package init(_ loadBalancer: RoundRobinLoadBalancer) {
     self = .roundRobin(loadBalancer)

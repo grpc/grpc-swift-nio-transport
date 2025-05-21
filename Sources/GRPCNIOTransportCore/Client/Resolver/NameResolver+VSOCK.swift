@@ -16,7 +16,7 @@
 
 internal import GRPCCore
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ResolvableTargets {
   /// A resolvable target for Virtual Socket addresses.
   ///
@@ -31,7 +31,7 @@ extension ResolvableTargets {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ResolvableTarget where Self == ResolvableTargets.VirtualSocket {
   /// Creates a new resolvable Virtual Socket target.
   /// - Parameters:
@@ -46,7 +46,7 @@ extension ResolvableTarget where Self == ResolvableTargets.VirtualSocket {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension NameResolvers {
   /// A ``NameResolverFactory`` for ``ResolvableTargets/VirtualSocket`` targets.
   ///

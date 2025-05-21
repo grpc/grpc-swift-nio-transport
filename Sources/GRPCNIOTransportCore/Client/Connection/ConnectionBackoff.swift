@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 package struct ConnectionBackoff {
   package var initial: Duration
   package var max: Duration

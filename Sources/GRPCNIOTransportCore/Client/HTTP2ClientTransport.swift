@@ -18,16 +18,16 @@ public import GRPCCore
 public import NIOCore
 
 /// A namespace for the HTTP/2 client transport.
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 public enum HTTP2ClientTransport {}
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport {
   /// A namespace for HTTP/2 client transport configuration.
   public enum Config {}
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport.Config {
   public struct Compression: Sendable, Hashable {
     /// The default algorithm used for compressing outbound messages.

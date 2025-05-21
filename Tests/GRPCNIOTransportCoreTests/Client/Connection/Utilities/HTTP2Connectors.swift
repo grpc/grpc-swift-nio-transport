@@ -20,7 +20,7 @@ import NIOCore
 import NIOHTTP2
 import NIOPosix
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2Connector where Self == ThrowingConnector {
   /// A connector which throws the given error on a connect attempt.
   static func throwing(_ error: RPCError) -> Self {
@@ -28,7 +28,7 @@ extension HTTP2Connector where Self == ThrowingConnector {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2Connector where Self == NeverConnector {
   /// A connector which fatal errors if a connect attempt is made.
   static var never: Self {
@@ -36,7 +36,7 @@ extension HTTP2Connector where Self == NeverConnector {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2Connector where Self == NIOPosixConnector {
   /// A connector which uses NIOPosix to establish a connection.
   static func posix(
@@ -56,7 +56,7 @@ extension HTTP2Connector where Self == NIOPosixConnector {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 struct ThrowingConnector: HTTP2Connector {
   private let error: RPCError
 
@@ -72,7 +72,7 @@ struct ThrowingConnector: HTTP2Connector {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 struct NeverConnector: HTTP2Connector {
   func establishConnection(
     to address: GRPCNIOTransportCore.SocketAddress,
@@ -82,7 +82,7 @@ struct NeverConnector: HTTP2Connector {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 struct NIOPosixConnector: HTTP2Connector {
   private let eventLoopGroup: any EventLoopGroup
   private let maxIdleTime: TimeAmount?

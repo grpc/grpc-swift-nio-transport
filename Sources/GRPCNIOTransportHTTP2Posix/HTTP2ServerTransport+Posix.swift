@@ -25,7 +25,7 @@ private import SwiftASN1
 private import Synchronization
 public import X509
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ServerTransport {
   /// A `ServerTransport` using HTTP/2 built on top of `NIOPosix`.
   ///
@@ -199,10 +199,9 @@ extension HTTP2ServerTransport {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ServerTransport.Posix {
   /// Context for Posix TransportSpecific
-  @available(gRPCSwiftNIOTransport 1.1, *)
   public struct Context: ServerContext.TransportSpecific {
     /// The peer certificate (if any) from the mTLS handshake
     public var peerCertificate: Certificate?
@@ -277,7 +276,7 @@ extension HTTP2ServerTransport.Posix {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ServerBootstrap {
   fileprivate func bind<Output: Sendable>(
     to address: GRPCNIOTransportCore.SocketAddress,
@@ -303,7 +302,7 @@ extension ServerBootstrap {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ServerTransport where Self == HTTP2ServerTransport.Posix {
   /// Create a new `Posix` based HTTP/2 server transport.
   ///

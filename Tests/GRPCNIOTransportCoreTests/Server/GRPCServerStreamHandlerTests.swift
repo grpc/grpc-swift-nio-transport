@@ -24,7 +24,7 @@ import XCTest
 
 @testable import GRPCNIOTransportCore
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 final class GRPCServerStreamHandlerTests: XCTestCase {
   private func makeServerStreamHandler(
     channel: any Channel,
@@ -1010,13 +1010,13 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
 }
 
 struct ServerStreamHandlerTests {
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   struct ConnectionAndStreamHandlers {
     let streamHandler: GRPCServerStreamHandler
     let connectionHandler: ServerConnectionManagementHandler
   }
 
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   private func makeServerConnectionAndStreamHandlers(
     channel: any Channel,
     scheme: Scheme = .http,
@@ -1053,7 +1053,7 @@ struct ServerStreamHandlerTests {
   }
 
   @Test("ChannelShouldQuiesceEvent is buffered and turns into RPC cancellation")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func shouldQuiesceEventIsBufferedBeforeHandleIsSet() async throws {
     let channel = EmbeddedChannel()
     let handler = self.makeServerConnectionAndStreamHandlers(channel: channel).streamHandler
@@ -1070,7 +1070,7 @@ struct ServerStreamHandlerTests {
   }
 
   @Test("ChannelShouldQuiesceEvent turns into RPC cancellation")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func shouldQuiesceEventTriggersCancellation() async throws {
     let channel = EmbeddedChannel()
     let handler = self.makeServerConnectionAndStreamHandlers(channel: channel).streamHandler
@@ -1088,7 +1088,7 @@ struct ServerStreamHandlerTests {
   }
 
   @Test("RST_STREAM turns into RPC cancellation")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func rstStreamTriggersCancellation() async throws {
     let channel = EmbeddedChannel()
     let handler = self.makeServerConnectionAndStreamHandlers(channel: channel).streamHandler
@@ -1109,7 +1109,7 @@ struct ServerStreamHandlerTests {
   }
 
   @Test("Connection FrameStats are updated when writing headers or data frames")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func connectionFrameStatsAreUpdatedAccordingly() async throws {
     let channel = EmbeddedChannel()
     let handlers = self.makeServerConnectionAndStreamHandlers(channel: channel)

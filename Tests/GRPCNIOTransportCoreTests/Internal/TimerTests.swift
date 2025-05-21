@@ -21,7 +21,7 @@ import NIOEmbedded
 import Synchronization
 import XCTest
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 internal final class TimerTests: XCTestCase {
   fileprivate struct CounterTimerHandler: NIOScheduledCallbackHandler {
     let counter = AtomicCounter(0)

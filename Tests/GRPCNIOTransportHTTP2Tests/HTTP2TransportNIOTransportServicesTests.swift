@@ -21,7 +21,7 @@ import GRPCNIOTransportHTTP2TransportServices
 import XCTest
 import NIOSSL
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
   func testGetListeningAddress_IPv4() async throws {
     let transport = GRPCNIOTransportCore.HTTP2ServerTransport.TransportServices(

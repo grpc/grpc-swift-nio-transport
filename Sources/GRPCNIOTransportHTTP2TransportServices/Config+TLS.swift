@@ -21,7 +21,7 @@ public import Network
 private import struct Foundation.Data
 private import struct Foundation.URL
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ServerTransport.TransportServices {
   /// The security configuration for this connection.
   public struct TransportSecurity: Sendable {
@@ -74,7 +74,7 @@ extension HTTP2ServerTransport.TransportServices {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ServerTransport.TransportServices {
   public struct TLS: Sendable {
     /// How to verify the client certificate, if one is presented.
@@ -158,7 +158,7 @@ extension HTTP2ServerTransport.TransportServices {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport.TransportServices {
   /// The security configuration for this connection.
   public struct TransportSecurity: Sendable {
@@ -211,7 +211,7 @@ extension HTTP2ClientTransport.TransportServices {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport.TransportServices {
   public struct TLS: Sendable {
     /// How to verify the server certificate, if one is presented.
@@ -289,7 +289,7 @@ extension HTTP2ClientTransport.TransportServices {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension NWProtocolTLS.Options {
   func setUpVerifyBlock(trustRootsSource: TLSConfig.TrustRootsSource) {
     if let (verifyQueue, verifyBlock) = trustRootsSource.makeTrustRootsConfig() {
@@ -302,7 +302,7 @@ extension NWProtocolTLS.Options {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension TLSConfig.TrustRootsSource {
   internal func makeTrustRootsConfig() -> (DispatchQueue, sec_protocol_verify_t)? {
     switch self.wrapped {

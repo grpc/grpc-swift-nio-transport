@@ -19,7 +19,7 @@ import GRPCNIOTransportCore
 import NIOPosix
 import XCTest
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 enum LoadBalancerTest {
   struct Context {
     let servers: [(server: TestServer, address: GRPCNIOTransportCore.SocketAddress)]
@@ -167,7 +167,7 @@ enum LoadBalancerTest {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension LoadBalancerTest.Context {
   var roundRobin: RoundRobinLoadBalancer? {
     switch self.loadBalancer {

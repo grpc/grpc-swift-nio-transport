@@ -20,7 +20,7 @@ import XCTest
 
 @testable import GRPCNIOTransportCore
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 final class RequestQueueTests: XCTestCase {
   struct AnErrorToAvoidALeak: Error {}
 

@@ -41,9 +41,9 @@ private import Synchronization
 /// By providing a channel to this transport you hand ownership of it to the transport. The
 /// transport therefore becomes responsible for closing the channel at the appropriate point
 /// in time.
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport {
-  @available(gRPCSwiftNIOTransport 1.2, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   public final class WrappedChannel: ClientTransport {
     public typealias Bytes = GRPCNIOTransportBytes
 
@@ -287,7 +287,7 @@ extension HTTP2ClientTransport {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.2, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ClientTransport where Self == HTTP2ClientTransport.WrappedChannel {
   /// Create a new wrapping client transport from an already connection NIO `Channel`.
   ///
