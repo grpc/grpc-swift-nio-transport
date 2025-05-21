@@ -16,6 +16,7 @@
 
 internal import GRPCCore
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 private struct ConstantAsyncSequence<Element: Sendable>: AsyncSequence, Sendable {
   private let element: Element
 
