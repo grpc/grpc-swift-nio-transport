@@ -39,6 +39,7 @@ private import NIOTLS
 /// Some of the behaviours are described in:
 /// - [gRFC A8](https://github.com/grpc/proposal/blob/0e1807a6e30a1a915c0dcadc873bca92b9fa9720/A8-client-side-keepalive.md), and
 /// - [gRFC A9](https://github.com/grpc/proposal/blob/0e1807a6e30a1a915c0dcadc873bca92b9fa9720/A9-server-side-conn-mgt.md).
+@available(gRPCSwiftNIOTransport 1.0, *)
 package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
   package typealias InboundIn = HTTP2Frame
   package typealias InboundOut = HTTP2Frame
@@ -416,6 +417,7 @@ package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
 }
 
 // Timer handler views.
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension ServerConnectionManagementHandler {
   struct MaxIdleTimerHandlerView: @unchecked Sendable, NIOScheduledCallbackHandler {
     private let handler: ServerConnectionManagementHandler
@@ -483,6 +485,7 @@ extension ServerConnectionManagementHandler {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension ServerConnectionManagementHandler {
   package struct HTTP2StreamDelegate: @unchecked Sendable, NIOHTTP2StreamDelegate {
     // @unchecked is okay: the only methods do the appropriate event-loop dance.
@@ -555,6 +558,7 @@ extension ServerConnectionManagementHandler {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension ServerConnectionManagementHandler {
   private func maybeFlush(context: ChannelHandlerContext) {
     if self.inReadLoop {

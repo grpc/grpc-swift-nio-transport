@@ -19,6 +19,7 @@ internal import GRPCNIOTransportCore
 internal import NIOCore
 internal import NIOPosix
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension ClientBootstrap {
   func connect<Result: Sendable>(
     to address: GRPCNIOTransportCore.SocketAddress,
@@ -44,6 +45,7 @@ extension ClientBootstrap {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension NIOPosix.VsockAddress {
   init(_ address: GRPCNIOTransportCore.SocketAddress.VirtualSocket) {
     self.init(

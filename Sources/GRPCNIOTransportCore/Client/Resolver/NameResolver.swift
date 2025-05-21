@@ -17,6 +17,7 @@
 public import GRPCCore
 
 /// A name resolver can provide resolved addresses and service configuration values over time.
+@available(gRPCSwiftNIOTransport 1.0, *)
 public struct NameResolver: Sendable {
   /// A sequence of name resolution results.
   ///
@@ -67,6 +68,7 @@ public struct NameResolver: Sendable {
 
 /// The result of name resolution, a list of endpoints to connect to and the service
 /// configuration reported by the resolver.
+@available(gRPCSwiftNIOTransport 1.0, *)
 public struct NameResolutionResult: Hashable, Sendable {
   /// A list of endpoints to connect to.
   public var endpoints: [Endpoint]
@@ -85,6 +87,7 @@ public struct NameResolutionResult: Hashable, Sendable {
 }
 
 /// A group of addresses which are considered equivalent when establishing a connection.
+@available(gRPCSwiftNIOTransport 1.0, *)
 public struct Endpoint: Hashable, Sendable {
   /// A list of equivalent addresses.
   ///
@@ -100,6 +103,7 @@ public struct Endpoint: Hashable, Sendable {
 }
 
 /// A resolver capable of resolving targets of type ``Target``.
+@available(gRPCSwiftNIOTransport 1.0, *)
 public protocol NameResolverFactory<Target> {
   /// The type of ``ResolvableTarget`` this factory makes resolvers for.
   associatedtype Target: ResolvableTarget
@@ -111,6 +115,7 @@ public protocol NameResolverFactory<Target> {
   func resolver(for target: Target) -> NameResolver
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension NameResolverFactory {
   /// Returns whether the given target is compatible with this factory.
   ///
@@ -131,10 +136,13 @@ extension NameResolverFactory {
 }
 
 /// A target which can be resolved to a ``SocketAddress``.
+@available(gRPCSwiftNIOTransport 1.0, *)
 public protocol ResolvableTarget {}
 
 /// A namespace for resolvable targets.
+@available(gRPCSwiftNIOTransport 1.0, *)
 public enum ResolvableTargets {}
 
 /// A namespace for name resolver factories.
+@available(gRPCSwiftNIOTransport 1.0, *)
 public enum NameResolvers {}

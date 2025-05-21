@@ -35,7 +35,7 @@ let products: [Product] = [
 let dependencies: [Package.Dependency] = [
   .package(
     url: "https://github.com/grpc/grpc-swift.git",
-    from: "2.2.0"
+    from: "2.2.1"
   ),
   .package(
     url: "https://github.com/apple/swift-nio.git",
@@ -67,12 +67,28 @@ let dependencies: [Package.Dependency] = [
   ),
 ]
 
-let defaultSwiftSettings: [SwiftSetting] = [
-  .swiftLanguageMode(.v6),
-  .enableUpcomingFeature("ExistentialAny"),
-  .enableUpcomingFeature("InternalImportsByDefault"),
-  .enableUpcomingFeature("MemberImportVisibility"),
-]
+// -------------------------------------------------------------------------------------------------
+
+// This adds some build settings which allow us to map "@available(gRPCSwiftNIOTransport 1.x, *)" to
+// the appropriate OS platforms.
+let nextMinorVersion = 3
+let availabilitySettings: [SwiftSetting] = (0 ... nextMinorVersion).map { minor in
+  let name = "gRPCSwiftNIOTransport"
+  let version = "1.\(minor)"
+  let platforms = "macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0"
+  let setting = "AvailabilityMacro=\(name) \(version):\(platforms)"
+  return .enableExperimentalFeature(setting)
+}
+
+let defaultSwiftSettings: [SwiftSetting] =
+  availabilitySettings + [
+    .swiftLanguageMode(.v6),
+    .enableUpcomingFeature("ExistentialAny"),
+    .enableUpcomingFeature("InternalImportsByDefault"),
+    .enableUpcomingFeature("MemberImportVisibility"),
+  ]
+
+// -------------------------------------------------------------------------------------------------
 
 let targets: [Target] = [
   // C-module for z-lib shims
@@ -156,13 +172,6 @@ let targets: [Target] = [
 
 let package = Package(
   name: "grpc-swift-nio-transport",
-  platforms: [
-    .macOS(.v15),
-    .iOS(.v18),
-    .tvOS(.v18),
-    .watchOS(.v11),
-    .visionOS(.v2),
-  ],
   products: products,
   dependencies: dependencies,
   targets: targets

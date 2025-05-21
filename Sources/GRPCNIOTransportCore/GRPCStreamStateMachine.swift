@@ -24,6 +24,7 @@ package enum Scheme: String {
   case https
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 enum GRPCStreamStateMachineConfiguration {
   case client(ClientConfiguration)
   case server(ServerConfiguration)
@@ -61,6 +62,7 @@ enum GRPCStreamStateMachineConfiguration {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 private enum GRPCStreamStateMachineState {
   case clientIdleServerIdle(ClientIdleServerIdleState)
   case clientOpenServerIdle(ClientOpenServerIdleState)
@@ -393,6 +395,7 @@ private enum GRPCStreamStateMachineState {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 struct GRPCStreamStateMachine {
   private var state: GRPCStreamStateMachineState
   private var configuration: GRPCStreamStateMachineConfiguration
@@ -629,6 +632,7 @@ struct GRPCStreamStateMachine {
 
 // - MARK: Client
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension GRPCStreamStateMachine {
   private func makeClientHeaders(
     methodDescriptor: MethodDescriptor,
@@ -1238,6 +1242,7 @@ extension GRPCStreamStateMachine {
 
 // - MARK: Server
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension GRPCStreamStateMachine {
   private func formResponseHeaders(
     in headers: inout HPACKHeaders,
@@ -1759,6 +1764,7 @@ extension GRPCStreamStateMachine {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension MethodDescriptor {
   init?(path: String) {
     var view = path[...]
@@ -1789,6 +1795,7 @@ internal enum GRPCHTTP2Keys: String {
   case grpcStatusMessage = "grpc-message"
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension HPACKHeaders {
   func firstString(forKey key: GRPCHTTP2Keys, canonicalForm: Bool = true) -> String? {
     self.values(forHeader: key.rawValue, canonicalForm: canonicalForm).first(where: { _ in true })
@@ -1848,6 +1855,7 @@ extension HPACKHeaders {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension Zlib.Method {
   init?(encoding: CompressionAlgorithm) {
     switch encoding {
@@ -1863,6 +1871,7 @@ extension Zlib.Method {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension Metadata {
   init(headers: HPACKHeaders) {
     var metadata = Metadata()
@@ -1883,6 +1892,7 @@ extension Metadata {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension Status.Code {
   // See https://github.com/grpc/grpc/blob/7f664c69b2a636386fbf95c16bc78c559734ce0f/doc/http-grpc-status-mapping.md
   init(httpStatusCode: HTTPResponseStatus) {
@@ -1903,12 +1913,14 @@ extension Status.Code {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension MethodDescriptor {
   var path: String {
     return "/\(self.service)/\(self.method)"
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension RPCError {
   fileprivate init(_ reason: GRPCStreamStateMachine.UnexpectedInboundCloseReason) {
     switch reason {
@@ -1925,12 +1937,14 @@ extension RPCError {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension Status {
   fileprivate init(_ error: RPCError) {
     self = Status(code: Status.Code(error.code), message: error.message)
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension RPCError {
   init(_ invalidState: GRPCStreamStateMachine.InvalidState) {
     self = RPCError(code: .internalError, message: "Invalid state", cause: invalidState)

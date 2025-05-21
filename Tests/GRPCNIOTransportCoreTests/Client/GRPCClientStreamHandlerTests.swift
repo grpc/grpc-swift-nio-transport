@@ -24,6 +24,7 @@ import XCTest
 
 @testable import GRPCNIOTransportCore
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 final class GRPCClientStreamHandlerTests: XCTestCase {
   func testH2FramesAreIgnored() throws {
     let handler = GRPCClientStreamHandler(
@@ -998,6 +999,7 @@ private enum TestError: Error {
   case assertionFailure(String)
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension MethodDescriptor {
   static let testTest = Self(fullyQualifiedService: "test", method: "test")
 }

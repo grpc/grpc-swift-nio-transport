@@ -18,6 +18,7 @@ import GRPCCore
 import GRPCNIOTransportCore
 import XCTest
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 final class HTTP2ServerTransportConfigTests: XCTestCase {
   func testCompressionDefaults() {
     let config = HTTP2ServerTransport.Config.Compression.defaults

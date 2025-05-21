@@ -16,6 +16,7 @@
 
 import GRPCCore
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 internal struct ControlClient<Transport> where Transport: ClientTransport {
   internal let client: GRPCCore.GRPCClient<Transport>
 

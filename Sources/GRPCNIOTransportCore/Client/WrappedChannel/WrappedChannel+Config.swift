@@ -16,6 +16,7 @@
 
 public import NIOCore
 
+@available(gRPCSwiftNIOTransport 1.2, *)
 extension HTTP2ClientTransport.WrappedChannel {
   public struct Config: Sendable {
     /// Configuration for HTTP/2 connections.
@@ -73,6 +74,7 @@ extension HTTP2ClientTransport.WrappedChannel {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.2, *)
 extension HTTP2ClientTransport.WrappedChannel.Config {
   /// Callbacks used for debugging purposes.
   ///
@@ -98,6 +100,7 @@ extension HTTP2ClientTransport.WrappedChannel.Config {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.2, *)
 extension GRPCChannel.Config {
   init(_ config: HTTP2ClientTransport.WrappedChannel.Config) {
     self.init(

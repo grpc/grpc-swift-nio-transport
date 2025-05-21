@@ -38,6 +38,7 @@ struct TLSConfigurationTests {
   }
 
   @Test("Client custom private key")
+  @available(gRPCSwiftNIOTransport 1.2, *)
   func clientTLSCustomPrivateKey() throws {
     let custom = NoOpCustomPrivateKey()
     let config = HTTP2ClientTransport.Posix.TransportSecurity.tls {
@@ -51,6 +52,7 @@ struct TLSConfigurationTests {
   }
 
   @Test("Server custom private key")
+  @available(gRPCSwiftNIOTransport 1.2, *)
   func serverTLSCustomPrivateKey() throws {
     let custom = NoOpCustomPrivateKey()
     let config = HTTP2ServerTransport.Posix.TransportSecurity.tls(
@@ -74,6 +76,7 @@ struct TLSConfigurationTests {
   }
 
   @Test("Client cert reloader is set")
+  @available(gRPCSwiftNIOTransport 1.2, *)
   func clientCertificateReloader() throws {
     let config = try HTTP2ClientTransport.Posix.TransportSecurity.mTLS(
       certificateReloader: StaticCertLoader()
@@ -87,6 +90,7 @@ struct TLSConfigurationTests {
   }
 
   @Test("Server cert reloader is set", arguments: [false, true])
+  @available(gRPCSwiftNIOTransport 1.2, *)
   func serverCertificateReloader(isMTLS: Bool) throws {
     let config: HTTP2ServerTransport.Posix.TransportSecurity
     if isMTLS {
@@ -108,6 +112,7 @@ struct TLSConfigurationTests {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.2, *)
 extension HTTP2ClientTransport.Posix.TransportSecurity {
   var tls: TLS? {
     switch self.wrapped {
@@ -119,6 +124,7 @@ extension HTTP2ClientTransport.Posix.TransportSecurity {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.2, *)
 extension HTTP2ServerTransport.Posix.TransportSecurity {
   var tls: TLS? {
     switch self.wrapped {
@@ -130,6 +136,7 @@ extension HTTP2ServerTransport.Posix.TransportSecurity {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.2, *)
 extension NIOSSLPrivateKeySource {
   var privateKey: NIOSSLPrivateKey? {
     switch self {

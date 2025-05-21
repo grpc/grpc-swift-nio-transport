@@ -17,6 +17,7 @@
 import GRPCCore
 import GRPCNIOTransportCore
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension NameResolver {
   static func `static`(
     endpoints: [Endpoint],
@@ -42,6 +43,7 @@ extension NameResolver {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 struct ConstantAsyncSequence<Element: Sendable>: AsyncSequence, Sendable {
   private let result: Result<Element, any Error>
 

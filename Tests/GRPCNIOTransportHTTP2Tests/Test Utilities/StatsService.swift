@@ -17,6 +17,7 @@
 import GRPCCore
 import Synchronization
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 final class DebugCallbackStats: Sendable {
   let tcpListenersBound: Atomic<Int>
   let tcpConnectionsAccepted: Atomic<Int>
@@ -50,6 +51,7 @@ final class DebugCallbackStats: Sendable {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 struct StatsService {
   private let stats: DebugCallbackStats
 
@@ -62,6 +64,7 @@ struct StatsService {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension StatsService: RegistrableRPCService {
   func registerMethods<Transport: ServerTransport>(with router: inout RPCRouter<Transport>) {
     router.registerHandler(
@@ -79,6 +82,7 @@ extension StatsService: RegistrableRPCService {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 struct StatsClient<Transport: ClientTransport> {
   private let underlying: GRPCClient<Transport>
 
@@ -99,6 +103,7 @@ struct StatsClient<Transport: ClientTransport> {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension MethodDescriptor {
   static let getStats = Self(fullyQualifiedService: "StatsService", method: "GetStats")
 }

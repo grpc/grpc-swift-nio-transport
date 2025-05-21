@@ -16,6 +16,7 @@
 
 import GRPCCore
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension MethodDescriptor {
   static var echoGet: Self {
     MethodDescriptor(fullyQualifiedService: "echo.Echo", method: "Get")
@@ -26,6 +27,7 @@ extension MethodDescriptor {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension MethodConfig.Name {
   init(_ descriptor: MethodDescriptor) {
     self = MethodConfig.Name(

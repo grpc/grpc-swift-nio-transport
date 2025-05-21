@@ -18,6 +18,7 @@ import XCTest
 
 @testable import GRPCNIOTransportCore
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 final class ProcessUniqueIDTests: XCTestCase {
   func testProcessUniqueIDIsUnique() {
     var ids: Set<ProcessUniqueID> = []

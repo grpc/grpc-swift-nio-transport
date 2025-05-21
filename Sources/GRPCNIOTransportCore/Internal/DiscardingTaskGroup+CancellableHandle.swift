@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension DiscardingTaskGroup {
   /// Adds a child task to the group which is individually cancellable.
   ///
@@ -61,6 +62,7 @@ extension DiscardingTaskGroup {
 }
 
 @usableFromInline
+@available(gRPCSwiftNIOTransport 1.0, *)
 struct CancellableTaskHandle: Sendable {
   @usableFromInline
   private(set) var continuation: AsyncStream<Void>.Continuation

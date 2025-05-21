@@ -22,6 +22,7 @@ import Testing
 
 struct ServerConnectionManagementHandlerTests {
   @Test("Idle timeout on new connection")
+  @available(gRPCSwiftNIOTransport 1.0, *)
   func idleTimeoutOnNewConnection() throws {
     let connection = try Connection(maxIdleTime: .minutes(1))
     try connection.activate()
@@ -36,6 +37,7 @@ struct ServerConnectionManagementHandlerTests {
   }
 
   @Test("Idle timeout is cancelled when stream is opened")
+  @available(gRPCSwiftNIOTransport 1.0, *)
   func idleTimerIsCancelledWhenStreamIsOpened() throws {
     let connection = try Connection(maxIdleTime: .minutes(1))
     try connection.activate()
@@ -49,6 +51,7 @@ struct ServerConnectionManagementHandlerTests {
   }
 
   @Test("Idle timer starts when all streams are closed")
+  @available(gRPCSwiftNIOTransport 1.0, *)
   func idleTimerStartsWhenAllStreamsAreClosed() throws {
     let connection = try Connection(maxIdleTime: .minutes(1))
     try connection.activate()
@@ -70,6 +73,7 @@ struct ServerConnectionManagementHandlerTests {
   }
 
   @Test("Connection shutdown after max age is reached")
+  @available(gRPCSwiftNIOTransport 1.0, *)
   func maxAge() throws {
     let connection = try Connection(maxAge: .minutes(1))
     try connection.activate()
@@ -91,6 +95,7 @@ struct ServerConnectionManagementHandlerTests {
   }
 
   @Test("Graceful shutdown ratchets down last stream ID")
+  @available(gRPCSwiftNIOTransport 1.0, *)
   func gracefulShutdownRatchetsDownStreamID() throws {
     // This test uses the idle timeout to trigger graceful shutdown. The mechanism is the same
     // regardless of how it's triggered.
@@ -111,6 +116,7 @@ struct ServerConnectionManagementHandlerTests {
   }
 
   @Test("Graceful shutdown promoted to close after grace period")
+  @available(gRPCSwiftNIOTransport 1.0, *)
   func gracefulShutdownGracePeriod() throws {
     // This test uses the idle timeout to trigger graceful shutdown. The mechanism is the same
     // regardless of how it's triggered.
@@ -134,6 +140,7 @@ struct ServerConnectionManagementHandlerTests {
   }
 
   @Test("Keepalive works on new connection")
+  @available(gRPCSwiftNIOTransport 1.0, *)
   func keepaliveOnNewConnection() throws {
     let connection = try Connection(
       keepaliveTime: .minutes(5),
@@ -157,6 +164,7 @@ struct ServerConnectionManagementHandlerTests {
   }
 
   @Test("Keepalive starts after read loop")
+  @available(gRPCSwiftNIOTransport 1.0, *)
   func keepaliveStartsAfterReadLoop() throws {
     let connection = try Connection(
       keepaliveTime: .minutes(5),
@@ -185,6 +193,7 @@ struct ServerConnectionManagementHandlerTests {
   }
 
   @Test("Keepalive works on new connection without response")
+  @available(gRPCSwiftNIOTransport 1.0, *)
   func keepaliveOnNewConnectionWithoutResponse() throws {
     let connection = try Connection(
       keepaliveTime: .minutes(5),
@@ -209,6 +218,7 @@ struct ServerConnectionManagementHandlerTests {
   }
 
   @Test("Keepalive sent by client is policed")
+  @available(gRPCSwiftNIOTransport 1.0, *)
   func clientKeepalivePolicing() throws {
     let connection = try Connection(
       allowKeepaliveWithoutCalls: true,
@@ -237,6 +247,7 @@ struct ServerConnectionManagementHandlerTests {
   }
 
   @Test("Client keepalive works with permissible intervals")
+  @available(gRPCSwiftNIOTransport 1.0, *)
   func clientKeepaliveWithPermissibleIntervals() throws {
     let connection = try Connection(
       allowKeepaliveWithoutCalls: true,
@@ -255,6 +266,7 @@ struct ServerConnectionManagementHandlerTests {
   }
 
   @Test("Client keepalive works after reset state")
+  @available(gRPCSwiftNIOTransport 1.0, *)
   func clientKeepaliveResetState() throws {
     let connection = try Connection(
       allowKeepaliveWithoutCalls: true,
@@ -294,6 +306,7 @@ struct ServerConnectionManagementHandlerTests {
   }
 
   @Test("Closes on error")
+  @available(gRPCSwiftNIOTransport 1.0, *)
   func closesOnError() throws {
     let connection = try Connection()
     try connection.activate()
@@ -307,6 +320,7 @@ struct ServerConnectionManagementHandlerTests {
   }
 
   @Test("Doesn't close on stream error")
+  @available(gRPCSwiftNIOTransport 1.0, *)
   func doesNotCloseOnStreamError() throws {
     let connection = try Connection(maxIdleTime: .minutes(1))
     try connection.activate()
@@ -328,6 +342,7 @@ struct ServerConnectionManagementHandlerTests {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension ServerConnectionManagementHandlerTests {
   private func testGracefulShutdown(
     connection: Connection,
@@ -371,6 +386,7 @@ extension ServerConnectionManagementHandlerTests {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension ServerConnectionManagementHandlerTests {
   struct Connection {
     let channel: EmbeddedChannel

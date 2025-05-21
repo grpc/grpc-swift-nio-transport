@@ -16,6 +16,7 @@
 
 internal import GRPCCore
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension ResolvableTargets {
   /// A resolvable target for IPv4 addresses.
   ///
@@ -33,6 +34,7 @@ extension ResolvableTargets {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension ResolvableTarget where Self == ResolvableTargets.IPv6 {
   /// Creates a new resolvable IPv6 target for a single address.
   /// - Parameters:
@@ -54,6 +56,7 @@ extension ResolvableTarget where Self == ResolvableTargets.IPv6 {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension NameResolvers {
   /// A ``NameResolverFactory`` for ``ResolvableTargets/IPv6`` targets.
   ///

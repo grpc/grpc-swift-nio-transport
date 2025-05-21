@@ -23,6 +23,7 @@ private import Synchronization
 /// Provides the common functionality for a `NIO`-based server transport.
 ///
 /// - SeeAlso: ``HTTP2ListenerFactory``.
+@available(gRPCSwiftNIOTransport 1.0, *)
 package final class CommonHTTP2ServerTransport<
   ListenerFactory: HTTP2ListenerFactory
 >: ServerTransport, ListeningServerTransport {

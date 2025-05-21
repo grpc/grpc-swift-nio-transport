@@ -21,6 +21,7 @@ import NIOHTTP2
 import NIOPosix
 import XCTest
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 final class SubchannelTests: XCTestCase {
   func testMakeStreamOnIdleSubchannel() async throws {
     let subchannel = self.makeSubchannel(
@@ -584,6 +585,7 @@ final class SubchannelTests: XCTestCase {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension ConnectionBackoff {
   static func fixed(at interval: Duration, jitter: Double = 0.0) -> Self {
     return Self(initial: interval, max: interval, multiplier: 1.0, jitter: jitter)

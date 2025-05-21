@@ -17,6 +17,7 @@
 import GRPCNIOTransportCore
 import XCTest
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 final class SocketAddressTests: XCTestCase {
   func testSocketAddressUnwrapping() {
     var address: SocketAddress = .ipv4(host: "foo", port: 42)

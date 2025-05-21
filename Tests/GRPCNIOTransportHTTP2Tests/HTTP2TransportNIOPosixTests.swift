@@ -20,6 +20,7 @@ import GRPCNIOTransportHTTP2Posix
 import NIOSSL
 import XCTest
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 final class HTTP2TransportNIOPosixTests: XCTestCase {
   func testGetListeningAddress_IPv4() async throws {
     let transport = GRPCNIOTransportCore.HTTP2ServerTransport.Posix(

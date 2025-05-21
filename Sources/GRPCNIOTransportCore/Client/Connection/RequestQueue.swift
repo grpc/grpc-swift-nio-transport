@@ -16,6 +16,7 @@
 
 internal import DequeModule
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 struct RequestQueue<Element> {
   typealias Continuation = CheckedContinuation<Element, any Error>
 

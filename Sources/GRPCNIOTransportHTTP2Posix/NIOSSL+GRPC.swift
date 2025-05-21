@@ -19,6 +19,7 @@ package import GRPCNIOTransportCore
 internal import NIOCertificateReloading
 internal import NIOSSL
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension NIOSSLSerializationFormats {
   fileprivate init(_ format: TLSConfig.SerializationFormat) {
     switch format.wrapped {
@@ -30,6 +31,7 @@ extension NIOSSLSerializationFormats {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension Sequence<TLSConfig.CertificateSource> {
   func sslCertificateSources() throws -> [NIOSSLCertificateSource] {
     var certificateSources: [NIOSSLCertificateSource] = []
@@ -75,6 +77,7 @@ extension Sequence<TLSConfig.CertificateSource> {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.2, *)
 extension TLSConfig.PrivateKeySource {
   enum _NIOSSLPrivateKeySource: TransportSpecific {
     case customPrivateKey(any (NIOSSLCustomPrivateKey & Hashable))
@@ -86,6 +89,7 @@ extension TLSConfig.PrivateKeySource {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension NIOSSLPrivateKey {
   fileprivate static func makePrivateKey(
     from source: TLSConfig.PrivateKeySource
@@ -132,6 +136,7 @@ extension NIOSSLPrivateKey {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension NIOSSLTrustRoots {
   fileprivate init(_ trustRoots: TLSConfig.TrustRootsSource) throws {
     switch trustRoots.wrapped {
@@ -182,6 +187,7 @@ extension NIOSSLTrustRoots {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension CertificateVerification {
   fileprivate init(
     _ verificationMode: TLSConfig.CertificateVerification
@@ -197,6 +203,7 @@ extension CertificateVerification {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension TLSConfiguration {
   package init(_ tlsConfig: HTTP2ServerTransport.Posix.TransportSecurity.TLS) throws {
     let certificateChain = try tlsConfig.certificateChain.sslCertificateSources()

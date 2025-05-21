@@ -18,6 +18,7 @@ import GRPCCore
 import GRPCNIOTransportCore
 import XCTest
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 final class NameResolverRegistryTests: XCTestCase {
   struct FailingResolver: NameResolverFactory {
     typealias Target = StringTarget

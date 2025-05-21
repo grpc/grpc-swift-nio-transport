@@ -23,6 +23,7 @@ import Testing
 @Suite("ChannelDebugCallbacks")
 struct ChannelDebugCallbackTests {
   @Test(arguments: TransportKind.supportsDebugCallbacks, TransportKind.supportsDebugCallbacks)
+  @available(gRPCSwiftNIOTransport 1.0, *)
   func debugCallbacksAreCalled(serverKind: TransportKind, clientKind: TransportKind) async throws {
     // Validates the callbacks are called appropriately by setting up callbacks which increment
     // counters and then returning those stats from a gRPC service. The client's interactions with
@@ -96,6 +97,7 @@ struct ChannelDebugCallbackTests {
     }
   }
 
+  @available(gRPCSwiftNIOTransport 1.0, *)
   private func makeServerTransport(
     kind: TransportKind,
     address: GRPCNIOTransportCore.SocketAddress,
@@ -130,6 +132,7 @@ struct ChannelDebugCallbackTests {
     }
   }
 
+  @available(gRPCSwiftNIOTransport 1.0, *)
   private func makeClientTransport(
     kind: TransportKind,
     target: any ResolvableTarget,

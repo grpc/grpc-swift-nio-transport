@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 public enum TLSConfig: Sendable {
   /// The serialization format of the provided certificates and private keys.
   public struct SerializationFormat: Sendable, Equatable {

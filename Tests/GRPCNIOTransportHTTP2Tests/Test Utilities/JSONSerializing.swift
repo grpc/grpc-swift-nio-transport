@@ -17,6 +17,7 @@
 import Foundation
 import GRPCCore
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 struct JSONSerializer<Message: Encodable>: MessageSerializer {
   private let encoder = JSONEncoder()
 
@@ -26,6 +27,7 @@ struct JSONSerializer<Message: Encodable>: MessageSerializer {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 struct JSONDeserializer<Message: Decodable>: MessageDeserializer {
   private let decoder = JSONDecoder()
 

@@ -35,6 +35,7 @@ struct HTTP2TransportTLSEnabledTests {
     arguments: TransportKind.clientsWithTLS,
     TransportKind.serversWithTLS
   )
+  @available(gRPCSwiftNIOTransport 1.0, *)
   func testRPC_Defaults_OK(
     clientTransport: TransportKind,
     serverTransport: TransportKind
@@ -59,6 +60,7 @@ struct HTTP2TransportTLSEnabledTests {
     }
   }
 
+  @available(gRPCSwiftNIOTransport 1.2, *)
   final class TransportSpecificInterceptor: ServerInterceptor {
     let clientCert: [UInt8]
     init(_ clientCert: [UInt8]) {
@@ -87,6 +89,7 @@ struct HTTP2TransportTLSEnabledTests {
     "Using the mTLS defaults, and with Posix transport, validate we get the peer cert on the server",
     arguments: [TransportKind.posix]
   )
+  @available(gRPCSwiftNIOTransport 1.2, *)
   func testRPC_mTLS_TransportContext_OK(supportedTransport: TransportKind) async throws {
     let certificateKeyPairs = try SelfSignedCertificateKeyPairs()
     let clientConfig = self.makeMTLSClientConfig(
@@ -116,6 +119,7 @@ struct HTTP2TransportTLSEnabledTests {
     arguments: TransportKind.clientsWithTLS,
     TransportKind.clientsWithTLS
   )
+  @available(gRPCSwiftNIOTransport 1.0, *)
   func testRPC_mTLS_OK(
     clientTransport: TransportKind,
     serverTransport: TransportKind
@@ -147,6 +151,7 @@ struct HTTP2TransportTLSEnabledTests {
     arguments: TransportKind.clientsWithTLS,
     TransportKind.clientsWithTLS
   )
+  @available(gRPCSwiftNIOTransport 1.0, *)
   // Verification should fail because the custom hostname is missing on the client.
   func testClientFailsServerValidation(
     clientTransport: TransportKind,
@@ -213,6 +218,7 @@ struct HTTP2TransportTLSEnabledTests {
     arguments: TransportKind.clientsWithTLS,
     TransportKind.clientsWithTLS
   )
+  @available(gRPCSwiftNIOTransport 1.0, *)
   // Verification should fail because the client does not offer a cert that
   // the server can use for mutual verification.
   func testServerFailsClientValidation(
@@ -295,6 +301,7 @@ struct HTTP2TransportTLSEnabledTests {
     var transport: Transport
   }
 
+  @available(gRPCSwiftNIOTransport 1.0, *)
   enum ClientConfig {
     typealias Posix = Config<
       HTTP2ClientTransport.Posix.Config,
@@ -311,6 +318,7 @@ struct HTTP2TransportTLSEnabledTests {
     #endif
   }
 
+  @available(gRPCSwiftNIOTransport 1.0, *)
   enum ServerConfig {
     typealias Posix = Config<
       HTTP2ServerTransport.Posix.Config,
@@ -327,6 +335,7 @@ struct HTTP2TransportTLSEnabledTests {
     #endif
   }
 
+  @available(gRPCSwiftNIOTransport 1.0, *)
   private func makeDefaultPlaintextPosixClientConfig() -> ClientConfig.Posix {
     ClientConfig.Posix(
       security: .plaintext,
@@ -339,6 +348,7 @@ struct HTTP2TransportTLSEnabledTests {
   }
 
   #if canImport(Network)
+  @available(gRPCSwiftNIOTransport 1.0, *)
   private func makeDefaultPlaintextTSClientConfig() -> ClientConfig.TransportServices {
     ClientConfig.TransportServices(
       security: .plaintext,
@@ -351,6 +361,7 @@ struct HTTP2TransportTLSEnabledTests {
   }
   #endif
 
+  @available(gRPCSwiftNIOTransport 1.0, *)
   private func makeDefaultTLSClientConfig(
     for transportSecurity: TransportKind,
     certificateKeyPairs: SelfSignedCertificateKeyPairs,
@@ -385,6 +396,7 @@ struct HTTP2TransportTLSEnabledTests {
   }
 
   #if canImport(Network)
+  @available(gRPCSwiftNIOTransport 1.0, *)
   private func makeSecIdentityProvider(
     certificateBytes: [UInt8],
     privateKeyBytes: [UInt8]
@@ -417,6 +429,7 @@ struct HTTP2TransportTLSEnabledTests {
   }
   #endif
 
+  @available(gRPCSwiftNIOTransport 1.0, *)
   private func makeMTLSClientConfig(
     for transportKind: TransportKind,
     certificateKeyPairs: SelfSignedCertificateKeyPairs,
@@ -458,16 +471,19 @@ struct HTTP2TransportTLSEnabledTests {
     }
   }
 
+  @available(gRPCSwiftNIOTransport 1.0, *)
   private func makeDefaultPlaintextPosixServerConfig() -> ServerConfig.Posix {
     ServerConfig.Posix(security: .plaintext, transport: .defaults)
   }
 
   #if canImport(Network)
+  @available(gRPCSwiftNIOTransport 1.0, *)
   private func makeDefaultPlaintextTSServerConfig() -> ServerConfig.TransportServices {
     ServerConfig.TransportServices(security: .plaintext, transport: .defaults)
   }
   #endif
 
+  @available(gRPCSwiftNIOTransport 1.0, *)
   private func makeDefaultTLSServerConfig(
     for transportKind: TransportKind,
     certificateKeyPairs: SelfSignedCertificateKeyPairs
@@ -498,6 +514,7 @@ struct HTTP2TransportTLSEnabledTests {
     }
   }
 
+  @available(gRPCSwiftNIOTransport 1.0, *)
   private func makeMTLSServerConfig(
     for transportKind: TransportKind,
     certificateKeyPairs: SelfSignedCertificateKeyPairs,
@@ -541,6 +558,7 @@ struct HTTP2TransportTLSEnabledTests {
     }
   }
 
+  @available(gRPCSwiftNIOTransport 1.0, *)
   func withClientAndServer(
     clientConfig: ClientConfig,
     serverConfig: ServerConfig,
@@ -604,6 +622,7 @@ struct HTTP2TransportTLSEnabledTests {
     }
   }
 
+  @available(gRPCSwiftNIOTransport 1.0, *)
   private func executeUnaryRPC(control: ControlClient<NIOClientTransport>) async throws {
     let input = ControlInput.with { $0.numberOfMessages = 1 }
     let request = ClientRequest(message: input)

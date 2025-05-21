@@ -17,6 +17,7 @@
 package import GRPCCore
 package import NIOCore
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 package enum ServerConnection {
   package enum Stream {
     package struct Outbound: ClosableRPCWriterProtocol {

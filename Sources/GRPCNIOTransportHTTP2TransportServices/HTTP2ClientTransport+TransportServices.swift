@@ -22,6 +22,7 @@ public import NIOCore  // has to be public because of EventLoopGroup param in in
 
 private import Network
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension HTTP2ClientTransport {
   /// A `ClientTransport` using HTTP/2 built on top of `NIOTransportServices`.
   ///
@@ -131,6 +132,7 @@ extension HTTP2ClientTransport {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension HTTP2ClientTransport.TransportServices {
   struct Connector: HTTP2Connector {
     private let config: HTTP2ClientTransport.TransportServices.Config
@@ -197,6 +199,7 @@ extension HTTP2ClientTransport.TransportServices {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension HTTP2ClientTransport.TransportServices {
   /// Configuration for the `TransportServices` transport.
   public struct Config: Sendable {
@@ -264,6 +267,7 @@ extension HTTP2ClientTransport.TransportServices {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension GRPCChannel.Config {
   init(transportServices config: HTTP2ClientTransport.TransportServices.Config) {
     self.init(
@@ -275,6 +279,7 @@ extension GRPCChannel.Config {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension NIOTSConnectionBootstrap {
   fileprivate func connect<Output: Sendable>(
     to address: GRPCNIOTransportCore.SocketAddress,
@@ -297,6 +302,7 @@ extension NIOTSConnectionBootstrap {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension ClientTransport where Self == HTTP2ClientTransport.TransportServices {
   /// Create a new `TransportServices` based HTTP/2 client transport.
   ///
@@ -330,6 +336,7 @@ extension ClientTransport where Self == HTTP2ClientTransport.TransportServices {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension NWProtocolTLS.Options {
   convenience init(
     _ tlsConfig: HTTP2ClientTransport.TransportServices.TLS,

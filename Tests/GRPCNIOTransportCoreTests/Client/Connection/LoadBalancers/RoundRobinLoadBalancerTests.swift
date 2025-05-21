@@ -21,6 +21,7 @@ import NIOHTTP2
 import NIOPosix
 import XCTest
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 final class RoundRobinLoadBalancerTests: XCTestCase {
   func testMultipleConnectionsAreEstablished() async throws {
     try await LoadBalancerTest.roundRobin(servers: 3, connector: .posix()) { context, event in

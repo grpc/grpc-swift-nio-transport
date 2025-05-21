@@ -56,6 +56,7 @@ private import Synchronization
 ///   }
 /// }
 /// ```
+@available(gRPCSwiftNIOTransport 1.0, *)
 package final class PickFirstLoadBalancer: Sendable {
   enum Input: Sendable, Hashable {
     /// Update the addresses used by the load balancer to the following endpoints.
@@ -170,6 +171,7 @@ package final class PickFirstLoadBalancer: Sendable {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension PickFirstLoadBalancer {
   private func handleUpdateEndpoint(_ endpoint: Endpoint, in group: inout DiscardingTaskGroup) {
     if endpoint.addresses.isEmpty { return }
@@ -271,6 +273,7 @@ extension PickFirstLoadBalancer {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension PickFirstLoadBalancer {
   enum State: Sendable {
     case active(Active)
@@ -283,6 +286,7 @@ extension PickFirstLoadBalancer {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension PickFirstLoadBalancer.State {
   struct Active: Sendable {
     var endpoint: Endpoint?
@@ -311,6 +315,7 @@ extension PickFirstLoadBalancer.State {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension PickFirstLoadBalancer.State.Active {
   mutating func updateEndpoint(
     _ endpoint: Endpoint,
@@ -480,6 +485,7 @@ extension PickFirstLoadBalancer.State.Active {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension PickFirstLoadBalancer.State.Closing {
   mutating func updateSubchannelConnectivityState(
     _ connectivityState: ConnectivityState,
@@ -520,6 +526,7 @@ extension PickFirstLoadBalancer.State.Closing {
   }
 }
 
+@available(gRPCSwiftNIOTransport 1.0, *)
 extension PickFirstLoadBalancer.State {
   enum OnUpdateEndpoint {
     case connect(Subchannel, close: Subchannel?)
