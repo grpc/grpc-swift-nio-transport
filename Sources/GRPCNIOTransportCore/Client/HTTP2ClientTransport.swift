@@ -19,6 +19,7 @@ public import NIOCore
 
 /// A namespace for the HTTP/2 client transport.
 @available(gRPCSwiftNIOTransport 1.0, *)
+@available(*, deprecated, message: "See https://forums.swift.org/t/80177")
 public enum HTTP2ClientTransport {}
 
 @available(gRPCSwiftNIOTransport 1.0, *)
