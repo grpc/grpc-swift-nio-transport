@@ -19,7 +19,7 @@ internal import NIOHTTP2
 
 @available(gRPCSwiftNIOTransport 1.2, *)
 extension HTTP2ClientTransport.WrappedChannel {
-  enum State: ~Copyable {
+  enum State {
     case idle(Idle)
     case configuring(Configuring)
     case configured(Configured)
@@ -27,7 +27,7 @@ extension HTTP2ClientTransport.WrappedChannel {
     case shuttingDown
     case shutDown
 
-    struct Idle: ~Copyable {
+    struct Idle {
       var queue: RequestQueue<NIOHTTP2Handler.AsyncStreamMultiplexer<Void>>
 
       init() {
@@ -35,7 +35,7 @@ extension HTTP2ClientTransport.WrappedChannel {
       }
     }
 
-    struct Configuring: ~Copyable {
+    struct Configuring {
       var queue: RequestQueue<NIOHTTP2Handler.AsyncStreamMultiplexer<Void>>
 
       init(from state: consuming Idle) {
@@ -43,7 +43,7 @@ extension HTTP2ClientTransport.WrappedChannel {
       }
     }
 
-    struct Configured: ~Copyable {
+    struct Configured {
       var queue: RequestQueue<NIOHTTP2Handler.AsyncStreamMultiplexer<Void>>
       var multiplexer: NIOHTTP2Handler.AsyncStreamMultiplexer<Void>
 
@@ -56,7 +56,7 @@ extension HTTP2ClientTransport.WrappedChannel {
       }
     }
 
-    struct Ready: ~Copyable {
+    struct Ready {
       var multiplexer: NIOHTTP2Handler.AsyncStreamMultiplexer<Void>
 
       init(from state: consuming Configured) {
