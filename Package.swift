@@ -69,7 +69,7 @@ let dependencies: [Package.Dependency] = [
 
 // -------------------------------------------------------------------------------------------------
 
-// This adds some build settings which allow us to map "@available(gRPCSwiftNIOTransport 1.x, *)" to
+// This adds some build settings which allow us to map "@available(gRPCSwiftNIOTransport 2.x, *)" to
 // the appropriate OS platforms.
 let nextMinorVersion = 0
 let availabilitySettings: [SwiftSetting] = (0 ... nextMinorVersion).map { minor in
