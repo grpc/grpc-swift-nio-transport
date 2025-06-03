@@ -20,6 +20,7 @@ internal import NIOHTTP2
 
 /// A namespace for the HTTP/2 server transport.
 @available(gRPCSwiftNIOTransport 1.0, *)
+@available(*, deprecated, message: "See https://forums.swift.org/t/80177")
 public enum HTTP2ServerTransport {}
 
 @available(gRPCSwiftNIOTransport 1.0, *)
