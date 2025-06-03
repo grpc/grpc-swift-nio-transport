@@ -19,17 +19,17 @@ import GRPCNIOTransportCore
 
 // Equatable conformance for these types is 'best effort', this is sufficient for testing but not
 // for general use.
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension Connection.Event: Equatable {}
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension Connection.CloseReason: Equatable {}
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ClientConnectionEvent: Equatable {}
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ClientConnectionEvent.CloseReason: Equatable {}
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension Connection.Event {
   static func == (lhs: Connection.Event, rhs: Connection.Event) -> Bool {
     switch (lhs, rhs) {
@@ -49,7 +49,7 @@ extension Connection.Event {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension Connection.CloseReason {
   static func == (lhs: Connection.CloseReason, rhs: Connection.CloseReason) -> Bool {
     switch (lhs, rhs) {
@@ -68,7 +68,7 @@ extension Connection.CloseReason {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ClientConnectionEvent {
   static func == (lhs: ClientConnectionEvent, rhs: ClientConnectionEvent) -> Bool {
     switch (lhs, rhs) {
@@ -82,7 +82,7 @@ extension ClientConnectionEvent {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ClientConnectionEvent.CloseReason {
   static func == (lhs: Self, rhs: Self) -> Bool {
     switch (lhs, rhs) {

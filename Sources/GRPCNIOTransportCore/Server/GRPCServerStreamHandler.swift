@@ -18,7 +18,7 @@ package import GRPCCore
 package import NIOCore
 package import NIOHTTP2
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 package final class GRPCServerStreamHandler: ChannelDuplexHandler, RemovableChannelHandler {
   package typealias InboundIn = HTTP2Frame.FramePayload
   package typealias InboundOut = RPCRequestPart<GRPCNIOTransportBytes>
@@ -105,7 +105,7 @@ package final class GRPCServerStreamHandler: ChannelDuplexHandler, RemovableChan
 
 // - MARK: ChannelInboundHandler
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCServerStreamHandler {
   package func userInboundEventTriggered(context: ChannelHandlerContext, event: Any) {
     switch event {
@@ -258,7 +258,7 @@ extension GRPCServerStreamHandler {
 
 // - MARK: ChannelOutboundHandler
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCServerStreamHandler {
   package func write(
     context: ChannelHandlerContext,

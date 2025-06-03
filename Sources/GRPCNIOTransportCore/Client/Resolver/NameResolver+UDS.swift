@@ -16,7 +16,7 @@
 
 internal import GRPCCore
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ResolvableTargets {
   /// A resolvable target for Unix Domain Socket address.
   ///
@@ -39,7 +39,7 @@ extension ResolvableTargets {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ResolvableTarget where Self == ResolvableTargets.UnixDomainSocket {
   /// Creates a new resolvable Unix Domain Socket target.
   /// - Parameters
@@ -56,7 +56,7 @@ extension ResolvableTarget where Self == ResolvableTargets.UnixDomainSocket {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension NameResolvers {
   /// A ``NameResolverFactory`` for ``ResolvableTargets/UnixDomainSocket`` targets.
   ///

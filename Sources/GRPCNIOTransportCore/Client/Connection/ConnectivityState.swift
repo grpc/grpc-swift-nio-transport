@@ -16,7 +16,7 @@
 
 package import GRPCCore
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 package enum ConnectivityState: Sendable, Hashable {
   /// This channel isn't trying to create a connection because of a lack of new or pending RPCs.
   ///

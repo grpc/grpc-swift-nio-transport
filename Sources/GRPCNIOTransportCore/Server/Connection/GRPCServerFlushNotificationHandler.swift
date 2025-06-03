@@ -16,7 +16,7 @@
 
 internal import NIOCore
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 final class GRPCServerFlushNotificationHandler: ChannelOutboundHandler {
   typealias OutboundIn = Any
   typealias OutboundOut = Any

@@ -17,7 +17,7 @@
 internal import NIOCore
 internal import NIOHTTP2
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ServerConnectionManagementHandler {
   /// Tracks the state of TCP connections at the server.
   ///
@@ -284,7 +284,7 @@ extension ServerConnectionManagementHandler {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ServerConnectionManagementHandler.StateMachine {
   fileprivate struct Keepalive {
     /// Allow the client to send keep alive pings when there are no active calls.
@@ -356,7 +356,7 @@ extension ServerConnectionManagementHandler.StateMachine {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ServerConnectionManagementHandler.StateMachine {
   fileprivate enum State {
     /// The connection is active.

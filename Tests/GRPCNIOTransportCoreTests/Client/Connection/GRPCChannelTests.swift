@@ -21,7 +21,7 @@ import NIOHTTP2
 import NIOPosix
 import XCTest
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 final class GRPCChannelTests: XCTestCase {
   func testDefaultServiceConfig() throws {
     var serviceConfig = ServiceConfig()
@@ -853,7 +853,7 @@ final class GRPCChannelTests: XCTestCase {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCChannel.Config {
   static var defaults: Self {
     Self(
@@ -865,14 +865,14 @@ extension GRPCChannel.Config {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension Endpoint {
   init(_ addresses: GRPCNIOTransportCore.SocketAddress...) {
     self.init(addresses: addresses)
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCChannel {
   fileprivate func serverAddress() async throws -> String? {
     let values: Metadata.StringValues? = try await self.withStream(

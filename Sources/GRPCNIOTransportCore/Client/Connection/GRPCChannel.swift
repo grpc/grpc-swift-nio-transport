@@ -18,7 +18,7 @@ private import DequeModule
 package import GRPCCore
 private import Synchronization
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 package final class GRPCChannel: ClientTransport {
   package typealias Bytes = GRPCNIOTransportBytes
 
@@ -240,7 +240,7 @@ package final class GRPCChannel: ClientTransport {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCChannel {
   package struct Config: Sendable {
     /// Configuration for HTTP/2 connections.
@@ -269,7 +269,7 @@ extension GRPCChannel {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCChannel {
   enum MakeStreamResult {
     /// A stream was created, use it.
@@ -368,7 +368,7 @@ extension GRPCChannel {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCChannel {
   private func handleClose(in group: inout DiscardingTaskGroup) {
     switch self.state.withLock({ $0.close() }) {
@@ -597,7 +597,7 @@ extension GRPCChannel {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCChannel {
   struct StateMachine {
     enum State {
@@ -672,7 +672,7 @@ extension GRPCChannel {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCChannel.StateMachine {
   mutating func start() {
     precondition(!self.running, "channel must only be started once")

@@ -18,7 +18,7 @@ internal import CGRPCNIOTransportZlib
 internal import GRPCCore
 internal import NIOCore
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 enum Zlib {
   enum Method {
     case deflate
@@ -35,7 +35,7 @@ enum Zlib {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension Zlib {
   /// Creates a new compressor for the given compression format.
   ///
@@ -87,7 +87,7 @@ extension Zlib {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension Zlib {
   /// Creates a new decompressor for the given compression format.
   ///
@@ -149,7 +149,7 @@ struct ZlibError: Error, Hashable {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension UnsafeMutablePointer<z_stream> {
   func inflateInit(windowBits: Int32) {
     self.pointee.zfree = nil

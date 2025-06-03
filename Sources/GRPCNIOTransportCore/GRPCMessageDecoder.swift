@@ -21,7 +21,7 @@ package import NIOCore
 /// - It reads the frame's metadata to know whether the message payload is compressed or not, and its length
 /// - It reads and decompresses the payload, if compressed
 /// - It helps put together frames that have been split across multiple `ByteBuffers` by the underlying transport
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 struct GRPCMessageDecoder: NIOSingleStepByteToMessageDecoder {
   /// Length of the gRPC message header (1 compression byte, 4 bytes for the length).
   static let metadataLength = 5
@@ -102,7 +102,7 @@ struct GRPCMessageDecoder: NIOSingleStepByteToMessageDecoder {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 package struct GRPCMessageDeframer {
   private var decoder: GRPCMessageDecoder
   private var buffer: Optional<ByteBuffer>
@@ -146,7 +146,7 @@ package struct GRPCMessageDeframer {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCMessageDeframer {
   mutating func decode(into queue: inout OneOrManyQueue<ByteBuffer>) throws {
     while let next = try self.decodeNext() {

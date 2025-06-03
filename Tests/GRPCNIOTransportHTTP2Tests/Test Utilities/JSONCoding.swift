@@ -26,7 +26,7 @@ import class Foundation.JSONEncoder
 import class Foundation.JSONDecoder
 #endif
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 struct JSONCoder<Message: Codable>: MessageSerializer, MessageDeserializer {
   func serialize<Bytes: GRPCContiguousBytes>(_ message: Message) throws -> Bytes {
     let json = JSONEncoder()

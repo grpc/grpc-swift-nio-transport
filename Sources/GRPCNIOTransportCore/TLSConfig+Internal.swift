@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@available(gRPCSwiftNIOTransport 1.2, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension TLSConfig.PrivateKeySource {
   /// Marker protocol for transport specific private key sources.
   ///
@@ -28,7 +28,7 @@ extension TLSConfig.PrivateKeySource {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.2, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension TLSConfig.CertificateSource {
   /// A type-erased transport specific certificate source.
   ///

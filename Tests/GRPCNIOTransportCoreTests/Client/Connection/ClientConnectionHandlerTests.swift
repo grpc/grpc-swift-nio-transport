@@ -23,7 +23,7 @@ import Testing
 
 struct ClientConnectionHandlerTests {
   @Test("Connection closed after max idle time")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func maxIdleTime() throws {
     let connection = try Connection(maxIdleTime: .minutes(5))
     try connection.activate()
@@ -51,7 +51,7 @@ struct ClientConnectionHandlerTests {
   }
 
   @Test("Connection closed after max idle time with open streams")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func maxIdleTimeWhenOpenStreams() throws {
     let connection = try Connection(maxIdleTime: .minutes(5))
     try connection.activate()
@@ -77,7 +77,7 @@ struct ClientConnectionHandlerTests {
   }
 
   @Test("Connection closed after keepalive with open streams")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func keepaliveWithOpenStreams() throws {
     let connection = try Connection(keepaliveTime: .minutes(1), keepaliveTimeout: .seconds(10))
     try connection.activate()
@@ -108,7 +108,7 @@ struct ClientConnectionHandlerTests {
   }
 
   @Test("Connection closed after keepalive with no open streams")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func keepaliveWithNoOpenStreams() throws {
     let connection = try Connection(keepaliveTime: .minutes(1), allowKeepaliveWithoutCalls: true)
     try connection.activate()
@@ -131,7 +131,7 @@ struct ClientConnectionHandlerTests {
   }
 
   @Test("Connection closed after keepalive with open streams and timeout")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func keepaliveWithOpenStreamsTimingOut() throws {
     let connection = try Connection(keepaliveTime: .minutes(1), keepaliveTimeout: .seconds(10))
     try connection.activate()
@@ -170,7 +170,7 @@ struct ClientConnectionHandlerTests {
   }
 
   @Test("Received PING frames are ignored")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func pingsAreIgnored() throws {
     let connection = try Connection()
     try connection.activate()
@@ -181,7 +181,7 @@ struct ClientConnectionHandlerTests {
   }
 
   @Test("Receiving GOAWAY results in close event")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func receiveGoAway() throws {
     let connection = try Connection()
     try connection.activate()
@@ -198,7 +198,7 @@ struct ClientConnectionHandlerTests {
   }
 
   @Test("Receiving GOAWAY with no open streams")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func receiveGoAwayWithOpenStreams() throws {
     let connection = try Connection()
     try connection.activate()
@@ -220,7 +220,7 @@ struct ClientConnectionHandlerTests {
   }
 
   @Test("Receiving GOAWAY with no error and then GOAWAY with protoco error")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func goAwayWithNoErrorThenGoAwayWithProtocolError() throws {
     let connection = try Connection()
     try connection.activate()
@@ -242,7 +242,7 @@ struct ClientConnectionHandlerTests {
   }
 
   @Test("Outbound graceful close")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func outboundGracefulClose() throws {
     let connection = try Connection()
     try connection.activate()
@@ -257,7 +257,7 @@ struct ClientConnectionHandlerTests {
   }
 
   @Test("Receive initial SETTINGS")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func receiveInitialSettings() throws {
     let connection = try Connection()
     try connection.activate()
@@ -275,7 +275,7 @@ struct ClientConnectionHandlerTests {
   }
 
   @Test("Receive error when idle")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func receiveErrorWhenIdle() throws {
     let connection = try Connection()
     try connection.activate()
@@ -293,7 +293,7 @@ struct ClientConnectionHandlerTests {
   }
 
   @Test("Receive error when streams are open")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func receiveErrorWhenStreamsAreOpen() throws {
     let connection = try Connection()
     try connection.activate()
@@ -314,7 +314,7 @@ struct ClientConnectionHandlerTests {
   }
 
   @Test("Unexpected close while idle")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func unexpectedCloseWhenIdle() throws {
     let connection = try Connection()
     try connection.activate()
@@ -328,7 +328,7 @@ struct ClientConnectionHandlerTests {
   }
 
   @Test("Unexpected close when streams are open")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func unexpectedCloseWhenStreamsAreOpen() throws {
     let connection = try Connection()
     try connection.activate()
@@ -343,7 +343,7 @@ struct ClientConnectionHandlerTests {
   }
 
   @Test("Closes on error")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func closesOnError() throws {
     let connection = try Connection()
     try connection.activate()
@@ -357,7 +357,7 @@ struct ClientConnectionHandlerTests {
   }
 
   @Test("Doesn't close on stream error")
-  @available(gRPCSwiftNIOTransport 1.0, *)
+  @available(gRPCSwiftNIOTransport 2.0, *)
   func doesNotCloseOnStreamError() throws {
     let connection = try Connection(maxIdleTime: .minutes(1))
     try connection.activate()

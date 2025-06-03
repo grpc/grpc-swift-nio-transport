@@ -18,7 +18,7 @@ import GRPCNIOTransportCore
 import NIOCore
 import XCTest
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 final class GRPCMessageDeframerTests: XCTestCase {
   // Most of the functionality is tested by the 'GRPCMessageDecoder' tests.
 

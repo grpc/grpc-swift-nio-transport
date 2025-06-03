@@ -17,7 +17,7 @@
 private import GRPCCore
 package import NIOCore
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCNIOTransportCore.SocketAddress {
   package init(_ nioSocketAddress: NIOCore.SocketAddress) {
     switch nioSocketAddress {
@@ -39,7 +39,7 @@ extension GRPCNIOTransportCore.SocketAddress {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension NIOCore.SocketAddress {
   package init(_ socketAddress: SocketAddress) throws {
     if let ipv4 = socketAddress.ipv4 {

@@ -37,7 +37,7 @@
 ///   // ...
 /// }
 /// ```
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 public struct NameResolverRegistry {
   private enum Factory {
     case dns(NameResolvers.DNS)

@@ -17,7 +17,7 @@
 import Foundation
 import GRPCCore
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 struct ControlService: RegistrableRPCService {
   func registerMethods<Transport: ServerTransport>(with router: inout RPCRouter<Transport>) {
     router.registerHandler(
@@ -88,7 +88,7 @@ struct ControlService: RegistrableRPCService {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ControlService {
   private func waitForCancellation(
     request: ServerRequest<CancellationKind>,
@@ -260,7 +260,7 @@ extension ControlService {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ControlService {
   struct PeerInfoResponse: Codable {
     struct PeerInfo: Codable {
@@ -273,7 +273,7 @@ extension ControlService {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension Metadata {
   fileprivate func echo() -> Self {
     var copy = Metadata()
@@ -304,7 +304,7 @@ private struct UnsafeTransfer<Wrapped> {
 
 extension UnsafeTransfer: @unchecked Sendable {}
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 struct PeerInfoClientInterceptor: ClientInterceptor {
   func intercept<Input, Output>(
     request: StreamingClientRequest<Input>,

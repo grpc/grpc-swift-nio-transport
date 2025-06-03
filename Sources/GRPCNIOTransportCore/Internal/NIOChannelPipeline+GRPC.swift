@@ -19,7 +19,7 @@ package import NIOCore
 internal import NIOHPACK
 package import NIOHTTP2
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ChannelPipeline.SynchronousOperations {
   package typealias HTTP2ConnectionChannel = NIOAsyncChannel<HTTP2Frame, HTTP2Frame>
   package typealias HTTP2StreamMultiplexer = NIOHTTP2Handler.AsyncStreamMultiplexer<
@@ -124,7 +124,7 @@ extension ChannelPipeline.SynchronousOperations {
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension ChannelPipeline.SynchronousOperations {
   package func configureGRPCClientPipeline(
     channel: any Channel,

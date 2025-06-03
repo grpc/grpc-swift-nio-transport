@@ -34,8 +34,8 @@ let products: [Product] = [
 
 let dependencies: [Package.Dependency] = [
   .package(
-    url: "https://github.com/grpc/grpc-swift.git",
-    from: "2.2.1"
+    url: "https://github.com/grpc/grpc-swift-2.git",
+    from: "2.0.0"
   ),
   .package(
     url: "https://github.com/apple/swift-nio.git",
@@ -69,12 +69,12 @@ let dependencies: [Package.Dependency] = [
 
 // -------------------------------------------------------------------------------------------------
 
-// This adds some build settings which allow us to map "@available(gRPCSwiftNIOTransport 1.x, *)" to
+// This adds some build settings which allow us to map "@available(gRPCSwiftNIOTransport 2.x, *)" to
 // the appropriate OS platforms.
-let nextMinorVersion = 3
+let nextMinorVersion = 0
 let availabilitySettings: [SwiftSetting] = (0 ... nextMinorVersion).map { minor in
   let name = "gRPCSwiftNIOTransport"
-  let version = "1.\(minor)"
+  let version = "2.\(minor)"
   let platforms = "macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0"
   let setting = "AvailabilityMacro=\(name) \(version):\(platforms)"
   return .enableExperimentalFeature(setting)
@@ -104,7 +104,7 @@ let targets: [Target] = [
   .target(
     name: "GRPCNIOTransportCore",
     dependencies: [
-      .product(name: "GRPCCore", package: "grpc-swift"),
+      .product(name: "GRPCCore", package: "grpc-swift-2"),
       .product(name: "NIOCore", package: "swift-nio"),
       .product(name: "NIOHTTP2", package: "swift-nio-http2"),
       .product(name: "NIOExtras", package: "swift-nio-extras"),
@@ -128,7 +128,7 @@ let targets: [Target] = [
     name: "GRPCNIOTransportHTTP2Posix",
     dependencies: [
       .target(name: "GRPCNIOTransportCore"),
-      .product(name: "GRPCCore", package: "grpc-swift"),
+      .product(name: "GRPCCore", package: "grpc-swift-2"),
       .product(name: "NIOPosix", package: "swift-nio"),
       .product(name: "NIOSSL", package: "swift-nio-ssl"),
       .product(name: "X509", package: "swift-certificates"),
@@ -143,7 +143,7 @@ let targets: [Target] = [
     name: "GRPCNIOTransportHTTP2TransportServices",
     dependencies: [
       .target(name: "GRPCNIOTransportCore"),
-      .product(name: "GRPCCore", package: "grpc-swift"),
+      .product(name: "GRPCCore", package: "grpc-swift-2"),
       .product(name: "NIOTransportServices", package: "swift-nio-transport-services"),
     ],
     swiftSettings: defaultSwiftSettings
@@ -162,7 +162,7 @@ let targets: [Target] = [
     name: "GRPCNIOTransportHTTP2Tests",
     dependencies: [
       .target(name: "GRPCNIOTransportHTTP2"),
-      .product(name: "GRPCCore", package: "grpc-swift"),
+      .product(name: "GRPCCore", package: "grpc-swift-2"),
       .product(name: "X509", package: "swift-certificates"),
       .product(name: "NIOSSL", package: "swift-nio-ssl"),
     ],

@@ -16,7 +16,7 @@
 
 internal import GRPCCore
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 private struct ConstantAsyncSequence<Element: Sendable>: AsyncSequence, Sendable {
   private let element: Element
 
@@ -41,7 +41,7 @@ private struct ConstantAsyncSequence<Element: Sendable>: AsyncSequence, Sendable
   }
 }
 
-@available(gRPCSwiftNIOTransport 1.0, *)
+@available(gRPCSwiftNIOTransport 2.0, *)
 extension RPCAsyncSequence where Element: Sendable, Failure == any Error {
   static func constant(_ element: Element) -> RPCAsyncSequence<Element, any Error> {
     return RPCAsyncSequence(wrapping: ConstantAsyncSequence(element: element))
