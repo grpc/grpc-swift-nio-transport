@@ -18,6 +18,8 @@ private import Dispatch
 
 #if canImport(Darwin)
 private import Darwin
+#elseif canImport(Android)
+private import Android
 #elseif canImport(Glibc)
 private import Glibc
 #elseif canImport(Musl)
@@ -141,11 +143,7 @@ extension DNSResolver {
     package let description: String
 
     package init(code: CInt) {
-      if let errorMessage = gai_strerror(code) {
-        self.description = String(cString: errorMessage)
-      } else {
-        self.description = "Unknown error: \(code)"
-      }
+      self.description = String(validatingCString: gai_strerror(code)) ?? "Unknown error: \(code)"
     }
   }
 }
