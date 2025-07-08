@@ -1,5 +1,5 @@
 /*
- * Copyright 2024, gRPC Authors All rights reserved.
+ * Copyright 2025, gRPC Authors All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,8 @@ struct HTTP2TransportTLSEnabledTests {
     func intercept<Input, Output>(
       request: GRPCCore.StreamingServerRequest<Input>,
       context: GRPCCore.ServerContext,
-      next: @Sendable (GRPCCore.StreamingServerRequest<Input>, GRPCCore.ServerContext) async throws
+      next:
+        @Sendable (GRPCCore.StreamingServerRequest<Input>, GRPCCore.ServerContext) async throws
         -> GRPCCore.StreamingServerResponse<Output>
     ) async throws -> GRPCCore.StreamingServerResponse<Output>
     where Input: Sendable, Output: Sendable {
@@ -136,6 +137,50 @@ struct HTTP2TransportTLSEnabledTests {
       includeClientCertificateInTrustRoots: true
     )
 
+    try await self.withClientAndServer(
+      clientConfig: clientConfig,
+      serverConfig: serverConfig
+    ) { control in
+      await #expect(throws: Never.self) {
+        try await self.executeUnaryRPC(control: control)
+      }
+    }
+  }
+
+  @Test(
+    "When using mTLS with PEM files, both client and server verify each others' certificates"
+  )
+  @available(gRPCSwiftNIOTransport 2.0, *)
+  func testRPC_mTLS_posixFileBasedCertificates_OK() async throws {
+    // Create a new certificate chain that has 4 certificate/key pairs: root, intermediate, client, server
+    let certificateChain = try CertificateChain()
+    // Tag our certificate files with the function name
+    let fileTag = #function
+    let fileNames = try certificateChain.writeToTemp(fileTag: fileTag)
+    // Check that the files
+    let clientCert = fileNames[.clientCert]!
+    #expect(FileManager.default.fileExists(atPath: clientCert))
+    let clientKey = fileNames[.clientKey]!
+    #expect(FileManager.default.fileExists(atPath: clientKey))
+    let serverCert = fileNames[.serverCert]!
+    #expect(FileManager.default.fileExists(atPath: serverCert))
+    let serverKey = fileNames[.serverKey]!
+    #expect(FileManager.default.fileExists(atPath: serverKey))
+    let trustRoots = fileNames[.trustRoots]!
+    #expect(FileManager.default.fileExists(atPath: trustRoots))
+    // Create configurations
+    let clientConfig = self.makeMTLSClientConfig(
+      certificate: clientCert,
+      key: clientKey,
+      trustRoots: trustRoots,
+      serverHostname: certificateChain.serverName
+    )
+    let serverConfig = self.makeMTLSServerConfig(
+      certificate: serverCert,
+      key: serverKey,
+      trustRoots: trustRoots,
+    )
+    // Run the test
     try await self.withClientAndServer(
       clientConfig: clientConfig,
       serverConfig: serverConfig
@@ -472,6 +517,26 @@ struct HTTP2TransportTLSEnabledTests {
   }
 
   @available(gRPCSwiftNIOTransport 2.0, *)
+  private func makeMTLSClientConfig(
+    certificate: String,
+    key: String,
+    trustRoots: String,
+    serverHostname: String?
+  ) -> ClientConfig {
+    var config = self.makeDefaultPlaintextPosixClientConfig()
+    config.security = .mTLS(
+      certificateChain: [.file(path: certificate, format: .pem)],
+      privateKey: .file(path: key, format: .pem)
+    ) {
+      $0.trustRoots = .certificates([
+        .file(path: trustRoots, format: .pem)
+      ])
+    }
+    config.transport.http2.authority = serverHostname
+    return .posix(config)
+  }
+
+  @available(gRPCSwiftNIOTransport 2.0, *)
   private func makeDefaultPlaintextPosixServerConfig() -> ServerConfig.Posix {
     ServerConfig.Posix(security: .plaintext, transport: .defaults)
   }
@@ -556,6 +621,25 @@ struct HTTP2TransportTLSEnabledTests {
     case .wrappedChannel:
       fatalError("Unsupported")
     }
+  }
+
+  @available(gRPCSwiftNIOTransport 2.0, *)
+  private func makeMTLSServerConfig(
+    certificate: String,
+    key: String,
+    trustRoots: String
+  ) -> ServerConfig {
+    var config = self.makeDefaultPlaintextPosixServerConfig()
+    config.security = .mTLS(
+      certificateChain: [.file(path: certificate, format: .pem)],
+      privateKey: .file(path: key, format: .pem)
+    ) {
+      // $0.clientCertificateVerification = .noHostnameVerification
+      $0.trustRoots = .certificates([
+        .file(path: trustRoots, format: .pem)
+      ])
+    }
+    return .posix(config)
   }
 
   @available(gRPCSwiftNIOTransport 2.0, *)
