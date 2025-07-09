@@ -1,5 +1,5 @@
 /*
- * Copyright 2024, gRPC Authors All rights reserved.
+ * Copyright 2025, gRPC Authors All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,19 +141,24 @@ extension NIOSSLTrustRoots {
   fileprivate init(_ trustRoots: TLSConfig.TrustRootsSource) throws {
     switch trustRoots.wrapped {
     case .certificates(let certificateSources):
-      let certificates = try certificateSources.map { source in
+      var certificates: [NIOSSLCertificate] = []
+      for source in certificateSources {
         switch source.wrapped {
         case .bytes(let bytes, let serializationFormat):
-          return try NIOSSLCertificate(
-            bytes: bytes,
-            format: NIOSSLSerializationFormats(serializationFormat)
-          )
+          switch serializationFormat.wrapped {
+          case .pem:
+            certificates.append(contentsOf: try NIOSSLCertificate.fromPEMBytes(bytes))
+          case .der:
+            certificates.append(try NIOSSLCertificate(bytes: bytes, format: .der))
+          }
 
         case .file(let path, let serializationFormat):
-          return try NIOSSLCertificate(
-            file: path,
-            format: NIOSSLSerializationFormats(serializationFormat)
-          )
+          switch serializationFormat.wrapped {
+          case .pem:
+            certificates.append(contentsOf: try NIOSSLCertificate.fromPEMFile(path))
+          case .der:
+            certificates.append(try NIOSSLCertificate(file: path, format: .der))
+          }
 
         case .transportSpecific(let specific):
           guard let source = specific.wrapped as? NIOSSLCertificateSource else {
@@ -162,14 +167,14 @@ extension NIOSSLTrustRoots {
 
           switch source {
           case .certificate(let certificate):
-            return certificate
+            certificates.append(certificate)
 
           case .file(let path):
             switch path.split(separator: ".").last {
             case "pem":
-              return try NIOSSLCertificate(file: path, format: .pem)
+              certificates.append(contentsOf: try NIOSSLCertificate.fromPEMFile(path))
             case "der":
-              return try NIOSSLCertificate(file: path, format: .der)
+              certificates.append(try NIOSSLCertificate(file: path, format: .der))
             default:
               throw RPCError(
                 code: .invalidArgument,
