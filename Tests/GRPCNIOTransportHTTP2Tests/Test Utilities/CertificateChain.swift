@@ -19,17 +19,34 @@ import Foundation
 import SwiftASN1
 import X509
 
+/// Create a certificate chain with a root and intermediate certificate stored in a trust roots file and
+/// key / certificate pairs for a client and a server. These can be used to establish mTLS connections
+/// with local trust.
+///
+/// Usage example:
+/// ```
+/// // Create a new certificate chain
+/// let certificateChain = try CertificateChain()
+/// // Tag our certificate files with the function name
+/// let fileNames = try certificateChain.writeToTemp(fileTag: #function)
+/// // Access the file paths of the certificate files.
+/// let clientCertPath = fileNames[.clientCert]!
+/// ...
+/// ```
 struct CertificateChain {
+  /// Each node in the chain has a certificate and a key
   struct CertificateKeyPair {
     let certificate: Certificate
     let key: Certificate.PrivateKey
   }
 
+  /// Leaf certificates can authenticate either a client or a server
   enum Authenticating {
     case client
     case server
   }
 
+  /// Writing the files to disk returns a dictionary with these keys to access the file locations
   enum Files {
     case clientCert
     case clientKey
@@ -38,14 +55,17 @@ struct CertificateChain {
     case trustRoots
   }
 
+  /// The domains names for the leaf certificates
   let serverName = "my.server"
   let clientName = "my.client"
 
+  /// Our certificate chain
   let root: CertificateKeyPair
   let intermediate: CertificateKeyPair
   let server: CertificateKeyPair
   let client: CertificateKeyPair
 
+  /// On initialization create a chain of certificates: root signes intermediate, intermediate signs both leaf certificates
   init() throws {
     let root = try Self.makeRootCertificate(commonName: "root")
     let intermediate = try Self.makeIntermediateCertificate(
@@ -72,6 +92,10 @@ struct CertificateChain {
     self.client = client
   }
 
+  /// Create a new root certificate.
+  ///
+  /// - Parameter commonName: CN of the certificate
+  /// - Returns: A certificate and a private key.
   private static func makeRootCertificate(commonName cn: String) throws -> CertificateKeyPair {
     let privateKey = P256.Signing.PrivateKey()
     let key = Certificate.PrivateKey(privateKey)
@@ -108,6 +132,12 @@ struct CertificateChain {
     return CertificateKeyPair(certificate: certificate, key: key)
   }
 
+  /// Create a new intermediate certificate.
+  ///
+  /// - Parameters:
+  ///   - commonName: CN for the certificate
+  ///   - signedBy: Certificate that signs this
+  /// - Returns: A certificate and a private key.
   private static func makeIntermediateCertificate(
     commonName cn: String,
     signedBy issuer: CertificateKeyPair
@@ -170,6 +200,14 @@ struct CertificateChain {
     )
   }
 
+  /// Create a new leaf certificate.
+  ///
+  /// - Parameters:
+  ///   - commonName: CN for the certificate
+  ///   - domainName: Domain name added as a SAN to the cert
+  ///   - authenticating: Whether the certificate authenticates a client or a server
+  ///   - signedBy: Certificate that signs this
+  /// - Returns: A certificate and a private key.
   private static func makeLeafCertificate(
     commonName cn: String,
     domainName: String,
@@ -226,38 +264,39 @@ struct CertificateChain {
     )
   }
 
+  /// Write the certificate chain to a temporary directory.
+  ///
+  /// - Parameters:
+  ///   - fileTag: A prefix added to all certificates files
+  /// - Returns: A dictionary storing mapping `CertificateChain.Files` to the respective file names
   public func writeToTemp(fileTag: String) throws -> [Files: String] {
     let fm = FileManager.default
     let directory = fm.temporaryDirectory
 
     var fileNames = [Files: String]()
 
-    // File paths.
+    // Store file paths
     let trustRootsPath = directory.appendingPathComponent("\(fileTag).ca-chain.cert.pem")
     fileNames[.trustRoots] = trustRootsPath.path()
-
     let clientCertPath = directory.appendingPathComponent("\(fileTag).client.cert.pem")
     fileNames[.clientCert] = clientCertPath.path()
     let clientKeyPath = directory.appendingPathComponent("\(fileTag).client.key.pem")
     fileNames[.clientKey] = clientKeyPath.path()
-
     let serverCertPath = directory.appendingPathComponent("\(fileTag).server.cert.pem")
     fileNames[.serverCert] = serverCertPath.path()
-
     let serverKeyPath = directory.appendingPathComponent("\(fileTag).server.key.pem")
     fileNames[.serverKey] = serverKeyPath.path()
 
     // Write chain: certificates of the root and intermediate in one file
     let rootPEM = try self.root.certificate.serializeAsPEM().pemString
     let intermediatePEM = try self.intermediate.certificate.serializeAsPEM().pemString
-
     try intermediatePEM.appending("\n").appending(rootPEM).write(
       to: trustRootsPath,
       atomically: true,
       encoding: .utf8
     )
 
-    // Write leaf certificates
+    // Write leaf certificates and keys
     try self.client.writeKeyPair(certPath: clientCertPath, keyPath: clientKeyPath)
     try self.server.writeKeyPair(certPath: serverCertPath, keyPath: serverKeyPath)
 
