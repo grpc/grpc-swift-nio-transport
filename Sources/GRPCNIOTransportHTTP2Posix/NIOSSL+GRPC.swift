@@ -145,15 +145,15 @@ extension NIOSSLTrustRoots {
       for source in certificateSources {
         switch source.wrapped {
         case .bytes(let bytes, let serializationFormat):
-          certificates.append(
-            try NIOSSLCertificate(
-              bytes: bytes,
-              format: NIOSSLSerializationFormats(serializationFormat)
-            )
-          )
+          switch serializationFormat.wrapped {
+          case .pem:
+            certificates.append(contentsOf: try NIOSSLCertificate.fromPEMBytes(bytes))
+          case .der:
+            certificates.append(try NIOSSLCertificate(bytes: bytes, format: .der))
+          }
 
         case .file(let path, let serializationFormat):
-          switch NIOSSLSerializationFormats(serializationFormat) {
+          switch serializationFormat.wrapped {
           case .pem:
             certificates.append(contentsOf: try NIOSSLCertificate.fromPEMFile(path))
           case .der:

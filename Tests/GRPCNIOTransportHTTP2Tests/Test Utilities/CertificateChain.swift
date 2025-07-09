@@ -28,9 +28,9 @@ import X509
 /// // Create a new certificate chain
 /// let certificateChain = try CertificateChain()
 /// // Tag our certificate files with the function name
-/// let fileNames = try certificateChain.writeToTemp(fileTag: #function)
+/// let filePaths = try certificateChain.writeToTemp(fileTag: #function)
 /// // Access the file paths of the certificate files.
-/// let clientCertPath = fileNames[.clientCert]!
+/// let clientCertPath = filePaths.clientCert
 /// ...
 /// ```
 struct CertificateChain {
@@ -46,18 +46,18 @@ struct CertificateChain {
     case server
   }
 
-  /// Writing the files to disk returns a dictionary with these keys to access the file locations
-  enum Files {
-    case clientCert
-    case clientKey
-    case serverCert
-    case serverKey
-    case trustRoots
+  /// Writing the files to disk returns the paths to all written files
+  struct FilePaths {
+    var clientCert: String
+    var clientKey: String
+    var serverCert: String
+    var serverKey: String
+    var trustRoots: String
   }
 
   /// The domains names for the leaf certificates
-  let serverName = "my.server"
-  let clientName = "my.client"
+  static let serverName = "my.server"
+  static let clientName = "my.client"
 
   /// Our certificate chain
   let root: CertificateKeyPair
@@ -75,13 +75,13 @@ struct CertificateChain {
 
     let server = try Self.makeLeafCertificate(
       commonName: "server",
-      domainName: serverName,
+      domainName: CertificateChain.serverName,
       authenticating: .server,
       signedBy: intermediate
     )
     let client = try Self.makeLeafCertificate(
       commonName: "client",
-      domainName: clientName,
+      domainName: CertificateChain.clientName,
       authenticating: .client,
       signedBy: intermediate
     )
@@ -268,39 +268,38 @@ struct CertificateChain {
   ///
   /// - Parameters:
   ///   - fileTag: A prefix added to all certificates files
-  /// - Returns: A dictionary storing mapping `CertificateChain.Files` to the respective file names
-  public func writeToTemp(fileTag: String) throws -> [Files: String] {
+  /// - Returns: A struct that contains paths of the written file
+  public func writeToTemp(fileTag: String = #function) throws -> FilePaths {
     let fm = FileManager.default
     let directory = fm.temporaryDirectory
 
-    var fileNames = [Files: String]()
-
     // Store file paths
-    let trustRootsPath = directory.appendingPathComponent("\(fileTag).ca-chain.cert.pem")
-    fileNames[.trustRoots] = trustRootsPath.path()
-    let clientCertPath = directory.appendingPathComponent("\(fileTag).client.cert.pem")
-    fileNames[.clientCert] = clientCertPath.path()
-    let clientKeyPath = directory.appendingPathComponent("\(fileTag).client.key.pem")
-    fileNames[.clientKey] = clientKeyPath.path()
-    let serverCertPath = directory.appendingPathComponent("\(fileTag).server.cert.pem")
-    fileNames[.serverCert] = serverCertPath.path()
-    let serverKeyPath = directory.appendingPathComponent("\(fileTag).server.key.pem")
-    fileNames[.serverKey] = serverKeyPath.path()
+    let trustRootsURL = directory.appendingPathComponent("\(fileTag).ca-chain.cert.pem")
+    let clientCertURL = directory.appendingPathComponent("\(fileTag).client.cert.pem")
+    let clientKeyURL = directory.appendingPathComponent("\(fileTag).client.key.pem")
+    let serverCertURL = directory.appendingPathComponent("\(fileTag).server.cert.pem")
+    let serverKeyURL = directory.appendingPathComponent("\(fileTag).server.key.pem")
 
     // Write chain: certificates of the root and intermediate in one file
     let rootPEM = try self.root.certificate.serializeAsPEM().pemString
     let intermediatePEM = try self.intermediate.certificate.serializeAsPEM().pemString
     try intermediatePEM.appending("\n").appending(rootPEM).write(
-      to: trustRootsPath,
+      to: trustRootsURL,
       atomically: true,
       encoding: .utf8
     )
 
     // Write leaf certificates and keys
-    try self.client.writeKeyPair(certPath: clientCertPath, keyPath: clientKeyPath)
-    try self.server.writeKeyPair(certPath: serverCertPath, keyPath: serverKeyPath)
+    try self.client.writeKeyPair(certPath: clientCertURL, keyPath: clientKeyURL)
+    try self.server.writeKeyPair(certPath: serverCertURL, keyPath: serverKeyURL)
 
-    return fileNames
+    return FilePaths(
+      clientCert: clientCertURL.path(),
+      clientKey: clientKeyURL.path(),
+      serverCert: serverCertURL.path(),
+      serverKey: serverKeyURL.path(),
+      trustRoots: trustRootsURL.path()
+    )
   }
 }
 
