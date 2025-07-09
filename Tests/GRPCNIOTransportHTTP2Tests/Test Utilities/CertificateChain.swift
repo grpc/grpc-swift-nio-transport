@@ -212,7 +212,7 @@ struct CertificateChain {
     commonName cn: String,
     domainName: String,
     authenticating side: Authenticating,
-    signedBy issuer: CertificateKeyPair,
+    signedBy issuer: CertificateKeyPair
   ) throws -> CertificateKeyPair {
 
     // Generate a new private key for the Leaf certificate
