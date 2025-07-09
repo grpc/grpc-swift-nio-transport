@@ -154,11 +154,10 @@ package final class CommonHTTP2ServerTransport<
   }
 
   package func listen(
-    streamHandler:
-      @escaping @Sendable (
-        _ stream: RPCStream<Inbound, Outbound>,
-        _ context: ServerContext
-      ) async -> Void
+    streamHandler: @escaping @Sendable (
+      _ stream: RPCStream<Inbound, Outbound>,
+      _ context: ServerContext
+    ) async -> Void
   ) async throws {
     defer {
       switch self.listeningAddressState.withLock({ $0.close() }) {
@@ -206,11 +205,10 @@ package final class CommonHTTP2ServerTransport<
   private func handleConnection(
     _ connection: NIOAsyncChannel<HTTP2Frame, HTTP2Frame>,
     multiplexer: ChannelPipeline.SynchronousOperations.HTTP2StreamMultiplexer,
-    streamHandler:
-      @escaping @Sendable (
-        _ stream: RPCStream<Inbound, Outbound>,
-        _ context: ServerContext
-      ) async -> Void
+    streamHandler: @escaping @Sendable (
+      _ stream: RPCStream<Inbound, Outbound>,
+      _ context: ServerContext
+    ) async -> Void
   ) async throws {
     let remotePeer = connection.channel.remoteAddressInfo
     let localPeer = connection.channel.localAddressInfo
@@ -248,11 +246,10 @@ package final class CommonHTTP2ServerTransport<
   private func handleStream(
     _ stream: NIOAsyncChannel<RPCRequestPart<Bytes>, RPCResponsePart<Bytes>>,
     _ connection: NIOAsyncChannel<HTTP2Frame, HTTP2Frame>,
-    handler streamHandler:
-      @escaping @Sendable (
-        _ stream: RPCStream<Inbound, Outbound>,
-        _ context: ServerContext
-      ) async -> Void,
+    handler streamHandler: @escaping @Sendable (
+      _ stream: RPCStream<Inbound, Outbound>,
+      _ context: ServerContext
+    ) async -> Void,
     descriptor: EventLoopFuture<MethodDescriptor>,
     remotePeer: String,
     localPeer: String
