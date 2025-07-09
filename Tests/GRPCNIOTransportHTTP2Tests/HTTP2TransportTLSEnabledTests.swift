@@ -177,7 +177,7 @@ struct HTTP2TransportTLSEnabledTests {
     let serverConfig = self.makeMTLSServerConfig(
       certificate: serverCertPath,
       key: serverKeyPath,
-      trustRoots: trustRootsPath,
+      trustRoots: trustRootsPath
     )
     // Run the test
     try await self.withClientAndServer(
