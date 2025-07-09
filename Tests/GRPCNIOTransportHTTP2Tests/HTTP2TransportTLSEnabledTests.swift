@@ -155,30 +155,29 @@ struct HTTP2TransportTLSEnabledTests {
     // Create a new certificate chain that has 4 certificate/key pairs: root, intermediate, client, server
     let certificateChain = try CertificateChain()
     // Tag our certificate files with the function name
-    let fileTag = #function
-    let fileNames = try certificateChain.writeToTemp(fileTag: fileTag)
+    let fileNames = try certificateChain.writeToTemp(fileTag: #function)
     // Check that the files
-    let clientCert = fileNames[.clientCert]!
-    #expect(FileManager.default.fileExists(atPath: clientCert))
-    let clientKey = fileNames[.clientKey]!
-    #expect(FileManager.default.fileExists(atPath: clientKey))
-    let serverCert = fileNames[.serverCert]!
-    #expect(FileManager.default.fileExists(atPath: serverCert))
-    let serverKey = fileNames[.serverKey]!
-    #expect(FileManager.default.fileExists(atPath: serverKey))
-    let trustRoots = fileNames[.trustRoots]!
-    #expect(FileManager.default.fileExists(atPath: trustRoots))
+    let clientCertPath = fileNames[.clientCert]!
+    #expect(FileManager.default.fileExists(atPath: clientCertPath))
+    let clientKeyPath = fileNames[.clientKey]!
+    #expect(FileManager.default.fileExists(atPath: clientKeyPath))
+    let serverCertPath = fileNames[.serverCert]!
+    #expect(FileManager.default.fileExists(atPath: serverCertPath))
+    let serverKeyPath = fileNames[.serverKey]!
+    #expect(FileManager.default.fileExists(atPath: serverKeyPath))
+    let trustRootsPath = fileNames[.trustRoots]!
+    #expect(FileManager.default.fileExists(atPath: trustRootsPath))
     // Create configurations
     let clientConfig = self.makeMTLSClientConfig(
-      certificate: clientCert,
-      key: clientKey,
-      trustRoots: trustRoots,
+      certificate: clientCertPath,
+      key: clientKeyPath,
+      trustRoots: trustRootsPath,
       serverHostname: certificateChain.serverName
     )
     let serverConfig = self.makeMTLSServerConfig(
-      certificate: serverCert,
-      key: serverKey,
-      trustRoots: trustRoots,
+      certificate: serverCertPath,
+      key: serverKeyPath,
+      trustRoots: trustRootsPath,
     )
     // Run the test
     try await self.withClientAndServer(
@@ -634,7 +633,6 @@ struct HTTP2TransportTLSEnabledTests {
       certificateChain: [.file(path: certificate, format: .pem)],
       privateKey: .file(path: key, format: .pem)
     ) {
-      // $0.clientCertificateVerification = .noHostnameVerification
       $0.trustRoots = .certificates([
         .file(path: trustRoots, format: .pem)
       ])
