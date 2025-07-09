@@ -155,7 +155,6 @@ extension NIOSSLTrustRoots {
         case .file(let path, let serializationFormat):
           switch NIOSSLSerializationFormats(serializationFormat) {
           case .pem:
-            print("Reading multiple certs from PEM file at \(path)")
             certificates.append(contentsOf: try NIOSSLCertificate.fromPEMFile(path))
           case .der:
             certificates.append(try NIOSSLCertificate(file: path, format: .der))
