@@ -37,7 +37,8 @@ extension ResolvableTargets {
             case .v4:
               ()
             default:
-              assertionFailure("""
+              assertionFailure(
+                """
                 \(address.host):\(address.port) isn't a valid IPv4 address, did you mean to \
                 use 'dns(host:port:)' instead?
                 """
