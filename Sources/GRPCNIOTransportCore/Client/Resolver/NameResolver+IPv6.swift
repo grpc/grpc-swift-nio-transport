@@ -22,7 +22,7 @@ extension ResolvableTargets {
   ///
   /// IPv4 addresses can be resolved by the ``NameResolvers/IPv6`` resolver which creates a
   /// separate ``Endpoint`` for each address.
-  public struct IPv6: ResolvableTarget {
+  public struct IPv6: ResolvableTarget, Sendable {
     /// The IPv6 addresses.
     public var addresses: [SocketAddress.IPv6]
 
@@ -62,7 +62,7 @@ extension NameResolvers {
   ///
   /// The name resolver for a given target always produces the same values, with one endpoint per
   /// address in the target. This resolver doesn't support fetching service configuration.
-  public struct IPv6: NameResolverFactory {
+  public struct IPv6: NameResolverFactory, Sendable {
     public typealias Target = ResolvableTargets.IPv6
 
     /// Create a new IPv6 resolver factory.

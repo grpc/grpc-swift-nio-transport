@@ -22,7 +22,7 @@ extension ResolvableTargets {
   ///
   /// ``UnixDomainSocket`` addresses can be resolved by the ``NameResolvers/UnixDomainSocket``
   /// resolver which creates a single ``Endpoint`` for target address.
-  public struct UnixDomainSocket: ResolvableTarget {
+  public struct UnixDomainSocket: ResolvableTarget, Sendable {
     /// The Unix Domain Socket address.
     public var address: SocketAddress.UnixDomainSocket
 
@@ -62,7 +62,7 @@ extension NameResolvers {
   ///
   /// The name resolver for a given target always produces the same values, with a single endpoint.
   /// This resolver doesn't support fetching service configuration.
-  public struct UnixDomainSocket: NameResolverFactory {
+  public struct UnixDomainSocket: NameResolverFactory, Sendable {
     public typealias Target = ResolvableTargets.UnixDomainSocket
 
     public init() {}

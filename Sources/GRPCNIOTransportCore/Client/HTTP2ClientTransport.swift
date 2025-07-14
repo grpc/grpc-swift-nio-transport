@@ -19,12 +19,12 @@ public import NIOCore
 
 /// A namespace for the HTTP/2 client transport.
 @available(gRPCSwiftNIOTransport 2.0, *)
-public enum HTTP2ClientTransport {}
+public enum HTTP2ClientTransport: Sendable {}
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport {
   /// A namespace for HTTP/2 client transport configuration.
-  public enum Config {}
+  public enum Config: Sendable {}
 }
 
 @available(gRPCSwiftNIOTransport 2.0, *)

@@ -20,12 +20,12 @@ internal import NIOHTTP2
 
 /// A namespace for the HTTP/2 server transport.
 @available(gRPCSwiftNIOTransport 2.0, *)
-public enum HTTP2ServerTransport {}
+public enum HTTP2ServerTransport: Sendable {}
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ServerTransport {
   /// A namespace for HTTP/2 server transport configuration.
-  public enum Config {}
+  public enum Config: Sendable {}
 }
 
 @available(gRPCSwiftNIOTransport 2.0, *)

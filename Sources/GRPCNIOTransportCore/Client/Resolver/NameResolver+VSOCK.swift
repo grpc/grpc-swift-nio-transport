@@ -22,7 +22,7 @@ extension ResolvableTargets {
   ///
   /// ``VirtualSocket`` addresses can be resolved by the ``NameResolvers/VirtualSocket``
   /// resolver which creates a single ``Endpoint`` for target address.
-  public struct VirtualSocket: ResolvableTarget {
+  public struct VirtualSocket: ResolvableTarget, Sendable {
     public var address: SocketAddress.VirtualSocket
 
     public init(address: SocketAddress.VirtualSocket) {
@@ -52,7 +52,7 @@ extension NameResolvers {
   ///
   /// The name resolver for a given target always produces the same values, with a single endpoint.
   /// This resolver doesn't support fetching service configuration.
-  public struct VirtualSocket: NameResolverFactory {
+  public struct VirtualSocket: NameResolverFactory, Sendable {
     public typealias Target = ResolvableTargets.VirtualSocket
 
     public init() {}

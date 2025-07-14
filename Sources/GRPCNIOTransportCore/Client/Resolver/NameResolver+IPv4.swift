@@ -22,7 +22,7 @@ extension ResolvableTargets {
   ///
   /// IPv4 addresses can be resolved by the ``NameResolvers/IPv4`` resolver which creates a
   /// separate ``Endpoint`` for each address.
-  public struct IPv4: ResolvableTarget {
+  public struct IPv4: ResolvableTarget, Sendable {
     /// The IPv4 addresses.
     public var addresses: [SocketAddress.IPv4]
 
@@ -62,7 +62,7 @@ extension NameResolvers {
   ///
   /// The name resolver for a given target always produces the same values, with one endpoint per
   /// address in the target. This resolver doesn't support fetching service configuration.
-  public struct IPv4: NameResolverFactory {
+  public struct IPv4: NameResolverFactory, Sendable {
     public typealias Target = ResolvableTargets.IPv4
 
     /// Create a new IPv4 resolver factory.
