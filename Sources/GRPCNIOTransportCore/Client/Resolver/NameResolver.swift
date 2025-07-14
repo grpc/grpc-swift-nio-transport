@@ -141,8 +141,8 @@ public protocol ResolvableTarget {}
 
 /// A namespace for resolvable targets.
 @available(gRPCSwiftNIOTransport 2.0, *)
-public enum ResolvableTargets {}
+public enum ResolvableTargets: Sendable {}
 
 /// A namespace for name resolver factories.
 @available(gRPCSwiftNIOTransport 2.0, *)
-public enum NameResolvers {}
+public enum NameResolvers: Sendable {}

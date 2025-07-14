@@ -209,3 +209,6 @@ public struct NameResolverRegistry {
     return nil
   }
 }
+
+@available(*, unavailable)
+extension NameResolverRegistry: Sendable {}

@@ -57,7 +57,7 @@ extension ResolvableTarget where Self == ResolvableTargets.DNS {
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension NameResolvers {
   /// A ``NameResolverFactory`` for ``ResolvableTargets/DNS`` targets.
-  public struct DNS: NameResolverFactory {
+  public struct DNS: NameResolverFactory, Sendable {
     public typealias Target = ResolvableTargets.DNS
 
     /// Create a new DNS name resolver factory.
