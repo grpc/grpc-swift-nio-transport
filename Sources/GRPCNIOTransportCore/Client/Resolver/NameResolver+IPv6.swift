@@ -67,7 +67,7 @@ extension ResolvableTarget where Self == ResolvableTargets.IPv6 {
 
   /// Creates a new resolvable IPv6 target for a single address.
   /// - Parameters:
-  ///   - host: The resolved host address.
+  ///   - address: The resolved host address.
   ///   - port: The port on the host.
   /// - Returns: A ``ResolvableTarget``.
   @available(gRPCSwiftNIOTransport 2.1, *)

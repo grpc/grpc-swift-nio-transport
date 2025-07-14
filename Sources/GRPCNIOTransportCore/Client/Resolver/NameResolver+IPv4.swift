@@ -68,7 +68,7 @@ extension ResolvableTarget where Self == ResolvableTargets.IPv4 {
 
   /// Creates a new resolvable IPv4 target for a single address.
   /// - Parameters:
-  ///   - host: The resolved host address.
+  ///   - address: The resolved host address.
   ///   - port: The port on the host.
   /// - Returns: A ``ResolvableTarget``.
   @available(gRPCSwiftNIOTransport 2.1, *)
