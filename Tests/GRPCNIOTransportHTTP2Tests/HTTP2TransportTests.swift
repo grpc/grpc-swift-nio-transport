@@ -60,9 +60,9 @@ final class HTTP2TransportTests: XCTestCase {
 
         let target: any ResolvableTarget
         if let ipv4 = address.ipv4 {
-          target = .ipv4(host: ipv4.host, port: ipv4.port)
+          target = .ipv4(address: ipv4.host, port: ipv4.port)
         } else if let ipv6 = address.ipv6 {
-          target = .ipv6(host: ipv6.host, port: ipv6.port)
+          target = .ipv6(address: ipv6.host, port: ipv6.port)
         } else if let uds = address.unixDomainSocket {
           target = .unixDomainSocket(path: uds.path)
         } else {
@@ -108,7 +108,7 @@ final class HTTP2TransportTests: XCTestCase {
         let address = try await server.listeningAddress
         let client = try self.makeClient(
           kind: clientKind,
-          target: .ipv4(host: address.host, port: address.port),
+          target: .ipv4(address: address.host, port: address.port),
           compression: .none,
           enabledCompression: .none
         )
@@ -1602,7 +1602,7 @@ final class HTTP2TransportTests: XCTestCase {
 
   func testAuthorityIPv4() async throws {
     try await self.testAuthority(serverAddress: .ipv4(host: "127.0.0.1", port: 0)) { address in
-      return .ipv4(host: "127.0.0.1", port: address.ipv4!.port)
+      return .ipv4(address: "127.0.0.1", port: address.ipv4!.port)
     } expectedAuthority: { address in
       return "127.0.0.1:\(address.ipv4!.port)"
     }
@@ -1613,7 +1613,7 @@ final class HTTP2TransportTests: XCTestCase {
       serverAddress: .ipv4(host: "127.0.0.1", port: 0),
       authorityOverride: "respect-my-authority"
     ) { address in
-      return .ipv4(host: "127.0.0.1", port: address.ipv4!.port)
+      return .ipv4(address: "127.0.0.1", port: address.ipv4!.port)
     } expectedAuthority: { _ in
       return "respect-my-authority"
     }
@@ -1621,7 +1621,7 @@ final class HTTP2TransportTests: XCTestCase {
 
   func testAuthorityIPv6() async throws {
     try await self.testAuthority(serverAddress: .ipv6(host: "::1", port: 0)) { address in
-      return .ipv6(host: "::1", port: address.ipv6!.port)
+      return .ipv6(address: "::1", port: address.ipv6!.port)
     } expectedAuthority: { address in
       return "[::1]:\(address.ipv6!.port)"
     }
@@ -1632,7 +1632,7 @@ final class HTTP2TransportTests: XCTestCase {
       serverAddress: .ipv6(host: "::1", port: 0),
       authorityOverride: "respect-my-authority"
     ) { address in
-      return .ipv6(host: "::1", port: address.ipv6!.port)
+      return .ipv6(address: "::1", port: address.ipv6!.port)
     } expectedAuthority: { _ in
       return "respect-my-authority"
     }
