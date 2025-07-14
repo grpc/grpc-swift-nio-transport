@@ -74,7 +74,7 @@ struct ChannelDebugCallbackTests {
         try await withGRPCClient(
           transport: self.makeClientTransport(
             kind: clientKind,
-            target: .ipv4(host: address.host, port: address.port),
+            target: .ipv4(address: address.host, port: address.port),
             debug: clientDebug
           )
         ) { client in

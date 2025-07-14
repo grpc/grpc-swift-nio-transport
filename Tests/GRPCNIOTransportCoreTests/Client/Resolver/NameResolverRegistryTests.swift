@@ -142,7 +142,7 @@ final class NameResolverRegistryTests: XCTestCase {
 
   func testMakeResolver() {
     let resolvers = NameResolverRegistry()
-    XCTAssertNil(resolvers.makeResolver(for: .ipv4(host: "foo")))
+    XCTAssertNil(resolvers.makeResolver(for: .ipv4(address: "127.0.0.1")))
   }
 
   func testCustomResolver() async throws {
@@ -192,7 +192,7 @@ final class NameResolverRegistryTests: XCTestCase {
 
   func testIPv4ResolverForSingleHost() async throws {
     let factory = NameResolvers.IPv4()
-    let resolver = factory.resolver(for: .ipv4(host: "foo", port: 1234))
+    let resolver = factory.resolver(for: .ipv4(address: "127.0.0.1", port: 1234))
 
     XCTAssertEqual(resolver.updateMode, .pull)
 
@@ -200,14 +200,17 @@ final class NameResolverRegistryTests: XCTestCase {
     var iterator = resolver.names.makeAsyncIterator()
     for _ in 0 ..< 1000 {
       let result = try await XCTUnwrapAsync { try await iterator.next() }
-      XCTAssertEqual(result.endpoints, [Endpoint(addresses: [.ipv4(host: "foo", port: 1234)])])
+      XCTAssertEqual(
+        result.endpoints,
+        [Endpoint(addresses: [.ipv4(host: "127.0.0.1", port: 1234)])]
+      )
       XCTAssertNil(result.serviceConfig)
     }
   }
 
   func testIPv4ResolverForMultipleHosts() async throws {
     let factory = NameResolvers.IPv4()
-    let resolver = factory.resolver(for: .ipv4(pairs: [("foo", 443), ("bar", 444)]))
+    let resolver = factory.resolver(for: .ipv4(pairs: [("127.0.0.1", 443), ("127.0.0.1", 444)]))
 
     XCTAssertEqual(resolver.updateMode, .pull)
 
@@ -218,8 +221,8 @@ final class NameResolverRegistryTests: XCTestCase {
       XCTAssertEqual(
         result.endpoints,
         [
-          Endpoint(addresses: [.ipv4(host: "foo", port: 443)]),
-          Endpoint(addresses: [.ipv4(host: "bar", port: 444)]),
+          Endpoint(addresses: [.ipv4(host: "127.0.0.1", port: 443)]),
+          Endpoint(addresses: [.ipv4(host: "127.0.0.1", port: 444)]),
         ]
       )
       XCTAssertNil(result.serviceConfig)
@@ -228,7 +231,7 @@ final class NameResolverRegistryTests: XCTestCase {
 
   func testIPv6ResolverForSingleHost() async throws {
     let factory = NameResolvers.IPv6()
-    let resolver = factory.resolver(for: .ipv6(host: "foo", port: 1234))
+    let resolver = factory.resolver(for: .ipv6(address: "::1", port: 1234))
 
     XCTAssertEqual(resolver.updateMode, .pull)
 
@@ -236,14 +239,14 @@ final class NameResolverRegistryTests: XCTestCase {
     var iterator = resolver.names.makeAsyncIterator()
     for _ in 0 ..< 1000 {
       let result = try await XCTUnwrapAsync { try await iterator.next() }
-      XCTAssertEqual(result.endpoints, [Endpoint(addresses: [.ipv6(host: "foo", port: 1234)])])
+      XCTAssertEqual(result.endpoints, [Endpoint(addresses: [.ipv6(host: "::1", port: 1234)])])
       XCTAssertNil(result.serviceConfig)
     }
   }
 
   func testIPv6ResolverForMultipleHosts() async throws {
     let factory = NameResolvers.IPv6()
-    let resolver = factory.resolver(for: .ipv6(pairs: [("foo", 443), ("bar", 444)]))
+    let resolver = factory.resolver(for: .ipv6(pairs: [("::1", 443), ("::1", 444)]))
 
     XCTAssertEqual(resolver.updateMode, .pull)
 
@@ -254,8 +257,8 @@ final class NameResolverRegistryTests: XCTestCase {
       XCTAssertEqual(
         result.endpoints,
         [
-          Endpoint(addresses: [.ipv6(host: "foo", port: 443)]),
-          Endpoint(addresses: [.ipv6(host: "bar", port: 444)]),
+          Endpoint(addresses: [.ipv6(host: "::1", port: 443)]),
+          Endpoint(addresses: [.ipv6(host: "::1", port: 444)]),
         ]
       )
       XCTAssertNil(result.serviceConfig)

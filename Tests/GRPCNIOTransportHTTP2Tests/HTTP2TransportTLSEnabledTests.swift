@@ -673,7 +673,7 @@ struct HTTP2TransportTLSEnabledTests {
         throw TLSEnabledTestsError.unexpectedListeningAddress
       }
 
-      let target: any ResolvableTarget = .ipv4(host: address.host, port: address.port)
+      let target: any ResolvableTarget = .ipv4(address: address.host, port: address.port)
       let clientTransport: NIOClientTransport
       switch clientConfig {
       case .posix(let config):

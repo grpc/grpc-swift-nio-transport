@@ -15,6 +15,7 @@
  */
 
 internal import GRPCCore
+internal import NIOCore
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ResolvableTargets {
@@ -29,6 +30,23 @@ extension ResolvableTargets {
     /// Create a new IPv6 target.
     /// - Parameter addresses: The IPv6 addresses.
     public init(addresses: [SocketAddress.IPv6]) {
+      debugOnly {
+        for address in addresses {
+          do {
+            switch try? NIOCore.SocketAddress(ipAddress: address.host, port: address.port) {
+            case .v6:
+              ()
+            default:
+              assertionFailure(
+                """
+                \(address.host):\(address.port) isn't a valid IPv6 address, did you mean to \
+                use 'dns(host:port:)' instead?
+                """
+              )
+            }
+          }
+        }
+      }
       self.addresses = addresses
     }
   }
@@ -38,11 +56,23 @@ extension ResolvableTargets {
 extension ResolvableTarget where Self == ResolvableTargets.IPv6 {
   /// Creates a new resolvable IPv6 target for a single address.
   /// - Parameters:
-  ///   - host: The host address.
+  ///   - host: The resolved host address.
   ///   - port: The port on the host.
   /// - Returns: A ``ResolvableTarget``.
+  @available(*, deprecated, renamed: "ipv6(address:port:)")
   public static func ipv6(host: String, port: Int = 443) -> Self {
     let address = SocketAddress.IPv6(host: host, port: port)
+    return Self(addresses: [address])
+  }
+
+  /// Creates a new resolvable IPv6 target for a single address.
+  /// - Parameters:
+  ///   - address: The resolved host address.
+  ///   - port: The port on the host.
+  /// - Returns: A ``ResolvableTarget``.
+  @available(gRPCSwiftNIOTransport 2.1, *)
+  public static func ipv6(address: String, port: Int = 443) -> Self {
+    let address = SocketAddress.IPv6(host: address, port: port)
     return Self(addresses: [address])
   }
 
