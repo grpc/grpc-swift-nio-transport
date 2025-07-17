@@ -154,13 +154,21 @@ package final class Connection: Sendable {
   package func run() async {
     func establishConnectionOrThrow() async throws(RPCError) -> HTTP2Connection {
       do {
-        return try await self.http2Connector.establishConnection(
+        let connection = try await self.http2Connector.establishConnection(
           to: self.address,
           // The authority here is used for the SNI hostname in the TLS handshake (if applicable)
           // where a raw IP address isn't permitted, so fallback to 'address.sniHostname' rather
           // than 'address.authority'.
           sniServerHostname: self.sniServerHostname ?? self.address.sniHostname
         )
+
+        // In NIOTS the local/remote address aren't available until channel active fires, wait
+        // for that to happen first if it hasn't already.
+        if !connection.channel.channel.isActive {
+          try? await connection.channel.channel.waitUntilActive().get()
+        }
+
+        return connection
       } catch let error as RPCError {
         throw error
       } catch {
