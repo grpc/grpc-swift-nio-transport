@@ -152,7 +152,7 @@ package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
   ///
   /// Methods on this view *must* be called from the same `EventLoop` as the `Channel` in which
   /// this handler exists.
-  package struct SyncView {
+  package struct SyncView: NIOHTTP2FrameDelegate {
     private let handler: ServerConnectionManagementHandler
 
     fileprivate init(_ handler: ServerConnectionManagementHandler) {
@@ -174,16 +174,18 @@ package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
       }
     }
 
-    /// Notify the handler that a HEADERS frame was written in the last write loop.
-    package func wroteHeadersFrame() {
-      self.handler.eventLoop.assertInEventLoop()
-      self.handler.frameStats.wroteHeaders()
-    }
+    /// Notify the handler that an HTTP/2 frame was written.
+    package func wroteFrame(_ frame: HTTP2Frame) {
+      // Only interested in HEADERS and DATA frames.
+      switch frame.payload {
+      case .headers:
+        self.handler.frameStats.wroteHeaders()
+      case .data:
+        self.handler.frameStats.wroteData()
+      default:
+        ()
+      }
 
-    /// Notify the handler that a DATA frame was written in the last write loop.
-    package func wroteDataFrame() {
-      self.handler.eventLoop.assertInEventLoop()
-      self.handler.frameStats.wroteData()
     }
   }
 
@@ -515,6 +517,7 @@ extension ServerConnectionManagementHandler {
         }
       }
     }
+
   }
 
   package var http2StreamDelegate: HTTP2StreamDelegate {

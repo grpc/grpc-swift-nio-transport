@@ -116,24 +116,12 @@ extension ConnectionTest {
             let h2 = NIOHTTP2Handler(mode: .server)
             let mux = HTTP2StreamMultiplexer(mode: .server, channel: channel) { stream in
               let sync = stream.pipeline.syncOperations
-              let connectionManagementHandler = ServerConnectionManagementHandler(
-                eventLoop: stream.eventLoop,
-                maxIdleTime: nil,
-                maxAge: nil,
-                maxGraceTime: nil,
-                keepaliveTime: nil,
-                keepaliveTimeout: nil,
-                allowKeepaliveWithoutCalls: false,
-                minPingIntervalWithoutCalls: .minutes(5),
-                requireALPN: false
-              )
               let handler = GRPCServerStreamHandler(
                 scheme: .http,
                 acceptedEncodings: .none,
                 maxPayloadSize: .max,
                 methodDescriptorPromise: channel.eventLoop.makePromise(of: MethodDescriptor.self),
-                eventLoop: stream.eventLoop,
-                connectionManagementHandler: connectionManagementHandler.syncView
+                eventLoop: stream.eventLoop
               )
 
               return stream.eventLoop.makeCompletedFuture {

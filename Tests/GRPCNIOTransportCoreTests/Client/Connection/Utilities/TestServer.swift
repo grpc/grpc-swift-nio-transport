@@ -73,24 +73,12 @@ final class TestServer: Sendable {
         let sync = channel.pipeline.syncOperations
         let multiplexer = try sync.configureAsyncHTTP2Pipeline(mode: .server) { stream in
           stream.eventLoop.makeCompletedFuture {
-            let connectionManagementHandler = ServerConnectionManagementHandler(
-              eventLoop: stream.eventLoop,
-              maxIdleTime: nil,
-              maxAge: nil,
-              maxGraceTime: nil,
-              keepaliveTime: nil,
-              keepaliveTimeout: nil,
-              allowKeepaliveWithoutCalls: false,
-              minPingIntervalWithoutCalls: .minutes(5),
-              requireALPN: false
-            )
             let handler = GRPCServerStreamHandler(
               scheme: .http,
               acceptedEncodings: .all,
               maxPayloadSize: .max,
               methodDescriptorPromise: channel.eventLoop.makePromise(of: MethodDescriptor.self),
-              eventLoop: stream.eventLoop,
-              connectionManagementHandler: connectionManagementHandler.syncView
+              eventLoop: stream.eventLoop
             )
 
             try stream.pipeline.syncOperations.addHandlers(handler)
