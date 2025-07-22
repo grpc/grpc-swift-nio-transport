@@ -54,9 +54,7 @@ extension Sequence<TLSConfig.CertificateSource> {
       case .file(let path, let serializationFormat):
         switch serializationFormat.wrapped {
         case .der:
-          certificateSources.append(
-            .certificate(try NIOSSLCertificate(file: path, format: .der))
-          )
+          try certificateSources.append(.certificate(NIOSSLCertificate.fromDERFile(path)))
 
         case .pem:
           let certificates = try NIOSSLCertificate.fromPEMFile(path).map {
@@ -157,7 +155,7 @@ extension NIOSSLTrustRoots {
           case .pem:
             certificates.append(contentsOf: try NIOSSLCertificate.fromPEMFile(path))
           case .der:
-            certificates.append(try NIOSSLCertificate(file: path, format: .der))
+            certificates.append(try NIOSSLCertificate.fromDERFile(path))
           }
 
         case .transportSpecific(let specific):
@@ -174,7 +172,7 @@ extension NIOSSLTrustRoots {
             case "pem":
               certificates.append(contentsOf: try NIOSSLCertificate.fromPEMFile(path))
             case "der":
-              certificates.append(try NIOSSLCertificate(file: path, format: .der))
+              certificates.append(try NIOSSLCertificate.fromDERFile(path))
             default:
               throw RPCError(
                 code: .invalidArgument,
