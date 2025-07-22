@@ -51,7 +51,7 @@ let dependencies: [Package.Dependency] = [
   ),
   .package(
     url: "https://github.com/apple/swift-nio-ssl.git",
-    from: "2.31.0"
+    from: "2.33.0"
   ),
   .package(
     url: "https://github.com/apple/swift-nio-extras.git",
