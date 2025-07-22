@@ -34,25 +34,12 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     descriptorPromise: EventLoopPromise<MethodDescriptor>? = nil,
     disableAssertions: Bool = false
   ) -> GRPCServerStreamHandler {
-    let serverConnectionManagementHandler = ServerConnectionManagementHandler(
-      eventLoop: channel.eventLoop,
-      maxIdleTime: nil,
-      maxAge: nil,
-      maxGraceTime: nil,
-      keepaliveTime: nil,
-      keepaliveTimeout: nil,
-      allowKeepaliveWithoutCalls: false,
-      minPingIntervalWithoutCalls: .minutes(5),
-      requireALPN: false
-    )
-
     return GRPCServerStreamHandler(
       scheme: scheme,
       acceptedEncodings: acceptedEncodings,
       maxPayloadSize: maxPayloadSize,
       methodDescriptorPromise: descriptorPromise ?? channel.eventLoop.makePromise(),
       eventLoop: channel.eventLoop,
-      connectionManagementHandler: serverConnectionManagementHandler.syncView,
       skipStateMachineAssertions: disableAssertions
     )
   }
@@ -1042,7 +1029,6 @@ struct ServerStreamHandlerTests {
       maxPayloadSize: maxPayloadSize,
       methodDescriptorPromise: descriptorPromise ?? channel.eventLoop.makePromise(),
       eventLoop: channel.eventLoop,
-      connectionManagementHandler: connectionManagementHandler.syncView,
       skipStateMachineAssertions: disableAssertions
     )
 
@@ -1104,53 +1090,6 @@ struct ServerStreamHandlerTests {
       #expect(handle.isCancelled)
     }
 
-    // Throwing is fine: the channel is closed abruptly, errors are expected.
-    _ = try? channel.finish()
-  }
-
-  @Test("Connection FrameStats are updated when writing headers or data frames")
-  @available(gRPCSwiftNIOTransport 2.0, *)
-  func connectionFrameStatsAreUpdatedAccordingly() async throws {
-    let channel = EmbeddedChannel()
-    let handlers = self.makeServerConnectionAndStreamHandlers(channel: channel)
-    try channel.pipeline.syncOperations.addHandler(handlers.streamHandler)
-
-    // We have written nothing yet, so expect FrameStats/didWriteHeadersOrData to be false
-    #expect(!handlers.connectionHandler.frameStats.didWriteHeadersOrData)
-
-    // FrameStats aren't affected by pings received
-    channel.pipeline.fireChannelRead(
-      HTTP2Frame.FramePayload.ping(.init(withInteger: 42), ack: false)
-    )
-    #expect(!handlers.connectionHandler.frameStats.didWriteHeadersOrData)
-
-    // Now write back headers and make sure FrameStats are updated accordingly:
-    // To do that, we first need to receive client's initial metadata...
-    let clientInitialMetadata: HPACKHeaders = [
-      GRPCHTTP2Keys.path.rawValue: "/SomeService/SomeMethod",
-      GRPCHTTP2Keys.scheme.rawValue: "http",
-      GRPCHTTP2Keys.method.rawValue: "POST",
-      GRPCHTTP2Keys.contentType.rawValue: "application/grpc",
-      GRPCHTTP2Keys.te.rawValue: "trailers",
-    ]
-    try channel.writeInbound(
-      HTTP2Frame.FramePayload.headers(.init(headers: clientInitialMetadata))
-    )
-
-    // Now we write back server's initial metadata...
-    let serverInitialMetadata = RPCResponsePart<GRPCNIOTransportBytes>.metadata([:])
-    try channel.writeOutbound(serverInitialMetadata)
-
-    // And this should have updated the FrameStats
-    #expect(handlers.connectionHandler.frameStats.didWriteHeadersOrData)
-
-    // Manually reset the FrameStats to make sure that writing data also updates it correctly.
-    handlers.connectionHandler.frameStats.reset()
-    #expect(!handlers.connectionHandler.frameStats.didWriteHeadersOrData)
-    try channel.writeOutbound(RPCResponsePart.message(GRPCNIOTransportBytes([42])))
-    #expect(handlers.connectionHandler.frameStats.didWriteHeadersOrData)
-
-    // Clean up.
     // Throwing is fine: the channel is closed abruptly, errors are expected.
     _ = try? channel.finish()
   }

@@ -17,6 +17,7 @@
 import GRPCNIOTransportCore
 import NIOCore
 import NIOEmbedded
+import NIOHPACK
 import NIOHTTP2
 import Testing
 
@@ -285,7 +286,12 @@ struct ServerConnectionManagementHandlerTests {
     try sendThreeKeepalivePings()
 
     // "send" a HEADERS frame and flush to reset keep alive state.
-    connection.syncView.wroteHeadersFrame()
+    connection.frameDelegate.wroteFrame(
+      HTTP2Frame(
+        streamID: 1,
+        payload: .headers(.init(headers: [:]))
+      )
+    )
     connection.syncView.connectionWillFlush()
 
     // As above, the first ping is valid, the next two are strikes.
@@ -391,6 +397,7 @@ extension ServerConnectionManagementHandlerTests {
   struct Connection {
     let channel: EmbeddedChannel
     let streamDelegate: any NIOHTTP2StreamDelegate
+    let frameDelegate: any NIOHTTP2FrameDelegate
     let syncView: ServerConnectionManagementHandler.SyncView
 
     var loop: EmbeddedEventLoop {
@@ -430,6 +437,7 @@ extension ServerConnectionManagementHandlerTests {
       )
 
       self.streamDelegate = handler.http2StreamDelegate
+      self.frameDelegate = handler.syncView
       self.syncView = handler.syncView
       self.channel = EmbeddedChannel(handler: handler, loop: loop)
     }
