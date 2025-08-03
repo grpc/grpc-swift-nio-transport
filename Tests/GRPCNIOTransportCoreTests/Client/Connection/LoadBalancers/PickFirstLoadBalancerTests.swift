@@ -96,7 +96,7 @@ final class PickFirstLoadBalancerTests: XCTestCase {
   }
 
   func testEndpointUpdateHandledGracefully() async throws {
-    try await LoadBalancerTest.pickFirst(servers: 2, connector: .posix()) { context, event in
+    try await LoadBalancerTest.pickFirst(servers: 3, connector: .posix()) { context, event in
       switch event {
       case .connectivityStateChanged(.idle):
         let endpoint = Endpoint(addresses: [context.servers[0].address])
@@ -109,12 +109,23 @@ final class PickFirstLoadBalancerTests: XCTestCase {
         }
 
         // Update the endpoint so that it contains server-1.
-        let endpoint = Endpoint(addresses: [context.servers[1].address])
-        context.pickFirst!.updateEndpoint(endpoint)
+        let endpoint1 = Endpoint(addresses: [context.servers[1].address])
+        context.pickFirst!.updateEndpoint(endpoint1)
 
         // Should remain in the ready state
         try await XCTPoll(every: .milliseconds(10)) {
           context.servers[0].server.clients.isEmpty && context.servers[1].server.clients.count == 1
+        }
+
+        // Update the endpoint so that it contains server-2.
+        let endpoint2 = Endpoint(addresses: [context.servers[2].address])
+        context.pickFirst!.updateEndpoint(endpoint2)
+
+        // Should remain in the ready state
+        try await XCTPoll(every: .milliseconds(10)) {
+          context.servers[0].server.clients.isEmpty
+          && context.servers[1].server.clients.isEmpty
+          && context.servers[2].server.clients.count == 1
         }
 
         context.loadBalancer.close()

@@ -395,15 +395,13 @@ extension PickFirstLoadBalancer.State.Active {
           } else {
             onUpdate = .publishStateChange(connectivityState)
           }
-
-          self.current = next
-          self.isCurrentGoingAway = false
         } else {
           // No state change to publish, just roll over.
           onUpdate = self.current.map { .close($0) } ?? .none
-          self.current = next
-          self.isCurrentGoingAway = false
         }
+        self.current = next
+        self.next = nil
+        self.isCurrentGoingAway = false
 
       case .idle, .connecting, .transientFailure, .shutdown:
         onUpdate = .none
