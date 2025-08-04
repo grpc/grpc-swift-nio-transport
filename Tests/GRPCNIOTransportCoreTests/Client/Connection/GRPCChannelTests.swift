@@ -619,13 +619,14 @@ final class GRPCChannelTests: XCTestCase {
 
           channel.beginGracefulShutdown()
 
-        case .shutdown:
-          group.cancelAll()
-
         default:
           ()
         }
       }
+
+      let result = await group.nextResult()!
+      group.cancelAll()
+      return try result.get()
     }
   }
 

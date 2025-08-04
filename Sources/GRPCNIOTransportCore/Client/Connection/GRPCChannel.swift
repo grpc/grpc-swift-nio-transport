@@ -834,6 +834,14 @@ extension GRPCChannel.StateMachine {
         case .idle, .connecting, .transientFailure, .shutdown:
           ()
         }
+      } else {
+        // In this case the LB is neither current nor next.
+        switch connectivityState {
+        case .shutdown:
+          state.past.removeValue(forKey: id)
+        case .idle, .connecting, .ready, .transientFailure:
+          ()
+        }
       }
 
       self.state = .running(state)
