@@ -124,8 +124,8 @@ final class PickFirstLoadBalancerTests: XCTestCase {
         // Should remain in the ready state
         try await XCTPoll(every: .milliseconds(10)) {
           context.servers[0].server.clients.isEmpty
-          && context.servers[1].server.clients.isEmpty
-          && context.servers[2].server.clients.count == 1
+            && context.servers[1].server.clients.isEmpty
+            && context.servers[2].server.clients.count == 1
         }
 
         context.loadBalancer.close()
