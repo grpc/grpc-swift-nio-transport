@@ -18,6 +18,7 @@ internal import GRPCCore
 internal import NIOCore
 internal import NIOHPACK
 internal import NIOHTTP1
+internal import NIOHTTP2
 
 package enum Scheme: String {
   case http
@@ -613,7 +614,7 @@ struct GRPCStreamStateMachine {
   }
 
   enum UnexpectedInboundCloseReason {
-    case streamReset
+    case streamReset(HTTP2ErrorCode)
     case channelInactive
     case errorThrown(any Error)
   }
@@ -1924,10 +1925,11 @@ extension MethodDescriptor {
 extension RPCError {
   fileprivate init(_ reason: GRPCStreamStateMachine.UnexpectedInboundCloseReason) {
     switch reason {
-    case .streamReset:
+    case .streamReset(let errorCode):
       self = RPCError(
         code: .unavailable,
-        message: "Stream unexpectedly closed: a RST_STREAM frame was received."
+        message:
+          "Stream unexpectedly closed: received RST_STREAM frame (\(errorCode.shortDescription))."
       )
     case .channelInactive:
       self = RPCError(code: .unavailable, message: "Stream unexpectedly closed.")
@@ -1948,5 +1950,46 @@ extension Status {
 extension RPCError {
   init(_ invalidState: GRPCStreamStateMachine.InvalidState) {
     self = RPCError(code: .internalError, message: "Invalid state", cause: invalidState)
+  }
+}
+
+extension HTTP2ErrorCode {
+  var shortDescription: String {
+    let prefix = "0x" + String(self.networkCode, radix: 16) + ": "
+    let suffix: String
+
+    switch self {
+    case .noError:
+      suffix = "no error"
+    case .protocolError:
+      suffix = "protocol error"
+    case .internalError:
+      suffix = "internal error"
+    case .flowControlError:
+      suffix = "flow control error"
+    case .settingsTimeout:
+      suffix = "settings Timeout"
+    case .streamClosed:
+      suffix = "stream closed"
+    case .frameSizeError:
+      suffix = "frame size error"
+    case .refusedStream:
+      suffix = "fefused stream"
+    case .cancel:
+      suffix = "cancel"
+    case .compressionError:
+      suffix = "compression error"
+    case .connectError:
+      suffix = "connect error"
+    case .enhanceYourCalm:
+      suffix = "enhance your calm"
+    case .inadequateSecurity:
+      suffix = "inadequate security"
+    case .http11Required:
+      suffix = "HTTP/1.1 required"
+    default:
+      suffix = "unknown error"
+    }
+    return prefix + suffix
   }
 }

@@ -981,7 +981,10 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
       )
     ) { error in
       XCTAssertEqual(error.code, .unavailable)
-      XCTAssertEqual(error.message, "Stream unexpectedly closed: a RST_STREAM frame was received.")
+      XCTAssertEqual(
+        error.message,
+        "Stream unexpectedly closed: received RST_STREAM frame (0x2: internal error)."
+      )
     }
 
     // We should now be closed: check we can't write anymore.

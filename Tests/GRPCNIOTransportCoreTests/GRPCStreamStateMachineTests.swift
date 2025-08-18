@@ -18,6 +18,7 @@ import GRPCCore
 import NIOCore
 import NIOEmbedded
 import NIOHPACK
+import NIOHTTP2
 import XCTest
 
 @testable import GRPCNIOTransportCore
@@ -975,10 +976,10 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
         Status(code: .unavailable, message: "Stream unexpectedly closed.")
       ),
       (
-        GRPCStreamStateMachine.UnexpectedInboundCloseReason.streamReset,
+        GRPCStreamStateMachine.UnexpectedInboundCloseReason.streamReset(.noError),
         Status(
           code: .unavailable,
-          message: "Stream unexpectedly closed: a RST_STREAM frame was received."
+          message: "Stream unexpectedly closed: received RST_STREAM frame (0x0: no error)."
         )
       ),
       (
@@ -1022,7 +1023,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
   func testUnexpectedCloseWhenServerClosed() throws {
     let closeReasons = [
       GRPCStreamStateMachine.UnexpectedInboundCloseReason.channelInactive,
-      .streamReset,
+      .streamReset(.noError),
       .errorThrown(RPCError(code: .deadlineExceeded, message: "Test error")),
     ]
     let states = [
@@ -2470,10 +2471,10 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
         RPCError(code: .unavailable, message: "Stream unexpectedly closed.")
       ),
       (
-        GRPCStreamStateMachine.UnexpectedInboundCloseReason.streamReset,
+        GRPCStreamStateMachine.UnexpectedInboundCloseReason.streamReset(.noError),
         RPCError(
           code: .unavailable,
-          message: "Stream unexpectedly closed: a RST_STREAM frame was received."
+          message: "Stream unexpectedly closed: received RST_STREAM frame (0x0: no error)."
         )
       ),
       (
@@ -2514,7 +2515,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
   func testUnexpectedCloseWhenClientClosed() throws {
     let closeReasons = [
       GRPCStreamStateMachine.UnexpectedInboundCloseReason.channelInactive,
-      .streamReset,
+      .streamReset(.noError),
       .errorThrown(RPCError(code: .deadlineExceeded, message: "Test error")),
     ]
     let states = [
