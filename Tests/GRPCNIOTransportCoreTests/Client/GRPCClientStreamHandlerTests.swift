@@ -954,7 +954,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       .status(
         .init(
           code: .unavailable,
-          message: "Stream unexpectedly closed: a RST_STREAM frame was received."
+          message: "Stream unexpectedly closed: received RST_STREAM frame (0x2: internal error)."
         ),
         [:]
       )

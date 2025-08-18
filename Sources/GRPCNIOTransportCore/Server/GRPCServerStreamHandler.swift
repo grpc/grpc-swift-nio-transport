@@ -202,8 +202,8 @@ extension GRPCServerStreamHandler {
         context.fireErrorCaught(error)
       }
 
-    case .rstStream:
-      self.handleUnexpectedInboundClose(context: context, reason: .streamReset)
+    case .rstStream(let errorCode):
+      self.handleUnexpectedInboundClose(context: context, reason: .streamReset(errorCode))
 
     case .ping, .goAway, .priority, .settings, .pushPromise, .windowUpdate,
       .alternativeService, .origin:
