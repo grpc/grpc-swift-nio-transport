@@ -454,14 +454,13 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
       ]
     )
 
-    // Try writing and assert it throws to make sure we don't allow writes
-    // after closing.
+    // Writing after EOS is an error.
     XCTAssertThrowsError(
       ofType: RPCError.self,
       try channel.writeOutbound(trailers)
     ) { error in
       XCTAssertEqual(error.code, .internalError)
-      XCTAssertEqual(error.message, "Invalid state")
+      XCTAssertEqual(error.message, "Can't write status, stream has already closed")
     }
   }
 

@@ -167,7 +167,7 @@ extension GRPCClientStreamHandler {
     context: ChannelHandlerContext,
     reason: GRPCStreamStateMachine.UnexpectedInboundCloseReason
   ) {
-    switch self.stateMachine.unexpectedInboundClose(reason: reason) {
+    switch self.stateMachine.unexpectedClose(reason: reason) {
     case .forwardStatus_clientOnly(let status):
       context.fireChannelRead(self.wrapInboundOut(.status(status, [:])))
     case .doNothing:

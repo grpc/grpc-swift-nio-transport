@@ -1001,7 +1001,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
     for state in states {
       for (closeReason, expectedStatus) in reasonAndExpectedStatusPairs {
         var stateMachine = self.makeClientStateMachine(targetState: state)
-        var action = stateMachine.unexpectedInboundClose(reason: closeReason)
+        var action = stateMachine.unexpectedClose(reason: closeReason)
 
         guard case .forwardStatus_clientOnly(let status) = action else {
           XCTFail("Should have been `fireError` but was `\(action)` (state: \(state)).")
@@ -1011,7 +1011,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
 
         // Calling unexpectedInboundClose again should return `doNothing` because
         // we're already closed.
-        action = stateMachine.unexpectedInboundClose(reason: closeReason)
+        action = stateMachine.unexpectedClose(reason: closeReason)
         guard case .doNothing = action else {
           XCTFail("Should have been `doNothing` but was `\(action)` (state: \(state)).")
           return
@@ -1034,14 +1034,14 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
     for state in states {
       for closeReason in closeReasons {
         var stateMachine = self.makeClientStateMachine(targetState: state)
-        var action = stateMachine.unexpectedInboundClose(reason: closeReason)
+        var action = stateMachine.unexpectedClose(reason: closeReason)
         guard case .doNothing = action else {
           XCTFail("Should have been `doNothing` but was `\(action)` (state: \(state)).")
           return
         }
 
         // Calling unexpectedInboundClose again should return `doNothing` again.
-        action = stateMachine.unexpectedInboundClose(reason: closeReason)
+        action = stateMachine.unexpectedClose(reason: closeReason)
         guard case .doNothing = action else {
           XCTFail("Should have been `doNothing` but was `\(action)` (state: \(state)).")
           return
@@ -1616,7 +1616,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     let trailers = try stateMachine.send(
       status: .init(code: .unknown, message: "RPC unknown"),
       metadata: .init()
-    )
+    ).assertTrailers()
 
     // Make sure it's a trailers-only response: it must have :status header and content-type
     XCTAssertEqual(
@@ -1644,7 +1644,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     let trailers = try stateMachine.send(
       status: .init(code: .ok, message: ""),
       metadata: .init()
-    )
+    ).assertTrailers()
 
     // Make sure it's NOT a trailers-only response, because the server was
     // already open (so it sent initial metadata): it shouldn't have :status or content-type headers
@@ -1659,18 +1659,13 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     }
   }
 
-  func testSendStatusAndTrailersWhenClientOpenAndServerClosed() {
+  func testSendStatusAndTrailersWhenClientOpenAndServerClosed() throws {
     var stateMachine = self.makeServerStateMachine(targetState: .clientOpenServerClosed)
 
-    XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
-      try stateMachine.send(
-        status: .init(code: .ok, message: ""),
-        metadata: .init()
-      )
-    ) { error in
-      XCTAssertEqual(error.message, "Server can't send anything if closed.")
-    }
+    try stateMachine.send(
+      status: .init(code: .ok, message: ""),
+      metadata: .init()
+    ).assertDropAndFailPromise()
   }
 
   func testSendStatusAndTrailersWhenClientClosedAndServerIdle() throws {
@@ -1679,7 +1674,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     let trailers = try stateMachine.send(
       status: .init(code: .unknown, message: "RPC unknown"),
       metadata: .init()
-    )
+    ).assertTrailers()
 
     // Make sure it's a trailers-only response: it must have :status header and content-type
     XCTAssertEqual(
@@ -1707,7 +1702,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     let trailers = try stateMachine.send(
       status: .init(code: .ok, message: ""),
       metadata: .init()
-    )
+    ).assertTrailers()
 
     // Make sure it's NOT a trailers-only response, because the server was
     // already open (so it sent initial metadata): it shouldn't have :status or content-type headers
@@ -1722,18 +1717,13 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     }
   }
 
-  func testSendStatusAndTrailersWhenClientClosedAndServerClosed() {
+  func testSendStatusAndTrailersWhenClientClosedAndServerClosed() throws {
     var stateMachine = self.makeServerStateMachine(targetState: .clientClosedServerClosed)
 
-    XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
-      try stateMachine.send(
-        status: .init(code: .ok, message: ""),
-        metadata: .init()
-      )
-    ) { error in
-      XCTAssertEqual(error.message, "Server can't send anything if closed.")
-    }
+    try stateMachine.send(
+      status: .init(code: .ok, message: ""),
+      metadata: .init()
+    ).assertDropAndFailPromise()
   }
 
   // - MARK: Receive metadata
@@ -2488,13 +2478,14 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
       TargetStateMachineState.clientIdleServerIdle,
       .clientOpenServerIdle,
       .clientOpenServerOpen,
-      .clientOpenServerClosed,
+      .clientClosedServerIdle,
+      .clientClosedServerOpen,
     ]
 
     for state in states {
       for (closeReason, expectedError) in reasonAndExpectedErrorPairs {
         var stateMachine = self.makeServerStateMachine(targetState: state)
-        var action = stateMachine.unexpectedInboundClose(reason: closeReason)
+        var action = stateMachine.unexpectedClose(reason: closeReason)
         guard case .fireError_serverOnly(let error) = action else {
           XCTFail("Should have been `fireError` but was `\(action)` (state: \(state)).")
           return
@@ -2503,7 +2494,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
 
         // Calling unexpectedInboundClose again should return `doNothing` because
         // we're already closed.
-        action = stateMachine.unexpectedInboundClose(reason: closeReason)
+        action = stateMachine.unexpectedClose(reason: closeReason)
         guard case .doNothing = action else {
           XCTFail("Should have been `doNothing` but was `\(action)` (state: \(state)).")
           return
@@ -2518,27 +2509,20 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
       .streamReset(.noError),
       .errorThrown(RPCError(code: .deadlineExceeded, message: "Test error")),
     ]
-    let states = [
-      TargetStateMachineState.clientClosedServerIdle,
-      .clientClosedServerOpen,
-      .clientClosedServerClosed,
-    ]
 
-    for state in states {
-      for closeReason in closeReasons {
-        var stateMachine = self.makeServerStateMachine(targetState: state)
-        var action = stateMachine.unexpectedInboundClose(reason: closeReason)
-        guard case .doNothing = action else {
-          XCTFail("Should have been `doNothing` but was `\(action)` (state: \(state)).")
-          return
-        }
+    for closeReason in closeReasons {
+      var stateMachine = self.makeServerStateMachine(targetState: .clientClosedServerClosed)
+      var action = stateMachine.unexpectedClose(reason: closeReason)
+      guard case .doNothing = action else {
+        XCTFail("Should have been `doNothing` but was `\(action)`.")
+        return
+      }
 
-        // Calling unexpectedInboundClose again should return `doNothing` again.
-        action = stateMachine.unexpectedInboundClose(reason: closeReason)
-        guard case .doNothing = action else {
-          XCTFail("Should have been `doNothing` but was `\(action)` (state: \(state)).")
-          return
-        }
+      // Calling unexpectedInboundClose again should return `doNothing` again.
+      action = stateMachine.unexpectedClose(reason: closeReason)
+      guard case .doNothing = action else {
+        XCTFail("Should have been `doNothing` but was `\(action)`.")
+        return
       }
     }
   }
@@ -2634,7 +2618,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     let response = try stateMachine.send(
       status: .init(code: .ok, message: ""),
       metadata: []
-    )
+    ).assertTrailers()
     XCTAssertEqual(response, ["grpc-status": "0"])
 
     XCTAssertEqual(try stateMachine.nextOutboundFrame(), .noMoreMessages)
@@ -2713,7 +2697,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     let response = try stateMachine.send(
       status: .init(code: .ok, message: ""),
       metadata: []
-    )
+    ).assertTrailers()
     XCTAssertEqual(response, ["grpc-status": "0"])
 
     XCTAssertEqual(try stateMachine.nextOutboundFrame(), .noMoreMessages)
@@ -2792,7 +2776,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     let response = try stateMachine.send(
       status: .init(code: .ok, message: ""),
       metadata: []
-    )
+    ).assertTrailers()
     XCTAssertEqual(response, ["grpc-status": "0"])
 
     XCTAssertEqual(try stateMachine.nextOutboundFrame(), .noMoreMessages)
@@ -2863,3 +2847,28 @@ extension GRPCStreamStateMachine.OnNextOutboundFrame {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCStreamStateMachine.OnNextOutboundFrame: Equatable {}
+
+@available(gRPCSwiftNIOTransport 2.1, *)
+extension GRPCStreamStateMachine.OnServerSendStatus {
+  func assertTrailers() throws -> HPACKHeaders {
+    switch self {
+    case .writeTrailers(let trailers):
+      return trailers
+    case .dropAndFailPromise(let error):
+      XCTFail("Expected trailers, found error: \(error)")
+      throw error
+    }
+  }
+
+  @discardableResult
+  func assertDropAndFailPromise() -> RPCError? {
+    switch self {
+    case .dropAndFailPromise(let error):
+      return error
+    case .writeTrailers:
+      XCTFail("Expected dropAndFailPromise, found trailers")
+      return nil
+    }
+
+  }
+}

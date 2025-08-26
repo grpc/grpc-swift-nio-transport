@@ -449,7 +449,7 @@ struct GRPCStreamStateMachine {
   mutating func send(
     status: Status,
     metadata: Metadata
-  ) throws(InvalidState) -> HPACKHeaders {
+  ) throws(InvalidState) -> OnServerSendStatus {
     switch self.configuration {
     case .client:
       try self.invalidState(
@@ -619,14 +619,14 @@ struct GRPCStreamStateMachine {
     case errorThrown(any Error)
   }
 
-  mutating func unexpectedInboundClose(
+  mutating func unexpectedClose(
     reason: UnexpectedInboundCloseReason
   ) -> OnUnexpectedInboundClose {
     switch self.configuration {
     case .client:
-      return self.clientUnexpectedInboundClose(reason: reason)
+      return self.clientUnexpectedClose(reason: reason)
     case .server:
-      return self.serverUnexpectedInboundClose(reason: reason)
+      return self.serverUnexpectedClose(reason: reason)
     }
   }
 }
@@ -1208,7 +1208,7 @@ extension GRPCStreamStateMachine {
     throw InvalidState(message)
   }
 
-  private mutating func clientUnexpectedInboundClose(
+  private mutating func clientUnexpectedClose(
     reason: UnexpectedInboundCloseReason
   ) -> OnUnexpectedInboundClose {
     switch self.state {
@@ -1357,44 +1357,54 @@ extension GRPCStreamStateMachine {
     }
   }
 
+  enum OnServerSendStatus {
+    case writeTrailers(HPACKHeaders)
+    case dropAndFailPromise(RPCError)
+  }
+
   private mutating func serverSend(
     status: Status,
     customMetadata: Metadata
-  ) throws(InvalidState) -> HPACKHeaders {
+  ) throws(InvalidState) -> OnServerSendStatus {
     // Close the server.
     switch self.state {
     case .clientOpenServerOpen(var state):
       self.state = ._modifying
       state.headers.formTrailers(status: status, metadata: customMetadata)
       self.state = .clientOpenServerClosed(.init(previousState: state))
-      return state.headers
+      return .writeTrailers(state.headers)
 
     case .clientClosedServerOpen(var state):
       self.state = ._modifying
       state.headers.formTrailers(status: status, metadata: customMetadata)
       self.state = .clientClosedServerClosed(.init(previousState: state))
-      return state.headers
+      return .writeTrailers(state.headers)
 
     case .clientOpenServerIdle(var state):
       self.state = ._modifying
       state.headers.formTrailersOnly(status: status, metadata: customMetadata)
       self.state = .clientOpenServerClosed(.init(previousState: state))
-      return state.headers
+      return .writeTrailers(state.headers)
 
     case .clientClosedServerIdle(var state):
       self.state = ._modifying
       state.headers.formTrailersOnly(status: status, metadata: customMetadata)
       self.state = .clientClosedServerClosed(.init(previousState: state))
-      return state.headers
+      return .writeTrailers(state.headers)
 
     case .clientIdleServerIdle:
       try self.invalidState(
         "Server can't send status if client is idle."
       )
+
     case .clientOpenServerClosed, .clientClosedServerClosed:
-      try self.invalidState(
-        "Server can't send anything if closed."
+      return .dropAndFailPromise(
+        RPCError(
+          code: .internalError,
+          message: "Can't write status, stream has already closed"
+        )
       )
+
     case ._modifying:
       preconditionFailure()
     }
@@ -1736,7 +1746,7 @@ extension GRPCStreamStateMachine {
     }
   }
 
-  private mutating func serverUnexpectedInboundClose(
+  private mutating func serverUnexpectedClose(
     reason: UnexpectedInboundCloseReason
   ) -> OnUnexpectedInboundClose {
     switch self.state {
@@ -1756,7 +1766,15 @@ extension GRPCStreamStateMachine {
       self.state = .clientClosedServerClosed(.init(previousState: state))
       return OnUnexpectedInboundClose(serverCloseReason: reason)
 
-    case .clientClosedServerIdle, .clientClosedServerOpen, .clientClosedServerClosed:
+    case .clientClosedServerIdle(let state):
+      self.state = .clientClosedServerClosed(.init(previousState: state))
+      return OnUnexpectedInboundClose(serverCloseReason: reason)
+
+    case .clientClosedServerOpen(let state):
+      self.state = .clientClosedServerClosed(.init(previousState: state))
+      return OnUnexpectedInboundClose(serverCloseReason: reason)
+
+    case .clientClosedServerClosed:
       return .doNothing
 
     case ._modifying:
