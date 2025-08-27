@@ -1493,6 +1493,37 @@ final class HTTP2TransportTests: XCTestCase {
     }
   }
 
+  func testCancellationIsPropagated() async throws {
+    for kind in [CancellationKind.awaitCancelled, .withCancellationHandler] {
+      try await self.forEachTransportPair { control, server, pair in
+        let request = ClientRequest(message: kind)
+        let signal = AsyncStream.makeStream(of: Void.self)
+
+        let task = Task {
+          try await control.waitForCancellation(request: request) { response in
+            // Signal that the task should be cancelled.
+            signal.continuation.finish()
+
+            // The RPC should complete without any error or response.
+            do {
+              _ = try await response.messages.reduce(into: []) { $0.append($1) }
+              XCTFail("Expected cancellation error")
+            } catch is CancellationError {
+              ()
+            }
+          }
+        }
+
+        // Wait for the signal to cancel.
+        for await _ in signal.stream {}
+
+        task.cancel()
+        try await task.value
+      }
+    }
+
+  }
+
   func testUppercaseClientMetadataKey() async throws {
     try await self.forEachTransportPair { control, _, _ in
       let request = ClientRequest<ControlInput>(

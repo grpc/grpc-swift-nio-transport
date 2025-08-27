@@ -203,7 +203,7 @@ extension GRPCServerStreamHandler {
       }
 
     case .rstStream(let errorCode):
-      self.handleUnexpectedInboundClose(context: context, reason: .streamReset(errorCode))
+      self.handleUnexpectedClose(context: context, reason: .streamReset(errorCode))
 
     case .ping, .goAway, .priority, .settings, .pushPromise, .windowUpdate,
       .alternativeService, .origin:
@@ -226,19 +226,19 @@ extension GRPCServerStreamHandler {
   }
 
   package func channelInactive(context: ChannelHandlerContext) {
-    self.handleUnexpectedInboundClose(context: context, reason: .channelInactive)
+    self.handleUnexpectedClose(context: context, reason: .channelInactive)
     context.fireChannelInactive()
   }
 
   package func errorCaught(context: ChannelHandlerContext, error: any Error) {
-    self.handleUnexpectedInboundClose(context: context, reason: .errorThrown(error))
+    self.handleUnexpectedClose(context: context, reason: .errorThrown(error))
   }
 
-  private func handleUnexpectedInboundClose(
+  private func handleUnexpectedClose(
     context: ChannelHandlerContext,
     reason: GRPCStreamStateMachine.UnexpectedInboundCloseReason
   ) {
-    switch self.stateMachine.unexpectedInboundClose(reason: reason) {
+    switch self.stateMachine.unexpectedClose(reason: reason) {
     case .fireError_serverOnly(let wrappedError):
       self.cancelRPC()
       context.fireErrorCaught(wrappedError)
@@ -285,9 +285,13 @@ extension GRPCServerStreamHandler {
 
     case .status(let status, let metadata):
       do {
-        let headers = try self.stateMachine.send(status: status, metadata: metadata)
-        let response = HTTP2Frame.FramePayload.headers(.init(headers: headers, endStream: true))
-        self.pendingTrailers = (response, promise)
+        switch try self.stateMachine.send(status: status, metadata: metadata) {
+        case .writeTrailers(let trailers):
+          let response = HTTP2Frame.FramePayload.headers(.init(headers: trailers, endStream: true))
+          self.pendingTrailers = (response, promise)
+        case .dropAndFailPromise(let error):
+          promise?.fail(error)
+        }
       } catch let invalidState {
         let error = RPCError(invalidState)
         promise?.fail(error)
