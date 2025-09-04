@@ -18,8 +18,8 @@ import Foundation
 import GRPCCore
 import GRPCNIOTransportHTTP2Posix
 import GRPCNIOTransportHTTP2TransportServices
-import NIOSSL
 import NIO
+import NIOSSL
 import SwiftASN1
 import Testing
 import X509
@@ -200,15 +200,19 @@ struct HTTP2TransportTLSEnabledTests {
       serverHostname: CertificateChain.serverName
     )
     let expectedCertificates = [certificateChain.client.certificate]
-    try await confirmation { confirmation in 
+    try await confirmation { confirmation in
       let serverConfig = self.makeMTLSServerConfigWithCallback(
         certificatePath: filePaths.serverCert,
         keyPath: filePaths.serverKey,
         trustRootsPath: filePaths.trustRoots
-      ) { certificates, promise in 
-        let presentedCertificates = certificates.map { try! Certificate(derEncoded: $0.toDERBytes()) }
+      ) { certificates, promise in
+        let presentedCertificates = certificates.map {
+          try! Certificate(derEncoded: $0.toDERBytes())
+        }
         #expect(expectedCertificates == presentedCertificates)
-        promise.succeed(.certificateVerified(VerificationMetadata(ValidatedCertificateChain(certificates))))
+        promise.succeed(
+          .certificateVerified(VerificationMetadata(ValidatedCertificateChain(certificates)))
+        )
         confirmation.confirm()
       }
       // Run the test
@@ -225,7 +229,9 @@ struct HTTP2TransportTLSEnabledTests {
 
   @Test("Custom certification callbacks are not called when verification is disabled.")
   @available(gRPCSwiftNIOTransport 2.0, *)
-  func testRPC_mTLS_customVerificationCallback_notCalledWhenNoVerificationIsConfigured() async throws {
+  func testRPC_mTLS_customVerificationCallback_notCalledWhenNoVerificationIsConfigured()
+    async throws
+  {
     // Create a new certificate chain that has 4 certificate/key pairs: root, intermediate, client, server
     let certificateChain = try CertificateChain()
     let filePaths = try certificateChain.writeToTemp()
@@ -236,16 +242,20 @@ struct HTTP2TransportTLSEnabledTests {
       serverHostname: CertificateChain.serverName
     )
     let expectedCertificates = [certificateChain.client.certificate]
-    try await confirmation(expectedCount: 0) { confirmation in 
+    try await confirmation(expectedCount: 0) { confirmation in
       let serverConfig = self.makeMTLSServerConfigWithCallback(
         certificatePath: filePaths.serverCert,
         keyPath: filePaths.serverKey,
         trustRootsPath: filePaths.trustRoots,
         certificateVerification: TLSConfig.CertificateVerification.noVerification
-      ) { certificates, promise in 
-        let presentedCertificates = certificates.map { try! Certificate(derEncoded: $0.toDERBytes()) }
+      ) { certificates, promise in
+        let presentedCertificates = certificates.map {
+          try! Certificate(derEncoded: $0.toDERBytes())
+        }
         #expect(expectedCertificates == presentedCertificates)
-        promise.succeed(.certificateVerified(VerificationMetadata(ValidatedCertificateChain(certificates))))
+        promise.succeed(
+          .certificateVerified(VerificationMetadata(ValidatedCertificateChain(certificates)))
+        )
         // We expect this never to be called. The call count should stay at 0.
         confirmation()
       }
@@ -275,13 +285,15 @@ struct HTTP2TransportTLSEnabledTests {
       serverHostname: CertificateChain.serverName
     )
     let expectedCertificates = [certificateChain.client.certificate]
-    await confirmation { confirmation in 
+    await confirmation { confirmation in
       let serverConfig = self.makeMTLSServerConfigWithCallback(
         certificatePath: filePaths.serverCert,
         keyPath: filePaths.serverKey,
         trustRootsPath: filePaths.trustRoots
-      ) { certificates, promise in 
-        let presentedCertificates = certificates.map { try! Certificate(derEncoded: $0.toDERBytes()) }
+      ) { certificates, promise in
+        let presentedCertificates = certificates.map {
+          try! Certificate(derEncoded: $0.toDERBytes())
+        }
         #expect(expectedCertificates == presentedCertificates)
         // We are failing the certificate check here by propagating ".failed"!
         promise.succeed(.failed)
@@ -289,12 +301,12 @@ struct HTTP2TransportTLSEnabledTests {
       }
       // Run the test
       await #expect {
-      try await self.withClientAndServer(
-        clientConfig: clientConfig,
-        serverConfig: serverConfig
-      ) { control in
-        try await self.executeUnaryRPC(control: control)
-      }
+        try await self.withClientAndServer(
+          clientConfig: clientConfig,
+          serverConfig: serverConfig
+        ) { control in
+          try await self.executeUnaryRPC(control: control)
+        }
       } throws: { error in
         let rootError = try #require(error as? RPCError)
         #expect(rootError.code == .unavailable)
@@ -305,12 +317,12 @@ struct HTTP2TransportTLSEnabledTests {
         )
         let sslError = try #require(rootError.cause as? BoringSSLError)
         switch sslError {
-          case .sslError:
-            break
-          default:
-            Issue.record(
-              "Should be a BoringSSLError.sslError error, but was: \(String(describing: rootError.cause))"
-            )
+        case .sslError:
+          break
+        default:
+          Issue.record(
+            "Should be a BoringSSLError.sslError error, but was: \(String(describing: rootError.cause))"
+          )
         }
         return true
       }
@@ -773,7 +785,11 @@ struct HTTP2TransportTLSEnabledTests {
     keyPath: String,
     trustRootsPath: String,
     certificateVerification: TLSConfig.CertificateVerification = .noHostnameVerification,
-    customVerificationCallback: @escaping (@Sendable ([NIOSSLCertificate], EventLoopPromise<NIOSSLVerificationResultWithMetadata>) -> Void),
+    customVerificationCallback:
+      @escaping (
+        @Sendable ([NIOSSLCertificate], EventLoopPromise<NIOSSLVerificationResultWithMetadata>) ->
+          Void
+      ),
   ) -> ServerConfig {
     var config = self.makeDefaultPlaintextPosixServerConfig()
     config.security = .mTLS(

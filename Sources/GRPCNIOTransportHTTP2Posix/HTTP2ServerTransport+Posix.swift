@@ -104,7 +104,10 @@ extension HTTP2ServerTransport {
               if let sslContext {
                 if let callback = tlsConfiguration?.customVerificationCallback {
                   try channel.pipeline.syncOperations.addHandler(
-                    NIOSSLServerHandler(context: sslContext, customVerificationCallbackWithMetadata: callback)
+                    NIOSSLServerHandler(
+                      context: sslContext,
+                      customVerificationCallbackWithMetadata: callback
+                    )
                   )
                 } else {
                   try channel.pipeline.syncOperations.addHandler(
@@ -194,10 +197,11 @@ extension HTTP2ServerTransport {
     }
 
     public func listen(
-      streamHandler: @escaping @Sendable (
-        _ stream: RPCStream<Inbound, Outbound>,
-        _ context: ServerContext
-      ) async -> Void
+      streamHandler:
+        @escaping @Sendable (
+          _ stream: RPCStream<Inbound, Outbound>,
+          _ context: ServerContext
+        ) async -> Void
     ) async throws {
       try await self.underlyingTransport.listen(streamHandler: streamHandler)
     }
