@@ -15,8 +15,8 @@
  */
 
 private import GRPCCore
-public import NIOCore
 public import NIOCertificateReloading
+public import NIOCore
 public import NIOSSL
 
 @available(gRPCSwiftNIOTransport 2.0, *)
