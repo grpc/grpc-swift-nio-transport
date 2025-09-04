@@ -170,7 +170,7 @@ extension HTTP2ServerTransport.Posix.TransportSecurity {
 
     /// Override the certificate verification with a custom callback that must return the verified certificate chain on success.
     /// Note: The callback is only used when `clientCertificateVerification` is *not* set to `noVerification`!
-    public var customVerificationCallbackWithMetadata:  (@Sendable ([NIOSSLCertificate], EventLoopPromise<NIOSSLVerificationResultWithMetadata>) -> Void)?
+    public var customVerificationCallback:  (@Sendable ([NIOSSLCertificate], EventLoopPromise<NIOSSLVerificationResultWithMetadata>) -> Void)?
 
     /// Create a new HTTP2 NIO Posix server transport TLS config.
     /// - Parameters:

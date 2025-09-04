@@ -102,7 +102,7 @@ extension HTTP2ServerTransport {
           .bind(to: address) { channel in
             channel.eventLoop.makeCompletedFuture {
               if let sslContext {
-                if let callback = tlsConfiguration?.customVerificationCallbackWithMetadata {
+                if let callback = tlsConfiguration?.customVerificationCallback {
                   try channel.pipeline.syncOperations.addHandler(
                     NIOSSLServerHandler(context: sslContext, customVerificationCallbackWithMetadata: callback)
                   )

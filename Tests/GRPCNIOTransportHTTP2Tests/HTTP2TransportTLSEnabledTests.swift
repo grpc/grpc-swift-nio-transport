@@ -784,7 +784,7 @@ struct HTTP2TransportTLSEnabledTests {
       $0.trustRoots = .certificates([
         .file(path: trustRootsPath, format: .pem)
       ])
-      $0.customVerificationCallbackWithMetadata = customVerificationCallback
+      $0.customVerificationCallback = customVerificationCallback
     }
     return .posix(config)
   }
