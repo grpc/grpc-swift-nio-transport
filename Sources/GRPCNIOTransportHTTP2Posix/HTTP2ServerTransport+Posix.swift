@@ -67,11 +67,12 @@ extension HTTP2ServerTransport {
         serverQuiescingHelper: ServerQuiescingHelper
       ) async throws -> NIOAsyncChannel<AcceptedChannel, Never> {
         let sslContext: NIOSSLContext?
-        let customVerificationCallback: (
-          @Sendable (
-            [NIOSSLCertificate], EventLoopPromise<NIOSSLVerificationResultWithMetadata>
-          ) -> Void
-        )?
+        let customVerificationCallback:
+          (
+            @Sendable (
+              [NIOSSLCertificate], EventLoopPromise<NIOSSLVerificationResultWithMetadata>
+            ) -> Void
+          )?
 
         switch self.transportSecurity.wrapped {
         case .plaintext:
