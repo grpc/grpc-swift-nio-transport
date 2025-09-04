@@ -18,7 +18,7 @@ import Foundation
 import GRPCCore
 import GRPCNIOTransportHTTP2Posix
 import GRPCNIOTransportHTTP2TransportServices
-import NIO
+import NIOCore
 import NIOSSL
 import SwiftASN1
 import Testing
@@ -192,15 +192,18 @@ struct HTTP2TransportTLSEnabledTests {
   func testRPC_mTLS_customVerificationCallback_OK() async throws {
     // Create a new certificate chain that has 4 certificate/key pairs: root, intermediate, client, server
     let certificateChain = try CertificateChain()
+    let certificatesExpectedInCallback = [certificateChain.client.certificate]
     let filePaths = try certificateChain.writeToTemp()
+
     let clientConfig = self.makeMTLSClientConfig(
       certificatePath: filePaths.clientCert,
       keyPath: filePaths.clientKey,
       trustRootsPath: filePaths.trustRoots,
       serverHostname: CertificateChain.serverName
     )
-    let expectedCertificates = [certificateChain.client.certificate]
-    try await confirmation { confirmation in
+    
+    // The confirmation lets us check that the callback is used.
+    try await confirmation(expectedCount: 1) { confirmation in
       let serverConfig = self.makeMTLSServerConfigWithCallback(
         certificatePath: filePaths.serverCert,
         keyPath: filePaths.serverKey,
@@ -209,12 +212,15 @@ struct HTTP2TransportTLSEnabledTests {
         let presentedCertificates = certificates.map {
           try! Certificate(derEncoded: $0.toDERBytes())
         }
-        #expect(expectedCertificates == presentedCertificates)
+        #expect(certificatesExpectedInCallback == presentedCertificates)
+        // "Verify" the chain and set the certificate.
         promise.succeed(
           .certificateVerified(VerificationMetadata(ValidatedCertificateChain(certificates)))
         )
+        // This should be called once.
         confirmation.confirm()
       }
+
       // Run the test
       try await self.withClientAndServer(
         clientConfig: clientConfig,
@@ -234,14 +240,17 @@ struct HTTP2TransportTLSEnabledTests {
   {
     // Create a new certificate chain that has 4 certificate/key pairs: root, intermediate, client, server
     let certificateChain = try CertificateChain()
+    let certificatesExpectedInCallback = [certificateChain.client.certificate]
     let filePaths = try certificateChain.writeToTemp()
+
     let clientConfig = self.makeMTLSClientConfig(
       certificatePath: filePaths.clientCert,
       keyPath: filePaths.clientKey,
       trustRootsPath: filePaths.trustRoots,
       serverHostname: CertificateChain.serverName
     )
-    let expectedCertificates = [certificateChain.client.certificate]
+
+    // The confirmation lets us check that the callback is not used.
     try await confirmation(expectedCount: 0) { confirmation in
       let serverConfig = self.makeMTLSServerConfigWithCallback(
         certificatePath: filePaths.serverCert,
@@ -252,13 +261,15 @@ struct HTTP2TransportTLSEnabledTests {
         let presentedCertificates = certificates.map {
           try! Certificate(derEncoded: $0.toDERBytes())
         }
-        #expect(expectedCertificates == presentedCertificates)
+        #expect(certificatesExpectedInCallback == presentedCertificates)
+        // "Verify" the chain and set the certificate.
         promise.succeed(
           .certificateVerified(VerificationMetadata(ValidatedCertificateChain(certificates)))
         )
-        // We expect this never to be called. The call count should stay at 0.
+        // We expect this never to be called.
         confirmation()
       }
+
       // Run the test
       try await self.withClientAndServer(
         clientConfig: clientConfig,
@@ -277,14 +288,17 @@ struct HTTP2TransportTLSEnabledTests {
   func testRPC_mTLS_customVerificationCallback_Failure() async throws {
     // Create a new certificate chain that has 4 certificate/key pairs: root, intermediate, client, server
     let certificateChain = try CertificateChain()
+    let certificatesExpectedInCallback = [certificateChain.client.certificate]
     let filePaths = try certificateChain.writeToTemp()
+
     let clientConfig = self.makeMTLSClientConfig(
       certificatePath: filePaths.clientCert,
       keyPath: filePaths.clientKey,
       trustRootsPath: filePaths.trustRoots,
       serverHostname: CertificateChain.serverName
     )
-    let expectedCertificates = [certificateChain.client.certificate]
+
+    // The confirmation lets us check that the callback is used.
     await confirmation { confirmation in
       let serverConfig = self.makeMTLSServerConfigWithCallback(
         certificatePath: filePaths.serverCert,
@@ -294,11 +308,12 @@ struct HTTP2TransportTLSEnabledTests {
         let presentedCertificates = certificates.map {
           try! Certificate(derEncoded: $0.toDERBytes())
         }
-        #expect(expectedCertificates == presentedCertificates)
+        #expect(certificatesExpectedInCallback == presentedCertificates)
         // We are failing the certificate check here by propagating ".failed"!
         promise.succeed(.failed)
         confirmation.confirm()
       }
+
       // Run the test
       await #expect {
         try await self.withClientAndServer(
@@ -308,13 +323,15 @@ struct HTTP2TransportTLSEnabledTests {
           try await self.executeUnaryRPC(control: control)
         }
       } throws: { error in
+        // Check root error ...
         let rootError = try #require(error as? RPCError)
         #expect(rootError.code == .unavailable)
-
         #expect(
           rootError.message
             == "The server accepted the TCP connection but closed the connection before completing the HTTP/2 connection preface."
         )
+
+        // ... and the its cause.
         let sslError = try #require(rootError.cause as? BoringSSLError)
         switch sslError {
         case .sslError:

@@ -67,12 +67,16 @@ extension HTTP2ServerTransport {
         serverQuiescingHelper: ServerQuiescingHelper
       ) async throws -> NIOAsyncChannel<AcceptedChannel, Never> {
         let sslContext: NIOSSLContext?
-        let tlsConfiguration: HTTP2ServerTransport.Posix.TransportSecurity.TLS?
+        let customVerificationCallback: (
+          @Sendable (
+            [NIOSSLCertificate], EventLoopPromise<NIOSSLVerificationResultWithMetadata>
+          ) -> Void
+        )?
 
         switch self.transportSecurity.wrapped {
         case .plaintext:
           sslContext = nil
-          tlsConfiguration = nil
+          customVerificationCallback = nil
         case .tls(let tlsConfig):
           do {
             sslContext = try NIOSSLContext(configuration: TLSConfiguration(tlsConfig))
@@ -83,7 +87,7 @@ extension HTTP2ServerTransport {
               cause: error
             )
           }
-          tlsConfiguration = tlsConfig
+          customVerificationCallback = tlsConfig.customVerificationCallback
         }
 
         let serverChannel = try await ServerBootstrap(group: eventLoopGroup)
@@ -102,7 +106,7 @@ extension HTTP2ServerTransport {
           .bind(to: address) { channel in
             channel.eventLoop.makeCompletedFuture {
               if let sslContext {
-                if let callback = tlsConfiguration?.customVerificationCallback {
+                if let callback = customVerificationCallback {
                   try channel.pipeline.syncOperations.addHandler(
                     NIOSSLServerHandler(
                       context: sslContext,
@@ -197,11 +201,10 @@ extension HTTP2ServerTransport {
     }
 
     public func listen(
-      streamHandler:
-        @escaping @Sendable (
-          _ stream: RPCStream<Inbound, Outbound>,
-          _ context: ServerContext
-        ) async -> Void
+      streamHandler: @escaping @Sendable (
+        _ stream: RPCStream<Inbound, Outbound>,
+        _ context: ServerContext
+      ) async -> Void
     ) async throws {
       try await self.underlyingTransport.listen(streamHandler: streamHandler)
     }
