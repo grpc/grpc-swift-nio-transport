@@ -789,7 +789,7 @@ struct HTTP2TransportTLSEnabledTests {
       @escaping (
         @Sendable ([NIOSSLCertificate], EventLoopPromise<NIOSSLVerificationResultWithMetadata>) ->
           Void
-      ),
+      )
   ) -> ServerConfig {
     var config = self.makeDefaultPlaintextPosixServerConfig()
     config.security = .mTLS(
