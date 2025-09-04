@@ -201,7 +201,7 @@ struct HTTP2TransportTLSEnabledTests {
       trustRootsPath: filePaths.trustRoots,
       serverHostname: CertificateChain.serverName
     )
-    
+
     // The confirmation lets us check that the callback is used.
     try await confirmation(expectedCount: 1) { confirmation in
       let serverConfig = self.makeMTLSServerConfigWithCallback(
