@@ -67,10 +67,12 @@ extension HTTP2ServerTransport {
         serverQuiescingHelper: ServerQuiescingHelper
       ) async throws -> NIOAsyncChannel<AcceptedChannel, Never> {
         let sslContext: NIOSSLContext?
+        let tlsConfiguration: HTTP2ServerTransport.Posix.TransportSecurity.TLS?
 
         switch self.transportSecurity.wrapped {
         case .plaintext:
           sslContext = nil
+          tlsConfiguration = nil
         case .tls(let tlsConfig):
           do {
             sslContext = try NIOSSLContext(configuration: TLSConfiguration(tlsConfig))
@@ -81,6 +83,7 @@ extension HTTP2ServerTransport {
               cause: error
             )
           }
+          tlsConfiguration = tlsConfig
         }
 
         let serverChannel = try await ServerBootstrap(group: eventLoopGroup)
@@ -99,9 +102,15 @@ extension HTTP2ServerTransport {
           .bind(to: address) { channel in
             channel.eventLoop.makeCompletedFuture {
               if let sslContext {
-                try channel.pipeline.syncOperations.addHandler(
-                  NIOSSLServerHandler(context: sslContext)
-                )
+                if let callback = tlsConfiguration?.customVerificationCallbackWithMetadata {
+                  try channel.pipeline.syncOperations.addHandler(
+                    NIOSSLServerHandler(context: sslContext, customVerificationCallbackWithMetadata: callback)
+                  )
+                } else {
+                  try channel.pipeline.syncOperations.addHandler(
+                    NIOSSLServerHandler(context: sslContext)
+                  )
+                }
               }
 
               let requireALPN: Bool

@@ -17,6 +17,7 @@
 private import GRPCCore
 public import NIOCertificateReloading
 public import NIOSSL
+public import NIO
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ServerTransport.Posix {
@@ -166,6 +167,10 @@ extension HTTP2ServerTransport.Posix.TransportSecurity {
     /// A certificate reloader providing the current certificate chain and private key to
     /// use at that point in time.
     public var certificateReloader: (any CertificateReloader)?
+
+    /// Override the certificate verification with a custom callback that must return the verified certificate chain on success.
+    /// Note: The callback is only used when `clientCertificateVerification` is *not* set to `noVerification`!
+    public var customVerificationCallbackWithMetadata:  (@Sendable ([NIOSSLCertificate], EventLoopPromise<NIOSSLVerificationResultWithMetadata>) -> Void)?
 
     /// Create a new HTTP2 NIO Posix server transport TLS config.
     /// - Parameters:
