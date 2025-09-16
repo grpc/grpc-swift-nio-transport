@@ -189,20 +189,21 @@ extension HTTP2ServerTransport {
         listenerFactory: factory
       ) { channel in
         var context = HTTP2ServerTransport.Posix.Context()
+
         do {
-          if let peerCert = try await channel.nioSSL_peerCertificate().get() {
+          // The validadted certificate chain is only available when using a custom verification callback, while the
+          // peer certificate is only available when using the BoringSSL backend. But if we can get the certificate
+          // chain, we can set the peer certificate (the leaf of the chain) as well.
+          if let peerCertificateChain =
+            try await channel.nioSSL_peerValidatedCertificateChain().get(),
+            let peerCertificateChain = try? X509.ValidatedCertificateChain(peerCertificateChain)
+          {
+            context.peerCertificate = peerCertificateChain.leaf
+            context.peerCertificateChain = peerCertificateChain
+          } else if let peerCert = try await channel.nioSSL_peerCertificate().get() {
             let serialized = try peerCert.toDERBytes()
             let swiftCert = try Certificate(derEncoded: serialized)
             context.peerCertificate = swiftCert
-          }
-        } catch {}
-
-        do {
-          if let peerValidatedCertificateChain =
-            try await channel.nioSSL_peerValidatedCertificateChain().get()
-          {
-            context.peerValidatedCertificateChain =
-              try? peerValidatedCertificateChain.usingX509Certificates()
           }
         } catch {}
 
@@ -234,7 +235,7 @@ extension HTTP2ServerTransport.Posix {
 
     /// The validated peer certificate chain from the mTLS handshake. This is only available when using a custom verification callback.
     @available(gRPCSwiftNIOTransport 2.2, *)
-    public var peerValidatedCertificateChain: X509.ValidatedCertificateChain?
+    public var peerCertificateChain: X509.ValidatedCertificateChain?
 
     public init() {
     }

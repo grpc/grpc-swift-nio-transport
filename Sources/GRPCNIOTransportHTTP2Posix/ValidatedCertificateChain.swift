@@ -19,14 +19,13 @@ internal import SwiftASN1
 internal import X509
 
 @available(gRPCSwiftNIOTransport 2.2, *)
-extension NIOSSL.ValidatedCertificateChain {
+extension X509.ValidatedCertificateChain {
   // The precondition holds because the `NIOSSL.ValidatedCertificateChain` always contains one `NIOSSLCertificate`.
-  func usingX509Certificates() throws -> X509.ValidatedCertificateChain {
-    return .init(
-      uncheckedCertificateChain: try self.map {
-        let derBytes = try $0.toDERBytes()
-        return try Certificate(derEncoded: derBytes)
-      }
-    )
+  init(_ chain: NIOSSL.ValidatedCertificateChain) throws {
+    let certs = try chain.map {
+      let derBytes = try $0.toDERBytes()
+      return try Certificate(derEncoded: derBytes)
+    }
+    self.init(uncheckedCertificateChain: certs)
   }
 }
