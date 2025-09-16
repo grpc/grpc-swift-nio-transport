@@ -198,8 +198,11 @@ extension HTTP2ServerTransport {
         } catch {}
 
         do {
-          if let peerValidatedCertificateChain = try await channel.nioSSL_peerValidatedCertificateChain().get() {
-            context.peerValidatedCertificateChain = try? peerValidatedCertificateChain.usingX509Certificates()
+          if let peerValidatedCertificateChain =
+            try await channel.nioSSL_peerValidatedCertificateChain().get()
+          {
+            context.peerValidatedCertificateChain =
+              try? peerValidatedCertificateChain.usingX509Certificates()
           }
         } catch {}
 

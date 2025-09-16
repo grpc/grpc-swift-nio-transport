@@ -365,7 +365,9 @@ struct HTTP2TransportTLSEnabledTests {
         transportSpecific as? HTTP2ServerTransport.Posix.Context
       )
 
-      let peerValidatedCertificateChain = try #require(transportSpecificAsPosixContext.peerValidatedCertificateChain)
+      let peerValidatedCertificateChain = try #require(
+        transportSpecificAsPosixContext.peerValidatedCertificateChain
+      )
       // The validated certifiacte chain always contains at least one element.
       #expect(!peerValidatedCertificateChain.isEmpty)
 
@@ -383,7 +385,9 @@ struct HTTP2TransportTLSEnabledTests {
     }
   }
 
-  @Test("When using a custom certificate callback the validated certifiate chain of the peer is available.")
+  @Test(
+    "When using a custom certificate callback the validated certifiate chain of the peer is available."
+  )
   @available(gRPCSwiftNIOTransport 2.2, *)
   func testRPC_mTLS_peerValidatedCertificateChain() async throws {
     // Create a new certificate chain that has 4 certificate/key pairs: root, intermediate, client, server
