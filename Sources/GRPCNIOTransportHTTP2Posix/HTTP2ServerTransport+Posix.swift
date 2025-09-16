@@ -197,6 +197,12 @@ extension HTTP2ServerTransport {
           }
         } catch {}
 
+        do {
+          if let peerValidatedCertificateChain = try await channel.nioSSL_peerValidatedCertificateChain().get() {
+            context.peerValidatedCertificateChain = try? peerValidatedCertificateChain.usingX509Certificates()
+          }
+        } catch {}
+
         return context
       }
     }
@@ -222,6 +228,10 @@ extension HTTP2ServerTransport.Posix {
   public struct Context: ServerContext.TransportSpecific {
     /// The peer certificate (if any) from the mTLS handshake
     public var peerCertificate: Certificate?
+
+    /// The validated peer certificate chain from the mTLS handshake. This is only available when using a custom verification callback.
+    @available(gRPCSwiftNIOTransport 2.2, *)
+    public var peerValidatedCertificateChain: X509.ValidatedCertificateChain?
 
     public init() {
     }

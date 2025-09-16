@@ -59,7 +59,7 @@ let dependencies: [Package.Dependency] = [
   ),
   .package(
     url: "https://github.com/apple/swift-certificates.git",
-    from: "1.5.0"
+    from: "1.14.0"
   ),
   .package(
     url: "https://github.com/apple/swift-asn1.git",
