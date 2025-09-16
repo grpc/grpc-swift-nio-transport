@@ -65,9 +65,11 @@ struct HTTP2TransportTLSEnabledTests {
   @available(gRPCSwiftNIOTransport 2.0, *)
   final class TransportSpecificInterceptor: ServerInterceptor {
     let clientCert: [UInt8]
+
     init(_ clientCert: [UInt8]) {
       self.clientCert = clientCert
     }
+
     func intercept<Input, Output>(
       request: GRPCCore.StreamingServerRequest<Input>,
       context: GRPCCore.ServerContext,
@@ -342,6 +344,91 @@ struct HTTP2TransportTLSEnabledTests {
           )
         }
         return true
+      }
+    }
+  }
+
+  @available(gRPCSwiftNIOTransport 2.2, *)
+  final class ValidatedCertificateChainInterceptor: ServerInterceptor {
+    let expectedCertificateChain: [Certificate]
+
+    init(_ expectedCertificateChain: [Certificate]) {
+      self.expectedCertificateChain = expectedCertificateChain
+    }
+
+    func intercept<Input, Output>(
+      request: GRPCCore.StreamingServerRequest<Input>,
+      context: GRPCCore.ServerContext,
+      next:
+        @Sendable (GRPCCore.StreamingServerRequest<Input>, GRPCCore.ServerContext) async throws
+        -> GRPCCore.StreamingServerResponse<Output>
+    ) async throws -> GRPCCore.StreamingServerResponse<Output>
+    where Input: Sendable, Output: Sendable {
+      let transportSpecific = context.transportSpecific
+      let transportSpecificAsPosixContext = try #require(
+        transportSpecific as? HTTP2ServerTransport.Posix.Context
+      )
+
+      let peerCertificateChain = try #require(
+        transportSpecificAsPosixContext.peerCertificateChain
+      )
+      // The validated certifiacte chain always contains at least one element.
+      #expect(!peerCertificateChain.isEmpty)
+
+      // And these chains should have the same length.
+      #expect(peerCertificateChain.count == self.expectedCertificateChain.count)
+      for (lhs, rhs) in zip(peerCertificateChain, self.expectedCertificateChain) {
+        #expect(lhs == rhs)
+      }
+
+      // leaf and root should match the first and last element of the expected chain.
+      #expect(peerCertificateChain.leaf == self.expectedCertificateChain.first!)
+      #expect(peerCertificateChain.root == self.expectedCertificateChain.last!)
+
+      return try await next(request, context)
+    }
+  }
+
+  @Test(
+    "When using a custom certificate callback the validated certifiate chain of the peer is available."
+  )
+  @available(gRPCSwiftNIOTransport 2.2, *)
+  func testRPC_mTLS_peerCertificateChain() async throws {
+    // Create a new certificate chain that has 4 certificate/key pairs: root, intermediate, client, server
+    let certificateChain = try CertificateChain()
+    let expectedCertificateChain = [certificateChain.client.certificate]
+    let filePaths = try certificateChain.writeToTemp()
+
+    // Client and server configurations.
+    let clientConfig = self.makeMTLSClientConfig(
+      certificatePath: filePaths.clientCert,
+      keyPath: filePaths.clientKey,
+      trustRootsPath: filePaths.trustRoots,
+      serverHostname: CertificateChain.serverName
+    )
+    let serverConfig = self.makeMTLSServerConfigWithCallback(
+      certificatePath: filePaths.serverCert,
+      keyPath: filePaths.serverKey,
+      trustRootsPath: filePaths.trustRoots
+    ) { certificates, promise in
+      let presentedCertificates = certificates.map {
+        try! Certificate(derEncoded: $0.toDERBytes())
+      }
+      #expect([certificateChain.client.certificate] == presentedCertificates)
+      // "Verify" the chain and set the certificate.
+      promise.succeed(
+        .certificateVerified(VerificationMetadata(ValidatedCertificateChain(certificates)))
+      )
+    }
+
+    // Run the test. The interceptor checks that we can query the expected certificate chain.
+    try await self.withClientAndServer(
+      clientConfig: clientConfig,
+      serverConfig: serverConfig,
+      interceptors: [ValidatedCertificateChainInterceptor(expectedCertificateChain)]
+    ) { control in
+      await #expect(throws: Never.self) {
+        try await self.executeUnaryRPC(control: control)
       }
     }
   }
