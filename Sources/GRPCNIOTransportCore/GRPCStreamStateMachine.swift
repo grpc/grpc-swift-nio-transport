@@ -1992,7 +1992,7 @@ extension HTTP2ErrorCode {
     case .frameSizeError:
       suffix = "frame size error"
     case .refusedStream:
-      suffix = "fefused stream"
+      suffix = "refused stream"
     case .cancel:
       suffix = "cancel"
     case .compressionError:
