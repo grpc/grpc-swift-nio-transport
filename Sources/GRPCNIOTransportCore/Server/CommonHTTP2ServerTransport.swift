@@ -307,7 +307,8 @@ package final class CommonHTTP2ServerTransport<
       // close the stream and drop buffered writes.
       //
       // If the task is cancelled then end stream might not have been written so the close future
-      // won't complete yet.
+      // won't complete yet. If the task has been cancelled then don't block here: the stream
+      // will be closed by 'executeThenClose'.
       if !Task.isCancelled {
         try await stream.channel.closeFuture.get()
       }
