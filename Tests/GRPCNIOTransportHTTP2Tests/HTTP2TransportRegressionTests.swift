@@ -69,11 +69,16 @@ struct HTTP2TransportRegressionTests {
       serverTask.cancel()
 
       // Now the client should complete.
+      #if compiler(>=6.1)
       let error = await #expect(throws: RPCError.self) {
         try await clientTask.value
       }
-
       #expect(error?.code == .unavailable)
+      #else
+      await #expect(throws: RPCError.self) {
+        try await clientTask.value
+      }
+      #endif
     }
   }
 }
