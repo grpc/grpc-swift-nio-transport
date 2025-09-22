@@ -305,7 +305,13 @@ package final class CommonHTTP2ServerTransport<
       // Wait for the stream to close (i.e. when the final status has been written or an error
       // occurs.) This is done to avoid closing too early as 'executeThenClose' may forcefully
       // close the stream and drop buffered writes.
-      try await stream.channel.closeFuture.get()
+      //
+      // If the task is cancelled then end stream might not have been written so the close future
+      // won't complete yet. If the task has been cancelled then don't block here: the stream
+      // will be closed by 'executeThenClose'.
+      if !Task.isCancelled {
+        try await stream.channel.closeFuture.get()
+      }
     }
   }
 
