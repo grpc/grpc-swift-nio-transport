@@ -16,6 +16,7 @@
 
 import GRPCCore
 import GRPCNIOTransportCore
+import NIOHTTP2
 
 // Equatable conformance for these types is 'best effort', this is sufficient for testing but not
 // for general use.
