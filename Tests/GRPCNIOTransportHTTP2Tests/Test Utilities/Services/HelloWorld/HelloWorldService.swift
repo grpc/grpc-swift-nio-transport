@@ -25,10 +25,11 @@ struct HelloWorldService: HelloWorld.SimpleServiceProtocol {
     ) async throws -> HelloResponse
 
   init(
-    implementation: @Sendable @escaping (
-      _: HelloRequest,
-      _: ServerContext
-    ) async throws -> HelloResponse
+    implementation:
+      @Sendable @escaping (
+        _: HelloRequest,
+        _: ServerContext
+      ) async throws -> HelloResponse
   ) {
     self.implementation = implementation
   }
