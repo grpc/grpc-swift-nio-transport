@@ -93,9 +93,10 @@ internal struct ControlClient<Transport> where Transport: ClientTransport {
   internal func waitForCancellation<R>(
     request: GRPCCore.ClientRequest<CancellationKind>,
     options: GRPCCore.CallOptions = .defaults,
-    _ body: @Sendable @escaping (
-      _ response: GRPCCore.StreamingClientResponse<CancellationKind>
-    ) async throws -> R
+    _ body:
+      @Sendable @escaping (
+        _ response: GRPCCore.StreamingClientResponse<CancellationKind>
+      ) async throws -> R
   ) async throws -> R where R: Sendable {
     try await self.client.serverStreaming(
       request: request,
@@ -109,9 +110,10 @@ internal struct ControlClient<Transport> where Transport: ClientTransport {
 
   internal func peerInfo<R>(
     options: GRPCCore.CallOptions = .defaults,
-    _ body: @Sendable @escaping (
-      _ response: GRPCCore.ClientResponse<ControlService.PeerInfoResponse>
-    ) async throws -> R = { try $0.message }
+    _ body:
+      @Sendable @escaping (
+        _ response: GRPCCore.ClientResponse<ControlService.PeerInfoResponse>
+      ) async throws -> R = { try $0.message }
   ) async throws -> R where R: Sendable {
     try await self.client.unary(
       request: ClientRequest(message: ""),
