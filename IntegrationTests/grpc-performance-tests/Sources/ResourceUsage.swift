@@ -16,7 +16,7 @@
 
 import Dispatch
 import NIOCore
-import NIOFileSystem
+import _NIOFileSystem
 
 #if canImport(Darwin)
 import Darwin
