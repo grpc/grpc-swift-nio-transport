@@ -138,6 +138,12 @@ extension HTTP2ClientTransport.Posix {
 
     private let sslContext: NIOSSLContext?
     private let isPlainText: Bool
+    private let customVerificationCallback:
+      (
+        @Sendable (
+          [NIOSSLCertificate], EventLoopPromise<NIOSSLVerificationResultWithMetadata>
+        ) -> Void
+      )?
 
     init(
       eventLoopGroup: any EventLoopGroup,
@@ -151,10 +157,12 @@ extension HTTP2ClientTransport.Posix {
       case .plaintext:
         self.sslContext = nil
         self.isPlainText = true
+        self.customVerificationCallback = nil
       case .tls(let tlsConfig):
         do {
           self.sslContext = try NIOSSLContext(configuration: TLSConfiguration(tlsConfig))
           self.isPlainText = false
+          self.customVerificationCallback = tlsConfig.customVerificationCallback
         } catch {
           throw RuntimeError(
             code: .transportError,
@@ -174,12 +182,22 @@ extension HTTP2ClientTransport.Posix {
       ).connect(to: address) { channel in
         channel.eventLoop.makeCompletedFuture {
           if let sslContext = self.sslContext {
-            try channel.pipeline.syncOperations.addHandler(
-              NIOSSLClientHandler(
-                context: sslContext,
-                serverHostname: sniServerHostname
+            if let customVerificationCallback = self.customVerificationCallback {
+              try channel.pipeline.syncOperations.addHandler(
+                NIOSSLClientHandler(
+                  context: sslContext,
+                  serverHostname: sniServerHostname,
+                  customVerificationCallbackWithMetadata: customVerificationCallback
+                )
               )
-            )
+            } else {
+              try channel.pipeline.syncOperations.addHandler(
+                NIOSSLClientHandler(
+                  context: sslContext,
+                  serverHostname: sniServerHostname
+                )
+              )
+            }
           }
 
           return try channel.pipeline.syncOperations.configureGRPCClientPipeline(
