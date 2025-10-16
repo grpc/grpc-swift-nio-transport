@@ -356,6 +356,7 @@ extension HTTP2ClientTransport.Posix.TransportSecurity {
 
     /// Override the certificate verification with a custom callback that must return the verified certificate chain on success.
     /// Note: The callback is only used when `serverCertificateVerification` is *not* set to `noVerification`!
+    @available(gRPCSwiftNIOTransport 2.3, *)
     public var customVerificationCallback:
       (
         @Sendable (
