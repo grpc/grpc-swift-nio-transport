@@ -364,7 +364,7 @@ extension HTTP2ClientTransport.Posix.TransportSecurity {
           _ promise: EventLoopPromise<NIOSSLVerificationResultWithMetadata>
         ) -> Void
       )?
-    
+
     /// The trust roots to be used when verifying server certificates.
     public var trustRoots: TLSConfig.TrustRootsSource
 
