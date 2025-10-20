@@ -173,10 +173,11 @@ enum NIOServerTransport: ServerTransport, ListeningServerTransport {
   }
 
   func listen(
-    streamHandler: @escaping @Sendable (
-      _ stream: RPCStream<Inbound, Outbound>,
-      _ context: ServerContext
-    ) async -> Void
+    streamHandler:
+      @escaping @Sendable (
+        _ stream: RPCStream<Inbound, Outbound>,
+        _ context: ServerContext
+      ) async -> Void
   ) async throws {
     switch self {
     case .posix(let transport):
