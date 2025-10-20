@@ -15,9 +15,10 @@
  */
 
 import GRPCCore
+
 import struct Foundation.Data
-import class Foundation.JSONEncoder
 import class Foundation.JSONDecoder
+import class Foundation.JSONEncoder
 
 // MARK: - HelloWorld
 
@@ -131,7 +132,9 @@ extension HelloWorld {
 // Default implementation of 'registerMethods(with:)'.
 @available(gRPCSwiftNIOTransport 2.2, *)
 extension HelloWorld.StreamingServiceProtocol {
-  internal func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
+  internal func registerMethods<Transport>(
+    with router: inout GRPCCore.RPCRouter<Transport>
+  ) where Transport: GRPCCore.ServerTransport {
     router.registerHandler(
       forMethod: HelloWorld.Method.sayHello.descriptor,
       deserializer: JSONDeserializer<HelloRequest>(),
@@ -203,7 +206,8 @@ extension HelloWorld {
       serializer: some GRPCCore.MessageSerializer<HelloRequest>,
       deserializer: some GRPCCore.MessageDeserializer<HelloResponse>,
       options: GRPCCore.CallOptions,
-      onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<HelloResponse>) async throws -> Result
+      onResponse handleResponse:
+        @Sendable @escaping (GRPCCore.ClientResponse<HelloResponse>) async throws -> Result
     ) async throws -> Result where Result: Sendable
   }
 
@@ -239,9 +243,11 @@ extension HelloWorld {
       serializer: some GRPCCore.MessageSerializer<HelloRequest>,
       deserializer: some GRPCCore.MessageDeserializer<HelloResponse>,
       options: GRPCCore.CallOptions = .defaults,
-      onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<HelloResponse>) async throws -> Result = { response in
-        try response.message
-      }
+      onResponse handleResponse:
+        @Sendable @escaping (GRPCCore.ClientResponse<HelloResponse>) async throws -> Result = {
+          response in
+          try response.message
+        }
     ) async throws -> Result where Result: Sendable {
       try await self.client.unary(
         request: request,
@@ -270,9 +276,11 @@ extension HelloWorld.ClientProtocol {
   internal func sayHello<Result>(
     request: GRPCCore.ClientRequest<HelloRequest>,
     options: GRPCCore.CallOptions = .defaults,
-    onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<HelloResponse>) async throws -> Result = { response in
-      try response.message
-    }
+    onResponse handleResponse:
+      @Sendable @escaping (GRPCCore.ClientResponse<HelloResponse>) async throws -> Result = {
+        response in
+        try response.message
+      }
   ) async throws -> Result where Result: Sendable {
     try await self.sayHello(
       request: request,
@@ -301,9 +309,11 @@ extension HelloWorld.ClientProtocol {
     _ message: HelloRequest,
     metadata: GRPCCore.Metadata = [:],
     options: GRPCCore.CallOptions = .defaults,
-    onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<HelloResponse>) async throws -> Result = { response in
-      try response.message
-    }
+    onResponse handleResponse:
+      @Sendable @escaping (GRPCCore.ClientResponse<HelloResponse>) async throws -> Result = {
+        response in
+        try response.message
+      }
   ) async throws -> Result where Result: Sendable {
     let request = GRPCCore.ClientRequest<HelloRequest>(
       message: message,

@@ -212,10 +212,11 @@ extension HTTP2ServerTransport {
     }
 
     public func listen(
-      streamHandler: @escaping @Sendable (
-        _ stream: RPCStream<Inbound, Outbound>,
-        _ context: ServerContext
-      ) async -> Void
+      streamHandler:
+        @escaping @Sendable (
+          _ stream: RPCStream<Inbound, Outbound>,
+          _ context: ServerContext
+        ) async -> Void
     ) async throws {
       try await self.underlyingTransport.listen(streamHandler: streamHandler)
     }
