@@ -133,8 +133,12 @@ extension HTTP2ClientTransport {
           switch self.state.withLock({ $0.connectionClosed() }) {
           case .none:
             ()
-          case .failQueuedStreams:
-            ()
+          case .failQueuedStreams(let continuations):
+            for continuation in continuations {
+              continuation.resume(
+                throwing: RPCError(code: .unavailable, message: "The channel was closed")
+              )
+            }
           }
 
         case .shutDown:
@@ -194,7 +198,15 @@ extension HTTP2ClientTransport {
             case .resume(.failure(let error)):
               continuation.resume(throwing: error)
             case .none:
-              ()
+              if Task.isCancelled {
+                let action = self.state.withLock { $0.dequeue(id: id) }
+                switch action {
+                case .dequeued(let continuation):
+                  continuation.resume(throwing: CancellationError())
+                case .none:
+                  ()
+                }
+              }
             }
           }
         } onCancel: {
