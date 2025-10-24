@@ -219,26 +219,29 @@ extension HTTP2ClientTransport.WrappedChannel.State {
 
   enum ConnectionClosedAction {
     case none
-    case failQueuedStreams
+    case failQueuedStreams([CheckedContinuation<NIOHTTP2Handler.AsyncStreamMultiplexer<Void>, any Error>])
   }
 
   mutating func connectionClosed() -> ConnectionClosedAction {
     switch consume self {
-    case .idle:
+    case .idle(var state):
       self = .shutDown
-      return .none
+      let continuations = state.queue.removeAll()
+      return .failQueuedStreams(continuations)
 
-    case .configuring:
+    case .configuring(var state):
       self = .shutDown
-      return .failQueuedStreams
+      let continuations = state.queue.removeAll()
+      return .failQueuedStreams(continuations)
 
-    case .configured:
+    case .configured(var state):
       self = .shutDown
-      return .failQueuedStreams
+      let continuations = state.queue.removeAll()
+      return .failQueuedStreams(continuations)
 
     case .ready:
       self = .shutDown
-      return .failQueuedStreams
+      return .none
 
     case .shuttingDown:
       self = .shuttingDown

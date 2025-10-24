@@ -337,11 +337,6 @@ extension GRPCChannel {
     let id = QueueEntryID()
     return try await withTaskCancellationHandler {
       try await withCheckedThrowingContinuation { continuation in
-        if Task.isCancelled {
-          continuation.resume(throwing: CancellationError())
-          return
-        }
-
         // Explicitly adding the types works around: https://github.com/swiftlang/swift/issues/78112
         let (enqueued, loadBalancer) = self.state.withLock { state -> (Bool, LoadBalancer?) in
           state.enqueue(continuation: continuation, waitForReady: waitForReady, id: id)
@@ -356,6 +351,11 @@ extension GRPCChannel {
         if !enqueued {
           let error = RPCError(code: .unavailable, message: "channel is shutdown")
           continuation.resume(throwing: error)
+        } else if Task.isCancelled {
+          let dequeued = self.state.withLock { state in
+            state.dequeueContinuation(id: id)
+          }
+          dequeued?.resume(throwing: CancellationError())
         }
       }
     } onCancel: {
