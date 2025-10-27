@@ -354,6 +354,17 @@ extension HTTP2ClientTransport.Posix.TransportSecurity {
     /// How to verify the server certificate, if one is presented.
     public var serverCertificateVerification: TLSConfig.CertificateVerification
 
+    /// Override the certificate verification with a custom callback that must return the verified certificate chain on success.
+    /// Note: The callback is only used when `serverCertificateVerification` is *not* set to `noVerification`!
+    @available(gRPCSwiftNIOTransport 2.3, *)
+    public var customVerificationCallback:
+      (
+        @Sendable (
+          _ certificates: [NIOSSLCertificate],
+          _ promise: EventLoopPromise<NIOSSLVerificationResultWithMetadata>
+        ) -> Void
+      )?
+
     /// The trust roots to be used when verifying server certificates.
     public var trustRoots: TLSConfig.TrustRootsSource
 
