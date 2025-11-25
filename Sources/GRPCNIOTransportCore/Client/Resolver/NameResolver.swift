@@ -17,16 +17,102 @@
 public import GRPCCore
 
 /// A name resolver can provide resolved addresses and service configuration values over time.
+///
+/// ## Update modes
+///
+/// Resolvers may be **push-based** or **pull-based**:
+///
+/// - **Push-based resolvers** (``UpdateMode-swift.struct/push``): Addresses are pushed to the
+///   resolver by an external source (e.g., file watcher, service discovery subscription). The
+///   channel subscribes to changes by awaiting new values in a loop.
+///
+/// - **Pull-based resolvers** (``UpdateMode-swift.struct/pull``): Addresses are resolved on-demand.
+///   The channel requests new results as and when needed (e.g., after receiving a `GOAWAY` from
+///   the server) by calling `next()`. Each `next()` call should attempt resolution.
+///
+/// ## Resolver semantics
+///
+/// Resolvers must follow these semantics for correct behavior.
+///
+/// ### Returning endpoints
+///
+/// Return a ``NameResolutionResult`` with a non-empty `endpoints` array when resolution succeeds.
+/// The channel will create or update its load balancer with the new endpoints.
+///
+/// - **Push-based resolvers** should push updates whenever the endpoint list changes.
+///
+/// - **Pull-based resolvers** should return the current endpoint list each time `next()` is called.
+///
+/// ### Error handling
+///
+/// When resolution fails (e.g., DNS timeout, network unreachable, service discovery unavailable),
+/// resolvers may throw an error. If the resolver throws errors then it **must** be
+/// **re-iterable**: calling `makeAsyncIterator()` multiple times must return independent iterators
+/// that can each attempt resolution.
+///
+/// After an iterator throws, the channel will:
+/// - Keep using the last known good endpoints (if any exist)
+/// - Wait (with exponential backoff)
+/// - Create a new iterator by calling `makeAsyncIterator()` and retry
+/// - New RPCs will be failed when the next resolution attempt fails (unless `waitForReady`
+///   is `true`)
+///
+/// ### Empty endpoint lists
+///
+/// Returning a ``NameResolutionResult`` with an empty `endpoints` array indicates that
+/// resolution succeeded but no backends are currently available. The channel will:
+/// - Ignore the empty result and keep using last known good endpoints (if possible)
+/// - Continue listening for the next update (but will not actively retry)
+///
+/// Returning an empty endpoint list is discouraged. Throwing an error is preferred as it trigger
+/// a retry and the channel will eventually recover.
+///
+/// ### Sequence completion
+///
+/// When an iterator completes (returns `nil`), the channel treats this the same as an error:
+/// it will wait with exponential backoff and create a new iterator by calling
+/// `makeAsyncIterator()` again.
+///
+/// - **Push-based resolvers**: If the external source closes the subscription cleanly
+///   (e.g., service discovery server restart, watch stream closes), the iterator may return nil.
+///   The channel will re-establish a fresh subscription by creating a new iterator.
+///
+/// - **Pull-based resolvers**: Should not return nil. Each `next()` call should either return
+///   a result or throw an error.
+///
+/// The channel stops consuming from the resolver when shutting down. For **push-based** resolvers,
+/// the channel will cancel the task iterating the resolver. When an iterator throws a
+/// `CancellationError`, the channel will **not** create a new iterator (as shutdown is in
+/// progress).
+///
+/// ## Resolver Patterns
+///
+/// ### Push based
+///
+/// **When to use**: Consuming subscription based external sources like service discovery.
+///
+/// - `makeAsyncIterator()`: Each call establishes a new subscription to the external source.
+/// - `next()`: Yields updates from the subscription. Throws when the subscription fails.
+///   May return `nil` when the source closes cleanly (e.g., server restart, connection closed).
+/// - Error handling: Throw errors on subscription failure. Return nil on clean closure.
+///   The channel will create a new iterator after exponential backoff in either case. Must
+///   throw `CancellationError` when cancelled.
+///
+/// ### Pull based
+///
+/// **When to use**: Static addresses that never change or on-demand resolution (e.g., DNS lookup).
+///
+/// - `makeAsyncIterator()`: Each call returns a fresh, independent iterator.
+/// - `next()`: Attempts resolution each time it's called. Throws on resolution failure
+///   (e.g., DNS timeout, network unreachable).
+/// - Error handling: Throw errors on resolution failure. The channel will create a new iterator
+///   after exponential backoff.
 @available(gRPCSwiftNIOTransport 2.0, *)
 public struct NameResolver: Sendable {
   /// A sequence of name resolution results.
   ///
-  /// Resolvers may be push or pull based. Resolvers with the ``UpdateMode-swift.struct/push``
-  /// update mode have addresses pushed to them by an external source and you should subscribe
-  /// to changes in addresses by awaiting for new values in a loop.
-  ///
-  /// Resolvers with the ``UpdateMode-swift.struct/pull`` update mode shouldn't be subscribed to,
-  /// instead you should create an iterator and ask for new results as and when necessary.
+  /// See ``NameResolver`` for the expected behavior of this sequence, including update modes,
+  /// error handling, empty endpoint lists, and sequence completion semantics.
   public var names: RPCAsyncSequence<NameResolutionResult, any Error>
 
   /// How ``names`` is updated and should be consumed.
