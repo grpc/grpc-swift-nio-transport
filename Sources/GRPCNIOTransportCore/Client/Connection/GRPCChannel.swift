@@ -60,7 +60,7 @@ package final class GRPCChannel: ClientTransport {
   private let authority: String?
 
   /// The connection backoff configuration used by the subchannel when establishing a connection.
-  private let backoff: ConnectionBackoff
+  private let backoff: Backoff
 
   /// The default compression algorithm used for requests.
   private let defaultCompression: CompressionAlgorithm
@@ -98,7 +98,7 @@ package final class GRPCChannel: ClientTransport {
       self.authority = nil
     }
 
-    self.backoff = ConnectionBackoff(
+    self.backoff = Backoff(
       initial: config.backoff.initial,
       max: config.backoff.max,
       multiplier: config.backoff.multiplier,

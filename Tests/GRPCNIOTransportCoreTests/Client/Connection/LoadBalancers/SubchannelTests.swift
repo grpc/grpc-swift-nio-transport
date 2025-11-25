@@ -563,7 +563,7 @@ final class SubchannelTests: XCTestCase {
   private func makeSubchannel(
     addresses: [GRPCNIOTransportCore.SocketAddress],
     connector: any HTTP2Connector,
-    backoff: ConnectionBackoff? = nil
+    backoff: Backoff? = nil
   ) -> Subchannel {
     return Subchannel(
       endpoint: Endpoint(addresses: addresses),
@@ -579,19 +579,19 @@ final class SubchannelTests: XCTestCase {
   private func makeSubchannel(
     address: GRPCNIOTransportCore.SocketAddress,
     connector: any HTTP2Connector,
-    backoff: ConnectionBackoff? = nil
+    backoff: Backoff? = nil
   ) -> Subchannel {
     self.makeSubchannel(addresses: [address], connector: connector, backoff: backoff)
   }
 }
 
 @available(gRPCSwiftNIOTransport 2.0, *)
-extension ConnectionBackoff {
+extension Backoff {
   static func fixed(at interval: Duration, jitter: Double = 0.0) -> Self {
     return Self(initial: interval, max: interval, multiplier: 1.0, jitter: jitter)
   }
 
   static var defaults: Self {
-    ConnectionBackoff(initial: .seconds(10), max: .seconds(120), multiplier: 1.6, jitter: 1.2)
+    Backoff(initial: .seconds(10), max: .seconds(120), multiplier: 1.6, jitter: 1.2)
   }
 }
