@@ -852,6 +852,200 @@ final class GRPCChannelTests: XCTestCase {
       group.cancelAll()
     }
   }
+
+  private func testMakeStreamWhenFirstResolveFails(isNil: Bool) async throws {
+    // The resolution throws/returns nil the first time it's called, so the channel never has a
+    // load balancer, and RPCs shouldn't be queued indefinitely (unless wait for ready is enabled).
+    struct ResolutionFailed: Error {}
+
+    let channel = GRPCChannel(
+      resolver: isNil ? .empty : .static(throwing: ResolutionFailed()),
+      connector: .never,
+      config: .defaults,
+      defaultServiceConfig: ServiceConfig()
+    )
+
+    try await withThrowingDiscardingTaskGroup { group in
+      group.addTask {
+        await channel.connect()
+      }
+
+      await XCTAssertThrowsErrorAsync(ofType: RPCError.self) {
+        try await channel.withStream(descriptor: .echoGet, options: .defaults) { stream, _ in
+          XCTFail("Stream created unexpectedly")
+        }
+      } errorHandler: { error in
+        XCTAssertEqual(error.code, .unavailable)
+        if isNil {
+          XCTAssertNil(error.cause)
+        } else {
+          XCTAssert(error.cause is ResolutionFailed)
+        }
+      }
+
+      group.cancelAll()
+    }
+  }
+
+  func testMakeStreamWhenResolverThrows() async throws {
+    try await self.testMakeStreamWhenFirstResolveFails(isNil: false)
+  }
+
+  func testMakeStreamWhenResolverReturnsNil() async throws {
+    try await self.testMakeStreamWhenFirstResolveFails(isNil: true)
+  }
+
+  func testMakeStreamWhenResolverFailsThenLaterSucceeds(isNil: Bool) async throws {
+    // When wait for ready is enabled, and the first resolution result is an error/nil then the
+    // RPC should be queued until resolution succeeds (or the RPC times out).
+    // When wait for ready is enabled, and the first resolution result is an error then the RPC
+    // should be queued until resolution succeeds (or the RPC times out).
+    let server = TestServer(eventLoopGroup: .singletonMultiThreadedEventLoopGroup)
+    let address = try await server.bind()
+    let endpoint = Endpoint(addresses: [address])
+    struct ResolutionFailed: Error {}
+
+    let channel = GRPCChannel(
+      resolver: .composedOf(
+        resolvers: [
+          // First fail/return nil.
+          RPCAsyncSequence(
+            wrapping: ConstantAsyncSequence(
+              result: isNil ? nil : .failure(ResolutionFailed())
+            )
+          ),
+          // Then succeed.
+          RPCAsyncSequence(
+            wrapping: ConstantAsyncSequence(
+              element: NameResolutionResult(endpoints: [endpoint], serviceConfig: nil)
+            )
+          )
+        ]
+      ),
+      connector: .posix(),
+      config: .defaults,
+      defaultServiceConfig: ServiceConfig()
+    )
+
+    try await withThrowingDiscardingTaskGroup { group in
+      group.addTask {
+        await channel.connect()
+      }
+
+      group.addTask {
+        try? await server.run(.echo)
+      }
+
+      // Wait-for-ready is necessary because the first resolver will fail, this will wait for
+      // the second resolution attempt.
+      var options = CallOptions.defaults
+      options.waitForReady = true
+      try await channel.withStream(descriptor: .echoGet, options: options) { stream, _ in
+        try await stream.outbound.write(.metadata([:]))
+        try await stream.outbound.write(.message(GRPCNIOTransportBytes(repeating: 0, count: 1)))
+        await stream.outbound.finish()
+        let parts = try await stream.inbound.reduce(into: []) { $0.append($1) }
+        XCTAssertEqual(parts.count, 3)
+      }
+
+      channel.beginGracefulShutdown()
+      group.cancelAll()
+    }
+  }
+
+  func testMakeStreamWhenResolverThrowsThenLaterSucceeds() async throws {
+    try await self.testMakeStreamWhenResolverFailsThenLaterSucceeds(isNil: false)
+  }
+
+  func testMakeStreamWhenResolverReturnsNilThenLaterSucceeds() async throws {
+    try await self.testMakeStreamWhenResolverFailsThenLaterSucceeds(isNil: true)
+  }
+
+  func testMakeStreamWhenResolverSucceedsThenFailsThenSucceeds(isNil: Bool) async throws {
+    // Verify that old addresses are used when the resolver throws/returns nil and that eventually
+    // a new resolver is used and that the channel flips over to using it.
+    let server1 = TestServer(eventLoopGroup: .singletonMultiThreadedEventLoopGroup)
+    let address1 = try await server1.bind()
+    let server2 = TestServer(eventLoopGroup: .singletonMultiThreadedEventLoopGroup)
+    let address2 = try await server2.bind()
+
+    let resolvers = [
+      // This will provide an address for server 1 and then throw
+      AsyncThrowingStream.makeStream(of: NameResolutionResult.self),
+      // This will provide an address for server 2
+      AsyncThrowingStream.makeStream(of: NameResolutionResult.self),
+    ]
+
+    let channel = GRPCChannel(
+      resolver: .composedOf(
+        resolvers: resolvers.map { RPCAsyncSequence(wrapping: $0.stream) },
+        updateMode: .push
+      ),
+      connector: .posix(),
+      config: .defaults,
+      defaultServiceConfig: ServiceConfig()
+    )
+
+    try await withThrowingDiscardingTaskGroup { group in
+      group.addTask { await channel.connect() }
+      group.addTask { try? await server1.run(.echo) }
+      group.addTask { try? await server2.run(.echo) }
+
+      func doAnRPC() async throws {
+        try await channel.withStream(descriptor: .echoGet, options: .defaults) { stream, _ in
+          try await stream.outbound.write(.metadata([:]))
+          try await stream.outbound.write(.message(GRPCNIOTransportBytes(repeating: 0, count: 1)))
+          await stream.outbound.finish()
+          let parts = try await stream.inbound.reduce(into: []) { $0.append($1) }
+          XCTAssertEqual(parts.count, 3)
+        }
+      }
+
+      // Push the endpoint for server 1 and do an RPC.
+      resolvers[0].continuation.yield(
+        NameResolutionResult(endpoints: [Endpoint(address1)], serviceConfig: nil)
+      )
+      try await doAnRPC()
+      XCTAssertEqual(server1.clients.count, 1)
+      XCTAssertEqual(server2.clients.count, 0)
+
+      // Push an error/nil to the resolver. The LB will continue using the last known good address
+      // but will now roll over to a new resolver.
+      if isNil {
+        resolvers[0].continuation.finish()
+      } else {
+        struct ResolutionFailed: Error {}
+        resolvers[0].continuation.finish(throwing: ResolutionFailed())
+      }
+      try await doAnRPC()
+      XCTAssertEqual(server1.clients.count, 1)
+      XCTAssertEqual(server2.clients.count, 0)
+
+      // Push the address for server 2.
+      resolvers[1].continuation.yield(
+        NameResolutionResult(endpoints: [Endpoint(address2)], serviceConfig: nil)
+      )
+
+      // The LB should rollver over to the new endpoint soon after getting the new address and
+      // then drop the old connection.
+      let rolledOver = try await Task.poll(every: .milliseconds(50)) {
+        server1.clients.count == 0 && server2.clients.count == 1
+      }
+      XCTAssertTrue(rolledOver)
+      try await doAnRPC()
+
+      channel.beginGracefulShutdown()
+      group.cancelAll()
+    }
+  }
+
+  func testMakeStreamWhenResolverSucceedsThenThrowsThenSucceeds() async throws {
+    try await self.testMakeStreamWhenResolverSucceedsThenFailsThenSucceeds(isNil: false)
+  }
+
+  func testMakeStreamWhenResolverSucceedsThenReturnsNilThenSucceeds() async throws {
+    try await self.testMakeStreamWhenResolverSucceedsThenFailsThenSucceeds(isNil: true)
+  }
 }
 
 @available(gRPCSwiftNIOTransport 2.0, *)
@@ -860,6 +1054,7 @@ extension GRPCChannel.Config {
     Self(
       http2: .defaults,
       backoff: .defaults,
+      resolverBackoff: .defaults,
       connection: .defaults,
       compression: .defaults
     )
