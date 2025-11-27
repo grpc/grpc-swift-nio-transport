@@ -81,4 +81,61 @@ struct HTTP2TransportRegressionTests {
       #endif
     }
   }
+
+  @Test
+  @available(gRPCSwiftNIOTransport 2.2, *)
+  func throwingResolverDoesNotShutdownClient() async throws {
+    // This is a test for: https://github.com/grpc/grpc-swift-2/issues/25
+    //
+    // The client gets wedged if a working channel re-resolves and the resolver throws an error.
+    struct CustomResolver: NameResolverFactory {
+      struct Target: ResolvableTarget {
+        let stream: AsyncThrowingStream<NameResolutionResult, any Error>
+      }
+
+      func resolver(for target: Target) -> NameResolver {
+        NameResolver(names: RPCAsyncSequence(wrapping: target.stream), updateMode: .push)
+      }
+    }
+
+    var registry = NameResolverRegistry()
+    registry.registerFactory(CustomResolver())
+
+    try await withGRPCServer(
+      transport: .http2NIOPosix(
+        address: .ipv4(host: "127.0.0.1", port: 0),
+        transportSecurity: .plaintext
+      ),
+      services: [HelloWorldService()]
+    ) { server in
+      let address = try #require(try await server.listeningAddress)
+      let resolver = AsyncThrowingStream.makeStream(of: NameResolutionResult.self)
+
+      // Send in the server address.
+      resolver.continuation.yield(
+        NameResolutionResult(endpoints: [Endpoint(addresses: [address])], serviceConfig: nil)
+      )
+
+      try await withGRPCClient(
+        transport: .http2NIOPosix(
+          target: CustomResolver.Target(stream: resolver.stream),
+          transportSecurity: .plaintext,
+          resolverRegistry: registry
+        )
+      ) { rawClient in
+        let helloWorld = HelloWorld.Client(wrapping: rawClient)
+        let reply1 = try await helloWorld.sayHello(HelloRequest(name: "World"))
+        #expect(reply1.message == "Hello, World!")
+
+        // Push a failure to the resolver.
+        struct ResolutionFailure: Error {}
+        resolver.continuation.finish(throwing: ResolutionFailure())
+
+        // Wait a moment for the error to propagate.
+        try await Task.sleep(for: .milliseconds(50))
+        let reply2 = try await helloWorld.sayHello(HelloRequest(name: "World"))
+        #expect(reply2.message == "Hello, World!")
+      }
+    }
+  }
 }
