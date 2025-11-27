@@ -919,7 +919,7 @@ final class GRPCChannelTests: XCTestCase {
             wrapping: ConstantAsyncSequence(
               element: NameResolutionResult(endpoints: [endpoint], serviceConfig: nil)
             )
-          )
+          ),
         ]
       ),
       connector: .posix(),
