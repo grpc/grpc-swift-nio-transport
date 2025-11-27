@@ -229,6 +229,10 @@ extension HTTP2ClientTransport.Posix {
     /// Configuration for backoff used when establishing a connection.
     public var backoff: HTTP2ClientTransport.Config.Backoff
 
+    /// Configuration for backoff used when resolving names.
+    @available(gRPCSwiftNIOTransport 2.4, *)
+    package var resolverBackoff: HTTP2ClientTransport.Config.Backoff
+
     /// Configuration for connection management.
     public var connection: HTTP2ClientTransport.Config.Connection
 
@@ -255,9 +259,28 @@ extension HTTP2ClientTransport.Posix {
       compression: HTTP2ClientTransport.Config.Compression,
       channelDebuggingCallbacks: HTTP2ClientTransport.Config.ChannelDebuggingCallbacks
     ) {
+      self.init(
+        http2: http2,
+        backoff: backoff,
+        resolverBackoff: Self.defaults.resolverBackoff,
+        connection: connection,
+        compression: compression,
+        channelDebuggingCallbacks: channelDebuggingCallbacks
+      )
+    }
+
+    private init(
+      http2: HTTP2ClientTransport.Config.HTTP2,
+      backoff: HTTP2ClientTransport.Config.Backoff,
+      resolverBackoff: HTTP2ClientTransport.Config.Backoff,
+      connection: HTTP2ClientTransport.Config.Connection,
+      compression: HTTP2ClientTransport.Config.Compression,
+      channelDebuggingCallbacks: HTTP2ClientTransport.Config.ChannelDebuggingCallbacks
+    ) {
       self.http2 = http2
       self.connection = connection
       self.backoff = backoff
+      self.resolverBackoff = resolverBackoff
       self.compression = compression
       self.channelDebuggingCallbacks = channelDebuggingCallbacks
     }
@@ -277,6 +300,7 @@ extension HTTP2ClientTransport.Posix {
       var config = Self(
         http2: .defaults,
         backoff: .defaults,
+        resolverBackoff: .defaults,
         connection: .defaults,
         compression: .defaults,
         channelDebuggingCallbacks: .defaults
@@ -293,6 +317,7 @@ extension GRPCChannel.Config {
     self.init(
       http2: posix.http2,
       backoff: posix.backoff,
+      resolverBackoff: posix.backoff,
       connection: posix.connection,
       compression: posix.compression
     )

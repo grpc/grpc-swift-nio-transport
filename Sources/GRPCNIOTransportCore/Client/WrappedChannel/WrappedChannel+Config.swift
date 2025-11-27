@@ -105,8 +105,10 @@ extension GRPCChannel.Config {
   init(_ config: HTTP2ClientTransport.WrappedChannel.Config) {
     self.init(
       http2: config.http2,
-      // This won't be used, the channel is already connected and can never reconnect.
+      // This (and the resolver backoff) won't be used, the channel is already connected and can
+      // never reconnect.
       backoff: .defaults,
+      resolverBackoff: .defaults,
       connection: config.connection,
       compression: config.compression
     )
