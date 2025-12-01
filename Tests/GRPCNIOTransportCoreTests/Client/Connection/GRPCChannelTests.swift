@@ -856,8 +856,6 @@ final class GRPCChannelTests: XCTestCase {
   private func testMakeStreamWhenFirstResolveFails(isNil: Bool) async throws {
     // The resolution throws/returns nil the first time it's called, so the channel never has a
     // load balancer, and RPCs shouldn't be queued indefinitely (unless wait for ready is enabled).
-    struct ResolutionFailed: Error {}
-
     let channel = GRPCChannel(
       resolver: isNil ? .empty : .static(throwing: ResolutionFailed()),
       connector: .never,
@@ -903,7 +901,6 @@ final class GRPCChannelTests: XCTestCase {
     let server = TestServer(eventLoopGroup: .singletonMultiThreadedEventLoopGroup)
     let address = try await server.bind()
     let endpoint = Endpoint(addresses: [address])
-    struct ResolutionFailed: Error {}
 
     let channel = GRPCChannel(
       resolver: .composedOf(
@@ -1014,7 +1011,6 @@ final class GRPCChannelTests: XCTestCase {
       if isNil {
         resolvers[0].continuation.finish()
       } else {
-        struct ResolutionFailed: Error {}
         resolvers[0].continuation.finish(throwing: ResolutionFailed())
       }
       try await doAnRPC()
@@ -1047,6 +1043,8 @@ final class GRPCChannelTests: XCTestCase {
     try await self.testMakeStreamWhenResolverSucceedsThenFailsThenSucceeds(isNil: true)
   }
 }
+
+struct ResolutionFailed: Error {}
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCChannel.Config {
