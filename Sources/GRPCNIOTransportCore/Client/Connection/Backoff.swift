@@ -15,11 +15,20 @@
  */
 
 @available(gRPCSwiftNIOTransport 2.0, *)
-package struct ConnectionBackoff {
+package struct Backoff {
   package var initial: Duration
   package var max: Duration
   package var multiplier: Double
   package var jitter: Double
+
+  package init(_ backoff: HTTP2ClientTransport.Config.Backoff) {
+    self.init(
+      initial: backoff.initial,
+      max: backoff.max,
+      multiplier: backoff.multiplier,
+      jitter: backoff.jitter
+    )
+  }
 
   package init(initial: Duration, max: Duration, multiplier: Double, jitter: Double) {
     self.initial = initial
@@ -42,7 +51,7 @@ package struct ConnectionBackoff {
     private let multiplier: Double
     private let maxBackoffSeconds: Double
 
-    init(_ backoff: ConnectionBackoff) {
+    init(_ backoff: Backoff) {
       self.isInitial = true
       self.currentBackoffSeconds = Self.seconds(from: backoff.initial)
       self.jitter = backoff.jitter

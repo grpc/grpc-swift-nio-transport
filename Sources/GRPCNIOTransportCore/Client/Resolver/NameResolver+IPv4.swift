@@ -25,10 +25,12 @@ extension ResolvableTargets {
   /// separate ``Endpoint`` for each address.
   public struct IPv4: ResolvableTarget, Sendable {
     /// The IPv4 addresses.
+    ///
+    /// This array must not be empty.
     public var addresses: [SocketAddress.IPv4]
 
     /// Create a new IPv4 target.
-    /// - Parameter addresses: The IPv4 addresses.
+    /// - Parameter addresses: The IPv4 addresses. Must not be empty.
     public init(addresses: [SocketAddress.IPv4]) {
       debugOnly {
         for address in addresses {
