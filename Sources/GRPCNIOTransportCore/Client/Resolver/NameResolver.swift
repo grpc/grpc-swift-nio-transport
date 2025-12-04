@@ -64,7 +64,7 @@ public import GRPCCore
 /// - Ignore the empty result and keep using last known good endpoints (if possible)
 /// - Continue listening for the next update (but will not actively retry)
 ///
-/// Returning an empty endpoint list is discouraged. Throwing an error is preferred as it trigger
+/// Returning an empty endpoint list is discouraged. Throwing an error is preferred as it will trigger
 /// a retry and the channel will eventually recover.
 ///
 /// ### Sequence completion
