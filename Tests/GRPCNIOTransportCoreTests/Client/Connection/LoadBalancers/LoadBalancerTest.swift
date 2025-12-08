@@ -29,7 +29,7 @@ enum LoadBalancerTest {
   static func pickFirst(
     servers serverCount: Int,
     connector: any HTTP2Connector,
-    backoff: ConnectionBackoff = .defaults,
+    backoff: Backoff = .defaults,
     timeout: Duration = .seconds(10),
     function: String = #function,
     handleEvent: @escaping @Sendable (Context, LoadBalancerEvent) async throws -> Void,
@@ -56,7 +56,7 @@ enum LoadBalancerTest {
   static func roundRobin(
     servers serverCount: Int,
     connector: any HTTP2Connector,
-    backoff: ConnectionBackoff = .defaults,
+    backoff: Backoff = .defaults,
     timeout: Duration = .seconds(10),
     function: String = #function,
     handleEvent: @escaping @Sendable (Context, LoadBalancerEvent) async throws -> Void,
