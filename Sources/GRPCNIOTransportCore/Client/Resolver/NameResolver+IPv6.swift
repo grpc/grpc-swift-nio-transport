@@ -19,16 +19,18 @@ internal import NIOCore
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ResolvableTargets {
-  /// A resolvable target for IPv4 addresses.
+  /// A resolvable target for IPv6 addresses.
   ///
-  /// IPv4 addresses can be resolved by the ``NameResolvers/IPv6`` resolver which creates a
+  /// IPv6 addresses can be resolved by the ``NameResolvers/IPv6`` resolver which creates a
   /// separate ``Endpoint`` for each address.
   public struct IPv6: ResolvableTarget, Sendable {
     /// The IPv6 addresses.
+    ///
+    /// This array must not be empty.
     public var addresses: [SocketAddress.IPv6]
 
     /// Create a new IPv6 target.
-    /// - Parameter addresses: The IPv6 addresses.
+    /// - Parameter addresses: The IPv6 addresses. Must not be empty.
     public init(addresses: [SocketAddress.IPv6]) {
       debugOnly {
         for address in addresses {

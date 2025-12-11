@@ -115,7 +115,7 @@ package final class RoundRobinLoadBalancer: Sendable {
   private let authority: String?
 
   /// Connection backoff configuration.
-  private let backoff: ConnectionBackoff
+  private let backoff: Backoff
 
   /// The default compression algorithm to use. Can be overridden on a per-call basis.
   private let defaultCompression: CompressionAlgorithm
@@ -129,7 +129,7 @@ package final class RoundRobinLoadBalancer: Sendable {
   package init(
     connector: any HTTP2Connector,
     authority: String?,
-    backoff: ConnectionBackoff,
+    backoff: Backoff,
     defaultCompression: CompressionAlgorithm,
     enabledCompression: CompressionAlgorithmSet
   ) {

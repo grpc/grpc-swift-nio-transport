@@ -89,7 +89,7 @@ package final class Subchannel: Sendable {
   private let authority: String?
 
   /// The connection backoff configuration used by the subchannel when establishing a connection.
-  private let backoff: ConnectionBackoff
+  private let backoff: Backoff
 
   /// The default compression algorithm used for requests.
   private let defaultCompression: CompressionAlgorithm
@@ -102,7 +102,7 @@ package final class Subchannel: Sendable {
     id: SubchannelID,
     connector: any HTTP2Connector,
     authority: String?,
-    backoff: ConnectionBackoff,
+    backoff: Backoff,
     defaultCompression: CompressionAlgorithm,
     enabledCompression: CompressionAlgorithmSet
   ) {
@@ -437,7 +437,7 @@ extension Subchannel {
       var connection: Connection
       let addresses: [SocketAddress]
       var addressIterator: Array<SocketAddress>.Iterator
-      var backoff: ConnectionBackoff.Iterator
+      var backoff: Backoff.Iterator
     }
 
     struct Connected {
@@ -486,7 +486,7 @@ extension Subchannel {
       to addresses: [SocketAddress],
       using connector: any HTTP2Connector,
       authority: String?,
-      backoff: ConnectionBackoff,
+      backoff: Backoff,
       defaultCompression: CompressionAlgorithm,
       enabledCompression: CompressionAlgorithmSet
     ) -> Connection? {

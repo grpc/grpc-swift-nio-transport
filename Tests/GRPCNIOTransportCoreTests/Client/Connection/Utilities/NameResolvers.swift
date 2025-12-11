@@ -16,9 +16,17 @@
 
 import GRPCCore
 import GRPCNIOTransportCore
+import Synchronization
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension NameResolver {
+  static var empty: Self {
+    return NameResolver(
+      names: RPCAsyncSequence(wrapping: ConstantAsyncSequence(result: nil)),
+      updateMode: .pull
+    )
+  }
+
   static func `static`(
     endpoints: [Endpoint],
     serviceConfig: ServiceConfig? = nil
@@ -34,6 +42,13 @@ extension NameResolver {
     )
   }
 
+  static func `static`(throwing error: any Error) -> Self {
+    return NameResolver(
+      names: RPCAsyncSequence(wrapping: ConstantAsyncSequence(error: error)),
+      updateMode: .pull
+    )
+  }
+
   static func `dynamic`(
     updateMode: UpdateMode
   ) -> (Self, AsyncThrowingStream<NameResolutionResult, any Error>.Continuation) {
@@ -41,18 +56,68 @@ extension NameResolver {
     let resolver = NameResolver(names: RPCAsyncSequence(wrapping: stream), updateMode: updateMode)
     return (resolver, continuation)
   }
+
+  static func composedOf(
+    resolvers: [RPCAsyncSequence<NameResolutionResult, any Error>],
+    updateMode: UpdateMode = .pull
+  ) -> Self {
+    final class CompositeResolver: AsyncSequence, Sendable {
+      typealias Element = NameResolutionResult
+
+      private let resolvers: Mutex<[RPCAsyncSequence<NameResolutionResult, any Error>].Iterator>
+
+      init(resolvers: [RPCAsyncSequence<NameResolutionResult, any Error>]) {
+        self.resolvers = Mutex(resolvers.makeIterator())
+      }
+
+      func makeAsyncIterator() -> AsyncIterator {
+        if let resolver = self.resolvers.withLock({ $0.next() }) {
+          return AsyncIterator(iterator: resolver.makeAsyncIterator())
+        } else {
+          struct TooManyResolversUsed: Error {}
+          let constant = ConstantAsyncSequence<NameResolutionResult>(error: TooManyResolversUsed())
+          let fallback = RPCAsyncSequence(wrapping: constant)
+          return AsyncIterator(iterator: fallback.makeAsyncIterator())
+        }
+      }
+
+      struct AsyncIterator: AsyncIteratorProtocol {
+        typealias Element = NameResolutionResult
+
+        private var iterator: RPCAsyncSequence<NameResolutionResult, any Error>.AsyncIterator
+
+        init(iterator: RPCAsyncSequence<NameResolutionResult, any Error>.AsyncIterator) {
+          self.iterator = iterator
+        }
+
+        mutating func next() async throws -> NameResolutionResult? {
+          try Task.checkCancellation()
+          return try await self.iterator.next()
+        }
+      }
+    }
+
+    return NameResolver(
+      names: RPCAsyncSequence(wrapping: CompositeResolver(resolvers: resolvers)),
+      updateMode: updateMode
+    )
+  }
 }
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 struct ConstantAsyncSequence<Element: Sendable>: AsyncSequence, Sendable {
-  private let result: Result<Element, any Error>
+  private let result: Result<Element, any Error>?
 
   init(element: Element) {
-    self.result = .success(element)
+    self.init(result: .success(element))
   }
 
   init(error: any Error) {
-    self.result = .failure(error)
+    self.init(result: .failure(error))
+  }
+
+  init(result: Result<Element, any Error>?) {
+    self.result = result
   }
 
   func makeAsyncIterator() -> AsyncIterator {
@@ -60,14 +125,14 @@ struct ConstantAsyncSequence<Element: Sendable>: AsyncSequence, Sendable {
   }
 
   struct AsyncIterator: AsyncIteratorProtocol {
-    private let result: Result<Element, any Error>
+    private let result: Result<Element, any Error>?
 
-    fileprivate init(result: Result<Element, any Error>) {
+    fileprivate init(result: Result<Element, any Error>?) {
       self.result = result
     }
 
     func next() async throws -> Element? {
-      try self.result.get()
+      try self.result?.get()
     }
   }
 
