@@ -24,6 +24,9 @@ private import Android
 private import Glibc
 #elseif canImport(Musl)
 private import Musl
+#elseif canImport(WinSDK)
+import WinSDK
+import ucrt
 #else
 #error("The GRPCNIOTransportCore module was unable to identify your C library.")
 #endif
@@ -69,7 +72,11 @@ package enum DNSResolver {
     #else
     hints.ai_socktype = SOCK_STREAM
     #endif
+    #if os(Windows)
+    hints.ai_protocol = IPPROTO_TCP.rawValue
+    #else
     hints.ai_protocol = CInt(IPPROTO_TCP)
+    #endif
 
     let errorCode = getaddrinfo(host, String(port), &hints, &result)
 
@@ -119,17 +126,25 @@ package enum DNSResolver {
     return try presentationAddressBytes.withUnsafeMutableBufferPointer {
       (presentationAddressBytesPtr: inout UnsafeMutableBufferPointer<CChar>) throws -> String in
 
+      #if !os(Windows)
+      let length = socklen_t(length)
+      #else
+      let length = Int(length)
+      #endif
       // Convert
       let presentationAddressStringPtr = inet_ntop(
         family,
         addressPtr,
         presentationAddressBytesPtr.baseAddress!,
-        socklen_t(length)
+        length
       )
 
       if let presentationAddressStringPtr {
         return String(cString: presentationAddressStringPtr)
       } else {
+        #if os(Windows)
+        let errno = WSAGetLastError()
+        #endif
         throw Self.InetNetworkToPresentationError(errno: errno)
       }
     }
@@ -143,7 +158,11 @@ extension DNSResolver {
     package let description: String
 
     package init(code: CInt) {
+      #if os(Windows)
+      self.description = String(validatingCString: gai_strerrorA(code)) ?? "Unknown error: \(code)"
+      #else
       self.description = String(validatingCString: gai_strerror(code)) ?? "Unknown error: \(code)"
+      #endif
     }
   }
 }
@@ -171,7 +190,7 @@ extension SocketAddress.IPv4 {
       )
     }
 
-    self = .init(host: presentationAddress, port: Int(in_port_t(bigEndian: address.sin_port)))
+    self = .init(host: presentationAddress, port: Int(UInt16(bigEndian: address.sin_port)))
   }
 }
 
@@ -186,6 +205,6 @@ extension SocketAddress.IPv6 {
       )
     }
 
-    self = .init(host: presentationAddress, port: Int(in_port_t(bigEndian: address.sin6_port)))
+    self = .init(host: presentationAddress, port: Int(UInt16(bigEndian: address.sin6_port)))
   }
 }
