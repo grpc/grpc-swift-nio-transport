@@ -138,4 +138,16 @@ struct HTTP2TransportRegressionTests {
       }
     }
   }
+
+  @Test
+  @available(gRPCSwiftNIOTransport 2.2, *)
+  func testNeverStartingServerDoesNotCrash() async throws {
+    let transport = HTTP2ServerTransport.Posix(
+      address: .ipv4(host: "0.0.0.0", port: 5678),
+      transportSecurity: .plaintext
+    )
+
+    // This should not crash
+    _ = GRPCServer(transport: transport, services: [])
+  }
 }

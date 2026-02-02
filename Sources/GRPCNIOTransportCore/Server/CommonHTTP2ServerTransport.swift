@@ -153,6 +153,18 @@ package final class CommonHTTP2ServerTransport<
     self.transportSpecificContext = transportSpecificContext
   }
 
+  deinit {
+    // Fail the promise if this transport is deallocated without ever being started.
+    self.listeningAddressState.withLock { state in
+      switch state.close() {
+      case .failPromise(let promise, let error):
+        promise.fail(error)
+      case .doNothing:
+        ()
+      }
+    }
+  }
+
   package func listen(
     streamHandler:
       @escaping @Sendable (
