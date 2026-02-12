@@ -231,7 +231,7 @@ extension UnsafeMutablePointer<z_stream> {
   }
 
   func deflateBound(inputBytes: Int) -> Int {
-    let bound = CGRPCNIOTransportZlib_deflateBound(self, UInt(inputBytes))
+    let bound = CGRPCNIOTransportZlib_deflateBound(self, .init(inputBytes))
     return Int(bound)
   }
 
