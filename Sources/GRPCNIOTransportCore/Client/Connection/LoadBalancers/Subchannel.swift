@@ -309,6 +309,9 @@ extension Subchannel {
           .transientFailure(cause: error)
         )
       )
+      // Trigger name re-resolution so the resolver can fetch fresh addresses.
+      // Matches gRPC-Go behavior (clientconn.go: resolveNow after tryAllAddrs fails).
+      self.event.continuation.yield(.requiresNameResolution)
       group.addTask {
         do {
           try await Task.sleep(for: duration, tolerance: .zero)
