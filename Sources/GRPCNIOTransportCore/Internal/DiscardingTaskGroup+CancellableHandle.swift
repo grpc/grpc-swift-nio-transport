@@ -65,15 +65,15 @@ extension DiscardingTaskGroup {
 @available(gRPCSwiftNIOTransport 2.0, *)
 struct CancellableTaskHandle: Sendable {
   @usableFromInline
-  private(set) var continuation: AsyncStream<Void>.Continuation
+  var _continuation: AsyncStream<Void>.Continuation
 
   @inlinable
   init(continuation: AsyncStream<Void>.Continuation) {
-    self.continuation = continuation
+    self._continuation = continuation
   }
 
   @inlinable
   func cancel() {
-    self.continuation.finish()
+    self._continuation.finish()
   }
 }
