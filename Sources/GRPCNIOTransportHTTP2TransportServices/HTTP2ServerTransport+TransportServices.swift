@@ -74,7 +74,12 @@ extension HTTP2ServerTransport {
           }
           .bind(to: address) { channel in
             return channel.eventLoop.makeCompletedFuture {
-              try channel.pipeline.syncOperations.configureGRPCServerPipeline(
+              let sync = channel.pipeline.syncOperations
+
+              let waitForActive = WaitForActive(promise: channel.eventLoop.makePromise())
+              try sync.addHandler(waitForActive, name: "wait-for-active")
+
+              return try sync.configureGRPCServerPipeline(
                 channel: channel,
                 compressionConfig: self.config.compression,
                 connectionConfig: self.config.connection,

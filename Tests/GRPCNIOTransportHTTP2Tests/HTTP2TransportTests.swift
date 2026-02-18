@@ -23,6 +23,12 @@ import XCTest
 
 import protocol NIOCore.Channel
 
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
+
 @available(gRPCSwiftNIOTransport 2.0, *)
 final class HTTP2TransportTests: XCTestCase {
   // A combination of client and server transport kinds.
@@ -162,6 +168,13 @@ final class HTTP2TransportTests: XCTestCase {
 
     #if canImport(Network)
     case .transportServices:
+      // NIOTS requires the UDS path to not already exist so remove it if necessary.
+      if let uds = address.unixDomainSocket {
+        if FileManager.default.fileExists(atPath: uds.path) {
+          try? FileManager.default.removeItem(atPath: uds.path)
+        }
+      }
+
       let server = GRPCServer(
         transport: NIOServerTransport(
           .http2NIOTS(
