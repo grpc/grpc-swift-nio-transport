@@ -186,6 +186,18 @@ extension SocketAddress.IPv6 {
       )
     }
 
-    self = .init(host: presentationAddress, port: Int(in_port_t(bigEndian: address.sin6_port)))
+    // Preserve IPv6 scope ID (e.g., for link-local addresses like fe80::%eth0).
+    // getaddrinfo sets sin6_scope_id but inet_ntop doesn't include it in the string.
+    var host = presentationAddress
+    #if !os(Windows)
+    if address.sin6_scope_id != 0 {
+      var ifname = [CChar](repeating: 0, count: Int(IF_NAMESIZE))
+      if if_indextoname(address.sin6_scope_id, &ifname) != nil {
+        host = "\(presentationAddress)%\(String(cString: ifname))"
+      }
+    }
+    #endif
+
+    self = .init(host: host, port: Int(in_port_t(bigEndian: address.sin6_port)))
   }
 }
