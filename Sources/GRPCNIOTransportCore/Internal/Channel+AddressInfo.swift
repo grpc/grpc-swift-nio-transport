@@ -37,7 +37,13 @@ extension Channel {
     udsFallback: NIOCore.SocketAddress?
   ) -> String {
     guard let address else {
-      return "<unknown>"
+      switch udsFallback {
+      case .none, .v4, .v6:
+        return "<unknown>"
+      case .unixDomainSocket:
+        // '!' is safe, UDS always has a path.
+        return "unix:\(udsFallback!.pathname!)"
+      }
     }
 
     switch address {

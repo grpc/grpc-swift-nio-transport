@@ -224,8 +224,15 @@ package final class CommonHTTP2ServerTransport<
         _ context: ServerContext
       ) async -> Void
   ) async throws {
+    // In NIOTS the local/remote address is set just before channel becomes fires, so wait until
+    // that has happened (if it hasn't already).
+    if !connection.channel.isActive {
+      try? await connection.channel.waitUntilActive().get()
+    }
+
     let remotePeer = connection.channel.remoteAddressInfo
     let localPeer = connection.channel.localAddressInfo
+
     try await connection.executeThenClose { inbound, _ in
       await withDiscardingTaskGroup { group in
         group.addTask {
