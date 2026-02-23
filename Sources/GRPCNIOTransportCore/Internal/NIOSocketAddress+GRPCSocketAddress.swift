@@ -17,15 +17,14 @@
 private import GRPCCore
 package import NIOCore
 
-#if canImport(Glibc)
-  import Glibc
-  import CNIOLinux
+#if canImport(Darwin)
+  private import Darwin
+#elseif canImport(Glibc)
+  private import Glibc
 #elseif canImport(Musl)
-  import Musl
-  import CNIOLinux
-#elseif canImport(Darwin)
-  import Darwin
+  private import Musl
 #endif
+private import CNIOLinux
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCNIOTransportCore.SocketAddress {
@@ -38,27 +37,27 @@ extension GRPCNIOTransportCore.SocketAddress {
       )
 
     case .v6(let address):
+      var host = address.host
       #if !os(Windows)
       // Preserve IPv6 scope ID (e.g., for link-local addresses) which inet_ntop drops.
       // The raw sockaddr_in6 stores sin6_scope_id; reconstruct the scoped host string.
-      var host = address.host
       let scopeID = address.address.sin6_scope_id
-      if scopeID != 0 && !host.contains("%") {
-        var ifname = [CChar](repeating: 0, count: Int(IF_NAMESIZE))
-        if if_indextoname(scopeID, &ifname) != nil {
-          host = "\(host)%\(String(cString: ifname))"
+      if scopeID != 0 && !host.utf8.contains(UInt8(ascii: "%")) {
+        let scopeName = String(unsafeUninitializedCapacity: Int(IF_NAMESIZE)) { buffer in
+          guard let ptr = if_indextoname(scopeID, buffer.baseAddress!) else {
+            return 0
+          }
+          return strlen(ptr)
+        }
+        if !scopeName.isEmpty {
+          host = "\(host)%\(scopeName)"
         }
       }
+      #endif
       self = .ipv6(
         host: host,
         port: nioSocketAddress.port ?? 0
       )
-      #else
-      self = .ipv6(
-        host: address.host,
-        port: nioSocketAddress.port ?? 0
-      )
-      #endif
 
     case .unixDomainSocket:
       self = .unixDomainSocket(path: nioSocketAddress.pathname ?? "")
@@ -92,10 +91,13 @@ extension NIOCore.SocketAddress {
     // IPv6 link-local addresses with scope IDs (e.g. "fe80::1%eth0") require
     // special handling: inet_pton (used by init(ipAddress:port:)) doesn't support
     // the %scope suffix, but getaddrinfo does and properly sets sin6_scope_id.
-    if address.host.contains("%") {
+    //
+    // Ideally this would be handled by swift-nio's SocketAddress.init(ipAddress:port:)
+    // directly, as it uses inet_pton which doesn't support %scope suffixes.
+    if address.host.utf8.contains(UInt8(ascii: "%")) {
       var hints = addrinfo()
       hints.ai_family = AF_INET6
-      #if os(Linux) && canImport(Glibc)
+      #if os(Linux)
       hints.ai_socktype = CInt(SOCK_STREAM.rawValue)
       #else
       hints.ai_socktype = SOCK_STREAM

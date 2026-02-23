@@ -191,9 +191,14 @@ extension SocketAddress.IPv6 {
     var host = presentationAddress
     #if !os(Windows)
     if address.sin6_scope_id != 0 {
-      var ifname = [CChar](repeating: 0, count: Int(IF_NAMESIZE))
-      if if_indextoname(address.sin6_scope_id, &ifname) != nil {
-        host = "\(presentationAddress)%\(String(cString: ifname))"
+      let scopeName = String(unsafeUninitializedCapacity: Int(IF_NAMESIZE)) { buffer in
+        guard let ptr = if_indextoname(address.sin6_scope_id, buffer.baseAddress!) else {
+          return 0
+        }
+        return strlen(ptr)
+      }
+      if !scopeName.isEmpty {
+        host = "\(presentationAddress)%\(scopeName)"
       }
     }
     #endif
