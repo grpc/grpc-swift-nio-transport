@@ -877,7 +877,7 @@ extension GRPCStreamStateMachine {
         .receivedStatusAndMetadata_clientOnly(
           status: .init(
             code: Status.Code(httpStatusCode: httpStatusCode),
-            message: "Unexpected non-200 HTTP Status Code."
+            message: "Unexpected non-200 HTTP Status Code (\(httpStatusCode))."
           ),
           metadata: Metadata(headers: metadata)
         )
