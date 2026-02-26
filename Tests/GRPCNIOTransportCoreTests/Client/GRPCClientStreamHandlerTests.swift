@@ -176,7 +176,10 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     XCTAssertEqual(
       try channel.readInbound(as: RPCResponsePart<GRPCNIOTransportBytes>.self),
       .status(
-        .init(code: .unavailable, message: "Unexpected non-200 HTTP Status Code."),
+        Status(
+          code: .unavailable,
+          message: "Unexpected non-200 HTTP Status Code (429 Too Many Requests)."
+        ),
         Metadata(headers: serverInitialMetadata)
       )
     )
