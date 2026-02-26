@@ -97,7 +97,7 @@ extension NIOCore.SocketAddress {
     if address.host.utf8.contains(UInt8(ascii: "%")) {
       var hints = addrinfo()
       hints.ai_family = AF_INET6
-      #if os(Linux)
+      #if canImport(Glibc)
       hints.ai_socktype = CInt(SOCK_STREAM.rawValue)
       #else
       hints.ai_socktype = SOCK_STREAM
