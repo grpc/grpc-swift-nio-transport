@@ -1797,7 +1797,7 @@ extension MethodDescriptor {
       return nil
     }
 
-    let service = String(utf8[serviceStart..<slashIndex])!
+    let service = String(utf8[serviceStart ..< slashIndex])!
     let methodStart = utf8.index(after: slashIndex)
     let method = String(utf8[methodStart...])!
 
