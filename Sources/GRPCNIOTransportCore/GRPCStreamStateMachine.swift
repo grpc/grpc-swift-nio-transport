@@ -1786,15 +1786,20 @@ extension GRPCStreamStateMachine {
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension MethodDescriptor {
   init?(path: String) {
-    var view = path[...]
-    guard view.popFirst() == "/" else { return nil }
+    let utf8 = path.utf8
+    var i = utf8.startIndex
+    guard i < utf8.endIndex, utf8[i] == UInt8(ascii: "/") else { return nil }
+    utf8.formIndex(after: &i)
+    let serviceStart = i
 
     // Find the index of the "/" separating the service and method names.
-    guard var index = view.firstIndex(of: "/") else { return nil }
+    guard let slashIndex = utf8[serviceStart...].firstIndex(of: UInt8(ascii: "/")) else {
+      return nil
+    }
 
-    let service = String(view[..<index])
-    view.formIndex(after: &index)
-    let method = String(view[index...])
+    let service = String(utf8[serviceStart ..< slashIndex])!
+    let methodStart = utf8.index(after: slashIndex)
+    let method = String(utf8[methodStart...])!
 
     self.init(service: ServiceDescriptor(fullyQualifiedService: service), method: method)
   }
