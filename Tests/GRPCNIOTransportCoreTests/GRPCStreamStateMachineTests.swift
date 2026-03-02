@@ -333,7 +333,10 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
       XCTAssertEqual(
         action,
         .receivedStatusAndMetadata_clientOnly(
-          status: .init(code: .unknown, message: "Unexpected non-200 HTTP Status Code."),
+          status: Status(
+            code: .unknown,
+            message: "Unexpected non-200 HTTP Status Code (300 Multiple Choices)."
+          ),
           metadata: [":status": "300"]
         )
       )
