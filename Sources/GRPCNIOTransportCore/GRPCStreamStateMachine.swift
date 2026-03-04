@@ -402,7 +402,7 @@ struct GRPCStreamStateMachine {
   private var configuration: GRPCStreamStateMachineConfiguration
   private var skipAssertions: Bool
 
-  struct InvalidState: Error {
+  struct UnreachableTransition: Error {
     var message: String
     init(_ message: String) {
       self.message = message
@@ -419,7 +419,7 @@ struct GRPCStreamStateMachine {
     self.skipAssertions = skipAssertions
   }
 
-  mutating func send(metadata: Metadata) throws(InvalidState) -> HPACKHeaders {
+  mutating func send(metadata: Metadata) throws(UnreachableTransition) -> HPACKHeaders {
     switch self.configuration {
     case .client(let clientConfiguration):
       return try self.clientSend(metadata: metadata, configuration: clientConfiguration)
@@ -428,7 +428,7 @@ struct GRPCStreamStateMachine {
     }
   }
 
-  mutating func send(message: ByteBuffer, promise: EventLoopPromise<Void>?) throws(InvalidState) {
+  mutating func send(message: ByteBuffer, promise: EventLoopPromise<Void>?) throws(UnreachableTransition) {
     switch self.configuration {
     case .client:
       try self.clientSend(message: message, promise: promise)
@@ -437,22 +437,22 @@ struct GRPCStreamStateMachine {
     }
   }
 
-  mutating func closeOutbound() throws(InvalidState) {
+  mutating func closeOutbound() throws(UnreachableTransition) {
     switch self.configuration {
     case .client:
       try self.clientCloseOutbound()
     case .server:
-      try self.invalidState("Server cannot call close: it must send status and trailers.")
+      try self.unreachable("Server cannot call close: it must send status and trailers.")
     }
   }
 
   mutating func send(
     status: Status,
     metadata: Metadata
-  ) throws(InvalidState) -> OnServerSendStatus {
+  ) throws(UnreachableTransition) -> OnServerSendStatus {
     switch self.configuration {
     case .client:
-      try self.invalidState(
+      try self.unreachable(
         "Client cannot send status and trailer."
       )
     case .server:
@@ -478,7 +478,7 @@ struct GRPCStreamStateMachine {
   mutating func receive(
     headers: HPACKHeaders,
     endStream: Bool
-  ) throws(InvalidState) -> OnMetadataReceived {
+  ) throws(UnreachableTransition) -> OnMetadataReceived {
     switch self.configuration {
     case .client(let clientConfiguration):
       return try self.clientReceive(
@@ -511,7 +511,7 @@ struct GRPCStreamStateMachine {
   mutating func receive(
     buffer: ByteBuffer,
     endStream: Bool
-  ) throws(InvalidState) -> OnBufferReceivedAction {
+  ) throws(UnreachableTransition) -> OnBufferReceivedAction {
     switch self.configuration {
     case .client:
       return try self.clientReceive(buffer: buffer, endStream: endStream)
@@ -544,7 +544,7 @@ struct GRPCStreamStateMachine {
     }
   }
 
-  mutating func nextOutboundFrame() throws(InvalidState) -> OnNextOutboundFrame {
+  mutating func nextOutboundFrame() throws(UnreachableTransition) -> OnNextOutboundFrame {
     switch self.configuration {
     case .client:
       return try self.clientNextOutboundFrame()
@@ -683,7 +683,7 @@ extension GRPCStreamStateMachine {
   private mutating func clientSend(
     metadata: Metadata,
     configuration: GRPCStreamStateMachineConfiguration.ClientConfiguration
-  ) throws(InvalidState) -> HPACKHeaders {
+  ) throws(UnreachableTransition) -> HPACKHeaders {
     // Client sends metadata only when opening the stream.
     switch self.state {
     case .clientIdleServerIdle(let state):
@@ -710,11 +710,11 @@ extension GRPCStreamStateMachine {
         customMetadata: metadata
       )
     case .clientOpenServerIdle, .clientOpenServerOpen, .clientOpenServerClosed:
-      try self.invalidState(
+      try self.unreachable(
         "Client is already open: shouldn't be sending metadata."
       )
     case .clientClosedServerIdle, .clientClosedServerOpen, .clientClosedServerClosed:
-      try self.invalidState(
+      try self.unreachable(
         "Client is closed: can't send metadata."
       )
     case ._modifying:
@@ -725,10 +725,10 @@ extension GRPCStreamStateMachine {
   private mutating func clientSend(
     message: ByteBuffer,
     promise: EventLoopPromise<Void>?
-  ) throws(InvalidState) {
+  ) throws(UnreachableTransition) {
     switch self.state {
     case .clientIdleServerIdle:
-      try self.invalidState("Client not yet open.")
+      try self.unreachable("Client not yet open.")
 
     case .clientOpenServerIdle(var state):
       self.state = ._modifying
@@ -745,7 +745,7 @@ extension GRPCStreamStateMachine {
       ()
 
     case .clientClosedServerIdle, .clientClosedServerOpen, .clientClosedServerClosed:
-      try self.invalidState(
+      try self.unreachable(
         "Client is closed, cannot send a message."
       )
 
@@ -754,7 +754,7 @@ extension GRPCStreamStateMachine {
     }
   }
 
-  private mutating func clientCloseOutbound() throws(InvalidState) {
+  private mutating func clientCloseOutbound() throws(UnreachableTransition) {
     switch self.state {
     case .clientIdleServerIdle(let state):
       self.state = .clientClosedServerIdle(.init(previousState: state))
@@ -774,11 +774,11 @@ extension GRPCStreamStateMachine {
 
   /// Returns the client's next request to the server.
   /// - Returns: The request to be made to the server.
-  private mutating func clientNextOutboundFrame() throws(InvalidState) -> OnNextOutboundFrame {
+  private mutating func clientNextOutboundFrame() throws(UnreachableTransition) -> OnNextOutboundFrame {
 
     switch self.state {
     case .clientIdleServerIdle:
-      try self.invalidState("Client is not open yet.")
+      try self.unreachable("Client is not open yet.")
 
     case .clientOpenServerIdle(var state):
       self.state = ._modifying
@@ -934,7 +934,7 @@ extension GRPCStreamStateMachine {
 
   private func validateTrailers(
     _ trailers: HPACKHeaders
-  ) throws(InvalidState) -> OnMetadataReceived {
+  ) throws(UnreachableTransition) -> OnMetadataReceived {
     let statusValue = trailers.firstString(forKey: .grpcStatus)
     let statusCode = statusValue.flatMap {
       Int($0)
@@ -968,7 +968,7 @@ extension GRPCStreamStateMachine {
     headers: HPACKHeaders,
     endStream: Bool,
     configuration: GRPCStreamStateMachineConfiguration.ClientConfiguration
-  ) throws(InvalidState) -> OnMetadataReceived {
+  ) throws(UnreachableTransition) -> OnMetadataReceived {
     switch self.state {
     case .clientOpenServerIdle(let state):
       switch (self.clientValidateHeadersReceivedFromServer(headers), endStream) {
@@ -1069,7 +1069,7 @@ extension GRPCStreamStateMachine {
       return .doNothing
 
     case .clientIdleServerIdle:
-      try self.invalidState(
+      try self.unreachable(
         "Server cannot have sent metadata if the client is idle."
       )
 
@@ -1081,16 +1081,16 @@ extension GRPCStreamStateMachine {
   private mutating func clientReceive(
     buffer: ByteBuffer,
     endStream: Bool
-  ) throws(InvalidState) -> OnBufferReceivedAction {
+  ) throws(UnreachableTransition) -> OnBufferReceivedAction {
     // This is a message received by the client, from the server.
     switch self.state {
     case .clientIdleServerIdle:
-      try self.invalidState(
+      try self.unreachable(
         "Cannot have received anything from server if client is not yet open."
       )
 
     case .clientOpenServerIdle, .clientClosedServerIdle:
-      try self.invalidState(
+      try self.unreachable(
         "Server cannot have sent a message before sending the initial metadata."
       )
 
@@ -1201,11 +1201,11 @@ extension GRPCStreamStateMachine {
     }
   }
 
-  private func invalidState(_ message: String, line: UInt = #line) throws(InvalidState) -> Never {
+  private func unreachable(_ message: String, line: UInt = #line) throws(UnreachableTransition) -> Never {
     if !self.skipAssertions {
       assertionFailure(message, line: line)
     }
-    throw InvalidState(message)
+    throw UnreachableTransition(message)
   }
 
   private mutating func clientUnexpectedClose(
@@ -1273,7 +1273,7 @@ extension GRPCStreamStateMachine {
   private mutating func serverSend(
     metadata: Metadata,
     configuration: GRPCStreamStateMachineConfiguration.ServerConfiguration
-  ) throws(InvalidState) -> HPACKHeaders {
+  ) throws(UnreachableTransition) -> HPACKHeaders {
     // Server sends initial metadata
     switch self.state {
     case .clientOpenServerIdle(var state):
@@ -1312,15 +1312,15 @@ extension GRPCStreamStateMachine {
       return state.headers
 
     case .clientIdleServerIdle:
-      try self.invalidState(
+      try self.unreachable(
         "Client cannot be idle if server is sending initial metadata: it must have opened."
       )
     case .clientOpenServerClosed, .clientClosedServerClosed:
-      try self.invalidState(
+      try self.unreachable(
         "Server cannot send metadata if closed."
       )
     case .clientOpenServerOpen, .clientClosedServerOpen:
-      try self.invalidState(
+      try self.unreachable(
         "Server has already sent initial metadata."
       )
     case ._modifying:
@@ -1331,10 +1331,10 @@ extension GRPCStreamStateMachine {
   private mutating func serverSend(
     message: ByteBuffer,
     promise: EventLoopPromise<Void>?
-  ) throws(InvalidState) {
+  ) throws(UnreachableTransition) {
     switch self.state {
     case .clientIdleServerIdle, .clientOpenServerIdle, .clientClosedServerIdle:
-      try self.invalidState(
+      try self.unreachable(
         "Server must have sent initial metadata before sending a message."
       )
 
@@ -1349,7 +1349,7 @@ extension GRPCStreamStateMachine {
       self.state = .clientClosedServerOpen(state)
 
     case .clientOpenServerClosed, .clientClosedServerClosed:
-      try self.invalidState(
+      try self.unreachable(
         "Server can't send a message if it's closed."
       )
     case ._modifying:
@@ -1365,7 +1365,7 @@ extension GRPCStreamStateMachine {
   private mutating func serverSend(
     status: Status,
     customMetadata: Metadata
-  ) throws(InvalidState) -> OnServerSendStatus {
+  ) throws(UnreachableTransition) -> OnServerSendStatus {
     // Close the server.
     switch self.state {
     case .clientOpenServerOpen(var state):
@@ -1393,7 +1393,7 @@ extension GRPCStreamStateMachine {
       return .writeTrailers(state.headers)
 
     case .clientIdleServerIdle:
-      try self.invalidState(
+      try self.unreachable(
         "Server can't send status if client is idle."
       )
 
@@ -1414,7 +1414,7 @@ extension GRPCStreamStateMachine {
     headers: HPACKHeaders,
     endStream: Bool,
     configuration: GRPCStreamStateMachineConfiguration.ServerConfiguration
-  ) throws(InvalidState) -> OnMetadataReceived {
+  ) throws(UnreachableTransition) -> OnMetadataReceived {
     func closeServer(
       from state: GRPCStreamStateMachineState.ClientIdleServerIdleState,
       endStream: Bool
@@ -1581,7 +1581,7 @@ extension GRPCStreamStateMachine {
       return .protocolViolation_serverOnly
 
     case .clientClosedServerIdle, .clientClosedServerOpen, .clientClosedServerClosed:
-      try self.invalidState("Client can't have sent metadata if closed.")
+      try self.unreachable("Client can't have sent metadata if closed.")
 
     case ._modifying:
       preconditionFailure()
@@ -1591,12 +1591,12 @@ extension GRPCStreamStateMachine {
   private mutating func serverReceive(
     buffer: ByteBuffer,
     endStream: Bool
-  ) throws(InvalidState) -> OnBufferReceivedAction {
+  ) throws(UnreachableTransition) -> OnBufferReceivedAction {
     let action: OnBufferReceivedAction
 
     switch self.state {
     case .clientIdleServerIdle:
-      try self.invalidState("Can't have received a message if client is idle.")
+      try self.unreachable("Can't have received a message if client is idle.")
 
     case .clientOpenServerIdle(var state):
       self.state = ._modifying
@@ -1645,7 +1645,7 @@ extension GRPCStreamStateMachine {
       action = .doNothing
 
     case .clientClosedServerIdle, .clientClosedServerOpen, .clientClosedServerClosed:
-      try self.invalidState("Client can't send a message if closed.")
+      try self.unreachable("Client can't send a message if closed.")
 
     case ._modifying:
       preconditionFailure()
@@ -1654,10 +1654,10 @@ extension GRPCStreamStateMachine {
     return action
   }
 
-  private mutating func serverNextOutboundFrame() throws(InvalidState) -> OnNextOutboundFrame {
+  private mutating func serverNextOutboundFrame() throws(UnreachableTransition) -> OnNextOutboundFrame {
     switch self.state {
     case .clientIdleServerIdle, .clientOpenServerIdle, .clientClosedServerIdle:
-      try self.invalidState("Server is not open yet.")
+      try self.unreachable("Server is not open yet.")
 
     case .clientOpenServerOpen(var state):
       self.state = ._modifying
@@ -1971,7 +1971,7 @@ extension Status {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension RPCError {
-  init(_ invalidState: GRPCStreamStateMachine.InvalidState) {
+  init(_ invalidState: GRPCStreamStateMachine.UnreachableTransition) {
     self = RPCError(code: .internalError, message: "Invalid state", cause: invalidState)
   }
 }
