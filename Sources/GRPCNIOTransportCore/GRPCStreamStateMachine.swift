@@ -428,7 +428,10 @@ struct GRPCStreamStateMachine {
     }
   }
 
-  mutating func send(message: ByteBuffer, promise: EventLoopPromise<Void>?) throws(UnreachableTransition) {
+  mutating func send(
+    message: ByteBuffer,
+    promise: EventLoopPromise<Void>?
+  ) throws(UnreachableTransition) {
     switch self.configuration {
     case .client:
       try self.clientSend(message: message, promise: promise)
@@ -774,7 +777,9 @@ extension GRPCStreamStateMachine {
 
   /// Returns the client's next request to the server.
   /// - Returns: The request to be made to the server.
-  private mutating func clientNextOutboundFrame() throws(UnreachableTransition) -> OnNextOutboundFrame {
+  private mutating func clientNextOutboundFrame() throws(UnreachableTransition)
+    -> OnNextOutboundFrame
+  {
 
     switch self.state {
     case .clientIdleServerIdle:
@@ -1201,7 +1206,10 @@ extension GRPCStreamStateMachine {
     }
   }
 
-  private func unreachable(_ message: String, line: UInt = #line) throws(UnreachableTransition) -> Never {
+  private func unreachable(
+    _ message: String,
+    line: UInt = #line
+  ) throws(UnreachableTransition) -> Never {
     if !self.skipAssertions {
       assertionFailure(message, line: line)
     }
@@ -1654,7 +1662,9 @@ extension GRPCStreamStateMachine {
     return action
   }
 
-  private mutating func serverNextOutboundFrame() throws(UnreachableTransition) -> OnNextOutboundFrame {
+  private mutating func serverNextOutboundFrame() throws(UnreachableTransition)
+    -> OnNextOutboundFrame
+  {
     switch self.state {
     case .clientIdleServerIdle, .clientOpenServerIdle, .clientClosedServerIdle:
       try self.unreachable("Server is not open yet.")
