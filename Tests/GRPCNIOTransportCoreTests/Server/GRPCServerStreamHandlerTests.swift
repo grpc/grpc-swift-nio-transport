@@ -573,7 +573,9 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     try channel.writeInbound(HTTP2Frame.FramePayload.headers(.init(headers: clientInitialMetadata)))
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
 
-    // Receive them again. Should be a protocol violation.
+    // Receive them again. Should be a protocol violation which results in a RST_STREAM.
+    // The state machine does not poison on duplicate headers in PR1, so the subsequent
+    // channelInactive fires an error.
     XCTAssertThrowsError(
       ofType: RPCError.self,
       try channel.writeInbound(
@@ -883,7 +885,10 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
       try channel.writeOutbound(RPCResponsePart<GRPCNIOTransportBytes>.metadata(Metadata()))
     ) { error in
       XCTAssertEqual(error.code, .internalError)
-      XCTAssertEqual(error.message, "Invalid state")
+      XCTAssertEqual(
+        error.message,
+        "Stream is in an error state: the stream was closed unexpectedly"
+      )
     }
   }
 
@@ -936,7 +941,10 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
       try channel.writeOutbound(RPCResponsePart<GRPCNIOTransportBytes>.metadata(Metadata()))
     ) { error in
       XCTAssertEqual(error.code, .internalError)
-      XCTAssertEqual(error.message, "Invalid state")
+      XCTAssertEqual(
+        error.message,
+        "Stream is in an error state: the stream was closed unexpectedly"
+      )
     }
   }
 
@@ -992,7 +1000,10 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
       try channel.writeOutbound(RPCResponsePart<GRPCNIOTransportBytes>.metadata([:]))
     ) { error in
       XCTAssertEqual(error.code, .internalError)
-      XCTAssertEqual(error.message, "Invalid state")
+      XCTAssertEqual(
+        error.message,
+        "Stream is in an error state: the stream was closed unexpectedly"
+      )
     }
   }
 

@@ -63,6 +63,29 @@ enum GRPCStreamStateMachineConfiguration {
   }
 }
 
+/// The state of a stream.
+///
+/// Valid states are the product of two independent dimensions, client and server. Each dimension
+/// can only make foward progress through the following states: idle → open → closed.
+///
+/// There are two terminal states:
+/// - clientClosedServerClosed: the stream completed cleanly.
+/// - poisoned: the stream failed to complete because of some unrecoverable error.
+///
+/// There are three kinds of invalid operation:
+/// 1. `UnreachableTransition`. The calling code has a bug: it invoked an operation that was thought
+///    to be structurally impossible in the current state. This represents API misuse or an
+///    incorrect assumption; i.e. the issue lies in gRPC. When this happens the state machine enters
+///    the poisoned state and throws `UnreachableTransition`. Debug builds also trigger
+///    an `assertionFailure`.
+/// 2. Protocol errors. The remote peer violated gRPC/HTTP2 semantics. The triggering operation
+///    surfaces an appropriate error to the caller (this is situation dependent) and the state
+///    machine enters the poisoned state. This represents an issue with the remote peer (or
+///    intermediary).
+/// 3. Silent drops. A small number of operations are legitimately ignored: 1xx HTTP status codes
+///    (spec-mandated), server discarding client data after the server has already closed (normal
+///    gRPC early-close behaviour), closing outbound more than once (as independent close mechanisms
+///    can race), and inbound operations received when already in the error state.
 @available(gRPCSwiftNIOTransport 2.0, *)
 private enum GRPCStreamStateMachineState {
   case clientIdleServerIdle(ClientIdleServerIdleState)
@@ -72,7 +95,36 @@ private enum GRPCStreamStateMachineState {
   case clientClosedServerIdle(ClientClosedServerIdleState)
   case clientClosedServerOpen(ClientClosedServerOpenState)
   case clientClosedServerClosed(ClientClosedServerClosedState)
+  /// The poisoned state: something happened that means the RPC can't make forward progress.
+  ///
+  /// All actions in this state are no-ops.
+  case poisoned(Poisoned)
+
+  /// Temporary state to avoid accidental CoWs.
   case _modifying
+
+  var name: String {
+    switch self {
+    case .clientIdleServerIdle:
+      return "clientIdleServerIdle"
+    case .clientOpenServerIdle:
+      return "clientOpenServerIdle"
+    case .clientOpenServerOpen:
+      return "clientOpenServerOpen"
+    case .clientOpenServerClosed:
+      return "clientOpenServerClosed"
+    case .clientClosedServerIdle:
+      return "clientClosedServerIdle"
+    case .clientClosedServerOpen:
+      return "clientClosedServerOpen"
+    case .clientClosedServerClosed:
+      return "clientClosedServerClosed"
+    case .poisoned:
+      return "poisoned"
+    case ._modifying:
+      return "_modifying"
+    }
+  }
 
   struct ClientIdleServerIdleState {
     let maxPayloadSize: Int
@@ -373,25 +425,82 @@ private enum GRPCStreamStateMachineState {
       self.inboundMessageBuffer = previousState.inboundMessageBuffer
     }
 
-    init(previousState: ClientOpenServerIdleState) {
-      self.framer = previousState.framer
-      self.compressor = previousState.compressor
-      self.outboundCompression = previousState.outboundCompression
-      self.inboundMessageBuffer = previousState.inboundMessageBuffer
-    }
-
-    init(previousState: ClientOpenServerOpenState) {
-      self.framer = previousState.framer
-      self.compressor = previousState.compressor
-      self.outboundCompression = previousState.outboundCompression
-      self.inboundMessageBuffer = previousState.inboundMessageBuffer
-    }
-
     init(previousState: ClientOpenServerClosedState) {
       self.framer = previousState.framer
       self.compressor = previousState.compressor
       self.outboundCompression = previousState.outboundCompression
       self.inboundMessageBuffer = previousState.inboundMessageBuffer
+    }
+  }
+
+  struct Poisoned {
+    enum Reason: CustomStringConvertible {
+      /// gRPC or HTTP/2 semantics were not respected.
+      case `protocol`
+      /// A supposedly unreachable state was reached.
+      case unreachableTransition(state: String, function: String)
+      /// Unexpected inbound close.
+      case unexpectedClose
+
+      var description: String {
+        switch self {
+        case .protocol:
+          return "gRPC or HTTP/2 protocol violation"
+        case .unreachableTransition(let state, let function):
+          return "an 'unreachable' transition was hit in the \(state) state (in \(function))"
+        case .unexpectedClose:
+          return "the stream was closed unexpectedly"
+        }
+      }
+    }
+
+    /// The reason the state was poisoned.
+    var reason: Reason
+
+    var rpcError: RPCError {
+      RPCError(
+        code: .internalError,
+        message: "Stream is in an error state: \(self.reason)"
+      )
+    }
+
+    init(previousState state: ClientIdleServerIdleState, reason: Reason) {
+      self.reason = reason
+    }
+
+    init(previousState state: ClientOpenServerIdleState, reason: Reason) {
+      self.reason = reason
+      state.compressor?.end()
+      state.decompressor?.end()
+    }
+
+    init(previousState state: ClientOpenServerOpenState, reason: Reason) {
+      self.reason = reason
+      state.compressor?.end()
+      state.decompressor?.end()
+    }
+
+    init(previousState state: ClientOpenServerClosedState, reason: Reason) {
+      self.reason = reason
+      state.compressor?.end()
+      state.decompressor?.end()
+    }
+
+    init(previousState state: ClientClosedServerIdleState, reason: Reason) {
+      self.reason = reason
+      state.compressor?.end()
+      state.decompressor?.end()
+    }
+
+    init(previousState state: ClientClosedServerOpenState, reason: Reason) {
+      self.reason = reason
+      state.compressor?.end()
+      state.decompressor?.end()
+    }
+
+    init(previousState state: ClientClosedServerClosedState, reason: Reason) {
+      self.reason = reason
+      state.compressor?.end()
     }
   }
 }
@@ -402,6 +511,7 @@ struct GRPCStreamStateMachine {
   private var configuration: GRPCStreamStateMachineConfiguration
   private var skipAssertions: Bool
 
+  /// The state transition isn't possible by construction.
   struct UnreachableTransition: Error {
     var message: String
     init(_ message: String) {
@@ -419,7 +529,12 @@ struct GRPCStreamStateMachine {
     self.skipAssertions = skipAssertions
   }
 
-  mutating func send(metadata: Metadata) throws(UnreachableTransition) -> HPACKHeaders {
+  enum OnSendMetadata {
+    case write(HPACKHeaders)
+    case failPromise(RPCError)
+  }
+
+  mutating func send(metadata: Metadata) throws(UnreachableTransition) -> OnSendMetadata {
     switch self.configuration {
     case .client(let clientConfiguration):
       return try self.clientSend(metadata: metadata, configuration: clientConfiguration)
@@ -428,10 +543,16 @@ struct GRPCStreamStateMachine {
     }
   }
 
+  enum OnSendMessage {
+    case nothing
+    case succeedPromise
+    case failPromise(RPCError)
+  }
+
   mutating func send(
     message: ByteBuffer,
     promise: EventLoopPromise<Void>?
-  ) throws(UnreachableTransition) {
+  ) throws(UnreachableTransition) -> OnSendMessage {
     switch self.configuration {
     case .client:
       try self.clientSend(message: message, promise: promise)
@@ -455,9 +576,7 @@ struct GRPCStreamStateMachine {
   ) throws(UnreachableTransition) -> OnServerSendStatus {
     switch self.configuration {
     case .client:
-      try self.unreachable(
-        "Client cannot send status and trailer."
-      )
+      try self.unreachable("Client cannot send status and trailer.")
     case .server:
       return try self.serverSend(
         status: status,
@@ -596,6 +715,8 @@ struct GRPCStreamStateMachine {
       state.decompressor?.end()
     case .clientClosedServerClosed(let state):
       state.compressor?.end()
+    case .poisoned:
+      ()
     case ._modifying:
       preconditionFailure()
     }
@@ -686,7 +807,7 @@ extension GRPCStreamStateMachine {
   private mutating func clientSend(
     metadata: Metadata,
     configuration: GRPCStreamStateMachineConfiguration.ClientConfiguration
-  ) throws(UnreachableTransition) -> HPACKHeaders {
+  ) throws(UnreachableTransition) -> OnSendMetadata {
     // Client sends metadata only when opening the stream.
     switch self.state {
     case .clientIdleServerIdle(let state):
@@ -704,7 +825,8 @@ extension GRPCStreamStateMachine {
           headers: [:]
         )
       )
-      return self.makeClientHeaders(
+
+      let headers = self.makeClientHeaders(
         methodDescriptor: configuration.methodDescriptor,
         scheme: configuration.scheme,
         authority: configuration.authority,
@@ -712,14 +834,22 @@ extension GRPCStreamStateMachine {
         acceptedEncodings: configuration.acceptedEncodings,
         customMetadata: metadata
       )
+
+      return .write(headers)
+
     case .clientOpenServerIdle, .clientOpenServerOpen, .clientOpenServerClosed:
-      try self.unreachable(
-        "Client is already open: shouldn't be sending metadata."
-      )
+      // This is unreachable by construction: higher level APIs should not make it possible
+      // to send client metadata more than once.
+      try self.unreachable("Client is already open: shouldn't be sending metadata.")
+
     case .clientClosedServerIdle, .clientClosedServerOpen, .clientClosedServerClosed:
-      try self.unreachable(
-        "Client is closed: can't send metadata."
-      )
+      // This is unreachable by construction: the client is closed, meaning it has already sent
+      // end stream, sending metadata now is a bug in a higher level abstraction.
+      try self.unreachable("Client is closed: can't send metadata.")
+
+    case .poisoned(let state):
+      return .failPromise(state.rpcError)
+
     case ._modifying:
       preconditionFailure()
     }
@@ -728,29 +858,38 @@ extension GRPCStreamStateMachine {
   private mutating func clientSend(
     message: ByteBuffer,
     promise: EventLoopPromise<Void>?
-  ) throws(UnreachableTransition) {
+  ) throws(UnreachableTransition) -> OnSendMessage {
     switch self.state {
     case .clientIdleServerIdle:
+      // This is unreachable by construction: the client hasn't opened yet, higher level
+      // APIs should enforce that metadata is sent first.
       try self.unreachable("Client not yet open.")
 
     case .clientOpenServerIdle(var state):
       self.state = ._modifying
       state.framer.append(message, promise: promise)
       self.state = .clientOpenServerIdle(state)
+      return .nothing
 
     case .clientOpenServerOpen(var state):
       self.state = ._modifying
       state.framer.append(message, promise: promise)
       self.state = .clientOpenServerOpen(state)
+      return .nothing
 
     case .clientOpenServerClosed:
-      // The server has closed, so it makes no sense to send the rest of the request.
-      ()
+      // The server has closed, so it makes no sense to send the rest of the request. The promise
+      // is succeeded in order to avoid throwing in client code where the RPC has already received
+      // the final outcome from the server.
+      return .succeedPromise
 
     case .clientClosedServerIdle, .clientClosedServerOpen, .clientClosedServerClosed:
-      try self.unreachable(
-        "Client is closed, cannot send a message."
-      )
+      // This is unreachable by construction: higher level APIs must guarantee that
+      // no messages are sent after half-closing.
+      try self.unreachable("Client is closed, cannot send a message.")
+
+    case .poisoned(let state):
+      return .failPromise(state.rpcError)
 
     case ._modifying:
       preconditionFailure()
@@ -768,8 +907,9 @@ extension GRPCStreamStateMachine {
     case .clientOpenServerClosed(let state):
       self.state = .clientClosedServerClosed(.init(previousState: state))
     case .clientClosedServerIdle, .clientClosedServerOpen, .clientClosedServerClosed:
-      // Client is already closed - nothing to do.
-      ()
+      ()  // Client is already closed - nothing to do.
+    case .poisoned:
+      ()  // No-op, already in an error state.
     case ._modifying:
       preconditionFailure()
     }
@@ -783,6 +923,8 @@ extension GRPCStreamStateMachine {
 
     switch self.state {
     case .clientIdleServerIdle:
+      // This is unreachable by construction: the handler holding this state machine shouldn't
+      // ask for more outbound messages unless it's successfully buffered one in the state machine.
       try self.unreachable("Client is not open yet.")
 
     case .clientOpenServerIdle(var state):
@@ -829,8 +971,9 @@ extension GRPCStreamStateMachine {
         return .noMoreMessages
       }
 
-    case .clientOpenServerClosed, .clientClosedServerClosed:
-      // No point in sending any more requests if the server is closed.
+    case .clientOpenServerClosed, .clientClosedServerClosed, .poisoned:
+      // No point in sending any more requests if the server is closed or the stream isn't in a
+      // good state.
       return .noMoreMessages
 
     case ._modifying:
@@ -983,8 +1126,8 @@ extension GRPCStreamStateMachine {
 
       case (.invalid(let action), _):
         // The received headers are invalid, so we can't do anything other than assume this server
-        // is not behaving correctly: transition both client and server to closed.
-        self.state = .clientClosedServerClosed(.init(previousState: state))
+        // is not behaving correctly. This is a protocol failure.
+        self.state = .poisoned(.init(previousState: state, reason: .protocol))
         return action
 
       case (.valid, true):
@@ -995,6 +1138,7 @@ extension GRPCStreamStateMachine {
       case (.valid, false):
         switch self.processInboundEncoding(headers: headers, configuration: configuration) {
         case .error(let failure):
+          self.state = .poisoned(.init(previousState: state, reason: .protocol))
           return failure
 
         case .success(let inboundEncoding):
@@ -1034,8 +1178,8 @@ extension GRPCStreamStateMachine {
 
       case (.invalid(let action), _):
         // The received headers are invalid, so we can't do anything other than assume this server
-        // is not behaving correctly: transition both client and server to closed.
-        self.state = .clientClosedServerClosed(.init(previousState: state))
+        // is not behaving correctly. This is a protocol failure.
+        self.state = .poisoned(.init(previousState: state, reason: .protocol))
         return action
 
       case (.valid, true):
@@ -1046,6 +1190,7 @@ extension GRPCStreamStateMachine {
       case (.valid, false):
         switch self.processInboundEncoding(headers: headers, configuration: configuration) {
         case .error(let failure):
+          self.state = .poisoned(.init(previousState: state, reason: .protocol))
           return failure
         case .success(let inboundEncoding):
           self.state = .clientClosedServerOpen(
@@ -1078,6 +1223,10 @@ extension GRPCStreamStateMachine {
         "Server cannot have sent metadata if the client is idle."
       )
 
+    case .poisoned:
+      // Already in an error state, ignore the headers.
+      return .doNothing
+
     case ._modifying:
       preconditionFailure()
     }
@@ -1105,7 +1254,7 @@ extension GRPCStreamStateMachine {
         // This is invalid as per the protocol specification, because the server
         // can only close by sending trailers, not by setting EOS when sending
         // a message.
-        self.state = .clientClosedServerClosed(.init(previousState: state))
+        self.state = .poisoned(.init(previousState: state, reason: .protocol))
         return .endRPCAndForwardErrorStatus_clientOnly(
           Status(
             code: .internalError,
@@ -1132,7 +1281,7 @@ extension GRPCStreamStateMachine {
     case .clientClosedServerOpen(var state):
       self.state = ._modifying
       if endStream {
-        self.state = .clientClosedServerClosed(.init(previousState: state))
+        self.state = .poisoned(.init(previousState: state, reason: .protocol))
         return .endRPCAndForwardErrorStatus_clientOnly(
           Status(
             code: .internalError,
@@ -1164,6 +1313,10 @@ extension GRPCStreamStateMachine {
       // In either case, we will have already surfaced a status + trailers response to the client,
       // so if we receive further packages, we should just drop them on the floor,
       // as there's nothing for us to do with them.
+      return .doNothing
+
+    case .poisoned:
+      // Already in an error state, drop the buffer.
       return .doNothing
 
     case ._modifying:
@@ -1201,18 +1354,50 @@ extension GRPCStreamStateMachine {
       .clientOpenServerIdle,
       .clientClosedServerIdle:
       return .awaitMoreMessages
+
+    case .poisoned:
+      return .noMoreMessages
+
     case ._modifying:
       preconditionFailure()
     }
   }
 
-  private func unreachable(
+  private mutating func unreachable(
     _ message: String,
-    line: UInt = #line
+    line: UInt = #line,
+    function: String = #function
   ) throws(UnreachableTransition) -> Never {
+    let reason = GRPCStreamStateMachineState.Poisoned.Reason.unreachableTransition(
+      state: self.state.name,
+      function: function
+    )
+
+    switch self.state {
+    case .clientIdleServerIdle(let state):
+      self.state = .poisoned(.init(previousState: state, reason: reason))
+    case .clientOpenServerIdle(let state):
+      self.state = .poisoned(.init(previousState: state, reason: reason))
+    case .clientOpenServerOpen(let state):
+      self.state = .poisoned(.init(previousState: state, reason: reason))
+    case .clientOpenServerClosed(let state):
+      self.state = .poisoned(.init(previousState: state, reason: reason))
+    case .clientClosedServerIdle(let state):
+      self.state = .poisoned(.init(previousState: state, reason: reason))
+    case .clientClosedServerOpen(let state):
+      self.state = .poisoned(.init(previousState: state, reason: reason))
+    case .clientClosedServerClosed(let state):
+      self.state = .poisoned(.init(previousState: state, reason: reason))
+    case .poisoned:
+      ()
+    case ._modifying:
+      preconditionFailure()
+    }
+
     if !self.skipAssertions {
       assertionFailure(message, line: line)
     }
+
     throw UnreachableTransition(message)
   }
 
@@ -1221,26 +1406,35 @@ extension GRPCStreamStateMachine {
   ) -> OnUnexpectedInboundClose {
     switch self.state {
     case .clientIdleServerIdle(let state):
-      self.state = .clientClosedServerClosed(.init(previousState: state))
+      self.state = .poisoned(.init(previousState: state, reason: .unexpectedClose))
       return .forwardStatus_clientOnly(Status(RPCError(reason)))
 
     case .clientOpenServerIdle(let state):
-      self.state = .clientClosedServerClosed(.init(previousState: state))
+      self.state = .poisoned(.init(previousState: state, reason: .unexpectedClose))
       return .forwardStatus_clientOnly(Status(RPCError(reason)))
 
     case .clientClosedServerIdle(let state):
-      self.state = .clientClosedServerClosed(.init(previousState: state))
+      self.state = .poisoned(.init(previousState: state, reason: .unexpectedClose))
       return .forwardStatus_clientOnly(Status(RPCError(reason)))
 
     case .clientOpenServerOpen(let state):
-      self.state = .clientClosedServerClosed(.init(previousState: state))
+      self.state = .poisoned(.init(previousState: state, reason: .unexpectedClose))
       return .forwardStatus_clientOnly(Status(RPCError(reason)))
 
     case .clientClosedServerOpen(let state):
-      self.state = .clientClosedServerClosed(.init(previousState: state))
+      self.state = .poisoned(.init(previousState: state, reason: .unexpectedClose))
       return .forwardStatus_clientOnly(Status(RPCError(reason)))
 
-    case .clientOpenServerClosed, .clientClosedServerClosed:
+    case .clientOpenServerClosed(let state):
+      self.state = .poisoned(.init(previousState: state, reason: .unexpectedClose))
+      // Already received end stream from the server.
+      return .doNothing
+
+    case .clientClosedServerClosed:
+      // Already closed cleanly, ignore.
+      return .doNothing
+
+    case .poisoned:
       return .doNothing
 
     case ._modifying:
@@ -1281,7 +1475,7 @@ extension GRPCStreamStateMachine {
   private mutating func serverSend(
     metadata: Metadata,
     configuration: GRPCStreamStateMachineConfiguration.ServerConfiguration
-  ) throws(UnreachableTransition) -> HPACKHeaders {
+  ) throws(UnreachableTransition) -> OnSendMetadata {
     // Server sends initial metadata
     switch self.state {
     case .clientOpenServerIdle(var state):
@@ -1305,7 +1499,7 @@ extension GRPCStreamStateMachine {
         )
       )
 
-      return state.headers
+      return .write(state.headers)
 
     case .clientClosedServerIdle(var state):
       self.state = ._modifying
@@ -1317,20 +1511,28 @@ extension GRPCStreamStateMachine {
         customMetadata: metadata
       )
       self.state = .clientClosedServerOpen(.init(previousState: state))
-      return state.headers
+      return .write(state.headers)
 
     case .clientIdleServerIdle:
+      // Unreachable by construction: higher level APIs ensure it's not possible for the server
+      // to send metadata until it has received client metadata.
       try self.unreachable(
         "Client cannot be idle if server is sending initial metadata: it must have opened."
       )
+
     case .clientOpenServerClosed, .clientClosedServerClosed:
-      try self.unreachable(
-        "Server cannot send metadata if closed."
-      )
+      // Unreachable by construction: higher level APIs ensure it's not possible for the server
+      // to send initial metadata more than once.
+      try self.unreachable("Server cannot send metadata if closed.")
+
     case .clientOpenServerOpen, .clientClosedServerOpen:
-      try self.unreachable(
-        "Server has already sent initial metadata."
-      )
+      // Unreachable by construction: higher level APIs ensure it's not possible for the server
+      // to send initial metadata more than once.
+      try self.unreachable("Server has already sent initial metadata.")
+
+    case .poisoned(let state):
+      return .failPromise(state.rpcError)
+
     case ._modifying:
       preconditionFailure()
     }
@@ -1339,7 +1541,7 @@ extension GRPCStreamStateMachine {
   private mutating func serverSend(
     message: ByteBuffer,
     promise: EventLoopPromise<Void>?
-  ) throws(UnreachableTransition) {
+  ) throws(UnreachableTransition) -> OnSendMessage {
     switch self.state {
     case .clientIdleServerIdle, .clientOpenServerIdle, .clientClosedServerIdle:
       try self.unreachable(
@@ -1350,16 +1552,22 @@ extension GRPCStreamStateMachine {
       self.state = ._modifying
       state.framer.append(message, promise: promise)
       self.state = .clientOpenServerOpen(state)
+      return .nothing
 
     case .clientClosedServerOpen(var state):
       self.state = ._modifying
       state.framer.append(message, promise: promise)
       self.state = .clientClosedServerOpen(state)
+      return .nothing
 
     case .clientOpenServerClosed, .clientClosedServerClosed:
-      try self.unreachable(
-        "Server can't send a message if it's closed."
-      )
+      // Unreachable by construction: high level APIs ensure that messages can't be sent
+      // after the server has half closed.
+      try self.unreachable("Server can't send a message if it's closed.")
+
+    case .poisoned(let state):
+      return .failPromise(state.rpcError)
+
     case ._modifying:
       preconditionFailure()
     }
@@ -1401,9 +1609,9 @@ extension GRPCStreamStateMachine {
       return .writeTrailers(state.headers)
 
     case .clientIdleServerIdle:
-      try self.unreachable(
-        "Server can't send status if client is idle."
-      )
+      // Unreachable by construction: higher level APIs ensure that the server can't send a status
+      // until it has received metadata from the client.
+      try self.unreachable("Server can't send status if client is idle.")
 
     case .clientOpenServerClosed, .clientClosedServerClosed:
       return .dropAndFailPromise(
@@ -1412,6 +1620,9 @@ extension GRPCStreamStateMachine {
           message: "Can't write status, stream has already closed"
         )
       )
+
+    case .poisoned(let state):
+      return .dropAndFailPromise(state.rpcError)
 
     case ._modifying:
       preconditionFailure()
@@ -1439,7 +1650,7 @@ extension GRPCStreamStateMachine {
       let contentType = headers.firstString(forKey: .contentType)
         .flatMap { ContentType(value: $0) }
       if contentType == nil {
-        self.state = .clientOpenServerClosed(.init(previousState: state))
+        self.state = closeServer(from: state, endStream: endStream)
 
         // Respond with HTTP-level Unsupported Media Type status code.
         var trailers = HPACKHeaders()
@@ -1584,12 +1795,23 @@ extension GRPCStreamStateMachine {
 
       return .receivedMetadata(Metadata(headers: headers), path)
 
-    case .clientOpenServerIdle, .clientOpenServerOpen, .clientOpenServerClosed:
+    case .clientOpenServerIdle:
+      // Metadata has already been received, should only be sent once by clients.
+      return .protocolViolation_serverOnly
+
+    case .clientOpenServerOpen:
+      // Metadata has already been received, should only be sent once by clients.
+      return .protocolViolation_serverOnly
+
+    case .clientOpenServerClosed:
       // Metadata has already been received, should only be sent once by clients.
       return .protocolViolation_serverOnly
 
     case .clientClosedServerIdle, .clientClosedServerOpen, .clientClosedServerClosed:
       try self.unreachable("Client can't have sent metadata if closed.")
+
+    case .poisoned:
+      return .doNothing
 
     case ._modifying:
       preconditionFailure()
@@ -1655,6 +1877,10 @@ extension GRPCStreamStateMachine {
     case .clientClosedServerIdle, .clientClosedServerOpen, .clientClosedServerClosed:
       try self.unreachable("Client can't send a message if closed.")
 
+    case .poisoned:
+      // Already in an error state, ignore the buffer.
+      return .doNothing
+
     case ._modifying:
       preconditionFailure()
     }
@@ -1713,6 +1939,9 @@ extension GRPCStreamStateMachine {
         return .noMoreMessages
       }
 
+    case .poisoned:
+      return .noMoreMessages
+
     case ._modifying:
       preconditionFailure()
     }
@@ -1751,6 +1980,9 @@ extension GRPCStreamStateMachine {
     case .clientIdleServerIdle:
       return .awaitMoreMessages
 
+    case .poisoned:
+      return .noMoreMessages
+
     case ._modifying:
       preconditionFailure()
     }
@@ -1761,30 +1993,36 @@ extension GRPCStreamStateMachine {
   ) -> OnUnexpectedInboundClose {
     switch self.state {
     case .clientIdleServerIdle(let state):
-      self.state = .clientClosedServerClosed(.init(previousState: state))
+      self.state = .poisoned(.init(previousState: state, reason: .unexpectedClose))
       return OnUnexpectedInboundClose(serverCloseReason: reason)
 
     case .clientOpenServerIdle(let state):
-      self.state = .clientClosedServerClosed(.init(previousState: state))
+      self.state = .poisoned(.init(previousState: state, reason: .unexpectedClose))
       return OnUnexpectedInboundClose(serverCloseReason: reason)
 
     case .clientOpenServerOpen(let state):
-      self.state = .clientClosedServerClosed(.init(previousState: state))
+      self.state = .poisoned(.init(previousState: state, reason: .unexpectedClose))
       return OnUnexpectedInboundClose(serverCloseReason: reason)
 
     case .clientOpenServerClosed(let state):
-      self.state = .clientClosedServerClosed(.init(previousState: state))
-      return OnUnexpectedInboundClose(serverCloseReason: reason)
+      self.state = .poisoned(.init(previousState: state, reason: .unexpectedClose))
+      // The server has already sent its final status; the RPC is complete from the server's
+      // perspective. The unexpected close does not need to be surfaced to the application.
+      return .doNothing
 
     case .clientClosedServerIdle(let state):
-      self.state = .clientClosedServerClosed(.init(previousState: state))
+      self.state = .poisoned(.init(previousState: state, reason: .unexpectedClose))
       return OnUnexpectedInboundClose(serverCloseReason: reason)
 
     case .clientClosedServerOpen(let state):
-      self.state = .clientClosedServerClosed(.init(previousState: state))
+      self.state = .poisoned(.init(previousState: state, reason: .unexpectedClose))
       return OnUnexpectedInboundClose(serverCloseReason: reason)
 
     case .clientClosedServerClosed:
+      // Already closed cleanly.
+      return .doNothing
+
+    case .poisoned:
       return .doNothing
 
     case ._modifying:

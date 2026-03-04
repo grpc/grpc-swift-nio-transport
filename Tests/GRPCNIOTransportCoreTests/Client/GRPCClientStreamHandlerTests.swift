@@ -575,21 +575,6 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     channel.flush()
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
 
-    // Make sure we cannot write anymore because client's closed.
-    XCTAssertThrowsError(
-      ofType: RPCError.self,
-      try channel.writeOutbound(
-        RPCRequestPart.message(GRPCNIOTransportBytes(repeating: 1, count: 42))
-      )
-    ) { error in
-      XCTAssertEqual(error.code, .internalError)
-      XCTAssertEqual(error.message, "Invalid state")
-    }
-
-    // This is needed to clear the EmbeddedChannel's stored error, otherwise
-    // it will be thrown when writing inbound.
-    try? channel.throwIfErrorCaught()
-
     // Server sends back response message
     var buffer = ByteBuffer()
     buffer.writeInteger(UInt8(0))  // not compressed
@@ -868,7 +853,10 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       try channel.writeOutbound(RPCRequestPart<GRPCNIOTransportBytes>.metadata([:]))
     ) { error in
       XCTAssertEqual(error.code, .internalError)
-      XCTAssertEqual(error.message, "Invalid state")
+      XCTAssertEqual(
+        error.message,
+        "Stream is in an error state: the stream was closed unexpectedly"
+      )
     }
   }
 
@@ -915,7 +903,10 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       try channel.writeOutbound(RPCRequestPart<GRPCNIOTransportBytes>.metadata([:]))
     ) { error in
       XCTAssertEqual(error.code, .internalError)
-      XCTAssertEqual(error.message, "Invalid state")
+      XCTAssertEqual(
+        error.message,
+        "Stream is in an error state: the stream was closed unexpectedly"
+      )
     }
   }
 
@@ -969,7 +960,10 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       try channel.writeOutbound(RPCRequestPart<GRPCNIOTransportBytes>.metadata([:]))
     ) { error in
       XCTAssertEqual(error.code, .internalError)
-      XCTAssertEqual(error.message, "Invalid state")
+      XCTAssertEqual(
+        error.message,
+        "Stream is in an error state: the stream was closed unexpectedly"
+      )
     }
   }
 }

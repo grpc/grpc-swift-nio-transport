@@ -187,8 +187,12 @@ extension GRPCClientStreamHandler {
     case .metadata(let metadata):
       do {
         self.flushPending = true
-        let headers = try self.stateMachine.send(metadata: metadata)
-        context.write(self.wrapOutboundOut(.headers(.init(headers: headers))), promise: promise)
+        switch try self.stateMachine.send(metadata: metadata) {
+        case .write(let headers):
+          context.write(self.wrapOutboundOut(.headers(.init(headers: headers))), promise: promise)
+        case .failPromise(let error):
+          promise?.fail(error)
+        }
       } catch let invalidState {
         let error = RPCError(invalidState)
         promise?.fail(error)
@@ -197,7 +201,14 @@ extension GRPCClientStreamHandler {
 
     case .message(let message):
       do {
-        try self.stateMachine.send(message: message.buffer, promise: promise)
+        switch try self.stateMachine.send(message: message.buffer, promise: promise) {
+        case .nothing:
+          ()
+        case .succeedPromise:
+          promise?.succeed()
+        case .failPromise(let error):
+          promise?.fail(error)
+        }
       } catch let invalidState {
         let error = RPCError(invalidState)
         promise?.fail(error)
