@@ -24,7 +24,6 @@ package import NIOCore
 #elseif canImport(Musl)
   private import Musl
 #endif
-private import CNIOLinux
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCNIOTransportCore.SocketAddress {
@@ -88,37 +87,9 @@ extension NIOCore.SocketAddress {
   }
 
   package init(_ address: SocketAddress.IPv6) throws {
-    // IPv6 link-local addresses with scope IDs (e.g. "fe80::1%eth0") require
-    // special handling: inet_pton (used by init(ipAddress:port:)) doesn't support
-    // the %scope suffix, but getaddrinfo does and properly sets sin6_scope_id.
-    //
-    // Ideally this would be handled by swift-nio's SocketAddress.init(ipAddress:port:)
-    // directly, as it uses inet_pton which doesn't support %scope suffixes.
-    if address.host.utf8.contains(UInt8(ascii: "%")) {
-      var hints = addrinfo()
-      hints.ai_family = AF_INET6
-      #if canImport(Glibc)
-      hints.ai_socktype = CInt(SOCK_STREAM.rawValue)
-      #else
-      hints.ai_socktype = SOCK_STREAM
-      #endif
-      hints.ai_flags = AI_NUMERICHOST
-      var result: UnsafeMutablePointer<addrinfo>?
-      let status = getaddrinfo(address.host, String(address.port), &hints, &result)
-      defer { if result != nil { freeaddrinfo(result) } }
-      guard status == 0, let addrInfo = result else {
-        throw RPCError(
-          code: .internalError,
-          message: "Failed to resolve scoped IPv6 address '\(address.host)': \(status)"
-        )
-      }
-      let sockaddr = addrInfo.pointee.ai_addr!.withMemoryRebound(
-        to: sockaddr_in6.self, capacity: 1
-      ) { $0.pointee }
-      try self.init(sockaddr)
-    } else {
-      try self.init(ipAddress: address.host, port: address.port)
-    }
+    // swift-nio now natively supports scoped IPv6 addresses (e.g., "fe80::1%eth0")
+    // in SocketAddress.init(ipAddress:port:) as of version 2.79.0+
+    try self.init(ipAddress: address.host, port: address.port)
   }
 
   package init(_ address: SocketAddress.UnixDomainSocket) throws {
