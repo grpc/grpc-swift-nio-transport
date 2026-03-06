@@ -41,9 +41,10 @@ extension GRPCNIOTransportCore.SocketAddress {
       // Preserve IPv6 scope ID (e.g., for link-local addresses) which inet_ntop drops.
       // The raw sockaddr_in6 stores sin6_scope_id; reconstruct the scoped host string.
       let scopeID = address.address.sin6_scope_id
-      if scopeID != 0 && !host.utf8.contains(UInt8(ascii: "%")) {
+      if scopeID != 0 && !host.contains("%") {
         let scopeName = String(unsafeUninitializedCapacity: Int(IF_NAMESIZE)) { buffer in
-          guard let ptr = if_indextoname(scopeID, buffer.baseAddress!) else {
+          guard let baseAddress = buffer.baseAddress,
+                let ptr = if_indextoname(scopeID, baseAddress) else {
             return 0
           }
           return strlen(ptr)

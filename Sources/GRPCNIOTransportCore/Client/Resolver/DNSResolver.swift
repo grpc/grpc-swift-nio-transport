@@ -190,9 +190,10 @@ extension SocketAddress.IPv6 {
     // getaddrinfo sets sin6_scope_id but inet_ntop doesn't include it in the string.
     var host = presentationAddress
     #if !os(Windows)
-    if address.sin6_scope_id != 0 {
+    if address.sin6_scope_id != 0 && !presentationAddress.contains("%") {
       let scopeName = String(unsafeUninitializedCapacity: Int(IF_NAMESIZE)) { buffer in
-        guard let ptr = if_indextoname(address.sin6_scope_id, buffer.baseAddress!) else {
+        guard let baseAddress = buffer.baseAddress,
+              let ptr = if_indextoname(address.sin6_scope_id, baseAddress) else {
           return 0
         }
         return strlen(ptr)

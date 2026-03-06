@@ -50,6 +50,13 @@ struct NIOSocketAddressConversionTests {
     let nioAddress = try NIOCore.SocketAddress(grpcAddress)
 
     #expect(nioAddress.port == 50051)
+
+    // Verify it's an IPv6 address with scope ID set
+    guard case .v6(let v6Address) = nioAddress else {
+      Issue.record("Expected IPv6 address, got \(nioAddress)")
+      return
+    }
+    #expect(v6Address.address.sin6_scope_id != 0, "Scope ID should be preserved")
     #endif
   }
 
@@ -78,7 +85,7 @@ struct NIOSocketAddressConversionTests {
     let roundTripped = GRPCNIOTransportCore.SocketAddress(nioAddress)
 
     let ipv6 = try #require(roundTripped.ipv6)
-    #expect(ipv6.host.contains("%\(loopback)"))
+    #expect(ipv6.host == "fe80::1%\(loopback)", "Expected exact scope ID preservation")
     #expect(ipv6.port == 50051)
     #endif
   }
