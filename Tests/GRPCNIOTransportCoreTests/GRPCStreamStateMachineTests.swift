@@ -217,7 +217,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
 
       // Try sending metadata again: should throw
       XCTAssertThrowsError(
-        ofType: GRPCStreamStateMachine.InvalidState.self,
+        ofType: GRPCStreamStateMachine.UnreachableTransition.self,
         try stateMachine.send(metadata: .init())
       ) {
         error in
@@ -235,7 +235,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
 
       // Try sending metadata again: should throw
       XCTAssertThrowsError(
-        ofType: GRPCStreamStateMachine.InvalidState.self,
+        ofType: GRPCStreamStateMachine.UnreachableTransition.self,
         try stateMachine.send(metadata: .init())
       ) {
         error in
@@ -251,7 +251,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
 
     // Try to send a message without opening (i.e. without sending initial metadata)
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.send(message: ByteBuffer(), promise: nil)
     ) { error in
       XCTAssertEqual(error.message, "Client not yet open.")
@@ -278,7 +278,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
 
       // Try sending another message: it should fail
       XCTAssertThrowsError(
-        ofType: GRPCStreamStateMachine.InvalidState.self,
+        ofType: GRPCStreamStateMachine.UnreachableTransition.self,
         try stateMachine.send(message: ByteBuffer(), promise: nil)
       ) { error in
         XCTAssertEqual(error.message, "Client is closed, cannot send a message.")
@@ -294,7 +294,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
 
       // This operation is never allowed on the client.
       XCTAssertThrowsError(
-        ofType: GRPCStreamStateMachine.InvalidState.self,
+        ofType: GRPCStreamStateMachine.UnreachableTransition.self,
         try stateMachine.send(
           status: Status(code: .ok, message: ""),
           metadata: .init()
@@ -311,7 +311,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
     var stateMachine = self.makeClientStateMachine(targetState: .clientIdleServerIdle)
 
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.receive(headers: .init(), endStream: false)
     ) { error in
       XCTAssertEqual(error.message, "Server cannot have sent metadata if the client is idle.")
@@ -536,7 +536,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
 
     // Receive an end trailer
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.receive(headers: .init(), endStream: true)
     ) { error in
       XCTAssertEqual(error.message, "Server cannot have sent metadata if the client is idle.")
@@ -658,7 +658,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
     var stateMachine = self.makeClientStateMachine(targetState: .clientIdleServerIdle)
 
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.receive(buffer: .init(), endStream: false)
     ) { error in
       XCTAssertEqual(
@@ -673,7 +673,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
       var stateMachine = self.makeClientStateMachine(targetState: targetState)
 
       XCTAssertThrowsError(
-        ofType: GRPCStreamStateMachine.InvalidState.self,
+        ofType: GRPCStreamStateMachine.UnreachableTransition.self,
         try stateMachine.receive(buffer: .init(), endStream: false)
       ) { error in
         XCTAssertEqual(
@@ -725,7 +725,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
     var stateMachine = self.makeClientStateMachine(targetState: .clientIdleServerIdle)
 
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.nextOutboundFrame()
     ) { error in
       XCTAssertEqual(error.message, "Client is not open yet.")
@@ -1416,7 +1416,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     var stateMachine = self.makeServerStateMachine(targetState: .clientIdleServerIdle)
 
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.send(metadata: .init())
     ) { error in
       XCTAssertEqual(
@@ -1462,7 +1462,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
 
     // Try sending metadata again: should throw
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.send(metadata: .init())
     ) { error in
       XCTAssertEqual(error.message, "Server has already sent initial metadata.")
@@ -1474,7 +1474,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
 
     // Try sending metadata again: should throw
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.send(metadata: .init())
     ) { error in
       XCTAssertEqual(error.message, "Server cannot send metadata if closed.")
@@ -1494,7 +1494,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
 
     // Try sending metadata again: should throw
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.send(metadata: .init())
     ) { error in
       XCTAssertEqual(error.message, "Server has already sent initial metadata.")
@@ -1506,7 +1506,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
 
     // Try sending metadata again: should throw
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.send(metadata: .init())
     ) { error in
       XCTAssertEqual(error.message, "Server cannot send metadata if closed.")
@@ -1519,7 +1519,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     var stateMachine = self.makeServerStateMachine(targetState: .clientIdleServerIdle)
 
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.send(message: ByteBuffer(), promise: nil)
     ) { error in
       XCTAssertEqual(
@@ -1534,7 +1534,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
 
     // Now send a message
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.send(message: ByteBuffer(), promise: nil)
     ) { error in
       XCTAssertEqual(
@@ -1556,7 +1556,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
 
     // Try sending another message: it should fail
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.send(message: ByteBuffer(), promise: nil)
     ) { error in
       XCTAssertEqual(error.message, "Server can't send a message if it's closed.")
@@ -1567,7 +1567,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     var stateMachine = self.makeServerStateMachine(targetState: .clientClosedServerIdle)
 
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.send(message: ByteBuffer(), promise: nil)
     ) { error in
       XCTAssertEqual(
@@ -1590,7 +1590,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
 
     // Try sending another message: it should fail
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.send(message: ByteBuffer(), promise: nil)
     ) { error in
       XCTAssertEqual(error.message, "Server can't send a message if it's closed.")
@@ -1603,7 +1603,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     var stateMachine = self.makeServerStateMachine(targetState: .clientIdleServerIdle)
 
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.send(
         status: .init(code: .ok, message: ""),
         metadata: .init()
@@ -1634,7 +1634,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
 
     // Try sending another message: it should fail because server is now closed.
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.send(message: ByteBuffer(), promise: nil)
     ) { error in
       XCTAssertEqual(error.message, "Server can't send a message if it's closed.")
@@ -1655,7 +1655,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
 
     // Try sending another message: it should fail because server is now closed.
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.send(message: ByteBuffer(), promise: nil)
     ) { error in
       XCTAssertEqual(error.message, "Server can't send a message if it's closed.")
@@ -1692,7 +1692,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
 
     // Try sending another message: it should fail because server is now closed.
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.send(message: ByteBuffer(), promise: nil)
     ) { error in
       XCTAssertEqual(error.message, "Server can't send a message if it's closed.")
@@ -1713,7 +1713,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
 
     // Try sending another message: it should fail because server is now closed.
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.send(message: ByteBuffer(), promise: nil)
     ) { error in
       XCTAssertEqual(error.message, "Server can't send a message if it's closed.")
@@ -1991,7 +1991,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     var stateMachine = self.makeServerStateMachine(targetState: .clientClosedServerIdle)
 
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.receive(headers: .clientInitialMetadata, endStream: false)
     ) { error in
       XCTAssertEqual(error.message, "Client can't have sent metadata if closed.")
@@ -2002,7 +2002,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     var stateMachine = self.makeServerStateMachine(targetState: .clientClosedServerOpen)
 
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.receive(headers: .clientInitialMetadata, endStream: false)
     ) { error in
       XCTAssertEqual(error.message, "Client can't have sent metadata if closed.")
@@ -2013,7 +2013,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     var stateMachine = self.makeServerStateMachine(targetState: .clientClosedServerClosed)
 
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.receive(headers: .clientInitialMetadata, endStream: false)
     ) { error in
       XCTAssertEqual(error.message, "Client can't have sent metadata if closed.")
@@ -2026,7 +2026,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     var stateMachine = self.makeServerStateMachine(targetState: .clientIdleServerIdle)
 
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.receive(buffer: .init(), endStream: false)
     ) { error in
       XCTAssertEqual(error.message, "Can't have received a message if client is idle.")
@@ -2042,7 +2042,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
 
     // Verify client is now closed
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.receive(buffer: .init(), endStream: false)
     ) { error in
       XCTAssertEqual(error.message, "Client can't send a message if closed.")
@@ -2058,7 +2058,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
 
     // Verify client is now closed
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.receive(buffer: .init(), endStream: false)
     ) { error in
       XCTAssertEqual(error.message, "Client can't send a message if closed.")
@@ -2133,7 +2133,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     var stateMachine = self.makeServerStateMachine(targetState: .clientClosedServerIdle)
 
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.receive(buffer: .init(), endStream: false)
     ) { error in
       XCTAssertEqual(error.message, "Client can't send a message if closed.")
@@ -2144,7 +2144,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     var stateMachine = self.makeServerStateMachine(targetState: .clientClosedServerOpen)
 
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.receive(buffer: .init(), endStream: false)
     ) { error in
       XCTAssertEqual(error.message, "Client can't send a message if closed.")
@@ -2155,7 +2155,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     var stateMachine = self.makeServerStateMachine(targetState: .clientClosedServerClosed)
 
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.receive(buffer: .init(), endStream: false)
     ) { error in
       XCTAssertEqual(error.message, "Client can't send a message if closed.")
@@ -2168,7 +2168,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     var stateMachine = self.makeServerStateMachine(targetState: .clientIdleServerIdle)
 
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.nextOutboundFrame()
     ) { error in
       XCTAssertEqual(error.message, "Server is not open yet.")
@@ -2179,7 +2179,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     var stateMachine = self.makeServerStateMachine(targetState: .clientOpenServerIdle)
 
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.nextOutboundFrame()
     ) { error in
       XCTAssertEqual(error.message, "Server is not open yet.")
@@ -2190,7 +2190,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     var stateMachine = self.makeServerStateMachine(targetState: .clientOpenServerIdle)
 
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.nextOutboundFrame()
     ) { error in
       XCTAssertEqual(error.message, "Server is not open yet.")
@@ -2260,7 +2260,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     var stateMachine = self.makeServerStateMachine(targetState: .clientClosedServerIdle)
 
     XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.InvalidState.self,
+      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
       try stateMachine.nextOutboundFrame()
     ) { error in
       XCTAssertEqual(error.message, "Server is not open yet.")
