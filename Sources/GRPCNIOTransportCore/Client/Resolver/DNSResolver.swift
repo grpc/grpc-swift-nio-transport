@@ -119,11 +119,15 @@ package enum DNSResolver {
     return try presentationAddressBytes.withUnsafeMutableBufferPointer {
       (presentationAddressBytesPtr: inout UnsafeMutableBufferPointer<CChar>) throws -> String in
 
+      guard let baseAddress = presentationAddressBytesPtr.baseAddress else {
+        throw Self.InetNetworkToPresentationError(errno: EINVAL)
+      }
+
       // Convert
       let presentationAddressStringPtr = inet_ntop(
         family,
         addressPtr,
-        presentationAddressBytesPtr.baseAddress!,
+        baseAddress,
         socklen_t(length)
       )
 
