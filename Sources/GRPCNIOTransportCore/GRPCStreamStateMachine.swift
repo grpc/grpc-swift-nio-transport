@@ -50,6 +50,10 @@ enum GRPCStreamStateMachineConfiguration {
       self.outboundEncoding = outboundEncoding
       self.acceptedEncodings = acceptedEncodings.union(.none)
     }
+
+    var delayWritesUntilHalfClosed: Bool {
+      methodDescriptor.type.isKnownUnaryRequest
+    }
   }
 
   struct ServerConfiguration {
@@ -261,6 +265,7 @@ private enum GRPCStreamStateMachineState {
     var decompressor: Zlib.Decompressor?
 
     var inboundMessageBuffer: OneOrManyQueue<ByteBuffer>
+    var hasSentEndStream: Bool
 
     // Store the headers received from the remote peer, its storage can be reused when sending
     // headers back to the remote peer.
@@ -281,6 +286,7 @@ private enum GRPCStreamStateMachineState {
       self.decompressor = nil
 
       self.inboundMessageBuffer = .init()
+      self.hasSentEndStream = false
       self.headers = [:]
     }
 
@@ -307,6 +313,7 @@ private enum GRPCStreamStateMachineState {
       // client: it's closed.
       self.deframer = nil
       self.inboundMessageBuffer = .init()
+      self.hasSentEndStream = false
       self.headers = headers
     }
 
@@ -318,6 +325,7 @@ private enum GRPCStreamStateMachineState {
       self.deframer = previousState.deframer
       self.decompressor = previousState.decompressor
       self.inboundMessageBuffer = previousState.inboundMessageBuffer
+      self.hasSentEndStream = false
       self.headers = previousState.headers
     }
   }
@@ -331,6 +339,7 @@ private enum GRPCStreamStateMachineState {
     var decompressor: Zlib.Decompressor?
 
     var inboundMessageBuffer: OneOrManyQueue<ByteBuffer>
+    var hasSentEndStream: Bool
 
     // Store the headers received from the remote peer, its storage can be reused when sending
     // headers back to the remote peer.
@@ -343,6 +352,7 @@ private enum GRPCStreamStateMachineState {
       self.deframer = previousState.deframer
       self.decompressor = previousState.decompressor
       self.inboundMessageBuffer = previousState.inboundMessageBuffer
+      self.hasSentEndStream = false
       self.headers = previousState.headers
     }
 
@@ -358,6 +368,7 @@ private enum GRPCStreamStateMachineState {
       self.decompressor = nil
 
       self.inboundMessageBuffer = previousState.inboundMessageBuffer
+      self.hasSentEndStream = previousState.hasSentEndStream
       self.headers = previousState.headers
     }
 
@@ -382,6 +393,7 @@ private enum GRPCStreamStateMachineState {
       )
 
       self.inboundMessageBuffer = previousState.inboundMessageBuffer
+      self.hasSentEndStream = previousState.hasSentEndStream
       self.headers = previousState.headers
     }
   }
@@ -396,6 +408,7 @@ private enum GRPCStreamStateMachineState {
 
     // These are already deframed, so we don't need the deframer anymore.
     var inboundMessageBuffer: OneOrManyQueue<ByteBuffer>
+    var hasSentEndStream: Bool
 
     // This transition should only happen on the server-side when, upon receiving
     // initial client metadata, some of the headers are invalid and we must reject
@@ -409,6 +422,7 @@ private enum GRPCStreamStateMachineState {
       self.compressor = nil
       self.outboundCompression = .none
       self.inboundMessageBuffer = .init()
+      self.hasSentEndStream = false
     }
 
     init(previousState: ClientClosedServerOpenState) {
@@ -416,6 +430,7 @@ private enum GRPCStreamStateMachineState {
       self.compressor = previousState.compressor
       self.outboundCompression = previousState.outboundCompression
       self.inboundMessageBuffer = previousState.inboundMessageBuffer
+      self.hasSentEndStream = previousState.hasSentEndStream
     }
 
     init(previousState: ClientClosedServerIdleState) {
@@ -423,6 +438,7 @@ private enum GRPCStreamStateMachineState {
       self.compressor = previousState.compressor
       self.outboundCompression = previousState.outboundCompression
       self.inboundMessageBuffer = previousState.inboundMessageBuffer
+      self.hasSentEndStream = previousState.hasSentEndStream
     }
 
     init(previousState: ClientOpenServerClosedState) {
@@ -430,6 +446,7 @@ private enum GRPCStreamStateMachineState {
       self.compressor = previousState.compressor
       self.outboundCompression = previousState.outboundCompression
       self.inboundMessageBuffer = previousState.inboundMessageBuffer
+      self.hasSentEndStream = false
     }
   }
 
@@ -652,14 +669,15 @@ struct GRPCStreamStateMachine {
     /// A frame is ready to be sent.
     case sendFrame(
       frame: ByteBuffer,
+      endStream: Bool,
       promise: EventLoopPromise<Void>?
     )
     case closeAndFailPromise(EventLoopPromise<Void>?, RPCError)
 
-    init(result: Result<ByteBuffer, RPCError>, promise: EventLoopPromise<Void>?) {
+    init(result: Result<ByteBuffer, RPCError>, endStream: Bool, promise: EventLoopPromise<Void>?) {
       switch result {
       case .success(let buffer):
-        self = .sendFrame(frame: buffer, promise: promise)
+        self = .sendFrame(frame: buffer, endStream: endStream, promise: promise)
       case .failure(let error):
         self = .closeAndFailPromise(promise, error)
       }
@@ -667,12 +685,175 @@ struct GRPCStreamStateMachine {
   }
 
   mutating func nextOutboundFrame() throws(UnreachableTransition) -> OnNextOutboundFrame {
-    switch self.configuration {
-    case .client:
-      return try self.clientNextOutboundFrame()
-    case .server:
-      return try self.serverNextOutboundFrame()
+    let action: OnNextOutboundFrame
+
+    switch self.state {
+    case .clientIdleServerIdle:
+      // This is unreachable by construction: the handler holding this state machine shouldn't
+      // ask for more outbound messages unless it's successfully buffered one in the state machine.
+      switch self.configuration {
+      case .client:
+        try self.unreachable("Client is not open yet.")
+      case .server:
+        try self.unreachable("Server is not open yet.")
+      }
+
+    case .clientOpenServerIdle(var state):
+      switch self.configuration {
+      case .client(let config):
+        if config.delayWritesUntilHalfClosed {
+          action = .awaitMoreMessages
+        } else {
+          self.state = ._modifying
+          let next = state.framer.nextResult(compressor: state.compressor)
+          self.state = .clientOpenServerIdle(state)
+
+          if let next = next {
+            action = OnNextOutboundFrame(
+              result: next.result,
+              endStream: false,
+              promise: next.promise
+            )
+          } else {
+            action = .awaitMoreMessages
+          }
+        }
+
+      case .server:
+        // This is unreachable by construction: the handler holding this state machine shouldn't
+        // ask for more outbound messages unless it's successfully buffered one in the state
+        // machine.
+        try self.unreachable("Server is not open yet.")
+      }
+
+    case .clientOpenServerOpen(var state):
+      switch self.configuration {
+      case .client(let config) where config.delayWritesUntilHalfClosed:
+        // Early exit, wait for half close.
+        action = .awaitMoreMessages
+
+      case .client, .server:
+        self.state = ._modifying
+        let next = state.framer.nextResult(compressor: state.compressor)
+        self.state = .clientOpenServerOpen(state)
+
+        if let next = next {
+          action = OnNextOutboundFrame(result: next.result, endStream: false, promise: next.promise)
+        } else {
+          action = .awaitMoreMessages
+        }
+      }
+
+    case .clientClosedServerIdle(var state):
+      switch self.configuration {
+      case .client:
+        self.state = ._modifying
+        let next = state.framer.nextResult(compressor: state.compressor)
+
+        if let next = next {
+          // nextResult() drains all pending messages into a single buffer in one
+          // call, so this batch is always the last one: endStream is always true.
+          state.hasSentEndStream = true
+          action = OnNextOutboundFrame(
+            result: next.result,
+            endStream: true,
+            promise: next.promise
+          )
+        } else if state.hasSentEndStream {
+          action = .noMoreMessages
+        } else {
+          // Send an empty frame with end-stream
+          state.hasSentEndStream = true
+          action = .sendFrame(frame: ByteBuffer(), endStream: true, promise: nil)
+        }
+
+        self.state = .clientClosedServerIdle(state)
+
+      case .server:
+        try self.unreachable("Server is not open yet.")
+      }
+
+    case .clientClosedServerOpen(var state):
+      self.state = ._modifying
+      let next = state.framer.nextResult(compressor: state.compressor)
+
+      switch self.configuration {
+      case .client:
+        if let next = next {
+          // nextResult() drains all pending messages into a single buffer in one
+          // call, so this batch is always the last one: endStream is always true.
+          state.hasSentEndStream = true
+          action = OnNextOutboundFrame(
+            result: next.result,
+            endStream: true,
+            promise: next.promise
+          )
+        } else if state.hasSentEndStream {
+          action = .noMoreMessages
+        } else {
+          // Send an empty frame with end-stream
+          state.hasSentEndStream = true
+          action = .sendFrame(frame: ByteBuffer(), endStream: true, promise: nil)
+        }
+      case .server:
+        if let next = next {
+          action = OnNextOutboundFrame(
+            result: next.result,
+            endStream: false,
+            promise: next.promise
+          )
+        } else {
+          action = .awaitMoreMessages
+        }
+      }
+
+      self.state = .clientClosedServerOpen(state)
+
+    case .clientOpenServerClosed(var state):
+      switch self.configuration {
+      case .client:
+        // No point in sending any more requests if the server is closed.
+        action = .noMoreMessages
+
+      case .server:
+        self.state = ._modifying
+        let next = state.framer?.nextResult(compressor: state.compressor)
+        self.state = .clientOpenServerClosed(state)
+
+        if let next = next {
+          action = OnNextOutboundFrame(result: next.result, endStream: false, promise: next.promise)
+        } else {
+          action = .noMoreMessages
+        }
+      }
+
+    case .clientClosedServerClosed(var state):
+      switch self.configuration {
+      case .client:
+        // No point in sending any more requests if the server is closed.
+        action = .noMoreMessages
+
+      case .server:
+        self.state = ._modifying
+        let next = state.framer?.nextResult(compressor: state.compressor)
+        self.state = .clientClosedServerClosed(state)
+
+        if let next = next {
+          action = OnNextOutboundFrame(result: next.result, endStream: false, promise: next.promise)
+        } else {
+          action = .noMoreMessages
+        }
+      }
+
+    case .poisoned:
+      // No point in sending any more requests if the stream is poisoned.
+      action = .noMoreMessages
+
+    case ._modifying:
+      preconditionFailure()
     }
+
+    return action
   }
 
   /// The result of requesting the next inbound message.
@@ -910,72 +1091,6 @@ extension GRPCStreamStateMachine {
       ()  // Client is already closed - nothing to do.
     case .poisoned:
       ()  // No-op, already in an error state.
-    case ._modifying:
-      preconditionFailure()
-    }
-  }
-
-  /// Returns the client's next request to the server.
-  /// - Returns: The request to be made to the server.
-  private mutating func clientNextOutboundFrame() throws(UnreachableTransition)
-    -> OnNextOutboundFrame
-  {
-
-    switch self.state {
-    case .clientIdleServerIdle:
-      // This is unreachable by construction: the handler holding this state machine shouldn't
-      // ask for more outbound messages unless it's successfully buffered one in the state machine.
-      try self.unreachable("Client is not open yet.")
-
-    case .clientOpenServerIdle(var state):
-      self.state = ._modifying
-      let next = state.framer.nextResult(compressor: state.compressor)
-      self.state = .clientOpenServerIdle(state)
-
-      if let next = next {
-        return OnNextOutboundFrame(result: next.result, promise: next.promise)
-      } else {
-        return .awaitMoreMessages
-      }
-
-    case .clientOpenServerOpen(var state):
-      self.state = ._modifying
-      let next = state.framer.nextResult(compressor: state.compressor)
-      self.state = .clientOpenServerOpen(state)
-
-      if let next = next {
-        return OnNextOutboundFrame(result: next.result, promise: next.promise)
-      } else {
-        return .awaitMoreMessages
-      }
-
-    case .clientClosedServerIdle(var state):
-      self.state = ._modifying
-      let next = state.framer.nextResult(compressor: state.compressor)
-      self.state = .clientClosedServerIdle(state)
-
-      if let next = next {
-        return OnNextOutboundFrame(result: next.result, promise: next.promise)
-      } else {
-        return .noMoreMessages
-      }
-
-    case .clientClosedServerOpen(var state):
-      self.state = ._modifying
-      let next = state.framer.nextResult(compressor: state.compressor)
-      self.state = .clientClosedServerOpen(state)
-
-      if let next = next {
-        return OnNextOutboundFrame(result: next.result, promise: next.promise)
-      } else {
-        return .noMoreMessages
-      }
-
-    case .clientOpenServerClosed, .clientClosedServerClosed, .poisoned:
-      // No point in sending any more requests if the server is closed or the stream isn't in a
-      // good state.
-      return .noMoreMessages
-
     case ._modifying:
       preconditionFailure()
     }
@@ -1973,65 +2088,6 @@ extension GRPCStreamStateMachine {
     }
 
     return action
-  }
-
-  private mutating func serverNextOutboundFrame() throws(UnreachableTransition)
-    -> OnNextOutboundFrame
-  {
-    switch self.state {
-    case .clientIdleServerIdle, .clientOpenServerIdle, .clientClosedServerIdle:
-      try self.unreachable("Server is not open yet.")
-
-    case .clientOpenServerOpen(var state):
-      self.state = ._modifying
-      let next = state.framer.nextResult(compressor: state.compressor)
-      self.state = .clientOpenServerOpen(state)
-
-      if let next = next {
-        return OnNextOutboundFrame(result: next.result, promise: next.promise)
-      } else {
-        return .awaitMoreMessages
-      }
-
-    case .clientClosedServerOpen(var state):
-      self.state = ._modifying
-      let next = state.framer.nextResult(compressor: state.compressor)
-      self.state = .clientClosedServerOpen(state)
-
-      if let next = next {
-        return OnNextOutboundFrame(result: next.result, promise: next.promise)
-      } else {
-        return .awaitMoreMessages
-      }
-
-    case .clientOpenServerClosed(var state):
-      self.state = ._modifying
-      let next = state.framer?.nextResult(compressor: state.compressor)
-      self.state = .clientOpenServerClosed(state)
-
-      if let next = next {
-        return OnNextOutboundFrame(result: next.result, promise: next.promise)
-      } else {
-        return .noMoreMessages
-      }
-
-    case .clientClosedServerClosed(var state):
-      self.state = ._modifying
-      let next = state.framer?.nextResult(compressor: state.compressor)
-      self.state = .clientClosedServerClosed(state)
-
-      if let next = next {
-        return OnNextOutboundFrame(result: next.result, promise: next.promise)
-      } else {
-        return .noMoreMessages
-      }
-
-    case .poisoned:
-      return .noMoreMessages
-
-    case ._modifying:
-      preconditionFailure()
-    }
   }
 
   private mutating func serverNextInboundMessage() -> OnNextInboundMessage {
