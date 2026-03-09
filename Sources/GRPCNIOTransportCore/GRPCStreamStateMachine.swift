@@ -603,7 +603,7 @@ struct GRPCStreamStateMachine {
   }
 
   enum OnMetadataReceived: Equatable {
-    case receivedMetadata(Metadata, MethodDescriptor?)
+    case receivedMetadata(Metadata, String?)
     case doNothing
 
     // Client-specific actions
@@ -1820,17 +1820,6 @@ extension GRPCStreamStateMachine {
         )
       }
 
-      guard let path = MethodDescriptor(path: pathHeader) else {
-        self.state = closeServer(from: state, endStream: endStream)
-        return .rejectRPC_serverOnly(
-          trailers: .trailersOnly(
-            code: .unimplemented,
-            message:
-              "The given \(GRPCHTTP2Keys.path.rawValue) (\(pathHeader)) does not correspond to a valid method."
-          )
-        )
-      }
-
       let scheme = headers.firstString(forKey: .scheme).flatMap { Scheme(rawValue: $0) }
       if scheme == nil {
         self.state = closeServer(from: state, endStream: endStream)
@@ -1945,7 +1934,7 @@ extension GRPCStreamStateMachine {
         )
       }
 
-      return .receivedMetadata(Metadata(headers: headers), path)
+      return .receivedMetadata(Metadata(headers: headers), pathHeader)
 
     case .clientOpenServerIdle(let state):
       // Metadata has already been received, should only be sent once by clients.

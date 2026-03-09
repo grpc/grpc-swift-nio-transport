@@ -121,7 +121,8 @@ extension ConnectionTest {
                 acceptedEncodings: .none,
                 maxPayloadSize: .max,
                 methodDescriptorPromise: channel.eventLoop.makePromise(of: MethodDescriptor.self),
-                eventLoop: stream.eventLoop
+                eventLoop: stream.eventLoop,
+                descriptorsByPath: [:]
               )
 
               return stream.eventLoop.makeCompletedFuture {

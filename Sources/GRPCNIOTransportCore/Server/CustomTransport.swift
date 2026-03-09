@@ -104,6 +104,7 @@ extension HTTP2ServerTransport {
     }
 
     private let listeningAddressState: Mutex<State>
+    private let serverContext: Mutex<GRPCServerContext?>
     private let serverQuiescingHelper: ServerQuiescingHelper
     private let factory: ListenerFactory
     private let config: Config
@@ -213,6 +214,7 @@ extension HTTP2ServerTransport {
     ) {
       let eventLoop = eventLoopGroup.any()
       self.listeningAddressState = Mutex(.idle(eventLoop.makePromise()))
+      self.serverContext = Mutex(nil)
 
       self.factory = listenerFactory
       self.serverQuiescingHelper = quiescingHelper
@@ -253,12 +255,15 @@ extension HTTP2ServerTransport {
         channelDebuggingCallbacks: self.config.channelDebuggingCallbacks
       )
 
+      let serverContext = self.serverContext.withLock { $0 }
+      let desciptorsByPath = serverContext?.descriptorsByPath() ?? [:]
       let connectionConfigurator = HTTP2ServerTransport.ConnectionConfigurator(
         compression: self.config.compression,
         connection: self.config.connection,
         http2: self.config.http2,
         rpc: self.config.rpc,
-        channelDebuggingCallbacks: self.config.channelDebuggingCallbacks
+        channelDebuggingCallbacks: self.config.channelDebuggingCallbacks,
+        descriptorsByPath: desciptorsByPath
       )
 
       let serverChannel = try await self.factory.makeListeningChannel(
@@ -414,6 +419,23 @@ extension HTTP2ServerTransport {
     public func beginGracefulShutdown() {
       self.serverQuiescingHelper.initiateShutdown(promise: nil)
     }
-  }
 
+    public func configure(context: GRPCServerContext) {
+      self.serverContext.withLock { $0 = context }
+    }
+  }
+}
+
+@available(gRPCSwiftNIOTransport 2.5, *)
+extension GRPCServerContext {
+  package func descriptorsByPath() -> [String: MethodDescriptor] {
+    var byPath: [String: MethodDescriptor] = [:]
+    byPath.reserveCapacity(self.methods.count)
+
+    for method in self.methods {
+      byPath["/" + method.fullyQualifiedMethod] = method
+    }
+
+    return byPath
+  }
 }

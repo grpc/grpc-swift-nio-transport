@@ -15,6 +15,7 @@
  */
 
 public import NIOCore
+package import GRPCCore
 
 @available(gRPCSwiftNIOTransport 2.6, *)
 extension HTTP2ServerTransport {
@@ -79,19 +80,22 @@ extension HTTP2ServerTransport {
     private let http2: HTTP2ServerTransport.Config.HTTP2
     private let rpc: HTTP2ServerTransport.Config.RPC
     private let channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
+    private let descriptorsByPath: [String: MethodDescriptor]
 
     package init(
       compression: HTTP2ServerTransport.Config.Compression,
       connection: HTTP2ServerTransport.Config.Connection,
       http2: HTTP2ServerTransport.Config.HTTP2,
       rpc: HTTP2ServerTransport.Config.RPC,
-      channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
+      channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks,
+      descriptorsByPath: [String: MethodDescriptor]
     ) {
       self.compression = compression
       self.connection = connection
       self.http2 = http2
       self.rpc = rpc
       self.channelDebuggingCallbacks = channelDebuggingCallbacks
+      self.descriptorsByPath = descriptorsByPath
     }
 
     /// Configures an accepted connection channel with the gRPC HTTP/2 server pipeline.
@@ -117,7 +121,8 @@ extension HTTP2ServerTransport {
           rpcConfig: self.rpc,
           debugConfig: self.channelDebuggingCallbacks,
           requireALPN: tls.requireALPN,
-          scheme: tls.usesTLS ? .https : .http
+          scheme: tls.usesTLS ? .https : .http,
+          descriptorsByPath: self.descriptorsByPath
         )
         return ConnectionChannel(connection: connection, multiplexer: mux)
       }

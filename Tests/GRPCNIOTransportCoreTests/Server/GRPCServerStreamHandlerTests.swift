@@ -32,6 +32,7 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     acceptedEncodings: CompressionAlgorithmSet = [],
     maxPayloadSize: Int = .max,
     descriptorPromise: EventLoopPromise<MethodDescriptor>? = nil,
+    descriptorsByPath: [String: MethodDescriptor] = [:],
     disableAssertions: Bool = false
   ) -> GRPCServerStreamHandler {
     return GRPCServerStreamHandler(
@@ -40,8 +41,130 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
       maxPayloadSize: maxPayloadSize,
       methodDescriptorPromise: descriptorPromise ?? channel.eventLoop.makePromise(),
       eventLoop: channel.eventLoop,
+      descriptorsByPath: descriptorsByPath,
       skipStateMachineAssertions: disableAssertions
     )
+  }
+
+  func testDescriptorResolvedFromCache() throws {
+    let channel = EmbeddedChannel()
+    let descriptor = MethodDescriptor(
+      service: ServiceDescriptor(fullyQualifiedService: "test"),
+      method: "test"
+    )
+    let descriptorPromise = channel.eventLoop.makePromise(of: MethodDescriptor.self)
+    let handler = self.makeServerStreamHandler(
+      channel: channel,
+      descriptorPromise: descriptorPromise,
+      descriptorsByPath: ["/test/test": descriptor]
+    )
+    try channel.pipeline.syncOperations.addHandler(handler)
+
+    let clientInitialMetadata: HPACKHeaders = [
+      ":path": "/test/test",
+      ":scheme": "http",
+      ":method": "POST",
+      "content-type": "application/grpc",
+      "te": "trailers",
+    ]
+    XCTAssertNoThrow(
+      try channel.writeInbound(
+        HTTP2Frame.FramePayload.headers(.init(headers: clientInitialMetadata))
+      )
+    )
+
+    // No error response should have been written.
+    XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
+
+    // The metadata should have been forwarded inbound.
+    XCTAssertEqual(
+      try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self),
+      RPCRequestPart<GRPCNIOTransportBytes>.metadata(Metadata(headers: clientInitialMetadata))
+    )
+
+    // The descriptor promise should have been fulfilled with the cached descriptor.
+    let resolved = try descriptorPromise.futureResult.wait()
+    XCTAssertEqual(resolved, descriptor)
+  }
+
+  func testDescriptorResolvedFromPathWhenNotInCache() throws {
+    let channel = EmbeddedChannel()
+    let descriptorPromise = channel.eventLoop.makePromise(of: MethodDescriptor.self)
+    // Empty cache: the path is valid but not pre-cached.
+    let handler = self.makeServerStreamHandler(
+      channel: channel,
+      descriptorPromise: descriptorPromise,
+      descriptorsByPath: [:]
+    )
+    try channel.pipeline.syncOperations.addHandler(handler)
+
+    let clientInitialMetadata: HPACKHeaders = [
+      ":path": "/some.Service/Method",
+      ":scheme": "http",
+      ":method": "POST",
+      "content-type": "application/grpc",
+      "te": "trailers",
+    ]
+    XCTAssertNoThrow(
+      try channel.writeInbound(
+        HTTP2Frame.FramePayload.headers(.init(headers: clientInitialMetadata))
+      )
+    )
+
+    // No error response should have been written.
+    XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
+
+    // The metadata should have been forwarded inbound.
+    XCTAssertEqual(
+      try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self),
+      RPCRequestPart<GRPCNIOTransportBytes>.metadata(Metadata(headers: clientInitialMetadata))
+    )
+
+    // The descriptor promise should have been fulfilled with a descriptor parsed from the path.
+    let resolved = try descriptorPromise.futureResult.wait()
+    XCTAssertEqual(
+      resolved,
+      MethodDescriptor(
+        service: ServiceDescriptor(fullyQualifiedService: "some.Service"),
+        method: "Method"
+      )
+    )
+  }
+
+  func testInvalidPathResultsInRejectedRPC() throws {
+    let channel = EmbeddedChannel()
+    let handler = self.makeServerStreamHandler(channel: channel, disableAssertions: true)
+    try channel.pipeline.syncOperations.addHandler(handler)
+
+    // A :path that doesn't match "/<service>/<method>" format.
+    let clientInitialMetadata: HPACKHeaders = [
+      ":path": "invalid-no-slashes",
+      ":scheme": "http",
+      ":method": "POST",
+      "content-type": "application/grpc",
+      "te": "trailers",
+    ]
+    XCTAssertNoThrow(
+      try channel.writeInbound(
+        HTTP2Frame.FramePayload.headers(.init(headers: clientInitialMetadata))
+      )
+    )
+
+    // Should have written a trailers-only rejection.
+    let writtenTrailersOnlyResponse = try channel.assertReadHeadersOutbound()
+    XCTAssertEqual(
+      writtenTrailersOnlyResponse.headers,
+      [
+        ":status": "200",
+        "content-type": "application/grpc",
+        "grpc-status": String(Status.Code.unimplemented.rawValue),
+        "grpc-message": "Requested RPC isn't implemented by this server.",
+      ]
+    )
+    XCTAssertTrue(writtenTrailersOnlyResponse.endStream)
+
+    // No metadata should have been forwarded inbound.
+    XCTAssertNil(try channel.readInbound(as: RPCRequestPart<GRPCNIOTransportBytes>.self))
   }
 
   func testH2FramesAreIgnored() throws {
@@ -1032,6 +1155,7 @@ struct ServerStreamHandlerTests {
       maxPayloadSize: maxPayloadSize,
       methodDescriptorPromise: descriptorPromise ?? channel.eventLoop.makePromise(),
       eventLoop: channel.eventLoop,
+      descriptorsByPath: [:],
       skipStateMachineAssertions: disableAssertions
     )
 

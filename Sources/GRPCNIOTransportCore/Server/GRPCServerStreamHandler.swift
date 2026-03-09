@@ -28,6 +28,11 @@ package final class GRPCServerStreamHandler: ChannelDuplexHandler, RemovableChan
 
   private var stateMachine: GRPCStreamStateMachine
   private let eventLoop: any EventLoop
+  /// Descriptors keyed by their corresponding ":path" pseudoheader value.
+  private let descriptorsByPath: [String: MethodDescriptor]
+  /// A descriptor of the method being handled. If the method is known via `descriptorsByPath` then
+  /// the handler can use the RPC type information to optimise flushing.
+  private var descriptor: MethodDescriptor?
 
   private var isReading = false
   private var flushPending = false
@@ -56,6 +61,7 @@ package final class GRPCServerStreamHandler: ChannelDuplexHandler, RemovableChan
     maxPayloadSize: Int,
     methodDescriptorPromise: EventLoopPromise<MethodDescriptor>,
     eventLoop: any EventLoop,
+    descriptorsByPath: [String: MethodDescriptor],
     cancellationHandler: ServerContext.RPCCancellationHandle? = nil,
     skipStateMachineAssertions: Bool = false
   ) {
@@ -67,6 +73,8 @@ package final class GRPCServerStreamHandler: ChannelDuplexHandler, RemovableChan
     self.methodDescriptorPromise = methodDescriptorPromise
     self.cancellationHandle = cancellationHandler
     self.eventLoop = eventLoop
+    self.descriptorsByPath = descriptorsByPath
+    self.descriptor = nil
   }
 
   package func setCancellationHandle(_ handle: ServerContext.RPCCancellationHandle) {
@@ -163,10 +171,31 @@ extension GRPCServerStreamHandler {
           endStream: headers.endStream
         )
         switch action {
-        case .receivedMetadata(let metadata, let methodDescriptor):
-          if let methodDescriptor = methodDescriptor {
-            self.methodDescriptorPromise.succeed(methodDescriptor)
-            context.fireChannelRead(self.wrapInboundOut(.metadata(metadata)))
+        case .receivedMetadata(let metadata, let path):
+          if let path = path {
+            if let descriptor = self.descriptorsByPath[path] ?? MethodDescriptor(path: path) {
+              // Descriptor was cached or computed from the :path, forward to the router.
+              self.descriptor = descriptor
+              self.methodDescriptorPromise.succeed(descriptor)
+              context.fireChannelRead(self.wrapInboundOut(.metadata(metadata)))
+            } else {
+              // Is gRPC but :path doesn't match the format of a normal descriptor.
+              let status = Status(
+                code: .unimplemented,
+                message: "Requested RPC isn't implemented by this server."
+              )
+              let error = RPCError(code: .unimplemented, message: status.message)
+              self.methodDescriptorPromise.fail(error)
+              switch try self.stateMachine.send(status: status, metadata: [:]) {
+              case .writeTrailers(let trailers):
+                // We'll need to flush this, do it at the end of the read loop.
+                self.flushPending = true
+                let response = HTTP2Frame.FramePayload.Headers(headers: trailers, endStream: true)
+                context.write(self.wrapOutboundOut(.headers(response)), promise: nil)
+              case .dropAndFailPromise:
+                ()  // no promise to fail.
+              }
+            }
           } else {
             assertionFailure("Method descriptor should have been present if we received metadata.")
           }
@@ -209,8 +238,7 @@ extension GRPCServerStreamHandler {
   package func channelReadComplete(context: ChannelHandlerContext) {
     self.isReading = false
     if self.flushPending {
-      self.flushPending = false
-      context.flush()
+      self._flush(context: context)
     }
     context.fireChannelReadComplete()
   }
@@ -223,6 +251,17 @@ extension GRPCServerStreamHandler {
   package func channelInactive(context: ChannelHandlerContext) {
     self.handleUnexpectedClose(context: context, reason: .channelInactive)
     context.fireChannelInactive()
+  }
+
+  package func channelWritabilityChanged(context: ChannelHandlerContext) {
+    let isWritable = context.channel.isWritable
+
+    if !isWritable {
+      // the stream became unwritable, flush out the buffered bytes.
+      self._flush(context: context, force: true)
+    }
+
+    context.fireChannelWritabilityChanged()
   }
 
   package func errorCaught(context: ChannelHandlerContext, error: any Error) {
@@ -260,7 +299,6 @@ extension GRPCServerStreamHandler {
     switch frame {
     case .metadata(let metadata):
       do {
-        self.flushPending = true
         switch try self.stateMachine.send(metadata: metadata) {
         case .write(let headers):
           context.write(self.wrapOutboundOut(.headers(.init(headers: headers))), promise: promise)
@@ -309,47 +347,62 @@ extension GRPCServerStreamHandler {
   package func flush(context: ChannelHandlerContext) {
     if self.isReading {
       // We don't want to flush yet if we're still in a read loop.
-      return
+      self.flushPending = true
+    } else {
+      self._flush(context: context)
+    }
+  }
+
+  private func _flush(context: ChannelHandlerContext, force forceFlush: Bool = false) {
+    var flush = true
+
+    loop: while true {
+      let action: GRPCStreamStateMachine.OnNextOutboundFrame
+      do {
+        action = try self.stateMachine.nextOutboundFrame()
+      } catch let invalid {
+        let error = RPCError(invalid)
+        context.fireErrorCaught(error)
+        break loop
+      }
+
+      switch action {
+      case .sendFrame(let byteBuffer, _, let promise):
+        // end stream is never set on DATA frames sent by the server.
+        context.write(
+          self.wrapOutboundOut(.data(.init(data: .byteBuffer(byteBuffer)))),
+          promise: promise
+        )
+
+      case .noMoreMessages:
+        if let pendingTrailers = self.pendingTrailers {
+          self.pendingTrailers = nil
+          context.write(
+            self.wrapOutboundOut(pendingTrailers.trailers),
+            promise: pendingTrailers.promise
+          )
+        } else {
+          // If it's known to be a unary response wait for trailers before flushing.
+          flush = !(self.descriptor?.type.isKnownUnaryResponse ?? false)
+        }
+
+        break loop
+
+      case .awaitMoreMessages:
+        // If it's known to be a unary response wait for trailers before flushing.
+        flush = !(self.descriptor?.type.isKnownUnaryResponse ?? false)
+        break loop
+
+      case .closeAndFailPromise(let promise, let error):
+        context.close(mode: .all, promise: nil)
+        promise?.fail(error)
+        break
+      }
     }
 
-    do {
-      loop: while true {
-        switch try self.stateMachine.nextOutboundFrame() {
-        case .sendFrame(let byteBuffer, _, let promise):
-          // end stream is never set on DATA frames sent by the server.
-          self.flushPending = true
-          context.write(
-            self.wrapOutboundOut(.data(.init(data: .byteBuffer(byteBuffer)))),
-            promise: promise
-          )
-
-        case .noMoreMessages:
-          if let pendingTrailers = self.pendingTrailers {
-            self.flushPending = true
-            self.pendingTrailers = nil
-            context.write(
-              self.wrapOutboundOut(pendingTrailers.trailers),
-              promise: pendingTrailers.promise
-            )
-          }
-          break loop
-
-        case .awaitMoreMessages:
-          break loop
-
-        case .closeAndFailPromise(let promise, let error):
-          context.close(mode: .all, promise: nil)
-          promise?.fail(error)
-        }
-      }
-
-      if self.flushPending {
-        self.flushPending = false
-        context.flush()
-      }
-    } catch let invalidState {
-      let error = RPCError(invalidState)
-      context.fireErrorCaught(error)
+    if flush || forceFlush {
+      self.flushPending = false
+      context.flush()
     }
   }
 }

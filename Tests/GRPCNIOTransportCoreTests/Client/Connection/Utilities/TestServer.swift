@@ -78,7 +78,8 @@ final class TestServer: Sendable {
               acceptedEncodings: .all,
               maxPayloadSize: .max,
               methodDescriptorPromise: channel.eventLoop.makePromise(of: MethodDescriptor.self),
-              eventLoop: stream.eventLoop
+              eventLoop: stream.eventLoop,
+              descriptorsByPath: [:]
             )
 
             try stream.pipeline.syncOperations.addHandlers(handler)
