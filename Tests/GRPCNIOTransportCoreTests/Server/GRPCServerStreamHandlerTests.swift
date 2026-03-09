@@ -355,7 +355,7 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
       try channel.writeInbound(HTTP2Frame.FramePayload.data(clientDataPayload))
     ) { error in
       XCTAssertEqual(error.code, .internalError)
-      XCTAssertEqual(error.message, "Invalid state")
+      XCTAssertEqual(error.message, "Received DATA frame after client sent END_STREAM.")
     }
   }
 
@@ -574,17 +574,7 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
 
     // Receive them again. Should be a protocol violation which results in a RST_STREAM.
-    // The state machine does not poison on duplicate headers in PR1, so the subsequent
-    // channelInactive fires an error.
-    XCTAssertThrowsError(
-      ofType: RPCError.self,
-      try channel.writeInbound(
-        HTTP2Frame.FramePayload.headers(.init(headers: clientInitialMetadata))
-      )
-    ) { error in
-      XCTAssertEqual(error.code, .unavailable)
-      XCTAssertEqual(error.message, "Stream unexpectedly closed.")
-    }
+    try channel.writeInbound(HTTP2Frame.FramePayload.headers(.init(headers: clientInitialMetadata)))
     let payload = try XCTUnwrap(channel.readOutbound(as: HTTP2Frame.FramePayload.self))
 
     switch payload {

@@ -609,7 +609,7 @@ struct GRPCStreamStateMachine {
         configuration: clientConfiguration
       )
     case .server(let serverConfiguration):
-      return try self.serverReceive(
+      return self.serverReceive(
         headers: headers,
         endStream: endStream,
         configuration: serverConfiguration
@@ -633,12 +633,12 @@ struct GRPCStreamStateMachine {
   mutating func receive(
     buffer: ByteBuffer,
     endStream: Bool
-  ) throws(UnreachableTransition) -> OnBufferReceivedAction {
+  ) -> OnBufferReceivedAction {
     switch self.configuration {
     case .client:
-      return try self.clientReceive(buffer: buffer, endStream: endStream)
+      return self.clientReceive(buffer: buffer, endStream: endStream)
     case .server:
-      return try self.serverReceive(buffer: buffer, endStream: endStream)
+      return self.serverReceive(buffer: buffer, endStream: endStream)
     }
   }
 
@@ -1214,13 +1214,26 @@ extension GRPCStreamStateMachine {
       }
       return try self.validateTrailers(headers)
 
-    case .clientOpenServerClosed, .clientClosedServerClosed:
+    case .clientOpenServerClosed(let state):
       // We've transitioned the server to closed: drop any other incoming headers.
+      self.state = .poisoned(.init(previousState: state, reason: .protocol))
       return .doNothing
 
-    case .clientIdleServerIdle:
-      try self.unreachable(
-        "Server cannot have sent metadata if the client is idle."
+    case .clientClosedServerClosed(let state):
+      // We've transitioned the server to closed: drop any other incoming headers.
+      self.state = .poisoned(.init(previousState: state, reason: .protocol))
+      return .doNothing
+
+    case .clientIdleServerIdle(let state):
+      // The client hasn't opened a stream yet; receiving server headers is an HTTP/2 protocol
+      // violation that swift-nio-http2 should prevent. Treat defensively as a protocol error.
+      self.state = .poisoned(.init(previousState: state, reason: .protocol))
+      return .receivedStatusAndMetadata_clientOnly(
+        status: .init(
+          code: .internalError,
+          message: "Recieved headers from server before writing client headers."
+        ),
+        metadata: Metadata(headers: headers)
       )
 
     case .poisoned:
@@ -1235,17 +1248,35 @@ extension GRPCStreamStateMachine {
   private mutating func clientReceive(
     buffer: ByteBuffer,
     endStream: Bool
-  ) throws(UnreachableTransition) -> OnBufferReceivedAction {
+  ) -> OnBufferReceivedAction {
     // This is a message received by the client, from the server.
     switch self.state {
-    case .clientIdleServerIdle:
-      try self.unreachable(
-        "Cannot have received anything from server if client is not yet open."
+    case .clientIdleServerIdle(let state):
+      // The client hasn't opened a stream yet; receiving server data is an HTTP/2 protocol
+      // violation that swift-nio-http2 should prevent. Treat defensively as a protocol error.
+      self.state = .poisoned(.init(previousState: state, reason: .protocol))
+      return .doNothing
+
+    case .clientOpenServerIdle(let state):
+      // The server sent DATA before its initial HEADERS — an HTTP/2 protocol violation that
+      // swift-nio-http2 should prevent. Treat defensively as a protocol error.
+      self.state = .poisoned(.init(previousState: state, reason: .protocol))
+      return .endRPCAndForwardErrorStatus_clientOnly(
+        Status(
+          code: .internalError,
+          message: "Server sent a DATA frame before sending initial metadata."
+        )
       )
 
-    case .clientOpenServerIdle, .clientClosedServerIdle:
-      try self.unreachable(
-        "Server cannot have sent a message before sending the initial metadata."
+    case .clientClosedServerIdle(let state):
+      // The server sent DATA before its initial HEADERS — an HTTP/2 protocol violation that
+      // swift-nio-http2 should prevent. Treat defensively as a protocol error.
+      self.state = .poisoned(.init(previousState: state, reason: .protocol))
+      return .endRPCAndForwardErrorStatus_clientOnly(
+        Status(
+          code: .internalError,
+          message: "Server sent a DATA frame before sending initial metadata."
+        )
       )
 
     case .clientOpenServerOpen(var state):
@@ -1273,7 +1304,7 @@ extension GRPCStreamStateMachine {
         self.state = .clientOpenServerOpen(state)
         return .readInbound
       } catch {
-        self.state = .clientOpenServerOpen(state)
+        self.state = .poisoned(.init(previousState: state, reason: .protocol))
         let status = Status(code: .internalError, message: "Failed to decode message")
         return .endRPCAndForwardErrorStatus_clientOnly(status)
       }
@@ -1302,17 +1333,23 @@ extension GRPCStreamStateMachine {
         self.state = .clientClosedServerOpen(state)
         return .readInbound
       } catch {
-        self.state = .clientClosedServerOpen(state)
+        self.state = .poisoned(.init(previousState: state, reason: .protocol))
         let status = Status(code: .internalError, message: "Failed to decode message \(error)")
         return .endRPCAndForwardErrorStatus_clientOnly(status)
       }
 
-    case .clientOpenServerClosed, .clientClosedServerClosed:
-      // If the server is closed, it's because it actually closed, or because the client
-      // transitioned it to a close state because it returned invalid headers.
-      // In either case, we will have already surfaced a status + trailers response to the client,
-      // so if we receive further packages, we should just drop them on the floor,
-      // as there's nothing for us to do with them.
+    case .clientOpenServerClosed(let state):
+      // This shouldn't be possible: the server has closed by sending end-stream and
+      // swift-nio-http2 should catch this. Nonetheless we treat it as a protocol violation and
+      // drop the data.
+      self.state = .poisoned(.init(previousState: state, reason: .protocol))
+      return .doNothing
+
+    case .clientClosedServerClosed(let state):
+      // This shouldn't be possible: both client and server have closed by sending end-stream and
+      // swift-nio-http2 should catch this. Nonetheless we treat it as a protocol violation and
+      // drop the data.
+      self.state = .poisoned(.init(previousState: state, reason: .protocol))
       return .doNothing
 
     case .poisoned:
@@ -1633,7 +1670,7 @@ extension GRPCStreamStateMachine {
     headers: HPACKHeaders,
     endStream: Bool,
     configuration: GRPCStreamStateMachineConfiguration.ServerConfiguration
-  ) throws(UnreachableTransition) -> OnMetadataReceived {
+  ) -> OnMetadataReceived {
     func closeServer(
       from state: GRPCStreamStateMachineState.ClientIdleServerIdleState,
       endStream: Bool
@@ -1795,20 +1832,38 @@ extension GRPCStreamStateMachine {
 
       return .receivedMetadata(Metadata(headers: headers), path)
 
-    case .clientOpenServerIdle:
+    case .clientOpenServerIdle(let state):
       // Metadata has already been received, should only be sent once by clients.
+      self.state = .poisoned(.init(previousState: state, reason: .protocol))
       return .protocolViolation_serverOnly
 
-    case .clientOpenServerOpen:
+    case .clientOpenServerOpen(let state):
       // Metadata has already been received, should only be sent once by clients.
+      self.state = .poisoned(.init(previousState: state, reason: .protocol))
       return .protocolViolation_serverOnly
 
-    case .clientOpenServerClosed:
+    case .clientOpenServerClosed(let state):
       // Metadata has already been received, should only be sent once by clients.
+      self.state = .poisoned(.init(previousState: state, reason: .protocol))
       return .protocolViolation_serverOnly
 
-    case .clientClosedServerIdle, .clientClosedServerOpen, .clientClosedServerClosed:
-      try self.unreachable("Client can't have sent metadata if closed.")
+    case .clientClosedServerIdle(let state):
+      // The client already sent END_STREAM; receiving another HEADERS frame from the client is an
+      // HTTP/2 protocol violation that swift-nio-http2 should prevent. Treat defensively.
+      self.state = .poisoned(.init(previousState: state, reason: .protocol))
+      return .protocolViolation_serverOnly
+
+    case .clientClosedServerOpen(let state):
+      // The client already sent END_STREAM; receiving another HEADERS frame from the client is an
+      // HTTP/2 protocol violation that swift-nio-http2 should prevent. Treat defensively.
+      self.state = .poisoned(.init(previousState: state, reason: .protocol))
+      return .protocolViolation_serverOnly
+
+    case .clientClosedServerClosed(let state):
+      // The client already sent END_STREAM; receiving another HEADERS frame from the client is an
+      // HTTP/2 protocol violation that swift-nio-http2 should prevent. Treat defensively.
+      self.state = .poisoned(.init(previousState: state, reason: .protocol))
+      return .protocolViolation_serverOnly
 
     case .poisoned:
       return .doNothing
@@ -1821,47 +1876,60 @@ extension GRPCStreamStateMachine {
   private mutating func serverReceive(
     buffer: ByteBuffer,
     endStream: Bool
-  ) throws(UnreachableTransition) -> OnBufferReceivedAction {
+  ) -> OnBufferReceivedAction {
     let action: OnBufferReceivedAction
 
     switch self.state {
-    case .clientIdleServerIdle:
-      try self.unreachable("Can't have received a message if client is idle.")
+    case .clientIdleServerIdle(let state):
+      // No stream has been opened by the client; receiving DATA is an HTTP/2 protocol violation
+      // that swift-nio-http2 should prevent. Treat defensively as a protocol error.
+      self.state = .poisoned(.init(previousState: state, reason: .protocol))
+      action = .forwardErrorAndClose_serverOnly(
+        RPCError(code: .internalError, message: "Received DATA frame before client sent HEADERS.")
+      )
 
     case .clientOpenServerIdle(var state):
       self.state = ._modifying
+
       // Deframer must be present on the server side, as we know the decompression
       // algorithm from the moment the client opens.
       do {
         state.deframer!.append(buffer)
         try state.deframer!.decode(into: &state.inboundMessageBuffer)
+
+        if endStream {
+          self.state = .clientClosedServerIdle(.init(previousState: state))
+        } else {
+          self.state = .clientOpenServerIdle(state)
+        }
+
         action = .readInbound
       } catch {
-        let error = RPCError(code: .internalError, message: "Failed to decode message")
-        action = .forwardErrorAndClose_serverOnly(error)
-      }
-
-      if endStream {
-        self.state = .clientClosedServerIdle(.init(previousState: state))
-      } else {
-        self.state = .clientOpenServerIdle(state)
+        self.state = .poisoned(.init(previousState: state, reason: .protocol))
+        action = .forwardErrorAndClose_serverOnly(
+          RPCError(code: .internalError, message: "Failed to decode message")
+        )
       }
 
     case .clientOpenServerOpen(var state):
       self.state = ._modifying
+
       do {
         state.deframer.append(buffer)
         try state.deframer.decode(into: &state.inboundMessageBuffer)
+
+        if endStream {
+          self.state = .clientClosedServerOpen(.init(previousState: state))
+        } else {
+          self.state = .clientOpenServerOpen(state)
+        }
+
         action = .readInbound
       } catch {
-        let error = RPCError(code: .internalError, message: "Failed to decode message")
-        action = .forwardErrorAndClose_serverOnly(error)
-      }
-
-      if endStream {
-        self.state = .clientClosedServerOpen(.init(previousState: state))
-      } else {
-        self.state = .clientOpenServerOpen(state)
+        self.state = .poisoned(.init(previousState: state, reason: .protocol))
+        action = .forwardErrorAndClose_serverOnly(
+          RPCError(code: .internalError, message: "Failed to decode message")
+        )
       }
 
     case .clientOpenServerClosed(let state):
@@ -1871,15 +1939,34 @@ extension GRPCStreamStateMachine {
       if endStream {
         self.state = .clientClosedServerClosed(.init(previousState: state))
       }
-
       action = .doNothing
 
-    case .clientClosedServerIdle, .clientClosedServerOpen, .clientClosedServerClosed:
-      try self.unreachable("Client can't send a message if closed.")
+    case .clientClosedServerIdle(let state):
+      // The client already sent END_STREAM; receiving another DATA frame from the client is an
+      // HTTP/2 protocol violation that swift-nio-http2 should prevent.
+      self.state = .poisoned(.init(previousState: state, reason: .protocol))
+      action = .forwardErrorAndClose_serverOnly(
+        RPCError(code: .internalError, message: "Received DATA frame after client sent END_STREAM.")
+      )
+
+    case .clientClosedServerOpen(let state):
+      // The client already sent END_STREAM; receiving another DATA frame from the client is an
+      // HTTP/2 protocol violation that swift-nio-http2 should prevent.
+      self.state = .poisoned(.init(previousState: state, reason: .protocol))
+      action = .forwardErrorAndClose_serverOnly(
+        RPCError(code: .internalError, message: "Received DATA frame after client sent END_STREAM.")
+      )
+
+    case .clientClosedServerClosed(let state):
+      // The client already sent END_STREAM; receiving another DATA frame from the client is an
+      // HTTP/2 protocol violation that swift-nio-http2 should prevent.
+      self.state = .poisoned(.init(previousState: state, reason: .protocol))
+      // Do nothing (unlike above) as the server has already closed the stream.
+      action = .doNothing
 
     case .poisoned:
       // Already in an error state, ignore the buffer.
-      return .doNothing
+      action = .doNothing
 
     case ._modifying:
       preconditionFailure()
