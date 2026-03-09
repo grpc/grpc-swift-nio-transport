@@ -69,38 +69,33 @@ extension GRPCClientStreamHandler {
       let endStream = frameData.endStream
       switch frameData.data {
       case .byteBuffer(let buffer):
-        do {
-          switch try self.stateMachine.receive(buffer: buffer, endStream: endStream) {
-          case .endRPCAndForwardErrorStatus_clientOnly(let status):
-            context.fireChannelRead(self.wrapInboundOut(.status(status, [:])))
-            context.close(promise: nil)
+        switch self.stateMachine.receive(buffer: buffer, endStream: endStream) {
+        case .endRPCAndForwardErrorStatus_clientOnly(let status):
+          context.fireChannelRead(self.wrapInboundOut(.status(status, [:])))
+          context.close(promise: nil)
 
-          case .forwardErrorAndClose_serverOnly:
-            assertionFailure("Unexpected client action")
+        case .forwardErrorAndClose_serverOnly:
+          assertionFailure("Unexpected client action")
 
-          case .readInbound:
-            loop: while true {
-              switch self.stateMachine.nextInboundMessage() {
-              case .receiveMessage(let message):
-                let wrapped = GRPCNIOTransportBytes(message)
-                context.fireChannelRead(self.wrapInboundOut(.message(wrapped)))
-              case .awaitMoreMessages:
-                break loop
-              case .noMoreMessages:
-                // This could only happen if the server sends a data frame with EOS
-                // set, without sending status and trailers.
-                // If this happens, we should have forwarded an error status above
-                // so we should never reach this point. Do nothing.
-                break loop
-              }
+        case .readInbound:
+          loop: while true {
+            switch self.stateMachine.nextInboundMessage() {
+            case .receiveMessage(let message):
+              let wrapped = GRPCNIOTransportBytes(message)
+              context.fireChannelRead(self.wrapInboundOut(.message(wrapped)))
+            case .awaitMoreMessages:
+              break loop
+            case .noMoreMessages:
+              // This could only happen if the server sends a data frame with EOS
+              // set, without sending status and trailers.
+              // If this happens, we should have forwarded an error status above
+              // so we should never reach this point. Do nothing.
+              break loop
             }
-
-          case .doNothing:
-            ()
           }
-        } catch let invalidState {
-          let error = RPCError(invalidState)
-          context.fireErrorCaught(error)
+
+        case .doNothing:
+          ()
         }
 
       case .fileRegion:
@@ -187,8 +182,12 @@ extension GRPCClientStreamHandler {
     case .metadata(let metadata):
       do {
         self.flushPending = true
-        let headers = try self.stateMachine.send(metadata: metadata)
-        context.write(self.wrapOutboundOut(.headers(.init(headers: headers))), promise: promise)
+        switch try self.stateMachine.send(metadata: metadata) {
+        case .write(let headers):
+          context.write(self.wrapOutboundOut(.headers(.init(headers: headers))), promise: promise)
+        case .failPromise(let error):
+          promise?.fail(error)
+        }
       } catch let invalidState {
         let error = RPCError(invalidState)
         promise?.fail(error)
@@ -197,7 +196,14 @@ extension GRPCClientStreamHandler {
 
     case .message(let message):
       do {
-        try self.stateMachine.send(message: message.buffer, promise: promise)
+        switch try self.stateMachine.send(message: message.buffer, promise: promise) {
+        case .nothing:
+          ()
+        case .succeedPromise:
+          promise?.succeed()
+        case .failPromise(let error):
+          promise?.fail(error)
+        }
       } catch let invalidState {
         let error = RPCError(invalidState)
         promise?.fail(error)

@@ -355,7 +355,7 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
       try channel.writeInbound(HTTP2Frame.FramePayload.data(clientDataPayload))
     ) { error in
       XCTAssertEqual(error.code, .internalError)
-      XCTAssertEqual(error.message, "Invalid state")
+      XCTAssertEqual(error.message, "Received DATA frame after client sent END_STREAM.")
     }
   }
 
@@ -573,16 +573,8 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
     try channel.writeInbound(HTTP2Frame.FramePayload.headers(.init(headers: clientInitialMetadata)))
     XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
 
-    // Receive them again. Should be a protocol violation.
-    XCTAssertThrowsError(
-      ofType: RPCError.self,
-      try channel.writeInbound(
-        HTTP2Frame.FramePayload.headers(.init(headers: clientInitialMetadata))
-      )
-    ) { error in
-      XCTAssertEqual(error.code, .unavailable)
-      XCTAssertEqual(error.message, "Stream unexpectedly closed.")
-    }
+    // Receive them again. Should be a protocol violation which results in a RST_STREAM.
+    try channel.writeInbound(HTTP2Frame.FramePayload.headers(.init(headers: clientInitialMetadata)))
     let payload = try XCTUnwrap(channel.readOutbound(as: HTTP2Frame.FramePayload.self))
 
     switch payload {
@@ -883,7 +875,10 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
       try channel.writeOutbound(RPCResponsePart<GRPCNIOTransportBytes>.metadata(Metadata()))
     ) { error in
       XCTAssertEqual(error.code, .internalError)
-      XCTAssertEqual(error.message, "Invalid state")
+      XCTAssertEqual(
+        error.message,
+        "Stream is in an error state: the stream was closed unexpectedly"
+      )
     }
   }
 
@@ -936,7 +931,10 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
       try channel.writeOutbound(RPCResponsePart<GRPCNIOTransportBytes>.metadata(Metadata()))
     ) { error in
       XCTAssertEqual(error.code, .internalError)
-      XCTAssertEqual(error.message, "Invalid state")
+      XCTAssertEqual(
+        error.message,
+        "Stream is in an error state: the stream was closed unexpectedly"
+      )
     }
   }
 
@@ -992,7 +990,10 @@ final class GRPCServerStreamHandlerTests: XCTestCase {
       try channel.writeOutbound(RPCResponsePart<GRPCNIOTransportBytes>.metadata([:]))
     ) { error in
       XCTAssertEqual(error.code, .internalError)
-      XCTAssertEqual(error.message, "Invalid state")
+      XCTAssertEqual(
+        error.message,
+        "Stream is in an error state: the stream was closed unexpectedly"
+      )
     }
   }
 

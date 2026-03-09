@@ -122,39 +122,34 @@ extension GRPCServerStreamHandler {
       let endStream = frameData.endStream
       switch frameData.data {
       case .byteBuffer(let buffer):
-        do {
-          switch try self.stateMachine.receive(buffer: buffer, endStream: endStream) {
-          case .endRPCAndForwardErrorStatus_clientOnly:
-            preconditionFailure(
-              "OnBufferReceivedAction.endRPCAndForwardErrorStatus should never be returned for the server."
-            )
+        switch self.stateMachine.receive(buffer: buffer, endStream: endStream) {
+        case .endRPCAndForwardErrorStatus_clientOnly:
+          preconditionFailure(
+            "OnBufferReceivedAction.endRPCAndForwardErrorStatus should never be returned for the server."
+          )
 
-          case .forwardErrorAndClose_serverOnly(let error):
-            context.fireErrorCaught(error)
-            context.close(mode: .all, promise: nil)
-
-          case .readInbound:
-            loop: while true {
-              switch self.stateMachine.nextInboundMessage() {
-              case .receiveMessage(let message):
-                let wrapped = GRPCNIOTransportBytes(message)
-                context.fireChannelRead(self.wrapInboundOut(.message(wrapped)))
-
-              case .awaitMoreMessages:
-                break loop
-
-              case .noMoreMessages:
-                context.fireUserInboundEventTriggered(ChannelEvent.inputClosed)
-                break loop
-              }
-            }
-
-          case .doNothing:
-            ()
-          }
-        } catch let invalidState {
-          let error = RPCError(invalidState)
+        case .forwardErrorAndClose_serverOnly(let error):
           context.fireErrorCaught(error)
+          context.close(mode: .all, promise: nil)
+
+        case .readInbound:
+          loop: while true {
+            switch self.stateMachine.nextInboundMessage() {
+            case .receiveMessage(let message):
+              let wrapped = GRPCNIOTransportBytes(message)
+              context.fireChannelRead(self.wrapInboundOut(.message(wrapped)))
+
+            case .awaitMoreMessages:
+              break loop
+
+            case .noMoreMessages:
+              context.fireUserInboundEventTriggered(ChannelEvent.inputClosed)
+              break loop
+            }
+          }
+
+        case .doNothing:
+          ()
         }
 
       case .fileRegion:
@@ -266,8 +261,12 @@ extension GRPCServerStreamHandler {
     case .metadata(let metadata):
       do {
         self.flushPending = true
-        let headers = try self.stateMachine.send(metadata: metadata)
-        context.write(self.wrapOutboundOut(.headers(.init(headers: headers))), promise: promise)
+        switch try self.stateMachine.send(metadata: metadata) {
+        case .write(let headers):
+          context.write(self.wrapOutboundOut(.headers(.init(headers: headers))), promise: promise)
+        case .failPromise(let error):
+          promise?.fail(error)
+        }
       } catch let invalidState {
         let error = RPCError(invalidState)
         promise?.fail(error)
@@ -276,7 +275,14 @@ extension GRPCServerStreamHandler {
 
     case .message(let message):
       do {
-        try self.stateMachine.send(message: message.buffer, promise: promise)
+        switch try self.stateMachine.send(message: message.buffer, promise: promise) {
+        case .nothing:
+          ()
+        case .succeedPromise:
+          promise?.succeed()
+        case .failPromise(let error):
+          promise?.fail(error)
+        }
       } catch let invalidState {
         let error = RPCError(invalidState)
         promise?.fail(error)
