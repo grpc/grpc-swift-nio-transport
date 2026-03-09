@@ -324,7 +324,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
       .receivedStatusAndMetadata_clientOnly(
         status: .init(
           code: .internalError,
-          message: "Recieved headers from server before writing client headers."
+          message: "Received headers from server before writing client headers."
         ),
         metadata: [:]
       )
@@ -558,7 +558,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
       .receivedStatusAndMetadata_clientOnly(
         status: .init(
           code: .internalError,
-          message: "Recieved headers from server before writing client headers."
+          message: "Received headers from server before writing client headers."
         ),
         metadata: [:]
       )

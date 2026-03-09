@@ -1231,7 +1231,7 @@ extension GRPCStreamStateMachine {
       return .receivedStatusAndMetadata_clientOnly(
         status: .init(
           code: .internalError,
-          message: "Recieved headers from server before writing client headers."
+          message: "Received headers from server before writing client headers."
         ),
         metadata: Metadata(headers: headers)
       )
