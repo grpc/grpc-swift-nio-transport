@@ -28,6 +28,22 @@ private import Musl
 #error("The GRPCNIOTransportCore module was unable to identify your C library.")
 #endif
 
+#if !os(Windows)
+/// Resolves an IPv6 scope ID to its interface name.
+/// - Parameter scopeID: The numeric scope ID from `sin6_scope_id`
+/// - Returns: The interface name (e.g., "eth0"), or empty string if resolution fails
+@available(gRPCSwiftNIOTransport 2.0, *)
+private func resolveScopeID(_ scopeID: UInt32) -> String {
+  String(unsafeUninitializedCapacity: Int(IF_NAMESIZE)) { buffer in
+    guard let baseAddress = buffer.baseAddress,
+          let ptr = if_indextoname(scopeID, baseAddress) else {
+      return 0
+    }
+    return strlen(ptr)
+  }
+}
+#endif
+
 /// An asynchronous non-blocking DNS resolver built on top of the libc `getaddrinfo` function.
 @available(gRPCSwiftNIOTransport 2.0, *)
 package enum DNSResolver {
@@ -195,15 +211,9 @@ extension SocketAddress.IPv6 {
     var host = presentationAddress
     #if !os(Windows)
     if address.sin6_scope_id != 0 && !presentationAddress.contains("%") {
-      let scopeName = String(unsafeUninitializedCapacity: Int(IF_NAMESIZE)) { buffer in
-        guard let baseAddress = buffer.baseAddress,
-              let ptr = if_indextoname(address.sin6_scope_id, baseAddress) else {
-          return 0
-        }
-        return strlen(ptr)
-      }
+      let scopeName = resolveScopeID(address.sin6_scope_id)
       if !scopeName.isEmpty {
-        host = "\(presentationAddress)%\(scopeName)"
+        host += "%\(scopeName)"
       }
     }
     #endif
