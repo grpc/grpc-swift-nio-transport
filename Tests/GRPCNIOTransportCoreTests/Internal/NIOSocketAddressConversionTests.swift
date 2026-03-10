@@ -29,52 +29,39 @@ import Musl
 @Suite("NIOSocketAddress ↔ gRPC SocketAddress conversion")
 struct NIOSocketAddressConversionTests {
 
-  #if !os(Windows)
-  /// Returns the loopback interface name for the current platform.
-  private static var loopbackInterface: String {
-    #if canImport(Darwin)
-    return "lo0"
-    #else
-    return "lo"
-    #endif
-  }
-  #endif
-
-  @Test("gRPC → NIO conversion of scoped IPv6 does not throw")
+  @Test(
+    "gRPC → NIO conversion of scoped IPv6 does not throw",
+    .disabled(if: System.isWindows)
+  )
   @available(gRPCSwiftNIOTransport 2.0, *)
   func scopedIPv6ToNIO() throws {
-    #if os(Windows)
-    // Scoped IPv6 address handling uses if_indextoname, not available on Windows.
-    return
-    #else
-    let loopback = Self.loopbackInterface
-    guard if_nametoindex(loopback) != 0 else { return }
+    let loopback = try #require(System.loopbackInterfaceName)
 
-    // The getaddrinfo path should handle %scope and set sin6_scope_id.
+    #if !os(Windows)
+    guard if_nametoindex(loopback) != 0 else { return }
+    #endif
+
     let grpcAddress = SocketAddress.IPv6(host: "fe80::1%\(loopback)", port: 50051)
     let nioAddress = try NIOCore.SocketAddress(grpcAddress)
 
     #expect(nioAddress.port == 50051)
     #expect(nioAddress.ipAddress?.contains("fe80::1") == true, "IP address should contain fe80::1")
 
-    // Verify it's an IPv6 address with scope ID set
     guard case .v6(let v6Address) = nioAddress else {
       Issue.record("Expected IPv6 address, got \(nioAddress)")
       return
     }
     #expect(v6Address.address.sin6_scope_id != 0, "Scope ID should be preserved")
-    #endif
   }
 
-  @Test("Scoped IPv6 round-trip preserves scope ID")
+  @Test("Scoped IPv6 round-trip preserves scope ID", .disabled(if: System.isWindows))
   @available(gRPCSwiftNIOTransport 2.0, *)
   func scopedIPv6RoundTrip() throws {
-    #if os(Windows)
-    // Scoped IPv6 address handling uses if_indextoname, not available on Windows.
-    return
-    #else
-    let loopback = Self.loopbackInterface
+    let loopback = try #require(System.loopbackInterfaceName)
+
+    #if !os(Windows)
     guard if_nametoindex(loopback) != 0 else { return }
+    #endif
 
     let grpcAddress = SocketAddress.IPv6(host: "fe80::1%\(loopback)", port: 50051)
 
@@ -87,13 +74,11 @@ struct NIOSocketAddressConversionTests {
     let ipv6 = try #require(roundTripped.ipv6)
     #expect(ipv6.host == "fe80::1%\(loopback)", "Expected exact scope ID preservation")
     #expect(ipv6.port == 50051)
-    #endif
   }
 
   @Test("Non-scoped IPv6 uses inet_pton path")
   @available(gRPCSwiftNIOTransport 2.0, *)
   func nonScopedIPv6ToNIO() throws {
-    // Addresses without %scope should still work via the original inet_pton path.
     let grpcAddress = SocketAddress.IPv6(host: "::1", port: 443)
     let nioAddress = try NIOCore.SocketAddress(grpcAddress)
 

@@ -45,24 +45,14 @@ struct DNSResolverTests {
     #expect(result == [expected])
   }
 
-  @Test("Resolve link-local address preserves scope ID")
+  @Test("Resolve link-local address preserves scope ID", .disabled(if: System.isWindows))
   @available(gRPCSwiftNIOTransport 2.0, *)
   func resolveScopedIPv6() async throws {
-    #if os(Windows)
-    // if_indextoname is not available on Windows; skip.
-    return
-    #else
-    // Use a link-local address with the loopback interface.
-    // getaddrinfo accepts numeric IPv6 addresses with scope IDs
-    // regardless of whether the address is assigned to the interface.
-    let loopback: String
-    #if canImport(Darwin)
-    loopback = "lo0"
-    #else
-    loopback = "lo"
-    #endif
+    let loopback = try #require(System.loopbackInterfaceName)
 
+    #if !os(Windows)
     guard if_nametoindex(loopback) != 0 else { return }
+    #endif
 
     let result = try await DNSResolver.resolve(host: "fe80::1%\(loopback)", port: 80)
 
@@ -71,6 +61,5 @@ struct DNSResolverTests {
     let ipv6 = try #require(address.ipv6)
     #expect(ipv6.host.contains("%\(loopback)"))
     #expect(ipv6.port == 80)
-    #endif
   }
 }

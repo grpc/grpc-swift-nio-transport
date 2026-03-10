@@ -18,27 +18,11 @@ private import GRPCCore
 package import NIOCore
 
 #if canImport(Darwin)
-  private import Darwin
+private import Darwin
 #elseif canImport(Glibc)
-  private import Glibc
+private import Glibc
 #elseif canImport(Musl)
-  private import Musl
-#endif
-
-#if !os(Windows)
-/// Resolves an IPv6 scope ID to its interface name.
-/// - Parameter scopeID: The numeric scope ID from `sin6_scope_id`
-/// - Returns: The interface name (e.g., "eth0"), or empty string if resolution fails
-@available(gRPCSwiftNIOTransport 2.0, *)
-private func resolveScopeID(_ scopeID: UInt32) -> String {
-  String(unsafeUninitializedCapacity: Int(IF_NAMESIZE)) { buffer in
-    guard let baseAddress = buffer.baseAddress,
-          let ptr = if_indextoname(scopeID, baseAddress) else {
-      return 0
-    }
-    return strlen(ptr)
-  }
-}
+private import Musl
 #endif
 
 @available(gRPCSwiftNIOTransport 2.0, *)
@@ -57,7 +41,7 @@ extension GRPCNIOTransportCore.SocketAddress {
       // Preserve IPv6 scope ID (e.g., for link-local addresses) which inet_ntop drops.
       // The raw sockaddr_in6 stores sin6_scope_id; reconstruct the scoped host string.
       let scopeID = address.address.sin6_scope_id
-      if scopeID != 0 && !host.contains("%") {
+      if scopeID != 0 && !host.utf8.contains(UInt8(ascii: "%")) {
         let scopeName = resolveScopeID(scopeID)
         if !scopeName.isEmpty {
           host += "%\(scopeName)"
