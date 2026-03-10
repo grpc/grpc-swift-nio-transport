@@ -19,6 +19,8 @@ package import NIOCore
 
 #if canImport(Darwin)
 private import Darwin
+#elseif canImport(Android)
+private import Android
 #elseif canImport(Glibc)
 private import Glibc
 #elseif canImport(Musl)
@@ -38,15 +40,7 @@ extension GRPCNIOTransportCore.SocketAddress {
     case .v6(let address):
       var host = address.host
       #if !os(Windows)
-      // Preserve IPv6 scope ID (e.g., for link-local addresses) which inet_ntop drops.
-      // The raw sockaddr_in6 stores sin6_scope_id; reconstruct the scoped host string.
-      let scopeID = address.address.sin6_scope_id
-      if scopeID != 0 && !host.utf8.contains(UInt8(ascii: "%")) {
-        let scopeName = resolveScopeID(scopeID)
-        if !scopeName.isEmpty {
-          host += "%\(scopeName)"
-        }
-      }
+      appendScopeIDIfNeeded(to: &host, scopeID: address.address.sin6_scope_id)
       #endif
       self = .ipv6(
         host: host,

@@ -27,15 +27,32 @@ private import Musl
 #if !os(Windows)
 /// Resolves an IPv6 scope ID to its interface name.
 /// - Parameter scopeID: The numeric scope ID from `sin6_scope_id`
-/// - Returns: The interface name (e.g., "eth0"), or empty string if resolution fails
+/// - Returns: The interface name (e.g., "eth0"), or `nil` if resolution fails
 @available(gRPCSwiftNIOTransport 2.0, *)
-internal func resolveScopeID(_ scopeID: UInt32) -> String {
-  String(unsafeUninitializedCapacity: Int(IF_NAMESIZE)) { buffer in
+internal func resolveScopeID(_ scopeID: UInt32) -> String? {
+  let name = String(unsafeUninitializedCapacity: Int(IF_NAMESIZE)) { buffer in
     guard let baseAddress = buffer.baseAddress,
           let ptr = if_indextoname(scopeID, baseAddress) else {
       return 0
     }
     return strlen(ptr)
+  }
+  return name.isEmpty ? nil : name
+}
+
+/// Appends the scope ID interface name to an IPv6 host string if needed.
+///
+/// `inet_ntop` does not include the scope ID in its output, so this function
+/// reconstructs the `%scope` suffix from the raw `sin6_scope_id` value.
+/// - Parameters:
+///   - host: The IPv6 host string to modify in place.
+///   - scopeID: The numeric scope ID from `sin6_scope_id`.
+@available(gRPCSwiftNIOTransport 2.0, *)
+internal func appendScopeIDIfNeeded(to host: inout String, scopeID: UInt32) {
+  if scopeID != 0 && !host.utf8.contains(UInt8(ascii: "%")) {
+    if let scopeName = resolveScopeID(scopeID) {
+      host += "%\(scopeName)"
+    }
   }
 }
 #endif

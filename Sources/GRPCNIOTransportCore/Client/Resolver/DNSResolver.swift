@@ -194,12 +194,7 @@ extension SocketAddress.IPv6 {
     // getaddrinfo sets sin6_scope_id but inet_ntop doesn't include it in the string.
     var host = presentationAddress
     #if !os(Windows)
-    if address.sin6_scope_id != 0 && !presentationAddress.utf8.contains(UInt8(ascii: "%")) {
-      let scopeName = resolveScopeID(address.sin6_scope_id)
-      if !scopeName.isEmpty {
-        host += "%\(scopeName)"
-      }
-    }
+    appendScopeIDIfNeeded(to: &host, scopeID: address.sin6_scope_id)
     #endif
 
     self = .init(host: host, port: Int(in_port_t(bigEndian: address.sin6_port)))
