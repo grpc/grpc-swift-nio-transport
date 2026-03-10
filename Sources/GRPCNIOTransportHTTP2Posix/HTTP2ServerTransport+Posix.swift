@@ -57,15 +57,32 @@ extension HTTP2ServerTransport {
   public struct Posix: ServerTransport, ListeningServerTransport {
     public typealias Bytes = GRPCNIOTransportBytes
 
-    private struct ListenerFactory: HTTP2ListenerFactory {
+    struct ListenerFactory: HTTP2ServerTransport.ListenerFactory {
+      let address: Address
       let config: Config
       let transportSecurity: TransportSecurity
+      let eventLoopGroup: any EventLoopGroup
+
+      enum Address {
+        case socketAddress(GRPCNIOTransportCore.SocketAddress)
+        case listeningSocket(Int)
+
+        var socketAddress: GRPCNIOTransportCore.SocketAddress? {
+          switch self {
+          case .socketAddress(let address):
+            return address
+          case .listeningSocket:
+            return nil
+          }
+        }
+      }
 
       func makeListeningChannel(
-        eventLoopGroup: any EventLoopGroup,
-        address: GRPCNIOTransportCore.SocketAddress,
-        serverQuiescingHelper: ServerQuiescingHelper
-      ) async throws -> NIOAsyncChannel<AcceptedChannel, Never> {
+        listenerParameters: HTTP2ServerTransport.ListenerParameters,
+        connectionParameters: HTTP2ServerTransport.ConnectionParameters
+      ) async throws -> NIOAsyncChannel<HTTP2ServerTransport.ConnectionChannel, Never> {
+        let usesTLS: Bool
+        let requireALPN: Bool
         let sslContext: NIOSSLContext?
         let customVerificationCallback:
           (
@@ -76,8 +93,11 @@ extension HTTP2ServerTransport {
 
         switch self.transportSecurity.wrapped {
         case .plaintext:
+          usesTLS = false
+          requireALPN = false
           sslContext = nil
           customVerificationCallback = nil
+
         case .tls(let tlsConfig):
           do {
             sslContext = try NIOSSLContext(configuration: TLSConfiguration(tlsConfig))
@@ -88,71 +108,54 @@ extension HTTP2ServerTransport {
               cause: error
             )
           }
+          usesTLS = true
+          requireALPN = tlsConfig.requireALPN
           customVerificationCallback = tlsConfig.customVerificationCallback
         }
 
-        let serverChannel = try await ServerBootstrap(group: eventLoopGroup)
+        let serverChannel = try await ServerBootstrap(group: self.eventLoopGroup)
           .serverChannelOption(.socketOption(.so_reuseaddr), value: 1)
           .serverChannelInitializer { channel in
-            return channel.eventLoop.makeCompletedFuture {
-              let quiescingHandler = serverQuiescingHelper.makeServerChannelHandler(
-                channel: channel
-              )
-              try channel.pipeline.syncOperations.addHandler(quiescingHandler)
-            }.runInitializerIfSet(
-              self.config.channelDebuggingCallbacks.onBindTCPListener,
-              on: channel
+            listenerParameters.configureListener(
+              channel: channel,
+              debuggingCallbacks: self.config.channelDebuggingCallbacks
             )
           }
-          .bind(to: address) { channel in
-            channel.eventLoop.makeCompletedFuture {
-              if let sslContext {
-                if let callback = customVerificationCallback {
-                  try channel.pipeline.syncOperations.addHandler(
-                    NIOSSLServerHandler(
-                      context: sslContext,
-                      customVerificationCallbackWithMetadata: callback
-                    )
-                  )
-                } else {
-                  try channel.pipeline.syncOperations.addHandler(
-                    NIOSSLServerHandler(context: sslContext)
-                  )
-                }
-              }
+          .bind(to: self.address) { channel in
+            let sslHandler: NIOSSLServerHandler?
 
-              let requireALPN: Bool
-              let scheme: Scheme
-              switch self.transportSecurity.wrapped {
-              case .plaintext:
-                requireALPN = false
-                scheme = .http
-              case .tls(let tlsConfig):
-                requireALPN = tlsConfig.requireALPN
-                scheme = .https
+            if let sslContext {
+              if let callback = customVerificationCallback {
+                sslHandler = NIOSSLServerHandler(
+                  context: sslContext,
+                  customVerificationCallbackWithMetadata: callback
+                )
+              } else {
+                sslHandler = NIOSSLServerHandler(context: sslContext)
               }
+            } else {
+              sslHandler = nil
+            }
 
-              return try channel.pipeline.syncOperations.configureGRPCServerPipeline(
-                channel: channel,
-                compressionConfig: self.config.compression,
-                connectionConfig: self.config.connection,
-                http2Config: self.config.http2,
-                rpcConfig: self.config.rpc,
-                debugConfig: self.config.channelDebuggingCallbacks,
-                requireALPN: requireALPN,
-                scheme: scheme
-              )
-            }.runInitializerIfSet(
-              self.config.channelDebuggingCallbacks.onAcceptTCPConnection,
-              on: channel
+            return connectionParameters.configureConnection(
+              channel: channel,
+              sslHandler: sslHandler,
+              compressionConfig: self.config.compression,
+              connectionConfig: self.config.connection,
+              http2Config: self.config.http2,
+              rpcConfig: self.config.rpc,
+              debuggingCallbacks: self.config.channelDebuggingCallbacks,
+              usesTLS: usesTLS,
+              requireALPN: requireALPN
             )
+
           }
 
         return serverChannel
       }
     }
 
-    private let underlyingTransport: CommonHTTP2ServerTransport<ListenerFactory>
+    private let underlyingTransport: NIOBasedHTTP2ServerTransport<ListenerFactory>
 
     /// The listening address for this server transport.
     ///
@@ -180,13 +183,54 @@ extension HTTP2ServerTransport {
       config: Config = .defaults,
       eventLoopGroup: MultiThreadedEventLoopGroup = .singletonMultiThreadedEventLoopGroup
     ) {
-      let factory = ListenerFactory(config: config, transportSecurity: transportSecurity)
-      let helper = ServerQuiescingHelper(group: eventLoopGroup)
-      self.underlyingTransport = CommonHTTP2ServerTransport(
-        address: address,
+      self.init(
+        address: .socketAddress(address),
+        transportSecurity: transportSecurity,
+        config: config,
+        eventLoopGroup: eventLoopGroup
+      )
+    }
+
+    /// Create a new `Posix` transport.
+    /// 
+    /// - Parameters:
+    ///   - fileDescriptor: The file descriptor of an already bound listening socket.
+    ///   - transportSecurity: The configuration for securing network traffic.
+    ///   - config: The transport configuration.
+    ///   - eventLoopGroup: The ELG from which to get ELs to run this transport.
+    /// - Important: gRPC takes ownership of the `fileDescriptor` passed in, you *must not* close
+    ///   the descriptor manually.
+    @available(gRPCSwiftNIOTransport 2.5, *)
+    public init(
+      listeningSocketDescriptor fileDescriptor: Int,
+      transportSecurity: TransportSecurity,
+      config: Config = .defaults,
+      eventLoopGroup: MultiThreadedEventLoopGroup = .singletonMultiThreadedEventLoopGroup
+    ) {
+      self.init(
+        address: .listeningSocket(fileDescriptor),
+        transportSecurity: transportSecurity,
+        config: config,
+        eventLoopGroup: eventLoopGroup
+      )
+    }
+
+    private init(
+      address: ListenerFactory.Address,
+      transportSecurity: TransportSecurity,
+      config: Config = .defaults,
+      eventLoopGroup: MultiThreadedEventLoopGroup = .singletonMultiThreadedEventLoopGroup
+    ) {
+      self.underlyingTransport = NIOBasedHTTP2ServerTransport(
+        address: address.socketAddress,
         eventLoopGroup: eventLoopGroup,
-        quiescingHelper: helper,
-        listenerFactory: factory
+        quiescingHelper: ServerQuiescingHelper(group: eventLoopGroup),
+        listenerFactory: ListenerFactory(
+          address: address,
+          config: config,
+          transportSecurity: transportSecurity,
+          eventLoopGroup: eventLoopGroup
+        )
       ) { channel in
         var context = HTTP2ServerTransport.Posix.Context()
 
@@ -311,23 +355,32 @@ extension HTTP2ServerTransport.Posix {
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ServerBootstrap {
   fileprivate func bind<Output: Sendable>(
-    to address: GRPCNIOTransportCore.SocketAddress,
+    to address: HTTP2ServerTransport.Posix.ListenerFactory.Address,
     childChannelInitializer: @escaping @Sendable (any Channel) -> EventLoopFuture<Output>
   ) async throws -> NIOAsyncChannel<Output, Never> {
-    if let virtualSocket = address.virtualSocket {
+    switch address {
+    case .socketAddress(let address):
+      if let virtualSocket = address.virtualSocket {
+        return try await self.bind(
+          to: VsockAddress(virtualSocket),
+          childChannelInitializer: childChannelInitializer
+        )
+      } else if let uds = address.unixDomainSocket {
+        return try await self.bind(
+          unixDomainSocketPath: uds.path,
+          cleanupExistingSocketFile: true,
+          childChannelInitializer: childChannelInitializer
+        )
+      } else {
+        return try await self.bind(
+          to: NIOCore.SocketAddress(address),
+          childChannelInitializer: childChannelInitializer
+        )
+      }
+
+    case .listeningSocket(let descriptor):
       return try await self.bind(
-        to: VsockAddress(virtualSocket),
-        childChannelInitializer: childChannelInitializer
-      )
-    } else if let uds = address.unixDomainSocket {
-      return try await self.bind(
-        unixDomainSocketPath: uds.path,
-        cleanupExistingSocketFile: true,
-        childChannelInitializer: childChannelInitializer
-      )
-    } else {
-      return try await self.bind(
-        to: NIOCore.SocketAddress(address),
+        NIOBSDSocket.Handle(descriptor),
         childChannelInitializer: childChannelInitializer
       )
     }
@@ -351,8 +404,36 @@ extension ServerTransport where Self == HTTP2ServerTransport.Posix {
     config: HTTP2ServerTransport.Posix.Config = .defaults,
     eventLoopGroup: MultiThreadedEventLoopGroup = .singletonMultiThreadedEventLoopGroup
   ) -> Self {
-    return HTTP2ServerTransport.Posix(
+    HTTP2ServerTransport.Posix(
       address: address,
+      transportSecurity: transportSecurity,
+      config: config,
+      eventLoopGroup: eventLoopGroup
+    )
+  }
+}
+
+@available(gRPCSwiftNIOTransport 2.5, *)
+extension ServerTransport where Self == HTTP2ServerTransport.Posix {
+  /// Create a new `Posix` based HTTP/2 server transport.
+  ///
+  /// - Parameters:
+  ///   - fileDescriptor: The file descriptor of an already bound listening socket.
+  ///   - transportSecurity: The configuration for securing network traffic.
+  ///   - config: The transport configuration.
+  ///   - eventLoopGroup: The underlying NIO `EventLoopGroup` to the server on. This must
+  ///       be a `MultiThreadedEventLoopGroup` or an `EventLoop` from
+  ///       a `MultiThreadedEventLoopGroup`.
+  /// - Important: gRPC takes ownership of the `fileDescriptor` passed in, you *must not* close
+  ///   the descriptor manually.
+  public static func http2NIOPosix(
+    listeningSocketDescriptor fileDescriptor: Int,
+    transportSecurity: HTTP2ServerTransport.Posix.TransportSecurity,
+    config: HTTP2ServerTransport.Posix.Config = .defaults,
+    eventLoopGroup: MultiThreadedEventLoopGroup = .singletonMultiThreadedEventLoopGroup
+  ) -> Self {
+    HTTP2ServerTransport.Posix(
+      listeningSocketDescriptor: fileDescriptor,
       transportSecurity: transportSecurity,
       config: config,
       eventLoopGroup: eventLoopGroup
