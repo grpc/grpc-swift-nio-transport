@@ -217,7 +217,9 @@ public final class NIOBasedHTTP2ServerTransport<
     }
 
     let serverChannel = try await self.factory.makeListeningChannel(
-      listenerParameters: HTTP2ServerTransport.ListenerParameters(quiescingHelper: self.serverQuiescingHelper),
+      listenerParameters: HTTP2ServerTransport.ListenerParameters(
+        quiescingHelper: self.serverQuiescingHelper
+      ),
       connectionParameters: HTTP2ServerTransport.ConnectionParameters()
     )
 

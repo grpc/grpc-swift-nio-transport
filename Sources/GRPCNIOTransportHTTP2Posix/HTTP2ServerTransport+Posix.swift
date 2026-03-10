@@ -192,7 +192,7 @@ extension HTTP2ServerTransport {
     }
 
     /// Create a new `Posix` transport.
-    /// 
+    ///
     /// - Parameters:
     ///   - fileDescriptor: The file descriptor of an already bound listening socket.
     ///   - transportSecurity: The configuration for securing network traffic.

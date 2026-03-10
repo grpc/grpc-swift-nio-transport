@@ -491,7 +491,11 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
     // Allow address reuse.
     var reuseAddr: Int32 = 1
     let setOptResult = setsockopt(
-      fd, SOL_SOCKET, SO_REUSEADDR, &reuseAddr, socklen_t(MemoryLayout<Int32>.size)
+      fd,
+      SOL_SOCKET,
+      SO_REUSEADDR,
+      &reuseAddr,
+      socklen_t(MemoryLayout<Int32>.size)
     )
     if setOptResult != 0 {
       close(fd)
