@@ -143,10 +143,38 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
     targetState: TargetStateMachineState,
     compressionEnabled: Bool = false
   ) -> GRPCStreamStateMachine {
+    self.makeClientStateMachine(
+      targetState: targetState,
+      methodDescriptor: .testTest,
+      compressionEnabled: compressionEnabled
+    )
+  }
+
+  private func makeClientStateMachine(
+    targetState: TargetStateMachineState,
+    rpcType: MethodDescriptor.RPCType,
+    compressionEnabled: Bool = false
+  ) -> GRPCStreamStateMachine {
+    self.makeClientStateMachine(
+      targetState: targetState,
+      methodDescriptor: MethodDescriptor(
+        fullyQualifiedService: "test",
+        method: "test",
+        type: rpcType
+      ),
+      compressionEnabled: compressionEnabled
+    )
+  }
+
+  private func makeClientStateMachine(
+    targetState: TargetStateMachineState,
+    methodDescriptor: MethodDescriptor,
+    compressionEnabled: Bool = false
+  ) -> GRPCStreamStateMachine {
     var stateMachine = GRPCStreamStateMachine(
       configuration: .client(
         .init(
-          methodDescriptor: .testTest,
+          methodDescriptor: methodDescriptor,
           scheme: .http,
           authority: nil,
           outboundEncoding: compressionEnabled ? .deflate : .none,
@@ -765,7 +793,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
       ]
       XCTAssertEqual(
         try stateMachine.nextOutboundFrame(),
-        .sendFrame(frame: ByteBuffer(bytes: expectedBytes), promise: nil)
+        .sendFrame(frame: ByteBuffer(bytes: expectedBytes), endStream: false, promise: nil)
       )
 
       // And then make sure that nothing else is returned anymore
@@ -786,7 +814,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
 
     let request = try stateMachine.nextOutboundFrame()
     let framedMessage = try self.frameMessage(originalMessage, compression: .deflate)
-    XCTAssertEqual(request, .sendFrame(frame: framedMessage, promise: nil))
+    XCTAssertEqual(request, .sendFrame(frame: framedMessage, endStream: false, promise: nil))
   }
 
   func testNextOutboundMessageWhenClientOpenAndServerOpen_WithCompression() throws {
@@ -802,7 +830,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
 
     let request = try stateMachine.nextOutboundFrame()
     let framedMessage = try self.frameMessage(originalMessage, compression: .deflate)
-    XCTAssertEqual(request, .sendFrame(frame: framedMessage, promise: nil))
+    XCTAssertEqual(request, .sendFrame(frame: framedMessage, endStream: false, promise: nil))
   }
 
   func testNextOutboundMessageWhenClientOpenAndServerClosed() throws {
@@ -832,7 +860,10 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
       0, 0, 0, 2,  // message length: 2 bytes
       42, 42,  // original message
     ]
-    XCTAssertEqual(request, .sendFrame(frame: ByteBuffer(bytes: expectedBytes), promise: nil))
+    XCTAssertEqual(
+      request,
+      .sendFrame(frame: ByteBuffer(bytes: expectedBytes), endStream: true, promise: nil)
+    )
 
     // And then make sure that nothing else is returned anymore
     XCTAssertEqual(try stateMachine.nextOutboundFrame(), .noMoreMessages)
@@ -853,7 +884,10 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
       0, 0, 0, 2,  // message length: 2 bytes
       42, 42,  // original message
     ]
-    XCTAssertEqual(request, .sendFrame(frame: ByteBuffer(bytes: expectedBytes), promise: nil))
+    XCTAssertEqual(
+      request,
+      .sendFrame(frame: ByteBuffer(bytes: expectedBytes), endStream: true, promise: nil)
+    )
 
     // And then make sure that nothing else is returned anymore
     XCTAssertEqual(try stateMachine.nextOutboundFrame(), .noMoreMessages)
@@ -1114,7 +1148,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
     try stateMachine.send(message: message, promise: nil).assertNothing()
     XCTAssertEqual(
       try stateMachine.nextOutboundFrame(),
-      .sendFrame(frame: framedMessage, promise: nil)
+      .sendFrame(frame: framedMessage, endStream: false, promise: nil)
     )
     XCTAssertEqual(try stateMachine.nextOutboundFrame(), .awaitMoreMessages)
 
@@ -1196,7 +1230,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
     XCTAssertNoThrow(try stateMachine.closeOutbound())
     XCTAssertEqual(
       try stateMachine.nextOutboundFrame(),
-      .sendFrame(frame: framedMessage, promise: nil)
+      .sendFrame(frame: framedMessage, endStream: true, promise: nil)
     )
     XCTAssertEqual(try stateMachine.nextOutboundFrame(), .noMoreMessages)
 
@@ -1285,7 +1319,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
     try stateMachine.send(message: message, promise: nil).assertNothing()
     XCTAssertEqual(
       try stateMachine.nextOutboundFrame(),
-      .sendFrame(frame: framedMessage, promise: nil)
+      .sendFrame(frame: framedMessage, endStream: false, promise: nil)
     )
     XCTAssertEqual(try stateMachine.nextOutboundFrame(), .awaitMoreMessages)
 
@@ -1505,6 +1539,123 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
     // Poisoned: subsequent receives return doNothing.
     let action2 = stateMachine.receive(buffer: ByteBuffer(), endStream: false)
     try action2.assertDoNothing()
+  }
+
+  // - MARK: RPC-type-aware outbound frame delay
+
+  func testNextOutboundFrame_nonStreamingRequestRPC_delaysUntilHalfClosed() throws {
+    // Unary and server-streaming RPCs have a single request message, so frames are buffered until
+    // the client half-closes. This lets the message carry end-stream rather than requiring a
+    // separate empty DATA frame.
+    for rpcType in [MethodDescriptor.RPCType.unary, .serverStreaming] {
+      for targetState in [TargetStateMachineState.clientOpenServerIdle, .clientOpenServerOpen] {
+        var stateMachine = self.makeClientStateMachine(
+          targetState: targetState,
+          rpcType: rpcType
+        )
+
+        // No messages yet: still awaiting.
+        try stateMachine.nextOutboundFrame().assertAwaitMoreMessages()
+
+        let message = ByteBuffer(bytes: [1, 2, 3, 4])
+        try stateMachine.send(message: message, promise: nil).assertNothing()
+
+        // Message is buffered; client is still open, so delay applies.
+        try stateMachine.nextOutboundFrame().assertAwaitMoreMessages()
+
+        // Half-close: now the buffered message should flush with end-stream set.
+        try stateMachine.closeOutbound()
+
+        let framedMessage = try self.frameMessage(message, compression: .none)
+        let frame = try stateMachine.nextOutboundFrame().assertSendFrame(endStream: true)
+        XCTAssertEqual(frame, framedMessage)
+        try stateMachine.nextOutboundFrame().assertNoMoreMessages()
+      }
+    }
+  }
+
+  func testNextOutboundFrame_streamingRequestRPC_noDelay() throws {
+    // Client-streaming and bidirectional-streaming RPCs send multiple requests, so frames are
+    // emitted immediately without waiting for half-close.
+    for rpcType in [MethodDescriptor.RPCType.clientStreaming, .bidirectionalStreaming] {
+      for targetState in [TargetStateMachineState.clientOpenServerIdle, .clientOpenServerOpen] {
+        var stateMachine = self.makeClientStateMachine(
+          targetState: targetState,
+          rpcType: rpcType
+        )
+
+        // No messages yet.
+        try stateMachine.nextOutboundFrame().assertAwaitMoreMessages()
+
+        let message1 = ByteBuffer(bytes: [1, 2])
+        try stateMachine.send(message: message1, promise: nil).assertNothing()
+        let framedMessage1 = try self.frameMessage(message1, compression: .none)
+        let frame1 = try stateMachine.nextOutboundFrame().assertSendFrame(endStream: false)
+        XCTAssertEqual(frame1, framedMessage1)
+
+        let message2 = ByteBuffer(bytes: [3, 4])
+        try stateMachine.send(message: message2, promise: nil).assertNothing()
+        let framedMessage2 = try self.frameMessage(message2, compression: .none)
+        let frame2 = try stateMachine.nextOutboundFrame().assertSendFrame(endStream: false)
+        XCTAssertEqual(frame2, framedMessage2)
+
+        try stateMachine.nextOutboundFrame().assertAwaitMoreMessages()
+      }
+    }
+  }
+
+  func testNextOutboundFrame_unaryRPC_serverAlreadyClosed_noMoreMessages() throws {
+    // If the server closed the stream first, there's no point sending any request frames,
+    // even for a unary RPC.
+    var stateMachine = self.makeClientStateMachine(
+      targetState: .clientOpenServerClosed,
+      rpcType: .unary
+    )
+
+    try stateMachine.send(message: ByteBuffer(bytes: [1, 2, 3, 4]), promise: nil)
+      .assertSucceedPromise()
+    try stateMachine.nextOutboundFrame().assertNoMoreMessages()
+  }
+
+  func testNormalFlow_unaryRPC() throws {
+    // Full round-trip for a unary RPC. The key difference from the streaming case is that the
+    // single request message is held until the client half-closes, then sent with end-stream set,
+    // avoiding a separate empty DATA frame.
+    var stateMachine = self.makeClientStateMachine(
+      targetState: .clientIdleServerIdle,
+      rpcType: .unary
+    )
+
+    // Client opens.
+    try stateMachine.send(metadata: []).assertHeaders()
+
+    // Server responds with initial metadata.
+    try stateMachine.receive(headers: .serverInitialMetadata, endStream: false)
+      .assertReceivedMetadata()
+
+    // Client queues its single request message; frame is withheld until half-close.
+    let requestMessage = ByteBuffer(bytes: [1, 2, 3, 4])
+    try stateMachine.send(message: requestMessage, promise: nil).assertNothing()
+    try stateMachine.nextOutboundFrame().assertAwaitMoreMessages()
+
+    // Half-close: the request message is now emitted with end-stream.
+    try stateMachine.closeOutbound()
+    let framedRequest = try self.frameMessage(requestMessage, compression: .none)
+    let frame = try stateMachine.nextOutboundFrame().assertSendFrame(endStream: true)
+    XCTAssertEqual(frame, framedRequest)
+    try stateMachine.nextOutboundFrame().assertNoMoreMessages()
+
+    // Server sends one response message.
+    let responseMessage = ByteBuffer(bytes: [5, 6, 7])
+    let framedResponse = try self.frameMessage(responseMessage, compression: .none)
+    try stateMachine.receive(buffer: framedResponse, endStream: false).assertReadInbound()
+    XCTAssertEqual(try stateMachine.nextInboundMessage().assertReceiveMessage(), responseMessage)
+    try stateMachine.nextInboundMessage().assertAwaitMoreMessages()
+
+    // Server closes with trailers.
+    try stateMachine.receive(headers: .serverTrailers, endStream: true)
+      .assertReceivedStatusAndMetadata()
+    try stateMachine.nextInboundMessage().assertNoMoreMessages()
   }
 }
 
@@ -2401,7 +2552,10 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
       0, 0, 0, 2,  // message length: 2 bytes
       42, 42,  // original message
     ]
-    XCTAssertEqual(response, .sendFrame(frame: ByteBuffer(bytes: expectedBytes), promise: nil))
+    XCTAssertEqual(
+      response,
+      .sendFrame(frame: ByteBuffer(bytes: expectedBytes), endStream: false, promise: nil)
+    )
 
     // And then make sure that nothing else is returned
     XCTAssertEqual(try stateMachine.nextOutboundFrame(), .awaitMoreMessages)
@@ -2420,7 +2574,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
 
     let response = try stateMachine.nextOutboundFrame()
     let framedMessage = try self.frameMessage(originalMessage, compression: .deflate)
-    XCTAssertEqual(response, .sendFrame(frame: framedMessage, promise: nil))
+    XCTAssertEqual(response, .sendFrame(frame: framedMessage, endStream: false, promise: nil))
   }
 
   func testNextOutboundMessageWhenClientOpenAndServerClosed() throws {
@@ -2441,7 +2595,10 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
       0, 0, 0, 2,  // message length: 2 bytes
       42, 42,  // original message
     ]
-    XCTAssertEqual(response, .sendFrame(frame: ByteBuffer(bytes: expectedBytes), promise: nil))
+    XCTAssertEqual(
+      response,
+      .sendFrame(frame: ByteBuffer(bytes: expectedBytes), endStream: false, promise: nil)
+    )
 
     // And then make sure that nothing else is returned anymore
     XCTAssertEqual(try stateMachine.nextOutboundFrame(), .noMoreMessages)
@@ -2482,7 +2639,10 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
       0, 0, 0, 2,  // message length: 2 bytes
       43, 43,  // original message
     ]
-    XCTAssertEqual(response, .sendFrame(frame: ByteBuffer(bytes: expectedBytes), promise: nil))
+    XCTAssertEqual(
+      response,
+      .sendFrame(frame: ByteBuffer(bytes: expectedBytes), endStream: false, promise: nil)
+    )
 
     // And then make sure that nothing else is returned anymore
     XCTAssertEqual(try stateMachine.nextOutboundFrame(), .awaitMoreMessages)
@@ -2508,7 +2668,10 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
       0, 0, 0, 2,  // message length: 2 bytes
       42, 42,  // original message
     ]
-    XCTAssertEqual(response, .sendFrame(frame: ByteBuffer(bytes: expectedBytes), promise: nil))
+    XCTAssertEqual(
+      response,
+      .sendFrame(frame: ByteBuffer(bytes: expectedBytes), endStream: false, promise: nil)
+    )
 
     // And then make sure that nothing else is returned anymore
     XCTAssertEqual(try stateMachine.nextOutboundFrame(), .noMoreMessages)
@@ -2789,7 +2952,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     )
 
     guard
-      case .sendFrame(let nextOutboundByteBuffer, let nextOutboundPromise) =
+      case .sendFrame(let nextOutboundByteBuffer, let nextEndStream, let nextOutboundPromise) =
         try stateMachine.nextOutboundFrame()
     else {
       XCTFail("Should have received .sendMessage")
@@ -2797,6 +2960,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     }
     XCTAssertEqual(nextOutboundByteBuffer, framedMessages)
     XCTAssertTrue(firstPromise.futureResult === nextOutboundPromise?.futureResult)
+    XCTAssertFalse(nextEndStream)
 
     // Make sure that the promises associated with each sent message are chained
     // together: when succeeding the one returned by the state machine on
@@ -2888,7 +3052,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     )
     XCTAssertEqual(
       try stateMachine.nextOutboundFrame(),
-      .sendFrame(frame: framedMessages, promise: nil)
+      .sendFrame(frame: framedMessages, endStream: false, promise: nil)
     )
 
     // Server ends
@@ -2969,7 +3133,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
     )
     XCTAssertEqual(
       try stateMachine.nextOutboundFrame(),
-      .sendFrame(frame: framedMessages, promise: nil)
+      .sendFrame(frame: framedMessages, endStream: false, promise: nil)
     )
 
     // Server ends
@@ -3173,10 +3337,10 @@ extension GRPCStreamStateMachine.OnNextOutboundFrame {
       return true
     case (.awaitMoreMessages, .awaitMoreMessages):
       return true
-    case (.sendFrame(let lhsMessage, _), .sendFrame(let rhsMessage, _)):
+    case (.sendFrame(let lhsMessage, let lhsEnd, _), .sendFrame(let rhsMessage, let rhsEnd, _)):
       // Note that we're not comparing the EventLoopPromises here, as they're
       // not Equatable. This is fine though, since we only use this in tests.
-      return lhsMessage == rhsMessage
+      return lhsMessage == rhsMessage && lhsEnd == rhsEnd
     default:
       return false
     }
@@ -3241,6 +3405,7 @@ extension GRPCStreamStateMachine.OnSendMessage {
 
 @available(gRPCSwiftNIOTransport 2.2, *)
 extension GRPCStreamStateMachine.OnSendMetadata {
+  @discardableResult
   func assertHeaders() throws -> HPACKHeaders {
     switch self {
     case .write(let headers):
@@ -3318,6 +3483,28 @@ extension GRPCStreamStateMachine.OnMetadataReceived {
     case .receivedMetadata, .receivedStatusAndMetadata_clientOnly, .rejectRPC_serverOnly,
       .protocolViolation_serverOnly:
       XCTFail("Expected doNothing, got \(self)")
+      throw AssertionFailed()
+    }
+  }
+
+  func assertReceivedMetadata() throws {
+    switch self {
+    case .receivedMetadata:
+      ()
+    case .doNothing, .receivedStatusAndMetadata_clientOnly, .rejectRPC_serverOnly,
+      .protocolViolation_serverOnly:
+      XCTFail("Expected receivedMetadata, got \(self)")
+      throw AssertionFailed()
+    }
+  }
+
+  func assertReceivedStatusAndMetadata() throws {
+    switch self {
+    case .receivedStatusAndMetadata_clientOnly:
+      ()
+    case .doNothing, .receivedMetadata, .rejectRPC_serverOnly,
+      .protocolViolation_serverOnly:
+      XCTFail("Expected receivedStatusAndMetadata_clientOnly, got \(self)")
       throw AssertionFailed()
     }
   }
@@ -3442,6 +3629,18 @@ extension GRPCStreamStateMachine.OnNextOutboundFrame {
       ()
     case .noMoreMessages, .sendFrame, .closeAndFailPromise:
       XCTFail("Expected awaitMoreMessages, got \(self)")
+      throw AssertionFailed()
+    }
+  }
+
+  @discardableResult
+  func assertSendFrame(endStream: Bool) throws -> ByteBuffer {
+    switch self {
+    case .sendFrame(let frame, let eos, _):
+      XCTAssertEqual(eos, endStream, "Expected endStream=\(endStream), got \(eos)")
+      return frame
+    case .noMoreMessages, .awaitMoreMessages, .closeAndFailPromise:
+      XCTFail("Expected sendFrame, got \(self)")
       throw AssertionFailed()
     }
   }

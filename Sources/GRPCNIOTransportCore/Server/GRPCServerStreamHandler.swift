@@ -315,7 +315,8 @@ extension GRPCServerStreamHandler {
     do {
       loop: while true {
         switch try self.stateMachine.nextOutboundFrame() {
-        case .sendFrame(let byteBuffer, let promise):
+        case .sendFrame(let byteBuffer, _, let promise):
+          // end stream is never set on DATA frames sent by the server.
           self.flushPending = true
           context.write(
             self.wrapOutboundOut(.data(.init(data: .byteBuffer(byteBuffer)))),
