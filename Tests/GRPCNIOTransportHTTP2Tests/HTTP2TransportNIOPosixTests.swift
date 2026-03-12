@@ -20,6 +20,14 @@ import GRPCNIOTransportHTTP2Posix
 import NIOSSL
 import XCTest
 
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#elseif canImport(Musl)
+import Musl
+#endif
+
 @available(gRPCSwiftNIOTransport 2.0, *)
 final class HTTP2TransportNIOPosixTests: XCTestCase {
   func testGetListeningAddress_IPv4() async throws {
@@ -470,5 +478,138 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
     XCTAssertEqual(nioSSLTLSConfig.certificateVerification, .noHostnameVerification)
     XCTAssertEqual(nioSSLTLSConfig.trustRoots, .default)
     XCTAssertEqual(nioSSLTLSConfig.applicationProtocols, ["grpc-exp", "h2"])
+  }
+
+  // MARK: - File Descriptor Based Server Tests
+
+  /// Creates a pre-bound TCP listening socket on the loopback address with an
+  /// ephemeral port. Returns the file descriptor and the port it was bound to.
+  private func makeListeningSocket() throws -> (fd: Int, port: Int) {
+    let fd = socket(AF_INET, SOCK_STREAM, 0)
+    XCTAssertNotEqual(fd, -1, "Failed to create socket: errno=\(errno)")
+
+    // Allow address reuse.
+    var reuseAddr: Int32 = 1
+    let setOptResult = setsockopt(
+      fd,
+      SOL_SOCKET,
+      SO_REUSEADDR,
+      &reuseAddr,
+      socklen_t(MemoryLayout<Int32>.size)
+    )
+    if setOptResult != 0 {
+      close(fd)
+      XCTFail("setsockopt failed: errno=\(errno)")
+      return (fd: -1, port: 0)
+    }
+
+    // Bind to loopback with port 0 (ephemeral).
+    var addr = sockaddr_in()
+    addr.sin_family = sa_family_t(AF_INET)
+    addr.sin_port = UInt16(0).bigEndian
+    addr.sin_addr.s_addr = inet_addr("127.0.0.1")
+
+    let bindResult = withUnsafePointer(to: &addr) { ptr in
+      ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPtr in
+        #if canImport(Darwin)
+        Darwin.bind(fd, sockaddrPtr, socklen_t(MemoryLayout<sockaddr_in>.size))
+        #elseif canImport(Glibc)
+        Glibc.bind(fd, sockaddrPtr, socklen_t(MemoryLayout<sockaddr_in>.size))
+        #elseif canImport(Musl)
+        Musl.bind(fd, sockaddrPtr, socklen_t(MemoryLayout<sockaddr_in>.size))
+        #endif
+      }
+    }
+    if bindResult != 0 {
+      close(fd)
+      XCTFail("bind failed: errno=\(errno)")
+      return (fd: -1, port: 0)
+    }
+
+    // Start listening.
+    let listenResult = listen(fd, 128)
+    if listenResult != 0 {
+      close(fd)
+      XCTFail("listen failed: errno=\(errno)")
+      return (fd: -1, port: 0)
+    }
+
+    // Retrieve the assigned port.
+    var boundAddr = sockaddr_in()
+    var boundAddrLen = socklen_t(MemoryLayout<sockaddr_in>.size)
+    let getsocknameResult = withUnsafeMutablePointer(to: &boundAddr) { ptr in
+      ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPtr in
+        getsockname(fd, sockaddrPtr, &boundAddrLen)
+      }
+    }
+    if getsocknameResult != 0 {
+      close(fd)
+      XCTFail("getsockname failed: errno=\(errno)")
+      return (fd: -1, port: 0)
+    }
+
+    let port = Int(UInt16(bigEndian: boundAddr.sin_port))
+    return (fd: Int(fd), port: port)
+  }
+
+  func testGetListeningAddress_FileDescriptor() async throws {
+    let (fd, port) = try makeListeningSocket()
+
+    // gRPC takes ownership of the fd, so we must not close it ourselves.
+    let transport = GRPCNIOTransportCore.HTTP2ServerTransport.Posix(
+      listeningSocketDescriptor: fd,
+      transportSecurity: .plaintext
+    )
+
+    try await withThrowingDiscardingTaskGroup { group in
+      group.addTask {
+        try await transport.listen { _, _ in }
+      }
+
+      group.addTask {
+        // The listening address should be available since it's a real TCP socket.
+        let address = try await transport.listeningAddress
+        let ipv4Address = try XCTUnwrap(address.ipv4)
+        XCTAssertEqual(ipv4Address.port, port)
+        transport.beginGracefulShutdown()
+      }
+    }
+  }
+
+  func testFileDescriptorBasedServer_UnaryRPC() async throws {
+    let (fd, port) = try makeListeningSocket()
+
+    // gRPC takes ownership of the fd, so we must not close it ourselves.
+    let transport: HTTP2ServerTransport.Posix = .http2NIOPosix(
+      listeningSocketDescriptor: fd,
+      transportSecurity: .plaintext
+    )
+
+    try await withThrowingDiscardingTaskGroup { group in
+      let server = GRPCServer(transport: transport, services: [HelloWorldService()])
+
+      group.addTask {
+        try await server.serve()
+      }
+
+      group.addTask {
+        // Wait for the server to be ready.
+        let address = try await server.listeningAddress
+        XCTAssertNotNil(address)
+
+        try await withGRPCClient(
+          transport: .http2NIOPosix(
+            target: .ipv4(address: "127.0.0.1", port: port),
+            transportSecurity: .plaintext
+          )
+        ) { client in
+          let helloWorld = HelloWorld.Client(wrapping: client)
+          let response = try await helloWorld.sayHello(HelloRequest(name: "fd-test"))
+          XCTAssertEqual(response.message, "Hello, fd-test!")
+        }
+
+        server.beginGracefulShutdown()
+      }
+    }
   }
 }

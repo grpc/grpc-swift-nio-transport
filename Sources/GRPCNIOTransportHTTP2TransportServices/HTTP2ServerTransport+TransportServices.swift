@@ -32,29 +32,26 @@ extension HTTP2ServerTransport {
   public struct TransportServices: ServerTransport, ListeningServerTransport {
     public typealias Bytes = GRPCNIOTransportBytes
 
-    private struct ListenerFactory: HTTP2ListenerFactory {
-      let config: Config
+    private struct ListenerFactory: HTTP2ServerTransport.ListenerFactory {
+      let address: GRPCNIOTransportCore.SocketAddress
       let transportSecurity: TransportSecurity
+      let eventLoopGroup: any EventLoopGroup
 
       func makeListeningChannel(
-        eventLoopGroup: any EventLoopGroup,
-        address: GRPCNIOTransportCore.SocketAddress,
-        serverQuiescingHelper: ServerQuiescingHelper
-      ) async throws -> NIOAsyncChannel<AcceptedChannel, Never> {
+        listenerConfigurator: HTTP2ServerTransport.ListenerConfigurator,
+        connectionConfigurator: HTTP2ServerTransport.ConnectionConfigurator
+      ) async throws -> NIOAsyncChannel<HTTP2ServerTransport.ConnectionChannel, Never> {
         let bootstrap: NIOTSListenerBootstrap
 
-        let requireALPN: Bool
-        let scheme: Scheme
+        let tls: HTTP2ServerTransport.TLS
         switch self.transportSecurity.wrapped {
         case .plaintext:
-          requireALPN = false
-          scheme = .http
-          bootstrap = NIOTSListenerBootstrap(group: eventLoopGroup)
+          tls = .none
+          bootstrap = NIOTSListenerBootstrap(group: self.eventLoopGroup)
 
         case .tls(let tlsConfig):
-          requireALPN = tlsConfig.requireALPN
-          scheme = .https
-          bootstrap = NIOTSListenerBootstrap(group: eventLoopGroup)
+          tls = .configured(requireALPN: tlsConfig.requireALPN)
+          bootstrap = NIOTSListenerBootstrap(group: self.eventLoopGroup)
             .tlsOptions(try NWProtocolTLS.Options(tlsConfig))
         }
 
@@ -62,44 +59,17 @@ extension HTTP2ServerTransport {
           try await bootstrap
           .serverChannelOption(.socketOption(.so_reuseaddr), value: 1)
           .serverChannelInitializer { channel in
-            channel.eventLoop.makeCompletedFuture {
-              let quiescingHandler = serverQuiescingHelper.makeServerChannelHandler(
-                channel: channel
-              )
-              try channel.pipeline.syncOperations.addHandler(quiescingHandler)
-            }.runInitializerIfSet(
-              self.config.channelDebuggingCallbacks.onBindTCPListener,
-              on: channel
-            )
+            listenerConfigurator.configure(channel: channel)
           }
-          .bind(to: address) { channel in
-            return channel.eventLoop.makeCompletedFuture {
-              let sync = channel.pipeline.syncOperations
-
-              let waitForActive = WaitForActive(promise: channel.eventLoop.makePromise())
-              try sync.addHandler(waitForActive, name: "wait-for-active")
-
-              return try sync.configureGRPCServerPipeline(
-                channel: channel,
-                compressionConfig: self.config.compression,
-                connectionConfig: self.config.connection,
-                http2Config: self.config.http2,
-                rpcConfig: self.config.rpc,
-                debugConfig: self.config.channelDebuggingCallbacks,
-                requireALPN: requireALPN,
-                scheme: scheme
-              )
-            }.runInitializerIfSet(
-              self.config.channelDebuggingCallbacks.onAcceptTCPConnection,
-              on: channel
-            )
+          .bind(to: self.address) { channel in
+            connectionConfigurator.configure(channel: channel, tls: tls)
           }
 
         return serverChannel
       }
     }
 
-    private let underlyingTransport: CommonHTTP2ServerTransport<ListenerFactory>
+    private let underlyingTransport: NIOBasedHTTP2ServerTransport<ListenerFactory>
 
     /// The listening address for this server transport.
     ///
@@ -127,13 +97,22 @@ extension HTTP2ServerTransport {
       config: Config = .defaults,
       eventLoopGroup: NIOTSEventLoopGroup = .singletonNIOTSEventLoopGroup
     ) {
-      let factory = ListenerFactory(config: config, transportSecurity: transportSecurity)
-      let helper = ServerQuiescingHelper(group: eventLoopGroup)
-      self.underlyingTransport = CommonHTTP2ServerTransport(
+      self.underlyingTransport = NIOBasedHTTP2ServerTransport(
         address: address,
         eventLoopGroup: eventLoopGroup,
-        quiescingHelper: helper,
-        listenerFactory: factory
+        quiescingHelper: ServerQuiescingHelper(group: eventLoopGroup),
+        config: .init(
+          compression: config.compression,
+          connection: config.connection,
+          http2: config.http2,
+          rpc: config.rpc,
+          channelDebuggingCallbacks: config.channelDebuggingCallbacks
+        ),
+        listenerFactory: ListenerFactory(
+          address: address,
+          transportSecurity: transportSecurity,
+          eventLoopGroup: eventLoopGroup
+        )
       )
     }
 

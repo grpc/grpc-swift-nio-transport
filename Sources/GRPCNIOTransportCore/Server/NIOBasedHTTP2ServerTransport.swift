@@ -14,26 +14,85 @@
  * limitations under the License.
  */
 
-package import GRPCCore
-package import NIOCore
+public import GRPCCore
+public import NIOCore
 package import NIOExtras
 private import NIOHTTP2
 private import Synchronization
 
-/// Provides the common functionality for a `NIO`-based server transport.
+/// A NIO-based server transport that handles HTTP/2 connections using a pluggable
+/// ``HTTP2ServerTransport/ListenerFactory``.
 ///
-/// - SeeAlso: ``HTTP2ListenerFactory``.
+/// This transport provides the core functionality for accepting HTTP/2 connections and
+/// dispatching RPC streams. It delegates the creation of the listening channel to a
+/// ``HTTP2ServerTransport/ListenerFactory`` implementation, allowing custom connection
+/// acceptance mechanisms (such as XPC) beyond the standard bind-accept pattern.
+///
+/// To use this transport with a custom listener factory:
+/// 1. Implement ``HTTP2ServerTransport/ListenerFactory`` to create your listening channel.
+/// 2. Create an instance of this transport with your factory.
+/// 3. Pass the transport to a `GRPCServer`.
+///
+/// This type does not conform to ``ListeningServerTransport``. If your transport has a
+/// listening address, you can conform your wrapper type to ``ListeningServerTransport``.
+///
+/// - SeeAlso: ``HTTP2ServerTransport/ListenerFactory``.
 @available(gRPCSwiftNIOTransport 2.0, *)
-package final class CommonHTTP2ServerTransport<
-  ListenerFactory: HTTP2ListenerFactory
->: ServerTransport, ListeningServerTransport {
-  package typealias Bytes = GRPCNIOTransportBytes
+public final class NIOBasedHTTP2ServerTransport<
+  ListenerFactory: HTTP2ServerTransport.ListenerFactory
+>: ServerTransport {
+  public typealias Bytes = GRPCNIOTransportBytes
 
-  private let eventLoopGroup: any EventLoopGroup
-  private let address: SocketAddress
+  /// Configuration for the common HTTP/2 server transport.
+  ///
+  /// This groups the gRPC-level configuration that the transport uses to configure
+  /// each accepted connection's HTTP/2 pipeline. Concrete transports (e.g. Posix,
+  /// TransportServices) pass this configuration when creating the underlying
+  /// ``NIOBasedHTTP2ServerTransport``.
+  public struct Config: Sendable {
+    /// Compression configuration.
+    public var compression: HTTP2ServerTransport.Config.Compression
+
+    /// Connection configuration.
+    public var connection: HTTP2ServerTransport.Config.Connection
+
+    /// HTTP/2 configuration.
+    public var http2: HTTP2ServerTransport.Config.HTTP2
+
+    /// RPC configuration.
+    public var rpc: HTTP2ServerTransport.Config.RPC
+
+    /// Channel callbacks for debugging.
+    public var channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
+
+    /// Creates a new configuration.
+    ///
+    /// - Parameters:
+    ///   - compression: Compression configuration.
+    ///   - connection: Connection configuration.
+    ///   - http2: HTTP/2 configuration.
+    ///   - rpc: RPC configuration.
+    ///   - channelDebuggingCallbacks: Channel callbacks for debugging.
+    public init(
+      compression: HTTP2ServerTransport.Config.Compression,
+      connection: HTTP2ServerTransport.Config.Connection,
+      http2: HTTP2ServerTransport.Config.HTTP2,
+      rpc: HTTP2ServerTransport.Config.RPC,
+      channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
+    ) {
+      self.compression = compression
+      self.connection = connection
+      self.http2 = http2
+      self.rpc = rpc
+      self.channelDebuggingCallbacks = channelDebuggingCallbacks
+    }
+  }
+
+  private let address: SocketAddress?
   private let listeningAddressState: Mutex<State>
   private let serverQuiescingHelper: ServerQuiescingHelper
   private let factory: ListenerFactory
+  private let config: Config
   private let transportSpecificContext:
     (
       @Sendable (any Channel) async -> any ServerContext.TransportSpecific
@@ -64,24 +123,25 @@ package final class CommonHTTP2ServerTransport<
 
     mutating func addressBound(
       _ address: NIOCore.SocketAddress?,
-      userProvidedAddress: SocketAddress
+      userProvidedAddress: SocketAddress?
     ) -> OnBound {
       switch self {
       case .idle(let listeningAddressPromise):
         if let address {
           self = .listening(listeningAddressPromise.futureResult)
           return .succeedPromise(listeningAddressPromise, address: SocketAddress(address))
-        } else if userProvidedAddress.virtualSocket != nil {
+        } else if let userProvidedAddress, userProvidedAddress.virtualSocket != nil {
           self = .listening(listeningAddressPromise.futureResult)
           return .succeedPromise(listeningAddressPromise, address: userProvidedAddress)
         } else {
-          assertionFailure("Unknown address type")
-          let invalidAddressError = RuntimeError(
+          // In some cases (such as starting the server from an fd, it might not be possible to get
+          // a socket address).
+          let unavailableAddress = RuntimeError(
             code: .transportError,
-            message: "Unknown address type returned by transport."
+            message: "Listener address isn't available. It may not correspond to a socket address."
           )
-          self = .closedOrInvalidAddress(invalidAddressError)
-          return .failPromise(listeningAddressPromise, error: invalidAddressError)
+          self = .closedOrInvalidAddress(unavailableAddress)
+          return .failPromise(listeningAddressPromise, error: unavailableAddress)
         }
 
       case .listening, .closedOrInvalidAddress:
@@ -124,8 +184,9 @@ package final class CommonHTTP2ServerTransport<
   ///
   /// - Throws: A runtime error will be thrown if the address could not be bound or is not bound any
   /// longer, because the transport isn't listening anymore. It can also throw if the transport returned an
-  /// invalid address.
-  package var listeningAddress: SocketAddress {
+  /// invalid address, or if the listener doesn't have a corresponding socket address (e.g. when
+  /// started from a file descriptor).
+  public var listeningAddress: SocketAddress {
     get async throws {
       try await self.listeningAddressState
         .withLock { try $0.listeningAddressFuture }
@@ -133,16 +194,39 @@ package final class CommonHTTP2ServerTransport<
     }
   }
 
+  /// Creates a new NIO-based HTTP/2 server transport.
+  ///
+  /// - Parameters:
+  ///   - address: The address the server is expected to be listening on, or `nil` if the
+  ///     address isn't known (e.g. when using a custom listener that doesn't bind to a socket
+  ///     address). This is used to populate ``listeningAddress``.
+  ///   - eventLoopGroup: The `EventLoopGroup` used for creating promises and event loops.
+  ///   - listenerFactory: The factory responsible for creating the listening channel.
+  public convenience init(
+    address: SocketAddress?,
+    eventLoopGroup: any EventLoopGroup,
+    config: Config,
+    listenerFactory: ListenerFactory
+  ) {
+    self.init(
+      address: address,
+      eventLoopGroup: eventLoopGroup,
+      quiescingHelper: ServerQuiescingHelper(group: eventLoopGroup),
+      config: config,
+      listenerFactory: listenerFactory
+    )
+  }
+
   package init(
-    address: SocketAddress,
+    address: SocketAddress?,
     eventLoopGroup: any EventLoopGroup,
     quiescingHelper: ServerQuiescingHelper,
+    config: Config,
     listenerFactory: ListenerFactory,
     transportSpecificContext: (
       @Sendable (any Channel) async -> any ServerContext.TransportSpecific
     )? = nil
   ) {
-    self.eventLoopGroup = eventLoopGroup
     self.address = address
 
     let eventLoop = eventLoopGroup.any()
@@ -150,6 +234,7 @@ package final class CommonHTTP2ServerTransport<
 
     self.factory = listenerFactory
     self.serverQuiescingHelper = quiescingHelper
+    self.config = config
     self.transportSpecificContext = transportSpecificContext
   }
 
@@ -165,7 +250,7 @@ package final class CommonHTTP2ServerTransport<
     }
   }
 
-  package func listen(
+  public func listen(
     streamHandler:
       @escaping @Sendable (
         _ stream: RPCStream<Inbound, Outbound>,
@@ -181,10 +266,43 @@ package final class CommonHTTP2ServerTransport<
       }
     }
 
+    let listenerConfigurator = HTTP2ServerTransport.ListenerConfigurator { channel in
+      let configured = channel.eventLoop.makeCompletedFuture {
+        let quiescingHandler = self.serverQuiescingHelper.makeServerChannelHandler(channel: channel)
+        try channel.pipeline.syncOperations.addHandler(quiescingHandler)
+      }
+      return configured.runInitializerIfSet(
+        self.config.channelDebuggingCallbacks.onBindTCPListener,
+        on: channel
+      )
+    }
+
+    let connectionConfigurator = HTTP2ServerTransport.ConnectionConfigurator { channel, tls in
+      let configured = channel.eventLoop.makeCompletedFuture {
+        let (connection, mux) = try channel.pipeline.syncOperations.configureGRPCServerPipeline(
+          channel: channel,
+          compressionConfig: self.config.compression,
+          connectionConfig: self.config.connection,
+          http2Config: self.config.http2,
+          rpcConfig: self.config.rpc,
+          debugConfig: self.config.channelDebuggingCallbacks,
+          requireALPN: tls.requireALPN,
+          scheme: tls.usesTLS ? .https : .http
+        )
+        return HTTP2ServerTransport.ConnectionChannel(
+          connection: connection,
+          multiplexer: mux
+        )
+      }
+      return configured.runInitializerIfSet(
+        self.config.channelDebuggingCallbacks.onAcceptTCPConnection,
+        on: channel
+      )
+    }
+
     let serverChannel = try await self.factory.makeListeningChannel(
-      eventLoopGroup: self.eventLoopGroup,
-      address: self.address,
-      serverQuiescingHelper: self.serverQuiescingHelper
+      listenerConfigurator: listenerConfigurator,
+      connectionConfigurator: connectionConfigurator
     )
 
     let action = self.listeningAddressState.withLock {
@@ -202,11 +320,11 @@ package final class CommonHTTP2ServerTransport<
 
     try await serverChannel.executeThenClose { inbound in
       try await withThrowingDiscardingTaskGroup { group in
-        for try await (connectionChannel, streamMultiplexer) in inbound {
+        for try await configuredConnection in inbound {
           group.addTask {
             try await self.handleConnection(
-              connectionChannel,
-              multiplexer: streamMultiplexer,
+              configuredConnection.connection,
+              multiplexer: configuredConnection.multiplexer,
               streamHandler: streamHandler
             )
           }
@@ -337,7 +455,7 @@ package final class CommonHTTP2ServerTransport<
     }
   }
 
-  package func beginGracefulShutdown() {
+  public func beginGracefulShutdown() {
     self.serverQuiescingHelper.initiateShutdown(promise: nil)
   }
 }
