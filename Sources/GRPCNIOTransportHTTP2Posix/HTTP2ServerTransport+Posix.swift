@@ -59,7 +59,6 @@ extension HTTP2ServerTransport {
 
     struct ListenerFactory: HTTP2ServerTransport.ListenerFactory {
       let address: Address
-      let config: Config
       let transportSecurity: TransportSecurity
       let eventLoopGroup: any EventLoopGroup
 
@@ -78,11 +77,10 @@ extension HTTP2ServerTransport {
       }
 
       func makeListeningChannel(
-        listenerParameters: HTTP2ServerTransport.ListenerParameters,
-        connectionParameters: HTTP2ServerTransport.ConnectionParameters
+        listenerConfigurator: HTTP2ServerTransport.ListenerConfigurator,
+        connectionConfigurator: HTTP2ServerTransport.ConnectionConfigurator
       ) async throws -> NIOAsyncChannel<HTTP2ServerTransport.ConnectionChannel, Never> {
-        let usesTLS: Bool
-        let requireALPN: Bool
+        let tls: HTTP2ServerTransport.TLS
         let sslContext: NIOSSLContext?
         let customVerificationCallback:
           (
@@ -93,8 +91,7 @@ extension HTTP2ServerTransport {
 
         switch self.transportSecurity.wrapped {
         case .plaintext:
-          usesTLS = false
-          requireALPN = false
+          tls = .none
           sslContext = nil
           customVerificationCallback = nil
 
@@ -108,18 +105,14 @@ extension HTTP2ServerTransport {
               cause: error
             )
           }
-          usesTLS = true
-          requireALPN = tlsConfig.requireALPN
+          tls = .configured(requireALPN: tlsConfig.requireALPN)
           customVerificationCallback = tlsConfig.customVerificationCallback
         }
 
         let serverChannel = try await ServerBootstrap(group: self.eventLoopGroup)
           .serverChannelOption(.socketOption(.so_reuseaddr), value: 1)
           .serverChannelInitializer { channel in
-            listenerParameters.configureListener(
-              channel: channel,
-              debuggingCallbacks: self.config.channelDebuggingCallbacks
-            )
+            listenerConfigurator.configure(channel: channel)
           }
           .bind(to: self.address) { channel in
             let sslHandler: NIOSSLServerHandler?
@@ -137,18 +130,16 @@ extension HTTP2ServerTransport {
               sslHandler = nil
             }
 
-            return connectionParameters.configureConnection(
-              channel: channel,
-              sslHandler: sslHandler,
-              compressionConfig: self.config.compression,
-              connectionConfig: self.config.connection,
-              http2Config: self.config.http2,
-              rpcConfig: self.config.rpc,
-              debuggingCallbacks: self.config.channelDebuggingCallbacks,
-              usesTLS: usesTLS,
-              requireALPN: requireALPN
-            )
-
+            if let sslHandler {
+              let addHandler = channel.eventLoop.makeCompletedFuture {
+                try channel.pipeline.syncOperations.addHandler(sslHandler)
+              }
+              return addHandler.flatMap {
+                connectionConfigurator.configure(channel: channel, tls: tls)
+              }
+            } else {
+              return connectionConfigurator.configure(channel: channel, tls: tls)
+            }
           }
 
         return serverChannel
@@ -225,9 +216,15 @@ extension HTTP2ServerTransport {
         address: address.socketAddress,
         eventLoopGroup: eventLoopGroup,
         quiescingHelper: ServerQuiescingHelper(group: eventLoopGroup),
+        config: NIOBasedHTTP2ServerTransport<ListenerFactory>.Config(
+          compression: config.compression,
+          connection: config.connection,
+          http2: config.http2,
+          rpc: config.rpc,
+          channelDebuggingCallbacks: config.channelDebuggingCallbacks
+        ),
         listenerFactory: ListenerFactory(
           address: address,
-          config: config,
           transportSecurity: transportSecurity,
           eventLoopGroup: eventLoopGroup
         )

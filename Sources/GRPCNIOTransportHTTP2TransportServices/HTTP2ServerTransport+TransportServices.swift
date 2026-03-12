@@ -34,27 +34,23 @@ extension HTTP2ServerTransport {
 
     private struct ListenerFactory: HTTP2ServerTransport.ListenerFactory {
       let address: GRPCNIOTransportCore.SocketAddress
-      let config: Config
       let transportSecurity: TransportSecurity
       let eventLoopGroup: any EventLoopGroup
 
       func makeListeningChannel(
-        listenerParameters: HTTP2ServerTransport.ListenerParameters,
-        connectionParameters: HTTP2ServerTransport.ConnectionParameters
+        listenerConfigurator: HTTP2ServerTransport.ListenerConfigurator,
+        connectionConfigurator: HTTP2ServerTransport.ConnectionConfigurator
       ) async throws -> NIOAsyncChannel<HTTP2ServerTransport.ConnectionChannel, Never> {
         let bootstrap: NIOTSListenerBootstrap
 
-        let requireALPN: Bool
-        let usesTLS: Bool
+        let tls: HTTP2ServerTransport.TLS
         switch self.transportSecurity.wrapped {
         case .plaintext:
-          requireALPN = false
-          usesTLS = false
+          tls = .none
           bootstrap = NIOTSListenerBootstrap(group: self.eventLoopGroup)
 
         case .tls(let tlsConfig):
-          requireALPN = tlsConfig.requireALPN
-          usesTLS = true
+          tls = .configured(requireALPN: tlsConfig.requireALPN)
           bootstrap = NIOTSListenerBootstrap(group: self.eventLoopGroup)
             .tlsOptions(try NWProtocolTLS.Options(tlsConfig))
         }
@@ -63,22 +59,10 @@ extension HTTP2ServerTransport {
           try await bootstrap
           .serverChannelOption(.socketOption(.so_reuseaddr), value: 1)
           .serverChannelInitializer { channel in
-            listenerParameters.configureListener(
-              channel: channel,
-              debuggingCallbacks: self.config.channelDebuggingCallbacks
-            )
+            listenerConfigurator.configure(channel: channel)
           }
           .bind(to: self.address) { channel in
-            connectionParameters.configureConnection(
-              channel: channel,
-              compressionConfig: self.config.compression,
-              connectionConfig: self.config.connection,
-              http2Config: self.config.http2,
-              rpcConfig: self.config.rpc,
-              debuggingCallbacks: self.config.channelDebuggingCallbacks,
-              usesTLS: usesTLS,
-              requireALPN: requireALPN
-            )
+            connectionConfigurator.configure(channel: channel, tls: tls)
           }
 
         return serverChannel
@@ -117,9 +101,15 @@ extension HTTP2ServerTransport {
         address: address,
         eventLoopGroup: eventLoopGroup,
         quiescingHelper: ServerQuiescingHelper(group: eventLoopGroup),
+        config: .init(
+          compression: config.compression,
+          connection: config.connection,
+          http2: config.http2,
+          rpc: config.rpc,
+          channelDebuggingCallbacks: config.channelDebuggingCallbacks
+        ),
         listenerFactory: ListenerFactory(
           address: address,
-          config: config,
           transportSecurity: transportSecurity,
           eventLoopGroup: eventLoopGroup
         )

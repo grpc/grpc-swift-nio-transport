@@ -43,10 +43,56 @@ public final class NIOBasedHTTP2ServerTransport<
 >: ServerTransport {
   public typealias Bytes = GRPCNIOTransportBytes
 
+  /// Configuration for the common HTTP/2 server transport.
+  ///
+  /// This groups the gRPC-level configuration that the transport uses to configure
+  /// each accepted connection's HTTP/2 pipeline. Concrete transports (e.g. Posix,
+  /// TransportServices) pass this configuration when creating the underlying
+  /// ``NIOBasedHTTP2ServerTransport``.
+  public struct Config: Sendable {
+    /// Compression configuration.
+    public var compression: HTTP2ServerTransport.Config.Compression
+
+    /// Connection configuration.
+    public var connection: HTTP2ServerTransport.Config.Connection
+
+    /// HTTP/2 configuration.
+    public var http2: HTTP2ServerTransport.Config.HTTP2
+
+    /// RPC configuration.
+    public var rpc: HTTP2ServerTransport.Config.RPC
+
+    /// Channel callbacks for debugging.
+    public var channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
+
+    /// Creates a new configuration.
+    ///
+    /// - Parameters:
+    ///   - compression: Compression configuration.
+    ///   - connection: Connection configuration.
+    ///   - http2: HTTP/2 configuration.
+    ///   - rpc: RPC configuration.
+    ///   - channelDebuggingCallbacks: Channel callbacks for debugging.
+    public init(
+      compression: HTTP2ServerTransport.Config.Compression,
+      connection: HTTP2ServerTransport.Config.Connection,
+      http2: HTTP2ServerTransport.Config.HTTP2,
+      rpc: HTTP2ServerTransport.Config.RPC,
+      channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
+    ) {
+      self.compression = compression
+      self.connection = connection
+      self.http2 = http2
+      self.rpc = rpc
+      self.channelDebuggingCallbacks = channelDebuggingCallbacks
+    }
+  }
+
   private let address: SocketAddress?
   private let listeningAddressState: Mutex<State>
   private let serverQuiescingHelper: ServerQuiescingHelper
   private let factory: ListenerFactory
+  private let config: Config
   private let transportSpecificContext:
     (
       @Sendable (any Channel) async -> any ServerContext.TransportSpecific
@@ -159,12 +205,14 @@ public final class NIOBasedHTTP2ServerTransport<
   public convenience init(
     address: SocketAddress?,
     eventLoopGroup: any EventLoopGroup,
+    config: Config,
     listenerFactory: ListenerFactory
   ) {
     self.init(
       address: address,
       eventLoopGroup: eventLoopGroup,
       quiescingHelper: ServerQuiescingHelper(group: eventLoopGroup),
+      config: config,
       listenerFactory: listenerFactory
     )
   }
@@ -173,6 +221,7 @@ public final class NIOBasedHTTP2ServerTransport<
     address: SocketAddress?,
     eventLoopGroup: any EventLoopGroup,
     quiescingHelper: ServerQuiescingHelper,
+    config: Config,
     listenerFactory: ListenerFactory,
     transportSpecificContext: (
       @Sendable (any Channel) async -> any ServerContext.TransportSpecific
@@ -185,6 +234,7 @@ public final class NIOBasedHTTP2ServerTransport<
 
     self.factory = listenerFactory
     self.serverQuiescingHelper = quiescingHelper
+    self.config = config
     self.transportSpecificContext = transportSpecificContext
   }
 
@@ -216,11 +266,43 @@ public final class NIOBasedHTTP2ServerTransport<
       }
     }
 
+    let listenerConfigurator = HTTP2ServerTransport.ListenerConfigurator { channel in
+      let configured = channel.eventLoop.makeCompletedFuture {
+        let quiescingHandler = self.serverQuiescingHelper.makeServerChannelHandler(channel: channel)
+        try channel.pipeline.syncOperations.addHandler(quiescingHandler)
+      }
+      return configured.runInitializerIfSet(
+        self.config.channelDebuggingCallbacks.onBindTCPListener,
+        on: channel
+      )
+    }
+
+    let connectionConfigurator = HTTP2ServerTransport.ConnectionConfigurator { channel, tls in
+      let configured = channel.eventLoop.makeCompletedFuture {
+        let (connection, mux) = try channel.pipeline.syncOperations.configureGRPCServerPipeline(
+          channel: channel,
+          compressionConfig: self.config.compression,
+          connectionConfig: self.config.connection,
+          http2Config: self.config.http2,
+          rpcConfig: self.config.rpc,
+          debugConfig: self.config.channelDebuggingCallbacks,
+          requireALPN: tls.requireALPN,
+          scheme: tls.usesTLS ? .https : .http
+        )
+        return HTTP2ServerTransport.ConnectionChannel(
+          connection: connection,
+          multiplexer: mux
+        )
+      }
+      return configured.runInitializerIfSet(
+        self.config.channelDebuggingCallbacks.onAcceptTCPConnection,
+        on: channel
+      )
+    }
+
     let serverChannel = try await self.factory.makeListeningChannel(
-      listenerParameters: HTTP2ServerTransport.ListenerParameters(
-        quiescingHelper: self.serverQuiescingHelper
-      ),
-      connectionParameters: HTTP2ServerTransport.ConnectionParameters()
+      listenerConfigurator: listenerConfigurator,
+      connectionConfigurator: connectionConfigurator
     )
 
     let action = self.listeningAddressState.withLock {
