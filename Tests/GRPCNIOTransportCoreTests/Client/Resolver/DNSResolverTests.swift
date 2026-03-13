@@ -17,14 +17,6 @@
 import GRPCNIOTransportCore
 import Testing
 
-#if canImport(Darwin)
-import Darwin
-#elseif canImport(Glibc)
-import Glibc
-#elseif canImport(Musl)
-import Musl
-#endif
-
 @Suite("DNSResolver")
 struct DNSResolverTests {
   @Test(
@@ -49,10 +41,7 @@ struct DNSResolverTests {
   @available(gRPCSwiftNIOTransport 2.0, *)
   func resolveScopedIPv6() async throws {
     let loopback = try #require(System.loopbackInterfaceName)
-
-    #if !os(Windows)
-    guard if_nametoindex(loopback) != 0 else { return }
-    #endif
+    try #require(System.isValidInterface(loopback))
 
     let result = try await DNSResolver.resolve(host: "fe80::1%\(loopback)", port: 80)
 

@@ -18,14 +18,6 @@ import GRPCNIOTransportCore
 import NIOCore
 import Testing
 
-#if canImport(Darwin)
-import Darwin
-#elseif canImport(Glibc)
-import Glibc
-#elseif canImport(Musl)
-import Musl
-#endif
-
 @Suite("NIOSocketAddress ↔ gRPC SocketAddress conversion")
 struct NIOSocketAddressConversionTests {
 
@@ -36,10 +28,7 @@ struct NIOSocketAddressConversionTests {
   @available(gRPCSwiftNIOTransport 2.0, *)
   func scopedIPv6ToNIO() throws {
     let loopback = try #require(System.loopbackInterfaceName)
-
-    #if !os(Windows)
-    guard if_nametoindex(loopback) != 0 else { return }
-    #endif
+    try #require(System.isValidInterface(loopback))
 
     let grpcAddress = SocketAddress.IPv6(host: "fe80::1%\(loopback)", port: 50051)
     let nioAddress = try NIOCore.SocketAddress(grpcAddress)
@@ -47,21 +36,17 @@ struct NIOSocketAddressConversionTests {
     #expect(nioAddress.port == 50051)
     #expect(nioAddress.ipAddress?.contains("fe80::1") == true, "IP address should contain fe80::1")
 
-    guard case .v6(let v6Address) = nioAddress else {
-      Issue.record("Expected IPv6 address, got \(nioAddress)")
-      return
-    }
-    #expect(v6Address.address.sin6_scope_id != 0, "Scope ID should be preserved")
+    // Verify scope ID is preserved by converting back to gRPC address.
+    let roundTripped = GRPCNIOTransportCore.SocketAddress(nioAddress)
+    let ipv6 = try #require(roundTripped.ipv6)
+    #expect(ipv6.host.contains("%\(loopback)"), "Scope ID should be preserved")
   }
 
   @Test("Scoped IPv6 round-trip preserves scope ID", .disabled(if: System.isWindows))
   @available(gRPCSwiftNIOTransport 2.0, *)
   func scopedIPv6RoundTrip() throws {
     let loopback = try #require(System.loopbackInterfaceName)
-
-    #if !os(Windows)
-    guard if_nametoindex(loopback) != 0 else { return }
-    #endif
+    try #require(System.isValidInterface(loopback))
 
     let grpcAddress = SocketAddress.IPv6(host: "fe80::1%\(loopback)", port: 50051)
 

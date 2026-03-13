@@ -14,6 +14,16 @@
  * limitations under the License.
  */
 
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(Android)
+import Android
+#elseif canImport(Glibc)
+import Glibc
+#elseif canImport(Musl)
+import Musl
+#endif
+
 enum System {
   static var isWindows: Bool {
     #if os(Windows)
@@ -31,6 +41,15 @@ enum System {
     "lo0"
     #else
     "lo"
+    #endif
+  }
+
+  /// Returns `true` if the named network interface exists and is valid on this platform.
+  static func isValidInterface(_ name: String) -> Bool {
+    #if os(Windows)
+    false
+    #else
+    if_nametoindex(name) != 0
     #endif
   }
 }

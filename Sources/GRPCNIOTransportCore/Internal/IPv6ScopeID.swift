@@ -15,13 +15,13 @@
  */
 
 #if canImport(Darwin)
-private import Darwin
+import Darwin
 #elseif canImport(Android)
-private import Android
+import Android
 #elseif canImport(Glibc)
-private import Glibc
+import Glibc
 #elseif canImport(Musl)
-private import Musl
+import Musl
 #endif
 
 #if !os(Windows)
@@ -54,5 +54,14 @@ internal func appendScopeIDIfNeeded(to host: inout String, scopeID: UInt32) {
       host += "%\(scopeName)"
     }
   }
+}
+
+/// Appends the scope ID from a `sockaddr_in6` to an IPv6 host string if needed.
+/// - Parameters:
+///   - host: The IPv6 host string to modify in place.
+///   - address: The `sockaddr_in6` containing the scope ID.
+@available(gRPCSwiftNIOTransport 2.0, *)
+internal func appendScopeIDIfNeeded(to host: inout String, from address: sockaddr_in6) {
+  appendScopeIDIfNeeded(to: &host, scopeID: address.sin6_scope_id)
 }
 #endif

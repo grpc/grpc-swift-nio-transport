@@ -17,16 +17,6 @@
 private import GRPCCore
 package import NIOCore
 
-#if canImport(Darwin)
-private import Darwin
-#elseif canImport(Android)
-private import Android
-#elseif canImport(Glibc)
-private import Glibc
-#elseif canImport(Musl)
-private import Musl
-#endif
-
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCNIOTransportCore.SocketAddress {
   package init(_ nioSocketAddress: NIOCore.SocketAddress) {
@@ -40,7 +30,7 @@ extension GRPCNIOTransportCore.SocketAddress {
     case .v6(let address):
       var host = address.host
       #if !os(Windows)
-      appendScopeIDIfNeeded(to: &host, scopeID: address.address.sin6_scope_id)
+      appendScopeIDIfNeeded(to: &host, from: address.address)
       #endif
       self = .ipv6(
         host: host,
