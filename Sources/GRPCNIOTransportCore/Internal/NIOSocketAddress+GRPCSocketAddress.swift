@@ -28,8 +28,12 @@ extension GRPCNIOTransportCore.SocketAddress {
       )
 
     case .v6(let address):
+      var host = address.host
+      #if !os(Windows)
+      appendScopeIDIfNeeded(to: &host, from: address.address)
+      #endif
       self = .ipv6(
-        host: address.host,
+        host: host,
         port: nioSocketAddress.port ?? 0
       )
 
@@ -62,6 +66,8 @@ extension NIOCore.SocketAddress {
   }
 
   package init(_ address: SocketAddress.IPv6) throws {
+    // swift-nio now natively supports scoped IPv6 addresses (e.g., "fe80::1%eth0")
+    // in SocketAddress.init(ipAddress:port:) as of version 2.79.0+
     try self.init(ipAddress: address.host, port: address.port)
   }
 

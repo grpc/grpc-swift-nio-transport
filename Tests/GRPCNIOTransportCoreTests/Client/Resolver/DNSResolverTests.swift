@@ -36,4 +36,19 @@ struct DNSResolverTests {
 
     #expect(result == [expected])
   }
+
+  @Test("Resolve link-local address preserves scope ID", .disabled(if: System.isWindows))
+  @available(gRPCSwiftNIOTransport 2.0, *)
+  func resolveScopedIPv6() async throws {
+    let loopback = try #require(System.loopbackInterfaceName)
+    try #require(System.isValidInterface(loopback))
+
+    let result = try await DNSResolver.resolve(host: "fe80::1%\(loopback)", port: 80)
+
+    #expect(result.count == 1)
+    let address = try #require(result.first)
+    let ipv6 = try #require(address.ipv6)
+    #expect(ipv6.host.contains("%\(loopback)"))
+    #expect(ipv6.port == 80)
+  }
 }
