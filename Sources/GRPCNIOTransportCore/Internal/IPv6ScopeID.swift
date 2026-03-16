@@ -24,6 +24,12 @@ import Glibc
 import Musl
 #endif
 
+// On Linux, MemberImportVisibility requires importing CNIOLinux to access
+// sockaddr_in6 members (sin6_scope_id) that NIOCore exposes through this module.
+#if canImport(CNIOLinux)
+import CNIOLinux
+#endif
+
 #if !os(Windows)
 /// Resolves an IPv6 scope ID to its interface name.
 /// - Parameter scopeID: The numeric scope ID from `sin6_scope_id`
@@ -32,7 +38,8 @@ import Musl
 internal func resolveScopeID(_ scopeID: UInt32) -> String? {
   let name = String(unsafeUninitializedCapacity: Int(IF_NAMESIZE)) { buffer in
     guard let baseAddress = buffer.baseAddress,
-          let ptr = if_indextoname(scopeID, baseAddress) else {
+      let ptr = if_indextoname(scopeID, baseAddress)
+    else {
       return 0
     }
     return strlen(ptr)
