@@ -43,6 +43,24 @@ struct PerformanceWorker: AsyncParsableCommand {
   )
   var driverPort: Int
 
+  @Option(
+    name: .customLong("driver_host"),
+    help: "Host to listen on for connections from the driver."
+  )
+  var driverHost: String = "127.0.0.1"
+
+  @Option(
+    name: .customLong("server_port"),
+    help: "Port the performance server should listen on for connections."
+  )
+  var serverPort: Int?
+
+  @Option(
+    name: .customLong("server_host"),
+    help: "Host the performance server should listen on for connections."
+  )
+  var serverHost: String = "127.0.0.1"
+
   func run() async throws {
     debugOnly {
       print("[WARNING] performance-worker built in DEBUG mode, results won't be representative.")
@@ -50,10 +68,10 @@ struct PerformanceWorker: AsyncParsableCommand {
 
     let server = GRPCServer(
       transport: .http2NIOPosix(
-        address: .ipv4(host: "127.0.0.1", port: self.driverPort),
+        address: .ipv4(host: self.driverHost, port: self.driverPort),
         transportSecurity: .plaintext
       ),
-      services: [WorkerService()]
+      services: [WorkerService(serverHost: self.serverHost, serverPort: self.serverPort)]
     )
     try await server.serve()
   }
