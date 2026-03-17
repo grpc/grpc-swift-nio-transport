@@ -30,7 +30,7 @@ final class GRPCClientStreamHandler: ChannelDuplexHandler {
 
   private var isReading = false
   private var flushPending = false
-  private var requestFinished = false
+  private var delayFlushUntilHalfClosed: Bool
 
   init(
     methodDescriptor: MethodDescriptor,
@@ -54,6 +54,7 @@ final class GRPCClientStreamHandler: ChannelDuplexHandler {
       maxPayloadSize: maxPayloadSize,
       skipAssertions: skipStateMachineAssertions
     )
+    self.delayFlushUntilHalfClosed = methodDescriptor.type.isKnownUnaryRequest
   }
 }
 
@@ -139,8 +140,7 @@ extension GRPCClientStreamHandler {
   func channelReadComplete(context: ChannelHandlerContext) {
     self.isReading = false
     if self.flushPending {
-      self.flushPending = false
-      self.flush(context: context)
+      self._flush(context: context)
     }
     context.fireChannelReadComplete()
   }
@@ -154,8 +154,23 @@ extension GRPCClientStreamHandler {
     context.fireChannelInactive()
   }
 
+  func channelWritabilityChanged(context: ChannelHandlerContext) {
+    let isWritable = context.channel.isWritable
+
+    if !isWritable {
+      // Stream isn't writable: force a flush to drain the pending write buffer.
+      self._flush(context: context, force: true)
+    }
+
+    context.fireChannelWritabilityChanged()
+  }
+
   func errorCaught(context: ChannelHandlerContext, error: any Error) {
     self.handleUnexpectedInboundClose(context: context, reason: .errorThrown(error))
+    // Close the channel so the HTTP/2 stream terminates (RST_STREAM). Without this,
+    // 'executeThenClose' would wait for 'closeFuture' which would never complete because
+    // the server is still waiting for END_STREAM from the client.
+    context.close(promise: nil)
   }
 
   private func handleUnexpectedInboundClose(
@@ -181,7 +196,6 @@ extension GRPCClientStreamHandler {
     switch self.unwrapOutboundIn(data) {
     case .metadata(let metadata):
       do {
-        self.flushPending = true
         switch try self.stateMachine.send(metadata: metadata) {
         case .write(let headers):
           context.write(self.wrapOutboundOut(.headers(.init(headers: headers))), promise: promise)
@@ -256,62 +270,51 @@ extension GRPCClientStreamHandler {
     if self.isReading {
       // We don't want to flush yet if we're still in a read loop.
       self.flushPending = true
-      return
+    } else {
+      self._flush(context: context)
     }
-
-    self._flush(context: context)
   }
 
-  private func _flush(context: ChannelHandlerContext) {
-    do {
-      loop: while true {
-        switch try self.stateMachine.nextOutboundFrame() {
-        case .sendFrame(let byteBuffer, let promise):
-          self.flushPending = true
-          context.write(
-            self.wrapOutboundOut(.data(.init(data: .byteBuffer(byteBuffer)))),
-            promise: promise
-          )
+  private func _flush(context: ChannelHandlerContext, force: Bool = false) {
+    var flush = true
 
-        case .noMoreMessages:
-          // If we're done writing (i.e. we have no more messages returned from state
-          // machine) then return.
-          if self.requestFinished { return }
-
-          self.requestFinished = true
-
-          // Write an empty data frame with the EOS flag set, to signal the RPC
-          // request is now finished.
-          context.write(
-            self.wrapOutboundOut(
-              HTTP2Frame.FramePayload.data(
-                .init(
-                  data: .byteBuffer(.init()),
-                  endStream: true
-                )
-              )
-            ),
-            promise: nil
-          )
-          context.flush()
-          break loop
-
-        case .awaitMoreMessages:
-          if self.flushPending {
-            self.flushPending = false
-            context.flush()
-          }
-          break loop
-
-        case .closeAndFailPromise(let promise, let error):
-          context.close(mode: .all, promise: nil)
-          promise?.fail(error)
-          break loop
-        }
-
+    loop: while true {
+      let action: GRPCStreamStateMachine.OnNextOutboundFrame
+      do {
+        action = try self.stateMachine.nextOutboundFrame()
+      } catch {
+        context.fireErrorCaught(RPCError(error))
+        break loop
       }
-    } catch let invalidState {
-      context.fireErrorCaught(RPCError(invalidState))
+
+      switch action {
+      case .sendFrame(let byteBuffer, let endStream, let promise):
+        let data = HTTP2Frame.FramePayload.Data(
+          data: .byteBuffer(byteBuffer),
+          endStream: endStream
+        )
+        context.write(self.wrapOutboundOut(.data(data)), promise: promise)
+
+      case .awaitMoreMessages:
+        // Respect the flush if not delaying as metadata may have been written.
+        flush = !self.delayFlushUntilHalfClosed
+        break loop
+
+      case .noMoreMessages:
+        // No more messages means EOS so always flush.
+        flush = true
+        break loop
+
+      case .closeAndFailPromise(let promise, let error):
+        context.close(mode: .all, promise: nil)
+        promise?.fail(error)
+        break loop
+      }
+    }
+
+    if flush || force {
+      self.flushPending = false
+      context.flush()
     }
   }
 }
