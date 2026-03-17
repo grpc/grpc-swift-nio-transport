@@ -18,7 +18,7 @@ internal import GRPCCore
 
 @available(gRPCSwiftNIOTransport 2.4, *)
 extension Optional where Wrapped == MethodDescriptor.RPCType {
-  /// Whehter the type is known to not be a request streaming RPC. If the type isn't known then
+  /// Whether the type is known to not be a request streaming RPC. If the type isn't known then
   /// `false` is returned.
   internal var isKnownUnaryRequest: Bool {
     switch self {
@@ -29,7 +29,7 @@ extension Optional where Wrapped == MethodDescriptor.RPCType {
     }
   }
 
-  /// Whehter the type is known to not be a response streaming RPC. If the type isn't known then
+  /// Whether the type is known to not be a response streaming RPC. If the type isn't known then
   /// `false` is returned.
   internal var isKnownUnaryResponse: Bool {
     switch self {
