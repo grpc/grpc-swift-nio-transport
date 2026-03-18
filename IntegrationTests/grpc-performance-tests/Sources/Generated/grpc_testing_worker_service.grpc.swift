@@ -32,13 +32,13 @@ import GRPCProtobuf
 
 /// Namespace containing generated types for the "grpc.testing.WorkerService" service.
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
-internal enum Grpc_Testing_WorkerService {
+internal enum Grpc_Testing_WorkerService: Sendable {
     /// Service descriptor for the "grpc.testing.WorkerService" service.
     internal static let descriptor = GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.WorkerService")
     /// Namespace for method metadata.
-    internal enum Method {
+    internal enum Method: Sendable {
         /// Namespace for "RunServer" metadata.
-        internal enum RunServer {
+        internal enum RunServer: Sendable {
             /// Request type for "RunServer".
             internal typealias Input = Grpc_Testing_ServerArgs
             /// Response type for "RunServer".
@@ -46,11 +46,12 @@ internal enum Grpc_Testing_WorkerService {
             /// Descriptor for "RunServer".
             internal static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.WorkerService"),
-                method: "RunServer"
+                method: "RunServer",
+                type: .bidirectionalStreaming
             )
         }
         /// Namespace for "RunClient" metadata.
-        internal enum RunClient {
+        internal enum RunClient: Sendable {
             /// Request type for "RunClient".
             internal typealias Input = Grpc_Testing_ClientArgs
             /// Response type for "RunClient".
@@ -58,11 +59,12 @@ internal enum Grpc_Testing_WorkerService {
             /// Descriptor for "RunClient".
             internal static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.WorkerService"),
-                method: "RunClient"
+                method: "RunClient",
+                type: .bidirectionalStreaming
             )
         }
         /// Namespace for "CoreCount" metadata.
-        internal enum CoreCount {
+        internal enum CoreCount: Sendable {
             /// Request type for "CoreCount".
             internal typealias Input = Grpc_Testing_CoreRequest
             /// Response type for "CoreCount".
@@ -70,11 +72,12 @@ internal enum Grpc_Testing_WorkerService {
             /// Descriptor for "CoreCount".
             internal static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.WorkerService"),
-                method: "CoreCount"
+                method: "CoreCount",
+                type: .unary
             )
         }
         /// Namespace for "QuitWorker" metadata.
-        internal enum QuitWorker {
+        internal enum QuitWorker: Sendable {
             /// Request type for "QuitWorker".
             internal typealias Input = Grpc_Testing_Void
             /// Response type for "QuitWorker".
@@ -82,7 +85,8 @@ internal enum Grpc_Testing_WorkerService {
             /// Descriptor for "QuitWorker".
             internal static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.WorkerService"),
-                method: "QuitWorker"
+                method: "QuitWorker",
+                type: .unary
             )
         }
         /// Descriptors for all methods in the "grpc.testing.WorkerService" service.

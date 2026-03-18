@@ -60,11 +60,11 @@ struct Grpc_Testing_ServerStats: Sendable {
 
   /// Core library stats
   var coreStats: Grpc_Core_Stats {
-    get {return _coreStats ?? Grpc_Core_Stats()}
+    get {_coreStats ?? Grpc_Core_Stats()}
     set {_coreStats = newValue}
   }
   /// Returns true if `coreStats` has been explicitly set.
-  var hasCoreStats: Bool {return self._coreStats != nil}
+  var hasCoreStats: Bool {self._coreStats != nil}
   /// Clears the value of `coreStats`. Subsequent reads from it will return its default value.
   mutating func clearCoreStats() {self._coreStats = nil}
 
@@ -136,11 +136,11 @@ struct Grpc_Testing_ClientStats: Sendable {
 
   /// Latency histogram. Data points are in nanoseconds.
   var latencies: Grpc_Testing_HistogramData {
-    get {return _latencies ?? Grpc_Testing_HistogramData()}
+    get {_latencies ?? Grpc_Testing_HistogramData()}
     set {_latencies = newValue}
   }
   /// Returns true if `latencies` has been explicitly set.
-  var hasLatencies: Bool {return self._latencies != nil}
+  var hasLatencies: Bool {self._latencies != nil}
   /// Clears the value of `latencies`. Subsequent reads from it will return its default value.
   mutating func clearLatencies() {self._latencies = nil}
 
@@ -159,11 +159,11 @@ struct Grpc_Testing_ClientStats: Sendable {
 
   /// Core library stats
   var coreStats: Grpc_Core_Stats {
-    get {return _coreStats ?? Grpc_Core_Stats()}
+    get {_coreStats ?? Grpc_Core_Stats()}
     set {_coreStats = newValue}
   }
   /// Returns true if `coreStats` has been explicitly set.
-  var hasCoreStats: Bool {return self._coreStats != nil}
+  var hasCoreStats: Bool {self._coreStats != nil}
   /// Clears the value of `coreStats`. Subsequent reads from it will return its default value.
   mutating func clearCoreStats() {self._coreStats = nil}
 
@@ -181,15 +181,7 @@ fileprivate let _protobuf_package = "grpc.testing"
 
 extension Grpc_Testing_ServerStats: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".ServerStats"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "time_elapsed"),
-    2: .standard(proto: "time_user"),
-    3: .standard(proto: "time_system"),
-    4: .standard(proto: "total_cpu_time"),
-    5: .standard(proto: "idle_cpu_time"),
-    6: .standard(proto: "cq_poll_count"),
-    7: .standard(proto: "core_stats"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}time_elapsed\0\u{3}time_user\0\u{3}time_system\0\u{3}total_cpu_time\0\u{3}idle_cpu_time\0\u{3}cq_poll_count\0\u{3}core_stats\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -253,10 +245,7 @@ extension Grpc_Testing_ServerStats: SwiftProtobuf.Message, SwiftProtobuf._Messag
 
 extension Grpc_Testing_HistogramParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".HistogramParams"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "resolution"),
-    2: .standard(proto: "max_possible"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}resolution\0\u{3}max_possible\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -291,14 +280,7 @@ extension Grpc_Testing_HistogramParams: SwiftProtobuf.Message, SwiftProtobuf._Me
 
 extension Grpc_Testing_HistogramData: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".HistogramData"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "bucket"),
-    2: .standard(proto: "min_seen"),
-    3: .standard(proto: "max_seen"),
-    4: .same(proto: "sum"),
-    5: .standard(proto: "sum_of_squares"),
-    6: .same(proto: "count"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}bucket\0\u{3}min_seen\0\u{3}max_seen\0\u{1}sum\0\u{3}sum_of_squares\0\u{1}count\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -353,10 +335,7 @@ extension Grpc_Testing_HistogramData: SwiftProtobuf.Message, SwiftProtobuf._Mess
 
 extension Grpc_Testing_RequestResultCount: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".RequestResultCount"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "status_code"),
-    2: .same(proto: "count"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}status_code\0\u{1}count\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -391,15 +370,7 @@ extension Grpc_Testing_RequestResultCount: SwiftProtobuf.Message, SwiftProtobuf.
 
 extension Grpc_Testing_ClientStats: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".ClientStats"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "latencies"),
-    2: .standard(proto: "time_elapsed"),
-    3: .standard(proto: "time_user"),
-    4: .standard(proto: "time_system"),
-    5: .standard(proto: "request_results"),
-    6: .standard(proto: "cq_poll_count"),
-    7: .standard(proto: "core_stats"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}latencies\0\u{3}time_elapsed\0\u{3}time_user\0\u{3}time_system\0\u{3}request_results\0\u{3}cq_poll_count\0\u{3}core_stats\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {

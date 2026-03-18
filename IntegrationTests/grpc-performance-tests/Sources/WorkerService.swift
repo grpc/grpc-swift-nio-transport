@@ -22,9 +22,13 @@ import NIOPosix
 
 final class WorkerService: Sendable {
   private let state: NIOLockedValueBox<State>
+  private let serverHost: String
+  private let serverPort: Int?
 
-  init() {
+  init(serverHost: String, serverPort: Int?) {
     self.state = NIOLockedValueBox(State())
+    self.serverHost = serverHost
+    self.serverPort = serverPort
   }
 
   private struct State {
@@ -392,7 +396,7 @@ extension WorkerService {
     config.rpc.maxRequestPayloadSize = .max
 
     let transport = HTTP2ServerTransport.Posix(
-      address: .ipv4(host: "127.0.0.1", port: Int(serverConfig.port)),
+      address: .ipv4(host: self.serverHost, port: self.serverPort ?? Int(serverConfig.port)),
       transportSecurity: .plaintext,
       config: config,
       eventLoopGroup: eventLoopGroup

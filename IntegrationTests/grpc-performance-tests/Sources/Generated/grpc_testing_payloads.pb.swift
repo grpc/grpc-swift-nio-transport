@@ -123,10 +123,7 @@ fileprivate let _protobuf_package = "grpc.testing"
 
 extension Grpc_Testing_ByteBufferParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".ByteBufferParams"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "req_size"),
-    2: .standard(proto: "resp_size"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}req_size\0\u{3}resp_size\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -161,10 +158,7 @@ extension Grpc_Testing_ByteBufferParams: SwiftProtobuf.Message, SwiftProtobuf._M
 
 extension Grpc_Testing_SimpleProtoParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".SimpleProtoParams"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "req_size"),
-    2: .standard(proto: "resp_size"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}req_size\0\u{3}resp_size\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -218,11 +212,7 @@ extension Grpc_Testing_ComplexProtoParams: SwiftProtobuf.Message, SwiftProtobuf.
 
 extension Grpc_Testing_PayloadConfig: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".PayloadConfig"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "bytebuf_params"),
-    2: .standard(proto: "simple_params"),
-    3: .standard(proto: "complex_params"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}bytebuf_params\0\u{3}simple_params\0\u{3}complex_params\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {

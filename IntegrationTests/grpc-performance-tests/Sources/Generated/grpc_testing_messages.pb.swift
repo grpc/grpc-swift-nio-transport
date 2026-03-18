@@ -24,7 +24,11 @@
 
 // Message definitions to be used by integration test service definitions.
 
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 import SwiftProtobuf
 
 // If the compiler emits an error on this type, it is because this file
@@ -137,7 +141,7 @@ struct Grpc_Testing_BoolValue: Sendable {
 }
 
 /// A block of data, to simply increase gRPC message size.
-struct Grpc_Testing_Payload: @unchecked Sendable {
+struct Grpc_Testing_Payload: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -184,11 +188,11 @@ struct Grpc_Testing_SimpleRequest: Sendable {
 
   /// Optional input payload sent along with the request.
   var payload: Grpc_Testing_Payload {
-    get {return _payload ?? Grpc_Testing_Payload()}
+    get {_payload ?? Grpc_Testing_Payload()}
     set {_payload = newValue}
   }
   /// Returns true if `payload` has been explicitly set.
-  var hasPayload: Bool {return self._payload != nil}
+  var hasPayload: Bool {self._payload != nil}
   /// Clears the value of `payload`. Subsequent reads from it will return its default value.
   mutating func clearPayload() {self._payload = nil}
 
@@ -203,31 +207,31 @@ struct Grpc_Testing_SimpleRequest: Sendable {
   /// implement the full compression tests by introspecting the call to verify
   /// the response's compression status.
   var responseCompressed: Grpc_Testing_BoolValue {
-    get {return _responseCompressed ?? Grpc_Testing_BoolValue()}
+    get {_responseCompressed ?? Grpc_Testing_BoolValue()}
     set {_responseCompressed = newValue}
   }
   /// Returns true if `responseCompressed` has been explicitly set.
-  var hasResponseCompressed: Bool {return self._responseCompressed != nil}
+  var hasResponseCompressed: Bool {self._responseCompressed != nil}
   /// Clears the value of `responseCompressed`. Subsequent reads from it will return its default value.
   mutating func clearResponseCompressed() {self._responseCompressed = nil}
 
   /// Whether server should return a given status
   var responseStatus: Grpc_Testing_EchoStatus {
-    get {return _responseStatus ?? Grpc_Testing_EchoStatus()}
+    get {_responseStatus ?? Grpc_Testing_EchoStatus()}
     set {_responseStatus = newValue}
   }
   /// Returns true if `responseStatus` has been explicitly set.
-  var hasResponseStatus: Bool {return self._responseStatus != nil}
+  var hasResponseStatus: Bool {self._responseStatus != nil}
   /// Clears the value of `responseStatus`. Subsequent reads from it will return its default value.
   mutating func clearResponseStatus() {self._responseStatus = nil}
 
   /// Whether the server should expect this request to be compressed.
   var expectCompressed: Grpc_Testing_BoolValue {
-    get {return _expectCompressed ?? Grpc_Testing_BoolValue()}
+    get {_expectCompressed ?? Grpc_Testing_BoolValue()}
     set {_expectCompressed = newValue}
   }
   /// Returns true if `expectCompressed` has been explicitly set.
-  var hasExpectCompressed: Bool {return self._expectCompressed != nil}
+  var hasExpectCompressed: Bool {self._expectCompressed != nil}
   /// Clears the value of `expectCompressed`. Subsequent reads from it will return its default value.
   mutating func clearExpectCompressed() {self._expectCompressed = nil}
 
@@ -239,11 +243,11 @@ struct Grpc_Testing_SimpleRequest: Sendable {
 
   /// If set the server should record this metrics report data for the current RPC.
   var orcaPerQueryReport: Grpc_Testing_TestOrcaReport {
-    get {return _orcaPerQueryReport ?? Grpc_Testing_TestOrcaReport()}
+    get {_orcaPerQueryReport ?? Grpc_Testing_TestOrcaReport()}
     set {_orcaPerQueryReport = newValue}
   }
   /// Returns true if `orcaPerQueryReport` has been explicitly set.
-  var hasOrcaPerQueryReport: Bool {return self._orcaPerQueryReport != nil}
+  var hasOrcaPerQueryReport: Bool {self._orcaPerQueryReport != nil}
   /// Clears the value of `orcaPerQueryReport`. Subsequent reads from it will return its default value.
   mutating func clearOrcaPerQueryReport() {self._orcaPerQueryReport = nil}
 
@@ -266,11 +270,11 @@ struct Grpc_Testing_SimpleResponse: Sendable {
 
   /// Payload to increase message size.
   var payload: Grpc_Testing_Payload {
-    get {return _payload ?? Grpc_Testing_Payload()}
+    get {_payload ?? Grpc_Testing_Payload()}
     set {_payload = newValue}
   }
   /// Returns true if `payload` has been explicitly set.
-  var hasPayload: Bool {return self._payload != nil}
+  var hasPayload: Bool {self._payload != nil}
   /// Clears the value of `payload`. Subsequent reads from it will return its default value.
   mutating func clearPayload() {self._payload = nil}
 
@@ -306,11 +310,11 @@ struct Grpc_Testing_StreamingInputCallRequest: Sendable {
 
   /// Optional input payload sent along with the request.
   var payload: Grpc_Testing_Payload {
-    get {return _payload ?? Grpc_Testing_Payload()}
+    get {_payload ?? Grpc_Testing_Payload()}
     set {_payload = newValue}
   }
   /// Returns true if `payload` has been explicitly set.
-  var hasPayload: Bool {return self._payload != nil}
+  var hasPayload: Bool {self._payload != nil}
   /// Clears the value of `payload`. Subsequent reads from it will return its default value.
   mutating func clearPayload() {self._payload = nil}
 
@@ -319,11 +323,11 @@ struct Grpc_Testing_StreamingInputCallRequest: Sendable {
   /// implement the full compression tests by introspecting the call to verify
   /// the request's compression status.
   var expectCompressed: Grpc_Testing_BoolValue {
-    get {return _expectCompressed ?? Grpc_Testing_BoolValue()}
+    get {_expectCompressed ?? Grpc_Testing_BoolValue()}
     set {_expectCompressed = newValue}
   }
   /// Returns true if `expectCompressed` has been explicitly set.
-  var hasExpectCompressed: Bool {return self._expectCompressed != nil}
+  var hasExpectCompressed: Bool {self._expectCompressed != nil}
   /// Clears the value of `expectCompressed`. Subsequent reads from it will return its default value.
   mutating func clearExpectCompressed() {self._expectCompressed = nil}
 
@@ -367,11 +371,11 @@ struct Grpc_Testing_ResponseParameters: Sendable {
   /// implement the full compression tests by introspecting the call to verify
   /// the response's compression status.
   var compressed: Grpc_Testing_BoolValue {
-    get {return _compressed ?? Grpc_Testing_BoolValue()}
+    get {_compressed ?? Grpc_Testing_BoolValue()}
     set {_compressed = newValue}
   }
   /// Returns true if `compressed` has been explicitly set.
-  var hasCompressed: Bool {return self._compressed != nil}
+  var hasCompressed: Bool {self._compressed != nil}
   /// Clears the value of `compressed`. Subsequent reads from it will return its default value.
   mutating func clearCompressed() {self._compressed = nil}
 
@@ -399,31 +403,31 @@ struct Grpc_Testing_StreamingOutputCallRequest: Sendable {
 
   /// Optional input payload sent along with the request.
   var payload: Grpc_Testing_Payload {
-    get {return _payload ?? Grpc_Testing_Payload()}
+    get {_payload ?? Grpc_Testing_Payload()}
     set {_payload = newValue}
   }
   /// Returns true if `payload` has been explicitly set.
-  var hasPayload: Bool {return self._payload != nil}
+  var hasPayload: Bool {self._payload != nil}
   /// Clears the value of `payload`. Subsequent reads from it will return its default value.
   mutating func clearPayload() {self._payload = nil}
 
   /// Whether server should return a given status
   var responseStatus: Grpc_Testing_EchoStatus {
-    get {return _responseStatus ?? Grpc_Testing_EchoStatus()}
+    get {_responseStatus ?? Grpc_Testing_EchoStatus()}
     set {_responseStatus = newValue}
   }
   /// Returns true if `responseStatus` has been explicitly set.
-  var hasResponseStatus: Bool {return self._responseStatus != nil}
+  var hasResponseStatus: Bool {self._responseStatus != nil}
   /// Clears the value of `responseStatus`. Subsequent reads from it will return its default value.
   mutating func clearResponseStatus() {self._responseStatus = nil}
 
   /// If set the server should update this metrics report data at the OOB server.
   var orcaOobReport: Grpc_Testing_TestOrcaReport {
-    get {return _orcaOobReport ?? Grpc_Testing_TestOrcaReport()}
+    get {_orcaOobReport ?? Grpc_Testing_TestOrcaReport()}
     set {_orcaOobReport = newValue}
   }
   /// Returns true if `orcaOobReport` has been explicitly set.
-  var hasOrcaOobReport: Bool {return self._orcaOobReport != nil}
+  var hasOrcaOobReport: Bool {self._orcaOobReport != nil}
   /// Clears the value of `orcaOobReport`. Subsequent reads from it will return its default value.
   mutating func clearOrcaOobReport() {self._orcaOobReport = nil}
 
@@ -444,11 +448,11 @@ struct Grpc_Testing_StreamingOutputCallResponse: Sendable {
 
   /// Payload to increase response size.
   var payload: Grpc_Testing_Payload {
-    get {return _payload ?? Grpc_Testing_Payload()}
+    get {_payload ?? Grpc_Testing_Payload()}
     set {_payload = newValue}
   }
   /// Returns true if `payload` has been explicitly set.
-  var hasPayload: Bool {return self._payload != nil}
+  var hasPayload: Bool {self._payload != nil}
   /// Clears the value of `payload`. Subsequent reads from it will return its default value.
   mutating func clearPayload() {self._payload = nil}
 
@@ -907,24 +911,16 @@ struct Grpc_Testing_HookResponse: Sendable {
 fileprivate let _protobuf_package = "grpc.testing"
 
 extension Grpc_Testing_PayloadType: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "COMPRESSABLE"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0COMPRESSABLE\0")
 }
 
 extension Grpc_Testing_GrpclbRouteType: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "GRPCLB_ROUTE_TYPE_UNKNOWN"),
-    1: .same(proto: "GRPCLB_ROUTE_TYPE_FALLBACK"),
-    2: .same(proto: "GRPCLB_ROUTE_TYPE_BACKEND"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0GRPCLB_ROUTE_TYPE_UNKNOWN\0\u{1}GRPCLB_ROUTE_TYPE_FALLBACK\0\u{1}GRPCLB_ROUTE_TYPE_BACKEND\0")
 }
 
 extension Grpc_Testing_BoolValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".BoolValue"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "value"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}value\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -954,10 +950,7 @@ extension Grpc_Testing_BoolValue: SwiftProtobuf.Message, SwiftProtobuf._MessageI
 
 extension Grpc_Testing_Payload: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".Payload"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "type"),
-    2: .same(proto: "body"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}type\0\u{1}body\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -992,10 +985,7 @@ extension Grpc_Testing_Payload: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
 
 extension Grpc_Testing_EchoStatus: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".EchoStatus"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "code"),
-    2: .same(proto: "message"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}code\0\u{1}message\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1030,19 +1020,7 @@ extension Grpc_Testing_EchoStatus: SwiftProtobuf.Message, SwiftProtobuf._Message
 
 extension Grpc_Testing_SimpleRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".SimpleRequest"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "response_type"),
-    2: .standard(proto: "response_size"),
-    3: .same(proto: "payload"),
-    4: .standard(proto: "fill_username"),
-    5: .standard(proto: "fill_oauth_scope"),
-    6: .standard(proto: "response_compressed"),
-    7: .standard(proto: "response_status"),
-    8: .standard(proto: "expect_compressed"),
-    9: .standard(proto: "fill_server_id"),
-    10: .standard(proto: "fill_grpclb_route_type"),
-    11: .standard(proto: "orca_per_query_report"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}response_type\0\u{3}response_size\0\u{1}payload\0\u{3}fill_username\0\u{3}fill_oauth_scope\0\u{3}response_compressed\0\u{3}response_status\0\u{3}expect_compressed\0\u{3}fill_server_id\0\u{3}fill_grpclb_route_type\0\u{3}orca_per_query_report\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1126,14 +1104,7 @@ extension Grpc_Testing_SimpleRequest: SwiftProtobuf.Message, SwiftProtobuf._Mess
 
 extension Grpc_Testing_SimpleResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".SimpleResponse"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "payload"),
-    2: .same(proto: "username"),
-    3: .standard(proto: "oauth_scope"),
-    4: .standard(proto: "server_id"),
-    5: .standard(proto: "grpclb_route_type"),
-    6: .same(proto: "hostname"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}payload\0\u{1}username\0\u{3}oauth_scope\0\u{3}server_id\0\u{3}grpclb_route_type\0\u{1}hostname\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1192,10 +1163,7 @@ extension Grpc_Testing_SimpleResponse: SwiftProtobuf.Message, SwiftProtobuf._Mes
 
 extension Grpc_Testing_StreamingInputCallRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".StreamingInputCallRequest"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "payload"),
-    2: .standard(proto: "expect_compressed"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}payload\0\u{3}expect_compressed\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1234,9 +1202,7 @@ extension Grpc_Testing_StreamingInputCallRequest: SwiftProtobuf.Message, SwiftPr
 
 extension Grpc_Testing_StreamingInputCallResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".StreamingInputCallResponse"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "aggregated_payload_size"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}aggregated_payload_size\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1266,11 +1232,7 @@ extension Grpc_Testing_StreamingInputCallResponse: SwiftProtobuf.Message, SwiftP
 
 extension Grpc_Testing_ResponseParameters: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".ResponseParameters"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "size"),
-    2: .standard(proto: "interval_us"),
-    3: .same(proto: "compressed"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}size\0\u{3}interval_us\0\u{1}compressed\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1314,13 +1276,7 @@ extension Grpc_Testing_ResponseParameters: SwiftProtobuf.Message, SwiftProtobuf.
 
 extension Grpc_Testing_StreamingOutputCallRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".StreamingOutputCallRequest"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "response_type"),
-    2: .standard(proto: "response_parameters"),
-    3: .same(proto: "payload"),
-    7: .standard(proto: "response_status"),
-    8: .standard(proto: "orca_oob_report"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}response_type\0\u{3}response_parameters\0\u{1}payload\0\u{4}\u{4}response_status\0\u{3}orca_oob_report\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1374,9 +1330,7 @@ extension Grpc_Testing_StreamingOutputCallRequest: SwiftProtobuf.Message, SwiftP
 
 extension Grpc_Testing_StreamingOutputCallResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".StreamingOutputCallResponse"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "payload"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}payload\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1410,9 +1364,7 @@ extension Grpc_Testing_StreamingOutputCallResponse: SwiftProtobuf.Message, Swift
 
 extension Grpc_Testing_ReconnectParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".ReconnectParams"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "max_reconnect_backoff_ms"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}max_reconnect_backoff_ms\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1442,10 +1394,7 @@ extension Grpc_Testing_ReconnectParams: SwiftProtobuf.Message, SwiftProtobuf._Me
 
 extension Grpc_Testing_ReconnectInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".ReconnectInfo"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "passed"),
-    2: .standard(proto: "backoff_ms"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}passed\0\u{3}backoff_ms\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1480,11 +1429,7 @@ extension Grpc_Testing_ReconnectInfo: SwiftProtobuf.Message, SwiftProtobuf._Mess
 
 extension Grpc_Testing_LoadBalancerStatsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".LoadBalancerStatsRequest"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "num_rpcs"),
-    2: .standard(proto: "timeout_sec"),
-    3: .standard(proto: "metadata_keys"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}num_rpcs\0\u{3}timeout_sec\0\u{3}metadata_keys\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1524,12 +1469,7 @@ extension Grpc_Testing_LoadBalancerStatsRequest: SwiftProtobuf.Message, SwiftPro
 
 extension Grpc_Testing_LoadBalancerStatsResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".LoadBalancerStatsResponse"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "rpcs_by_peer"),
-    2: .standard(proto: "num_failures"),
-    3: .standard(proto: "rpcs_by_method"),
-    4: .standard(proto: "metadatas_by_peer"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}rpcs_by_peer\0\u{3}num_failures\0\u{3}rpcs_by_method\0\u{3}metadatas_by_peer\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1573,20 +1513,12 @@ extension Grpc_Testing_LoadBalancerStatsResponse: SwiftProtobuf.Message, SwiftPr
 }
 
 extension Grpc_Testing_LoadBalancerStatsResponse.MetadataType: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "UNKNOWN"),
-    1: .same(proto: "INITIAL"),
-    2: .same(proto: "TRAILING"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0UNKNOWN\0\u{1}INITIAL\0\u{1}TRAILING\0")
 }
 
 extension Grpc_Testing_LoadBalancerStatsResponse.MetadataEntry: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = Grpc_Testing_LoadBalancerStatsResponse.protoMessageName + ".MetadataEntry"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "key"),
-    2: .same(proto: "value"),
-    3: .same(proto: "type"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}key\0\u{1}value\0\u{1}type\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1626,9 +1558,7 @@ extension Grpc_Testing_LoadBalancerStatsResponse.MetadataEntry: SwiftProtobuf.Me
 
 extension Grpc_Testing_LoadBalancerStatsResponse.RpcMetadata: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = Grpc_Testing_LoadBalancerStatsResponse.protoMessageName + ".RpcMetadata"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "metadata"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}metadata\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1658,9 +1588,7 @@ extension Grpc_Testing_LoadBalancerStatsResponse.RpcMetadata: SwiftProtobuf.Mess
 
 extension Grpc_Testing_LoadBalancerStatsResponse.MetadataByPeer: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = Grpc_Testing_LoadBalancerStatsResponse.protoMessageName + ".MetadataByPeer"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "rpc_metadata"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}rpc_metadata\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1690,9 +1618,7 @@ extension Grpc_Testing_LoadBalancerStatsResponse.MetadataByPeer: SwiftProtobuf.M
 
 extension Grpc_Testing_LoadBalancerStatsResponse.RpcsByPeer: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = Grpc_Testing_LoadBalancerStatsResponse.protoMessageName + ".RpcsByPeer"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "rpcs_by_peer"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}rpcs_by_peer\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1741,12 +1667,7 @@ extension Grpc_Testing_LoadBalancerAccumulatedStatsRequest: SwiftProtobuf.Messag
 
 extension Grpc_Testing_LoadBalancerAccumulatedStatsResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".LoadBalancerAccumulatedStatsResponse"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "num_rpcs_started_by_method"),
-    2: .standard(proto: "num_rpcs_succeeded_by_method"),
-    3: .standard(proto: "num_rpcs_failed_by_method"),
-    4: .standard(proto: "stats_per_method"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}num_rpcs_started_by_method\0\u{3}num_rpcs_succeeded_by_method\0\u{3}num_rpcs_failed_by_method\0\u{3}stats_per_method\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1791,10 +1712,7 @@ extension Grpc_Testing_LoadBalancerAccumulatedStatsResponse: SwiftProtobuf.Messa
 
 extension Grpc_Testing_LoadBalancerAccumulatedStatsResponse.MethodStats: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = Grpc_Testing_LoadBalancerAccumulatedStatsResponse.protoMessageName + ".MethodStats"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "rpcs_started"),
-    2: .same(proto: "result"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}rpcs_started\0\u{1}result\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1829,11 +1747,7 @@ extension Grpc_Testing_LoadBalancerAccumulatedStatsResponse.MethodStats: SwiftPr
 
 extension Grpc_Testing_ClientConfigureRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".ClientConfigureRequest"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "types"),
-    2: .same(proto: "metadata"),
-    3: .standard(proto: "timeout_sec"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}types\0\u{1}metadata\0\u{3}timeout_sec\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1872,19 +1786,12 @@ extension Grpc_Testing_ClientConfigureRequest: SwiftProtobuf.Message, SwiftProto
 }
 
 extension Grpc_Testing_ClientConfigureRequest.RpcType: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "EMPTY_CALL"),
-    1: .same(proto: "UNARY_CALL"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0EMPTY_CALL\0\u{1}UNARY_CALL\0")
 }
 
 extension Grpc_Testing_ClientConfigureRequest.Metadata: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = Grpc_Testing_ClientConfigureRequest.protoMessageName + ".Metadata"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "type"),
-    2: .same(proto: "key"),
-    3: .same(proto: "value"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}type\0\u{1}key\0\u{1}value\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1943,9 +1850,7 @@ extension Grpc_Testing_ClientConfigureResponse: SwiftProtobuf.Message, SwiftProt
 
 extension Grpc_Testing_MemorySize: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".MemorySize"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "rss"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}rss\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1975,12 +1880,7 @@ extension Grpc_Testing_MemorySize: SwiftProtobuf.Message, SwiftProtobuf._Message
 
 extension Grpc_Testing_TestOrcaReport: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".TestOrcaReport"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "cpu_utilization"),
-    2: .standard(proto: "memory_utilization"),
-    3: .standard(proto: "request_cost"),
-    4: .same(proto: "utilization"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}cpu_utilization\0\u{3}memory_utilization\0\u{3}request_cost\0\u{1}utilization\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -2025,10 +1925,7 @@ extension Grpc_Testing_TestOrcaReport: SwiftProtobuf.Message, SwiftProtobuf._Mes
 
 extension Grpc_Testing_SetReturnStatusRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".SetReturnStatusRequest"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "grpc_code_to_return"),
-    2: .standard(proto: "grpc_status_description"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}grpc_code_to_return\0\u{3}grpc_status_description\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -2063,12 +1960,7 @@ extension Grpc_Testing_SetReturnStatusRequest: SwiftProtobuf.Message, SwiftProto
 
 extension Grpc_Testing_HookRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".HookRequest"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "command"),
-    2: .standard(proto: "grpc_code_to_return"),
-    3: .standard(proto: "grpc_status_description"),
-    4: .standard(proto: "server_port"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}command\0\u{3}grpc_code_to_return\0\u{3}grpc_status_description\0\u{3}server_port\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -2112,12 +2004,7 @@ extension Grpc_Testing_HookRequest: SwiftProtobuf.Message, SwiftProtobuf._Messag
 }
 
 extension Grpc_Testing_HookRequest.HookRequestCommand: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "UNSPECIFIED"),
-    1: .same(proto: "START"),
-    2: .same(proto: "STOP"),
-    3: .same(proto: "RETURN"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0UNSPECIFIED\0\u{1}START\0\u{1}STOP\0\u{1}RETURN\0")
 }
 
 extension Grpc_Testing_HookResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
