@@ -277,41 +277,18 @@ extension HTTP2ServerTransport {
         }
       }
 
-      let listenerConfigurator = HTTP2ServerTransport.ListenerConfigurator { channel in
-        let configured = channel.eventLoop.makeCompletedFuture {
-          let quiescingHandler = self.serverQuiescingHelper.makeServerChannelHandler(
-            channel: channel
-          )
-          try channel.pipeline.syncOperations.addHandler(quiescingHandler)
-        }
-        return configured.runInitializerIfSet(
-          self.config.channelDebuggingCallbacks.onBindTCPListener,
-          on: channel
-        )
-      }
+      let listenerConfigurator = HTTP2ServerTransport.ListenerConfigurator(
+        quiescingHelper: self.serverQuiescingHelper,
+        channelDebuggingCallbacks: self.config.channelDebuggingCallbacks
+      )
 
-      let connectionConfigurator = HTTP2ServerTransport.ConnectionConfigurator { channel, tls in
-        let configured = channel.eventLoop.makeCompletedFuture {
-          let (connection, mux) = try channel.pipeline.syncOperations.configureGRPCServerPipeline(
-            channel: channel,
-            compressionConfig: self.config.compression,
-            connectionConfig: self.config.connection,
-            http2Config: self.config.http2,
-            rpcConfig: self.config.rpc,
-            debugConfig: self.config.channelDebuggingCallbacks,
-            requireALPN: tls.requireALPN,
-            scheme: tls.usesTLS ? .https : .http
-          )
-          return ConnectionConfigurator.ConnectionChannel(
-            connection: connection,
-            multiplexer: mux
-          )
-        }
-        return configured.runInitializerIfSet(
-          self.config.channelDebuggingCallbacks.onAcceptTCPConnection,
-          on: channel
-        )
-      }
+      let connectionConfigurator = HTTP2ServerTransport.ConnectionConfigurator(
+        compression: self.config.compression,
+        connection: self.config.connection,
+        http2: self.config.http2,
+        rpc: self.config.rpc,
+        channelDebuggingCallbacks: self.config.channelDebuggingCallbacks
+      )
 
       let serverChannel = try await self.factory.makeListeningChannel(
         listenerConfigurator: listenerConfigurator,

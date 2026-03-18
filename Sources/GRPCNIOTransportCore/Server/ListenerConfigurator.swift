@@ -15,6 +15,7 @@
  */
 
 public import NIOCore
+package import NIOExtras
 
 @available(gRPCSwiftNIOTransport 2.5, *)
 extension HTTP2ServerTransport {
@@ -24,12 +25,15 @@ extension HTTP2ServerTransport {
   /// appropriate configuration already captured. Use ``configure(channel:)`` to apply
   /// the required configuration to the listening channel.
   public struct ListenerConfigurator: Sendable {
-    private let _configure: @Sendable (any Channel) -> EventLoopFuture<Void>
+    private let quiescingHelper: ServerQuiescingHelper
+    private let channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
 
     package init(
-      configure: @escaping @Sendable (any Channel) -> EventLoopFuture<Void>
+      quiescingHelper: ServerQuiescingHelper,
+      channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
     ) {
-      self._configure = configure
+      self.quiescingHelper = quiescingHelper
+      self.channelDebuggingCallbacks = channelDebuggingCallbacks
     }
 
     /// Configures the listening channel with the necessary handlers (e.g. handlers for graceful
@@ -40,7 +44,14 @@ extension HTTP2ServerTransport {
     /// - Parameter channel: The listening channel to configure.
     /// - Returns: A future that completes when the channel has been configured.
     public func configure(channel: any Channel) -> EventLoopFuture<Void> {
-      self._configure(channel)
+      let configured = channel.eventLoop.makeCompletedFuture {
+        let handler = self.quiescingHelper.makeServerChannelHandler(channel: channel)
+        try channel.pipeline.syncOperations.addHandler(handler)
+      }
+      return configured.runInitializerIfSet(
+        self.channelDebuggingCallbacks.onBindTCPListener,
+        on: channel
+      )
     }
   }
 }

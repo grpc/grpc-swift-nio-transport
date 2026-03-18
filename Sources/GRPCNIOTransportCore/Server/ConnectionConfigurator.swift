@@ -75,12 +75,24 @@ extension HTTP2ServerTransport {
       let multiplexer: ChannelPipeline.SynchronousOperations.HTTP2StreamMultiplexer
     }
 
-    private let _configure: @Sendable (any Channel, TLS) -> EventLoopFuture<ConnectionChannel>
+    private let compression: HTTP2ServerTransport.Config.Compression
+    private let connection: HTTP2ServerTransport.Config.Connection
+    private let http2: HTTP2ServerTransport.Config.HTTP2
+    private let rpc: HTTP2ServerTransport.Config.RPC
+    private let channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
 
     package init(
-      configure: @escaping @Sendable (any Channel, TLS) -> EventLoopFuture<ConnectionChannel>
+      compression: HTTP2ServerTransport.Config.Compression,
+      connection: HTTP2ServerTransport.Config.Connection,
+      http2: HTTP2ServerTransport.Config.HTTP2,
+      rpc: HTTP2ServerTransport.Config.RPC,
+      channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
     ) {
-      self._configure = configure
+      self.compression = compression
+      self.connection = connection
+      self.http2 = http2
+      self.rpc = rpc
+      self.channelDebuggingCallbacks = channelDebuggingCallbacks
     }
 
     /// Configures an accepted connection channel with the gRPC HTTP/2 server pipeline.
@@ -97,7 +109,23 @@ extension HTTP2ServerTransport {
       channel: any Channel,
       tls: TLS
     ) -> EventLoopFuture<ConnectionChannel> {
-      self._configure(channel, tls)
+      let configured = channel.eventLoop.makeCompletedFuture {
+        let (connection, mux) = try channel.pipeline.syncOperations.configureGRPCServerPipeline(
+          channel: channel,
+          compressionConfig: self.compression,
+          connectionConfig: self.connection,
+          http2Config: self.http2,
+          rpcConfig: self.rpc,
+          debugConfig: self.channelDebuggingCallbacks,
+          requireALPN: tls.requireALPN,
+          scheme: tls.usesTLS ? .https : .http
+        )
+        return ConnectionChannel(connection: connection, multiplexer: mux)
+      }
+      return configured.runInitializerIfSet(
+        self.channelDebuggingCallbacks.onAcceptTCPConnection,
+        on: channel
+      )
     }
   }
 }
