@@ -109,9 +109,9 @@ extension HTTP2ServerTransport {
     private let factory: ListenerFactory
     private let config: Config
     private let transportSpecificContext:
-    (
-      @Sendable (any Channel) async -> any ServerContext.TransportSpecific
-    )?
+      (
+        @Sendable (any Channel) async -> any ServerContext.TransportSpecific
+      )?
 
     private enum State {
       case idle(EventLoopPromise<SocketAddress>)
@@ -153,14 +153,17 @@ extension HTTP2ServerTransport {
             // a socket address).
             let unavailableAddress = RuntimeError(
               code: .transportError,
-              message: "Listener address isn't available. It may not correspond to a socket address."
+              message:
+                "Listener address isn't available. It may not correspond to a socket address."
             )
             self = .closedOrInvalidAddress(unavailableAddress)
             return .failPromise(listeningAddressPromise, error: unavailableAddress)
           }
 
         case .listening, .closedOrInvalidAddress:
-          fatalError("Invalid state: addressBound should only be called once and when in idle state")
+          fatalError(
+            "Invalid state: addressBound should only be called once and when in idle state"
+          )
         }
       }
 
@@ -173,9 +176,9 @@ extension HTTP2ServerTransport {
         let serverStoppedError = RuntimeError(
           code: .serverIsStopped,
           message: """
-          There is no listening address bound for this server: there may have been \
-          an error which caused the transport to close, or it may have shut down.
-          """
+            There is no listening address bound for this server: there may have been \
+            an error which caused the transport to close, or it may have shut down.
+            """
         )
 
         switch self {
@@ -260,10 +263,10 @@ extension HTTP2ServerTransport {
 
     public func listen(
       streamHandler:
-      @escaping @Sendable (
-        _ stream: RPCStream<Inbound, Outbound>,
-        _ context: ServerContext
-      ) async -> Void
+        @escaping @Sendable (
+          _ stream: RPCStream<Inbound, Outbound>,
+          _ context: ServerContext
+        ) async -> Void
     ) async throws {
       defer {
         switch self.listeningAddressState.withLock({ $0.close() }) {
@@ -276,7 +279,9 @@ extension HTTP2ServerTransport {
 
       let listenerConfigurator = HTTP2ServerTransport.ListenerConfigurator { channel in
         let configured = channel.eventLoop.makeCompletedFuture {
-          let quiescingHandler = self.serverQuiescingHelper.makeServerChannelHandler(channel: channel)
+          let quiescingHandler = self.serverQuiescingHelper.makeServerChannelHandler(
+            channel: channel
+          )
           try channel.pipeline.syncOperations.addHandler(quiescingHandler)
         }
         return configured.runInitializerIfSet(
@@ -345,10 +350,10 @@ extension HTTP2ServerTransport {
       _ connection: NIOAsyncChannel<HTTP2Frame, HTTP2Frame>,
       multiplexer: ChannelPipeline.SynchronousOperations.HTTP2StreamMultiplexer,
       streamHandler:
-      @escaping @Sendable (
-        _ stream: RPCStream<Inbound, Outbound>,
-        _ context: ServerContext
-      ) async -> Void
+        @escaping @Sendable (
+          _ stream: RPCStream<Inbound, Outbound>,
+          _ context: ServerContext
+        ) async -> Void
     ) async throws {
       // In NIOTS the local/remote address is set just before channel becomes fires, so wait until
       // that has happened (if it hasn't already).
@@ -394,10 +399,10 @@ extension HTTP2ServerTransport {
       _ stream: NIOAsyncChannel<RPCRequestPart<Bytes>, RPCResponsePart<Bytes>>,
       _ connection: NIOAsyncChannel<HTTP2Frame, HTTP2Frame>,
       handler streamHandler:
-      @escaping @Sendable (
-        _ stream: RPCStream<Inbound, Outbound>,
-        _ context: ServerContext
-      ) async -> Void,
+        @escaping @Sendable (
+          _ stream: RPCStream<Inbound, Outbound>,
+          _ context: ServerContext
+        ) async -> Void,
       descriptor: EventLoopFuture<MethodDescriptor>,
       remotePeer: String,
       localPeer: String

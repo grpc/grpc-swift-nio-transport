@@ -77,7 +77,12 @@ extension HTTP2ServerTransport {
             listenerConfigurator.configure(channel: channel)
           }
           .bind(to: self.address) { channel in
-            connectionConfigurator.configure(channel: channel, tls: tls)
+            channel.eventLoop.makeCompletedFuture {
+              let waitForActive = WaitForActive(promise: channel.eventLoop.makePromise())
+              try channel.pipeline.syncOperations.addHandler(waitForActive, name: "wait-for-active")
+            }.flatMap {
+              connectionConfigurator.configure(channel: channel, tls: tls)
+            }
           }
 
         return serverChannel

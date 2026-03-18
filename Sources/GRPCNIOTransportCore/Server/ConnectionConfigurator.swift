@@ -75,8 +75,7 @@ extension HTTP2ServerTransport {
       let multiplexer: ChannelPipeline.SynchronousOperations.HTTP2StreamMultiplexer
     }
 
-    private let _configure:
-      @Sendable (any Channel, TLS) -> EventLoopFuture<ConnectionChannel>
+    private let _configure: @Sendable (any Channel, TLS) -> EventLoopFuture<ConnectionChannel>
 
     package init(
       configure: @escaping @Sendable (any Channel, TLS) -> EventLoopFuture<ConnectionChannel>

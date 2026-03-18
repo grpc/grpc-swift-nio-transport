@@ -50,6 +50,6 @@ extension HTTP2ServerTransport {
 }
 
 @available(gRPCSwiftNIOTransport 2.5, *)
-public extension HTTP2ServerTransport.ListenerFactory {
-  var listeningAddress: SocketAddress? { nil }
+extension HTTP2ServerTransport.ListenerFactory {
+  public var listeningAddress: SocketAddress? { nil }
 }
