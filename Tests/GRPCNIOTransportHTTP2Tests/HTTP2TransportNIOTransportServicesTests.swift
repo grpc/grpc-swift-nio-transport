@@ -44,6 +44,8 @@ final class HTTP2TransportNIOTransportServicesTests: XCTestCase {
   }
 
   func testGetListeningAddress_IPv6() async throws {
+    try XCTSkipUnless(System.supportsIPv6)
+
     let transport = GRPCNIOTransportCore.HTTP2ServerTransport.TransportServices(
       address: .ipv6(host: "::1", port: 0),
       transportSecurity: .plaintext
