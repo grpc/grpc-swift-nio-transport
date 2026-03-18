@@ -396,7 +396,7 @@ extension WorkerService {
     config.rpc.maxRequestPayloadSize = .max
 
     let transport = HTTP2ServerTransport.Posix(
-      address: .ipv4(host: self.serverHost, port: self.serverPort ?? (serverConfig.port)),
+      address: .ipv4(host: self.serverHost, port: self.serverPort ?? Int(serverConfig.port)),
       transportSecurity: .plaintext,
       config: config,
       eventLoopGroup: eventLoopGroup
