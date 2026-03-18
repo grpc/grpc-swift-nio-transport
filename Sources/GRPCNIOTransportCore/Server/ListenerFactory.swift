@@ -1,5 +1,5 @@
 /*
- * Copyright 2024, gRPC Authors All rights reserved.
+ * Copyright 2026, gRPC Authors All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,26 +19,17 @@ internal import NIOExtras
 
 @available(gRPCSwiftNIOTransport 2.5, *)
 extension HTTP2ServerTransport {
-  /// An HTTP/2 connection channel that has been configured for gRPC.
-  ///
-  /// This type wraps the HTTP/2 connection channel and its stream multiplexer, as returned
-  /// by ``ConnectionConfigurator/configure(channel:tls:)``.
-  public struct ConnectionChannel: Sendable {
-    let connection: ChannelPipeline.SynchronousOperations.HTTP2ConnectionChannel
-    let multiplexer: ChannelPipeline.SynchronousOperations.HTTP2StreamMultiplexer
-  }
-
   /// A factory for creating listening channels that accept HTTP/2 connections.
   ///
   /// Implement this protocol to provide a custom mechanism for accepting connections,
   /// such as XPC-based listeners. The factory is responsible for creating
-  /// a `NIOAsyncChannel` that produces ``ConnectionChannel`` values, one for each
+  /// a `NIOAsyncChannel` that produces ``ConnectionConfigurator/ConnectionChannel`` values, one for each
   /// accepted connection.
   ///
   /// The factory should use the provided ``ListenerConfigurator`` to configure the listening
   /// channel and ``ConnectionConfigurator`` to configure each accepted connection channel.
   ///
-  /// - SeeAlso: ``NIOBasedHTTP2ServerTransport``
+  /// - SeeAlso: ``HTTP2ServerTransport/Custom``
   public protocol ListenerFactory: Sendable {
     /// Creates a listening channel that produces configured HTTP/2 connection channels.
     ///
@@ -50,6 +41,15 @@ extension HTTP2ServerTransport {
     func makeListeningChannel(
       listenerConfigurator: ListenerConfigurator,
       connectionConfigurator: ConnectionConfigurator
-    ) async throws -> NIOAsyncChannel<ConnectionChannel, Never>
+    ) async throws -> NIOAsyncChannel<ConnectionConfigurator.ConnectionChannel, Never>
+
+    /// The address the server is expected to be listening on, or `nil` if the address isn't known (e.g. when using a custom listener
+    /// that doesn't bind to a socket address). Defaults to `nil`.
+    var listeningAddress: SocketAddress? { get }
   }
+}
+
+@available(gRPCSwiftNIOTransport 2.5, *)
+public extension HTTP2ServerTransport.ListenerFactory {
+  var listeningAddress: SocketAddress? { nil }
 }

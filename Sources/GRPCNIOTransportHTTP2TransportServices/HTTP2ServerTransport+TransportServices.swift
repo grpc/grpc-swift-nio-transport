@@ -32,15 +32,30 @@ extension HTTP2ServerTransport {
   public struct TransportServices: ServerTransport, ListeningServerTransport {
     public typealias Bytes = GRPCNIOTransportBytes
 
-    private struct ListenerFactory: HTTP2ServerTransport.ListenerFactory {
-      let address: GRPCNIOTransportCore.SocketAddress
-      let transportSecurity: TransportSecurity
-      let eventLoopGroup: any EventLoopGroup
+    fileprivate struct ListenerFactory: HTTP2ServerTransport.ListenerFactory {
+      private let address: GRPCNIOTransportCore.SocketAddress
+      private let transportSecurity: TransportSecurity
+      private let eventLoopGroup: any EventLoopGroup
+
+      fileprivate var listeningAddress: GRPCNIOTransportCore.SocketAddress? { self.address }
+
+      init(
+        address: GRPCNIOTransportCore.SocketAddress,
+        transportSecurity: TransportSecurity,
+        eventLoopGroup: any EventLoopGroup
+      ) {
+        self.address = address
+        self.transportSecurity = transportSecurity
+        self.eventLoopGroup = eventLoopGroup
+      }
 
       func makeListeningChannel(
         listenerConfigurator: HTTP2ServerTransport.ListenerConfigurator,
         connectionConfigurator: HTTP2ServerTransport.ConnectionConfigurator
-      ) async throws -> NIOAsyncChannel<HTTP2ServerTransport.ConnectionChannel, Never> {
+      ) async throws -> NIOAsyncChannel<
+        HTTP2ServerTransport.ConnectionConfigurator.ConnectionChannel,
+        Never
+      > {
         let bootstrap: NIOTSListenerBootstrap
 
         let tls: HTTP2ServerTransport.TLS
@@ -69,7 +84,7 @@ extension HTTP2ServerTransport {
       }
     }
 
-    private let underlyingTransport: NIOBasedHTTP2ServerTransport<ListenerFactory>
+    private let underlyingTransport: Custom<ListenerFactory>
 
     /// The listening address for this server transport.
     ///
@@ -97,8 +112,7 @@ extension HTTP2ServerTransport {
       config: Config = .defaults,
       eventLoopGroup: NIOTSEventLoopGroup = .singletonNIOTSEventLoopGroup
     ) {
-      self.underlyingTransport = NIOBasedHTTP2ServerTransport(
-        address: address,
+      self.underlyingTransport = Custom(
         eventLoopGroup: eventLoopGroup,
         quiescingHelper: ServerQuiescingHelper(group: eventLoopGroup),
         config: .init(

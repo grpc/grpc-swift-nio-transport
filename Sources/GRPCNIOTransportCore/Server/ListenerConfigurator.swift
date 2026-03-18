@@ -1,5 +1,5 @@
 /*
- * Copyright 2024, gRPC Authors All rights reserved.
+ * Copyright 2026, gRPC Authors All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ public import NIOCore
 extension HTTP2ServerTransport {
   /// A configurator for listening (server) channels.
   ///
-  /// Instances of this type are created by ``NIOBasedHTTP2ServerTransport`` with the
+  /// Instances of this type are created by ``HTTP2ServerTransport/Custom`` with the
   /// appropriate configuration already captured. Use ``configure(channel:)`` to apply
   /// the required configuration to the listening channel.
   public struct ListenerConfigurator: Sendable {

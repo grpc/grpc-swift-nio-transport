@@ -1,5 +1,5 @@
 /*
- * Copyright 2024, gRPC Authors All rights reserved.
+ * Copyright 2026, gRPC Authors All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,11 +61,20 @@ extension HTTP2ServerTransport {
 
   /// A configurator for accepted connection channels.
   ///
-  /// Instances of this type are created by ``NIOBasedHTTP2ServerTransport`` with the
+  /// Instances of this type are created by ``HTTP2ServerTransport/Custom`` with the
   /// appropriate gRPC configuration already captured. Use
   /// ``configure(channel:tls:)`` to apply the gRPC HTTP/2 pipeline configuration
   /// to each accepted connection channel.
   public struct ConnectionConfigurator: Sendable {
+    /// An HTTP/2 connection channel that has been configured for gRPC.
+    ///
+    /// This type wraps the HTTP/2 connection channel and its stream multiplexer, as returned
+    /// by ``ConnectionConfigurator/configure(channel:tls:)``.
+    public struct ConnectionChannel: Sendable {
+      let connection: ChannelPipeline.SynchronousOperations.HTTP2ConnectionChannel
+      let multiplexer: ChannelPipeline.SynchronousOperations.HTTP2StreamMultiplexer
+    }
+
     private let _configure:
       @Sendable (any Channel, TLS) -> EventLoopFuture<ConnectionChannel>
 
