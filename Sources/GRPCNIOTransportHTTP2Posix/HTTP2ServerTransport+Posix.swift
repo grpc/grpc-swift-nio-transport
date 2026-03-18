@@ -132,30 +132,22 @@ extension HTTP2ServerTransport {
             listenerConfigurator.configure(channel: channel)
           }
           .bind(to: self.address) { channel in
-            let sslHandler: NIOSSLServerHandler?
+            channel.eventLoop.makeCompletedFuture {
+              if let sslContext {
+                let sslHandler: NIOSSLServerHandler
+                if let callback = customVerificationCallback {
+                  sslHandler = NIOSSLServerHandler(
+                    context: sslContext,
+                    customVerificationCallbackWithMetadata: callback
+                  )
+                } else {
+                  sslHandler = NIOSSLServerHandler(context: sslContext)
+                }
 
-            if let sslContext {
-              if let callback = customVerificationCallback {
-                sslHandler = NIOSSLServerHandler(
-                  context: sslContext,
-                  customVerificationCallbackWithMetadata: callback
-                )
-              } else {
-                sslHandler = NIOSSLServerHandler(context: sslContext)
-              }
-            } else {
-              sslHandler = nil
-            }
-
-            if let sslHandler {
-              let addHandler = channel.eventLoop.makeCompletedFuture {
                 try channel.pipeline.syncOperations.addHandler(sslHandler)
               }
-              return addHandler.flatMap {
-                connectionConfigurator.configure(channel: channel, tls: tls)
-              }
-            } else {
-              return connectionConfigurator.configure(channel: channel, tls: tls)
+            }.flatMap {
+              connectionConfigurator.configure(channel: channel, tls: tls)
             }
           }
 
