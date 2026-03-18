@@ -296,127 +296,127 @@ struct Grpc_Testing_ClientConfig: @unchecked Sendable {
 
   /// List of targets to connect to. At least one target needs to be specified.
   var serverTargets: [String] {
-    get {return _storage._serverTargets}
+    get {_storage._serverTargets}
     set {_uniqueStorage()._serverTargets = newValue}
   }
 
   var clientType: Grpc_Testing_ClientType {
-    get {return _storage._clientType}
+    get {_storage._clientType}
     set {_uniqueStorage()._clientType = newValue}
   }
 
   var securityParams: Grpc_Testing_SecurityParams {
-    get {return _storage._securityParams ?? Grpc_Testing_SecurityParams()}
+    get {_storage._securityParams ?? Grpc_Testing_SecurityParams()}
     set {_uniqueStorage()._securityParams = newValue}
   }
   /// Returns true if `securityParams` has been explicitly set.
-  var hasSecurityParams: Bool {return _storage._securityParams != nil}
+  var hasSecurityParams: Bool {_storage._securityParams != nil}
   /// Clears the value of `securityParams`. Subsequent reads from it will return its default value.
   mutating func clearSecurityParams() {_uniqueStorage()._securityParams = nil}
 
   /// How many concurrent RPCs to start for each channel.
   /// For synchronous client, use a separate thread for each outstanding RPC.
   var outstandingRpcsPerChannel: Int32 {
-    get {return _storage._outstandingRpcsPerChannel}
+    get {_storage._outstandingRpcsPerChannel}
     set {_uniqueStorage()._outstandingRpcsPerChannel = newValue}
   }
 
   /// Number of independent client channels to create.
   /// i-th channel will connect to server_target[i % server_targets.size()]
   var clientChannels: Int32 {
-    get {return _storage._clientChannels}
+    get {_storage._clientChannels}
     set {_uniqueStorage()._clientChannels = newValue}
   }
 
   /// Only for async client. Number of threads to use to start/manage RPCs.
   var asyncClientThreads: Int32 {
-    get {return _storage._asyncClientThreads}
+    get {_storage._asyncClientThreads}
     set {_uniqueStorage()._asyncClientThreads = newValue}
   }
 
   var rpcType: Grpc_Testing_RpcType {
-    get {return _storage._rpcType}
+    get {_storage._rpcType}
     set {_uniqueStorage()._rpcType = newValue}
   }
 
   /// The requested load for the entire client (aggregated over all the threads).
   var loadParams: Grpc_Testing_LoadParams {
-    get {return _storage._loadParams ?? Grpc_Testing_LoadParams()}
+    get {_storage._loadParams ?? Grpc_Testing_LoadParams()}
     set {_uniqueStorage()._loadParams = newValue}
   }
   /// Returns true if `loadParams` has been explicitly set.
-  var hasLoadParams: Bool {return _storage._loadParams != nil}
+  var hasLoadParams: Bool {_storage._loadParams != nil}
   /// Clears the value of `loadParams`. Subsequent reads from it will return its default value.
   mutating func clearLoadParams() {_uniqueStorage()._loadParams = nil}
 
   var payloadConfig: Grpc_Testing_PayloadConfig {
-    get {return _storage._payloadConfig ?? Grpc_Testing_PayloadConfig()}
+    get {_storage._payloadConfig ?? Grpc_Testing_PayloadConfig()}
     set {_uniqueStorage()._payloadConfig = newValue}
   }
   /// Returns true if `payloadConfig` has been explicitly set.
-  var hasPayloadConfig: Bool {return _storage._payloadConfig != nil}
+  var hasPayloadConfig: Bool {_storage._payloadConfig != nil}
   /// Clears the value of `payloadConfig`. Subsequent reads from it will return its default value.
   mutating func clearPayloadConfig() {_uniqueStorage()._payloadConfig = nil}
 
   var histogramParams: Grpc_Testing_HistogramParams {
-    get {return _storage._histogramParams ?? Grpc_Testing_HistogramParams()}
+    get {_storage._histogramParams ?? Grpc_Testing_HistogramParams()}
     set {_uniqueStorage()._histogramParams = newValue}
   }
   /// Returns true if `histogramParams` has been explicitly set.
-  var hasHistogramParams: Bool {return _storage._histogramParams != nil}
+  var hasHistogramParams: Bool {_storage._histogramParams != nil}
   /// Clears the value of `histogramParams`. Subsequent reads from it will return its default value.
   mutating func clearHistogramParams() {_uniqueStorage()._histogramParams = nil}
 
   /// Specify the cores we should run the client on, if desired
   var coreList: [Int32] {
-    get {return _storage._coreList}
+    get {_storage._coreList}
     set {_uniqueStorage()._coreList = newValue}
   }
 
   var coreLimit: Int32 {
-    get {return _storage._coreLimit}
+    get {_storage._coreLimit}
     set {_uniqueStorage()._coreLimit = newValue}
   }
 
   /// If we use an OTHER_CLIENT client_type, this string gives more detail
   var otherClientApi: String {
-    get {return _storage._otherClientApi}
+    get {_storage._otherClientApi}
     set {_uniqueStorage()._otherClientApi = newValue}
   }
 
   var channelArgs: [Grpc_Testing_ChannelArg] {
-    get {return _storage._channelArgs}
+    get {_storage._channelArgs}
     set {_uniqueStorage()._channelArgs = newValue}
   }
 
   /// Number of threads that share each completion queue
   var threadsPerCq: Int32 {
-    get {return _storage._threadsPerCq}
+    get {_storage._threadsPerCq}
     set {_uniqueStorage()._threadsPerCq = newValue}
   }
 
   /// Number of messages on a stream before it gets finished/restarted
   var messagesPerStream: Int32 {
-    get {return _storage._messagesPerStream}
+    get {_storage._messagesPerStream}
     set {_uniqueStorage()._messagesPerStream = newValue}
   }
 
   /// Use coalescing API when possible.
   var useCoalesceApi: Bool {
-    get {return _storage._useCoalesceApi}
+    get {_storage._useCoalesceApi}
     set {_uniqueStorage()._useCoalesceApi = newValue}
   }
 
   /// If 0, disabled. Else, specifies the period between gathering latency
   /// medians in milliseconds.
   var medianLatencyCollectionIntervalMillis: Int32 {
-    get {return _storage._medianLatencyCollectionIntervalMillis}
+    get {_storage._medianLatencyCollectionIntervalMillis}
     set {_uniqueStorage()._medianLatencyCollectionIntervalMillis = newValue}
   }
 
   /// Number of client processes. 0 indicates no restriction.
   var clientProcesses: Int32 {
-    get {return _storage._clientProcesses}
+    get {_storage._clientProcesses}
     set {_uniqueStorage()._clientProcesses = newValue}
   }
 
@@ -433,11 +433,11 @@ struct Grpc_Testing_ClientStatus: Sendable {
   // methods supported on all messages.
 
   var stats: Grpc_Testing_ClientStats {
-    get {return _stats ?? Grpc_Testing_ClientStats()}
+    get {_stats ?? Grpc_Testing_ClientStats()}
     set {_stats = newValue}
   }
   /// Returns true if `stats` has been explicitly set.
-  var hasStats: Bool {return self._stats != nil}
+  var hasStats: Bool {self._stats != nil}
   /// Clears the value of `stats`. Subsequent reads from it will return its default value.
   mutating func clearStats() {self._stats = nil}
 
@@ -504,11 +504,11 @@ struct Grpc_Testing_ServerConfig: Sendable {
   var serverType: Grpc_Testing_ServerType = .syncServer
 
   var securityParams: Grpc_Testing_SecurityParams {
-    get {return _securityParams ?? Grpc_Testing_SecurityParams()}
+    get {_securityParams ?? Grpc_Testing_SecurityParams()}
     set {_securityParams = newValue}
   }
   /// Returns true if `securityParams` has been explicitly set.
-  var hasSecurityParams: Bool {return self._securityParams != nil}
+  var hasSecurityParams: Bool {self._securityParams != nil}
   /// Clears the value of `securityParams`. Subsequent reads from it will return its default value.
   mutating func clearSecurityParams() {self._securityParams = nil}
 
@@ -526,11 +526,11 @@ struct Grpc_Testing_ServerConfig: Sendable {
   /// 'response sizes' must be configured from the 'response_size' field of the
   /// 'SimpleRequest' objects in RPC requests.
   var payloadConfig: Grpc_Testing_PayloadConfig {
-    get {return _payloadConfig ?? Grpc_Testing_PayloadConfig()}
+    get {_payloadConfig ?? Grpc_Testing_PayloadConfig()}
     set {_payloadConfig = newValue}
   }
   /// Returns true if `payloadConfig` has been explicitly set.
-  var hasPayloadConfig: Bool {return self._payloadConfig != nil}
+  var hasPayloadConfig: Bool {self._payloadConfig != nil}
   /// Clears the value of `payloadConfig`. Subsequent reads from it will return its default value.
   mutating func clearPayloadConfig() {self._payloadConfig = nil}
 
@@ -599,11 +599,11 @@ struct Grpc_Testing_ServerStatus: Sendable {
   // methods supported on all messages.
 
   var stats: Grpc_Testing_ServerStats {
-    get {return _stats ?? Grpc_Testing_ServerStats()}
+    get {_stats ?? Grpc_Testing_ServerStats()}
     set {_stats = newValue}
   }
   /// Returns true if `stats` has been explicitly set.
-  var hasStats: Bool {return self._stats != nil}
+  var hasStats: Bool {self._stats != nil}
   /// Clears the value of `stats`. Subsequent reads from it will return its default value.
   mutating func clearStats() {self._stats = nil}
 
@@ -661,57 +661,57 @@ struct Grpc_Testing_Scenario: @unchecked Sendable {
 
   /// Human readable name for this scenario
   var name: String {
-    get {return _storage._name}
+    get {_storage._name}
     set {_uniqueStorage()._name = newValue}
   }
 
   /// Client configuration
   var clientConfig: Grpc_Testing_ClientConfig {
-    get {return _storage._clientConfig ?? Grpc_Testing_ClientConfig()}
+    get {_storage._clientConfig ?? Grpc_Testing_ClientConfig()}
     set {_uniqueStorage()._clientConfig = newValue}
   }
   /// Returns true if `clientConfig` has been explicitly set.
-  var hasClientConfig: Bool {return _storage._clientConfig != nil}
+  var hasClientConfig: Bool {_storage._clientConfig != nil}
   /// Clears the value of `clientConfig`. Subsequent reads from it will return its default value.
   mutating func clearClientConfig() {_uniqueStorage()._clientConfig = nil}
 
   /// Number of clients to start for the test
   var numClients: Int32 {
-    get {return _storage._numClients}
+    get {_storage._numClients}
     set {_uniqueStorage()._numClients = newValue}
   }
 
   /// Server configuration
   var serverConfig: Grpc_Testing_ServerConfig {
-    get {return _storage._serverConfig ?? Grpc_Testing_ServerConfig()}
+    get {_storage._serverConfig ?? Grpc_Testing_ServerConfig()}
     set {_uniqueStorage()._serverConfig = newValue}
   }
   /// Returns true if `serverConfig` has been explicitly set.
-  var hasServerConfig: Bool {return _storage._serverConfig != nil}
+  var hasServerConfig: Bool {_storage._serverConfig != nil}
   /// Clears the value of `serverConfig`. Subsequent reads from it will return its default value.
   mutating func clearServerConfig() {_uniqueStorage()._serverConfig = nil}
 
   /// Number of servers to start for the test
   var numServers: Int32 {
-    get {return _storage._numServers}
+    get {_storage._numServers}
     set {_uniqueStorage()._numServers = newValue}
   }
 
   /// Warmup period, in seconds
   var warmupSeconds: Int32 {
-    get {return _storage._warmupSeconds}
+    get {_storage._warmupSeconds}
     set {_uniqueStorage()._warmupSeconds = newValue}
   }
 
   /// Benchmark time, in seconds
   var benchmarkSeconds: Int32 {
-    get {return _storage._benchmarkSeconds}
+    get {_storage._benchmarkSeconds}
     set {_uniqueStorage()._benchmarkSeconds = newValue}
   }
 
   /// Number of workers to spawn locally (usually zero)
   var spawnLocalWorkerCount: Int32 {
-    get {return _storage._spawnLocalWorkerCount}
+    get {_storage._spawnLocalWorkerCount}
     set {_uniqueStorage()._spawnLocalWorkerCount = newValue}
   }
 
@@ -746,13 +746,13 @@ struct Grpc_Testing_ScenarioResultSummary: @unchecked Sendable {
   /// For unary benchmarks, an operation is processing of a single unary RPC. 
   /// For streaming benchmarks, an operation is processing of a single ping pong of request and response. 
   var qps: Double {
-    get {return _storage._qps}
+    get {_storage._qps}
     set {_uniqueStorage()._qps = newValue}
   }
 
   /// QPS per server core.
   var qpsPerServerCore: Double {
-    get {return _storage._qpsPerServerCore}
+    get {_storage._qpsPerServerCore}
     set {_uniqueStorage()._qpsPerServerCore = newValue}
   }
 
@@ -761,109 +761,109 @@ struct Grpc_Testing_ScenarioResultSummary: @unchecked Sendable {
   /// processes, the value could > 100 when there are multiple servers or a single server using multiple threads and cores. 
   /// Same explanation for the total client cpu load below.
   var serverSystemTime: Double {
-    get {return _storage._serverSystemTime}
+    get {_storage._serverSystemTime}
     set {_uniqueStorage()._serverSystemTime = newValue}
   }
 
   /// The total server cpu load based on user time across all server processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
   var serverUserTime: Double {
-    get {return _storage._serverUserTime}
+    get {_storage._serverUserTime}
     set {_uniqueStorage()._serverUserTime = newValue}
   }
 
   /// The total client cpu load based on system time across all client processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
   var clientSystemTime: Double {
-    get {return _storage._clientSystemTime}
+    get {_storage._clientSystemTime}
     set {_uniqueStorage()._clientSystemTime = newValue}
   }
 
   /// The total client cpu load based on user time across all client processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
   var clientUserTime: Double {
-    get {return _storage._clientUserTime}
+    get {_storage._clientUserTime}
     set {_uniqueStorage()._clientUserTime = newValue}
   }
 
   /// X% latency percentiles (in nanoseconds)
   var latency50: Double {
-    get {return _storage._latency50}
+    get {_storage._latency50}
     set {_uniqueStorage()._latency50 = newValue}
   }
 
   var latency90: Double {
-    get {return _storage._latency90}
+    get {_storage._latency90}
     set {_uniqueStorage()._latency90 = newValue}
   }
 
   var latency95: Double {
-    get {return _storage._latency95}
+    get {_storage._latency95}
     set {_uniqueStorage()._latency95 = newValue}
   }
 
   var latency99: Double {
-    get {return _storage._latency99}
+    get {_storage._latency99}
     set {_uniqueStorage()._latency99 = newValue}
   }
 
   var latency999: Double {
-    get {return _storage._latency999}
+    get {_storage._latency999}
     set {_uniqueStorage()._latency999 = newValue}
   }
 
   /// server cpu usage percentage
   var serverCpuUsage: Double {
-    get {return _storage._serverCpuUsage}
+    get {_storage._serverCpuUsage}
     set {_uniqueStorage()._serverCpuUsage = newValue}
   }
 
   /// Number of requests that succeeded/failed
   var successfulRequestsPerSecond: Double {
-    get {return _storage._successfulRequestsPerSecond}
+    get {_storage._successfulRequestsPerSecond}
     set {_uniqueStorage()._successfulRequestsPerSecond = newValue}
   }
 
   var failedRequestsPerSecond: Double {
-    get {return _storage._failedRequestsPerSecond}
+    get {_storage._failedRequestsPerSecond}
     set {_uniqueStorage()._failedRequestsPerSecond = newValue}
   }
 
   /// Number of polls called inside completion queue per request
   var clientPollsPerRequest: Double {
-    get {return _storage._clientPollsPerRequest}
+    get {_storage._clientPollsPerRequest}
     set {_uniqueStorage()._clientPollsPerRequest = newValue}
   }
 
   var serverPollsPerRequest: Double {
-    get {return _storage._serverPollsPerRequest}
+    get {_storage._serverPollsPerRequest}
     set {_uniqueStorage()._serverPollsPerRequest = newValue}
   }
 
   /// Queries per CPU-sec over all servers or clients
   var serverQueriesPerCpuSec: Double {
-    get {return _storage._serverQueriesPerCpuSec}
+    get {_storage._serverQueriesPerCpuSec}
     set {_uniqueStorage()._serverQueriesPerCpuSec = newValue}
   }
 
   var clientQueriesPerCpuSec: Double {
-    get {return _storage._clientQueriesPerCpuSec}
+    get {_storage._clientQueriesPerCpuSec}
     set {_uniqueStorage()._clientQueriesPerCpuSec = newValue}
   }
 
   /// Start and end time for the test scenario
   var startTime: SwiftProtobuf.Google_Protobuf_Timestamp {
-    get {return _storage._startTime ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    get {_storage._startTime ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
     set {_uniqueStorage()._startTime = newValue}
   }
   /// Returns true if `startTime` has been explicitly set.
-  var hasStartTime: Bool {return _storage._startTime != nil}
+  var hasStartTime: Bool {_storage._startTime != nil}
   /// Clears the value of `startTime`. Subsequent reads from it will return its default value.
   mutating func clearStartTime() {_uniqueStorage()._startTime = nil}
 
   var endTime: SwiftProtobuf.Google_Protobuf_Timestamp {
-    get {return _storage._endTime ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    get {_storage._endTime ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
     set {_uniqueStorage()._endTime = newValue}
   }
   /// Returns true if `endTime` has been explicitly set.
-  var hasEndTime: Bool {return _storage._endTime != nil}
+  var hasEndTime: Bool {_storage._endTime != nil}
   /// Clears the value of `endTime`. Subsequent reads from it will return its default value.
   mutating func clearEndTime() {_uniqueStorage()._endTime = nil}
 
@@ -882,21 +882,21 @@ struct Grpc_Testing_ScenarioResult: Sendable {
 
   /// Inputs used to run the scenario.
   var scenario: Grpc_Testing_Scenario {
-    get {return _scenario ?? Grpc_Testing_Scenario()}
+    get {_scenario ?? Grpc_Testing_Scenario()}
     set {_scenario = newValue}
   }
   /// Returns true if `scenario` has been explicitly set.
-  var hasScenario: Bool {return self._scenario != nil}
+  var hasScenario: Bool {self._scenario != nil}
   /// Clears the value of `scenario`. Subsequent reads from it will return its default value.
   mutating func clearScenario() {self._scenario = nil}
 
   /// Histograms from all clients merged into one histogram.
   var latencies: Grpc_Testing_HistogramData {
-    get {return _latencies ?? Grpc_Testing_HistogramData()}
+    get {_latencies ?? Grpc_Testing_HistogramData()}
     set {_latencies = newValue}
   }
   /// Returns true if `latencies` has been explicitly set.
-  var hasLatencies: Bool {return self._latencies != nil}
+  var hasLatencies: Bool {self._latencies != nil}
   /// Clears the value of `latencies`. Subsequent reads from it will return its default value.
   mutating func clearLatencies() {self._latencies = nil}
 
@@ -911,11 +911,11 @@ struct Grpc_Testing_ScenarioResult: Sendable {
 
   /// An after-the-fact computed summary
   var summary: Grpc_Testing_ScenarioResultSummary {
-    get {return _summary ?? Grpc_Testing_ScenarioResultSummary()}
+    get {_summary ?? Grpc_Testing_ScenarioResultSummary()}
     set {_summary = newValue}
   }
   /// Returns true if `summary` has been explicitly set.
-  var hasSummary: Bool {return self._summary != nil}
+  var hasSummary: Bool {self._summary != nil}
   /// Clears the value of `summary`. Subsequent reads from it will return its default value.
   mutating func clearSummary() {self._summary = nil}
 
@@ -941,39 +941,20 @@ struct Grpc_Testing_ScenarioResult: Sendable {
 fileprivate let _protobuf_package = "grpc.testing"
 
 extension Grpc_Testing_ClientType: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "SYNC_CLIENT"),
-    1: .same(proto: "ASYNC_CLIENT"),
-    2: .same(proto: "OTHER_CLIENT"),
-    3: .same(proto: "CALLBACK_CLIENT"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0SYNC_CLIENT\0\u{1}ASYNC_CLIENT\0\u{1}OTHER_CLIENT\0\u{1}CALLBACK_CLIENT\0")
 }
 
 extension Grpc_Testing_ServerType: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "SYNC_SERVER"),
-    1: .same(proto: "ASYNC_SERVER"),
-    2: .same(proto: "ASYNC_GENERIC_SERVER"),
-    3: .same(proto: "OTHER_SERVER"),
-    4: .same(proto: "CALLBACK_SERVER"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0SYNC_SERVER\0\u{1}ASYNC_SERVER\0\u{1}ASYNC_GENERIC_SERVER\0\u{1}OTHER_SERVER\0\u{1}CALLBACK_SERVER\0")
 }
 
 extension Grpc_Testing_RpcType: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "UNARY"),
-    1: .same(proto: "STREAMING"),
-    2: .same(proto: "STREAMING_FROM_CLIENT"),
-    3: .same(proto: "STREAMING_FROM_SERVER"),
-    4: .same(proto: "STREAMING_BOTH_WAYS"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0UNARY\0\u{1}STREAMING\0\u{1}STREAMING_FROM_CLIENT\0\u{1}STREAMING_FROM_SERVER\0\u{1}STREAMING_BOTH_WAYS\0")
 }
 
 extension Grpc_Testing_PoissonParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".PoissonParams"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "offered_load"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}offered_load\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1022,10 +1003,7 @@ extension Grpc_Testing_ClosedLoopParams: SwiftProtobuf.Message, SwiftProtobuf._M
 
 extension Grpc_Testing_LoadParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".LoadParams"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "closed_loop"),
-    2: .same(proto: "poisson"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}closed_loop\0\u{1}poisson\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1092,11 +1070,7 @@ extension Grpc_Testing_LoadParams: SwiftProtobuf.Message, SwiftProtobuf._Message
 
 extension Grpc_Testing_SecurityParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".SecurityParams"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "use_test_ca"),
-    2: .standard(proto: "server_host_override"),
-    3: .standard(proto: "cred_type"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}use_test_ca\0\u{3}server_host_override\0\u{3}cred_type\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1136,11 +1110,7 @@ extension Grpc_Testing_SecurityParams: SwiftProtobuf.Message, SwiftProtobuf._Mes
 
 extension Grpc_Testing_ChannelArg: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".ChannelArg"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "name"),
-    2: .standard(proto: "str_value"),
-    3: .standard(proto: "int_value"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{3}str_value\0\u{3}int_value\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1202,27 +1172,7 @@ extension Grpc_Testing_ChannelArg: SwiftProtobuf.Message, SwiftProtobuf._Message
 
 extension Grpc_Testing_ClientConfig: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".ClientConfig"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "server_targets"),
-    2: .standard(proto: "client_type"),
-    3: .standard(proto: "security_params"),
-    4: .standard(proto: "outstanding_rpcs_per_channel"),
-    5: .standard(proto: "client_channels"),
-    7: .standard(proto: "async_client_threads"),
-    8: .standard(proto: "rpc_type"),
-    10: .standard(proto: "load_params"),
-    11: .standard(proto: "payload_config"),
-    12: .standard(proto: "histogram_params"),
-    13: .standard(proto: "core_list"),
-    14: .standard(proto: "core_limit"),
-    15: .standard(proto: "other_client_api"),
-    16: .standard(proto: "channel_args"),
-    17: .standard(proto: "threads_per_cq"),
-    18: .standard(proto: "messages_per_stream"),
-    19: .standard(proto: "use_coalesce_api"),
-    20: .standard(proto: "median_latency_collection_interval_millis"),
-    21: .standard(proto: "client_processes"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}server_targets\0\u{3}client_type\0\u{3}security_params\0\u{3}outstanding_rpcs_per_channel\0\u{3}client_channels\0\u{4}\u{2}async_client_threads\0\u{3}rpc_type\0\u{4}\u{2}load_params\0\u{3}payload_config\0\u{3}histogram_params\0\u{3}core_list\0\u{3}core_limit\0\u{3}other_client_api\0\u{3}channel_args\0\u{3}threads_per_cq\0\u{3}messages_per_stream\0\u{3}use_coalesce_api\0\u{3}median_latency_collection_interval_millis\0\u{3}client_processes\0")
 
   fileprivate class _StorageClass {
     var _serverTargets: [String] = []
@@ -1418,9 +1368,7 @@ extension Grpc_Testing_ClientConfig: SwiftProtobuf.Message, SwiftProtobuf._Messa
 
 extension Grpc_Testing_ClientStatus: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".ClientStatus"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "stats"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}stats\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1454,9 +1402,7 @@ extension Grpc_Testing_ClientStatus: SwiftProtobuf.Message, SwiftProtobuf._Messa
 
 extension Grpc_Testing_Mark: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".Mark"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "reset"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}reset\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1486,10 +1432,7 @@ extension Grpc_Testing_Mark: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
 
 extension Grpc_Testing_ClientArgs: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".ClientArgs"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "setup"),
-    2: .same(proto: "mark"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}setup\0\u{1}mark\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1556,20 +1499,7 @@ extension Grpc_Testing_ClientArgs: SwiftProtobuf.Message, SwiftProtobuf._Message
 
 extension Grpc_Testing_ServerConfig: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".ServerConfig"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "server_type"),
-    2: .standard(proto: "security_params"),
-    4: .same(proto: "port"),
-    7: .standard(proto: "async_server_threads"),
-    8: .standard(proto: "core_limit"),
-    9: .standard(proto: "payload_config"),
-    10: .standard(proto: "core_list"),
-    11: .standard(proto: "other_server_api"),
-    12: .standard(proto: "threads_per_cq"),
-    1001: .standard(proto: "resource_quota_size"),
-    1002: .standard(proto: "channel_args"),
-    21: .standard(proto: "server_processes"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}server_type\0\u{3}security_params\0\u{2}\u{2}port\0\u{4}\u{3}async_server_threads\0\u{3}core_limit\0\u{3}payload_config\0\u{3}core_list\0\u{3}other_server_api\0\u{3}threads_per_cq\0\u{4}\u{9}server_processes\0\u{4}T\u{f}resource_quota_size\0\u{3}channel_args\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1658,10 +1588,7 @@ extension Grpc_Testing_ServerConfig: SwiftProtobuf.Message, SwiftProtobuf._Messa
 
 extension Grpc_Testing_ServerArgs: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".ServerArgs"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "setup"),
-    2: .same(proto: "mark"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}setup\0\u{1}mark\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1728,11 +1655,7 @@ extension Grpc_Testing_ServerArgs: SwiftProtobuf.Message, SwiftProtobuf._Message
 
 extension Grpc_Testing_ServerStatus: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".ServerStatus"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "stats"),
-    2: .same(proto: "port"),
-    3: .same(proto: "cores"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}stats\0\u{1}port\0\u{1}cores\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1795,9 +1718,7 @@ extension Grpc_Testing_CoreRequest: SwiftProtobuf.Message, SwiftProtobuf._Messag
 
 extension Grpc_Testing_CoreResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".CoreResponse"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "cores"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}cores\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1846,16 +1767,7 @@ extension Grpc_Testing_Void: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
 
 extension Grpc_Testing_Scenario: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".Scenario"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "name"),
-    2: .standard(proto: "client_config"),
-    3: .standard(proto: "num_clients"),
-    4: .standard(proto: "server_config"),
-    5: .standard(proto: "num_servers"),
-    6: .standard(proto: "warmup_seconds"),
-    7: .standard(proto: "benchmark_seconds"),
-    8: .standard(proto: "spawn_local_worker_count"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{3}client_config\0\u{3}num_clients\0\u{3}server_config\0\u{3}num_servers\0\u{3}warmup_seconds\0\u{3}benchmark_seconds\0\u{3}spawn_local_worker_count\0")
 
   fileprivate class _StorageClass {
     var _name: String = String()
@@ -1974,9 +1886,7 @@ extension Grpc_Testing_Scenario: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
 
 extension Grpc_Testing_Scenarios: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".Scenarios"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "scenarios"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}scenarios\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -2006,28 +1916,7 @@ extension Grpc_Testing_Scenarios: SwiftProtobuf.Message, SwiftProtobuf._MessageI
 
 extension Grpc_Testing_ScenarioResultSummary: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".ScenarioResultSummary"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "qps"),
-    2: .standard(proto: "qps_per_server_core"),
-    3: .standard(proto: "server_system_time"),
-    4: .standard(proto: "server_user_time"),
-    5: .standard(proto: "client_system_time"),
-    6: .standard(proto: "client_user_time"),
-    7: .standard(proto: "latency_50"),
-    8: .standard(proto: "latency_90"),
-    9: .standard(proto: "latency_95"),
-    10: .standard(proto: "latency_99"),
-    11: .standard(proto: "latency_999"),
-    12: .standard(proto: "server_cpu_usage"),
-    13: .standard(proto: "successful_requests_per_second"),
-    14: .standard(proto: "failed_requests_per_second"),
-    15: .standard(proto: "client_polls_per_request"),
-    16: .standard(proto: "server_polls_per_request"),
-    17: .standard(proto: "server_queries_per_cpu_sec"),
-    18: .standard(proto: "client_queries_per_cpu_sec"),
-    19: .standard(proto: "start_time"),
-    20: .standard(proto: "end_time"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}qps\0\u{3}qps_per_server_core\0\u{3}server_system_time\0\u{3}server_user_time\0\u{3}client_system_time\0\u{3}client_user_time\0\u{3}latency_50\0\u{3}latency_90\0\u{3}latency_95\0\u{3}latency_99\0\u{3}latency_999\0\u{3}server_cpu_usage\0\u{3}successful_requests_per_second\0\u{3}failed_requests_per_second\0\u{3}client_polls_per_request\0\u{3}server_polls_per_request\0\u{3}server_queries_per_cpu_sec\0\u{3}client_queries_per_cpu_sec\0\u{3}start_time\0\u{3}end_time\0")
 
   fileprivate class _StorageClass {
     var _qps: Double = 0
@@ -2230,17 +2119,7 @@ extension Grpc_Testing_ScenarioResultSummary: SwiftProtobuf.Message, SwiftProtob
 
 extension Grpc_Testing_ScenarioResult: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   static let protoMessageName: String = _protobuf_package + ".ScenarioResult"
-  static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "scenario"),
-    2: .same(proto: "latencies"),
-    3: .standard(proto: "client_stats"),
-    4: .standard(proto: "server_stats"),
-    5: .standard(proto: "server_cores"),
-    6: .same(proto: "summary"),
-    7: .standard(proto: "client_success"),
-    8: .standard(proto: "server_success"),
-    9: .standard(proto: "request_results"),
-  ]
+  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}scenario\0\u{1}latencies\0\u{3}client_stats\0\u{3}server_stats\0\u{3}server_cores\0\u{1}summary\0\u{3}client_success\0\u{3}server_success\0\u{3}request_results\0")
 
   mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
