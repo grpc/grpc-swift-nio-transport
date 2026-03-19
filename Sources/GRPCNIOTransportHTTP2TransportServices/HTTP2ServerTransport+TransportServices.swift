@@ -35,7 +35,8 @@ extension HTTP2ServerTransport {
     fileprivate struct ListenerFactory: HTTP2ServerTransport.ListenerFactory {
       private let address: GRPCNIOTransportCore.SocketAddress
       private let transportSecurity: TransportSecurity
-      private let eventLoopGroup: any EventLoopGroup
+
+      fileprivate let eventLoopGroup: any EventLoopGroup
 
       init(
         address: GRPCNIOTransportCore.SocketAddress,

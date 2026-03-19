@@ -15,7 +15,7 @@
  */
 
 public import GRPCCore
-public import NIOCore
+package import NIOCore
 package import NIOExtras
 private import NIOHTTP2
 private import Synchronization
@@ -216,13 +216,12 @@ extension HTTP2ServerTransport {
     ///
     /// - Parameters:
     ///   - listenerFactory: The factory responsible for creating the listening channel.
-    ///   - eventLoopGroup: The `EventLoopGroup` used for creating promises and event loops.
     ///   - config: The configuration for accepted connection channels. Defaults to ``Config/defaults``.
     public convenience init(
       listenerFactory: ListenerFactory,
-      eventLoopGroup: any EventLoopGroup,
       config: Config = .defaults
     ) {
+      let eventLoopGroup = listenerFactory.eventLoopGroup
       self.init(
         eventLoopGroup: eventLoopGroup,
         quiescingHelper: ServerQuiescingHelper(group: eventLoopGroup),

@@ -31,6 +31,13 @@ extension HTTP2ServerTransport {
   ///
   /// - SeeAlso: ``HTTP2ServerTransport/Custom``
   public protocol ListenerFactory: Sendable {
+    /// An optional override for the address the server is expected to be listening on. This should only return something other than
+    /// `nil` if the listening channel does not have an address. Defaults to `nil`.
+    var listeningAddressOverride: SocketAddress? { get }
+
+    /// The `EventLoopGroup` used for creating promises and event loops.
+    var eventLoopGroup: any EventLoopGroup { get }
+
     /// Creates a listening channel that produces configured HTTP/2 connection channels.
     ///
     /// - Parameters:
@@ -42,10 +49,6 @@ extension HTTP2ServerTransport {
       listenerConfigurator: ListenerConfigurator,
       connectionConfigurator: ConnectionConfigurator
     ) async throws -> NIOAsyncChannel<ConnectionConfigurator.ConnectionChannel, Never>
-
-    /// An optional override for the address the server is expected to be listening on. This should only return something other than
-    /// `nil` if the listening channel does not have an address. Defaults to `nil`.
-    var listeningAddressOverride: SocketAddress? { get }
   }
 }
 

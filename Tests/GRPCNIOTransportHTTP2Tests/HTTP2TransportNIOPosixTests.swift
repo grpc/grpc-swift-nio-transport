@@ -622,10 +622,7 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
     let eventLoopGroup = MultiThreadedEventLoopGroup.singletonMultiThreadedEventLoopGroup
     let factory = LoopbackListenerFactory(eventLoopGroup: eventLoopGroup)
 
-    let transport = HTTP2ServerTransport.Custom(
-      listenerFactory: factory,
-      eventLoopGroup: eventLoopGroup
-    )
+    let transport = HTTP2ServerTransport.Custom(listenerFactory: factory)
 
     try await withThrowingDiscardingTaskGroup { group in
       let server = GRPCServer(transport: transport, services: [HelloWorldService()])
@@ -660,7 +657,7 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
 /// the loopback address using `ServerBootstrap`.
 @available(gRPCSwiftNIOTransport 2.5, *)
 private struct LoopbackListenerFactory: HTTP2ServerTransport.ListenerFactory {
-  private let eventLoopGroup: any EventLoopGroup
+  fileprivate let eventLoopGroup: any EventLoopGroup
 
   init(eventLoopGroup: any EventLoopGroup) {
     self.eventLoopGroup = eventLoopGroup
