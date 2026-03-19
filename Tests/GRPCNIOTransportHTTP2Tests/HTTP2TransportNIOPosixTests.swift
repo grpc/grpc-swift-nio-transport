@@ -17,6 +17,8 @@
 import GRPCCore
 import GRPCNIOTransportCore
 import GRPCNIOTransportHTTP2Posix
+import NIOCore
+import NIOPosix
 import NIOSSL
 import XCTest
 
@@ -611,5 +613,73 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
         server.beginGracefulShutdown()
       }
     }
+  }
+
+  // MARK: - Custom Listener Tests
+
+  @available(gRPCSwiftNIOTransport 2.5, *)
+  func testCustomListenerBasedServer_UnaryRPC() async throws {
+    let eventLoopGroup = MultiThreadedEventLoopGroup.singletonMultiThreadedEventLoopGroup
+    let factory = LoopbackListenerFactory(eventLoopGroup: eventLoopGroup)
+
+    let transport = HTTP2ServerTransport.Custom(
+      listenerFactory: factory,
+      eventLoopGroup: eventLoopGroup
+    )
+
+    try await withThrowingDiscardingTaskGroup { group in
+      let server = GRPCServer(transport: transport, services: [HelloWorldService()])
+
+      group.addTask {
+        try await server.serve()
+      }
+
+      group.addTask {
+        let address = try await transport.listeningAddress
+        let ipv4Address = try XCTUnwrap(address.ipv4)
+        XCTAssertNotEqual(ipv4Address.port, 0)
+
+        try await withGRPCClient(
+          transport: .http2NIOPosix(
+            target: .ipv4(address: "127.0.0.1", port: ipv4Address.port),
+            transportSecurity: .plaintext
+          )
+        ) { client in
+          let helloWorld = HelloWorld.Client(wrapping: client)
+          let response = try await helloWorld.sayHello(HelloRequest(name: "custom-listener"))
+          XCTAssertEqual(response.message, "Hello, custom-listener!")
+        }
+
+        server.beginGracefulShutdown()
+      }
+    }
+  }
+}
+
+/// A custom ``HTTP2ServerTransport/ListenerFactory`` that binds to an ephemeral port on
+/// the loopback address using `ServerBootstrap`.
+@available(gRPCSwiftNIOTransport 2.5, *)
+private struct LoopbackListenerFactory: HTTP2ServerTransport.ListenerFactory {
+  private let eventLoopGroup: any EventLoopGroup
+
+  init(eventLoopGroup: any EventLoopGroup) {
+    self.eventLoopGroup = eventLoopGroup
+  }
+
+  func makeListeningChannel(
+    listenerConfigurator: HTTP2ServerTransport.ListenerConfigurator,
+    connectionConfigurator: HTTP2ServerTransport.ConnectionConfigurator
+  ) async throws -> NIOAsyncChannel<
+    HTTP2ServerTransport.ConnectionConfigurator.ConnectionChannel,
+    Never
+  > {
+    try await ServerBootstrap(group: self.eventLoopGroup)
+      .serverChannelOption(.socketOption(.so_reuseaddr), value: 1)
+      .serverChannelInitializer { channel in
+        listenerConfigurator.configure(channel: channel)
+      }
+      .bind(host: "127.0.0.1", port: 0) { channel in
+        connectionConfigurator.configure(channel: channel, tls: .none)
+      }
   }
 }
