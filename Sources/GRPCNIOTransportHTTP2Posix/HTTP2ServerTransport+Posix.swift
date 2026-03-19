@@ -62,10 +62,6 @@ extension HTTP2ServerTransport {
       private let transportSecurity: TransportSecurity
       private let eventLoopGroup: any EventLoopGroup
 
-      var listeningAddress: GRPCNIOTransportCore.SocketAddress? {
-        self.address.socketAddress
-      }
-
       init(
         address: Address,
         transportSecurity: TransportSecurity,

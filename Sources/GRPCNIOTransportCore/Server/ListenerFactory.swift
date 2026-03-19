@@ -43,13 +43,13 @@ extension HTTP2ServerTransport {
       connectionConfigurator: ConnectionConfigurator
     ) async throws -> NIOAsyncChannel<ConnectionConfigurator.ConnectionChannel, Never>
 
-    /// The address the server is expected to be listening on, or `nil` if the address isn't known (e.g. when using a custom listener
-    /// that doesn't bind to a socket address). Defaults to `nil`.
-    var listeningAddress: SocketAddress? { get }
+    /// An optional override for the address the server is expected to be listening on. This should only return something other than
+    /// `nil` if the listening channel does not have an address. Defaults to `nil`.
+    var listeningAddressOverride: SocketAddress? { get }
   }
 }
 
 @available(gRPCSwiftNIOTransport 2.5, *)
 extension HTTP2ServerTransport.ListenerFactory {
-  public var listeningAddress: SocketAddress? { nil }
+  public var listeningAddressOverride: SocketAddress? { nil }
 }

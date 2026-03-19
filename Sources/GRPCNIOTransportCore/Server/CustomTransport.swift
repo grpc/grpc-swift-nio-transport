@@ -138,16 +138,16 @@ extension HTTP2ServerTransport {
 
       mutating func addressBound(
         _ address: NIOCore.SocketAddress?,
-        userProvidedAddress: SocketAddress?
+        addressOverride: SocketAddress?
       ) -> OnBound {
         switch self {
         case .idle(let listeningAddressPromise):
           if let address {
             self = .listening(listeningAddressPromise.futureResult)
             return .succeedPromise(listeningAddressPromise, address: SocketAddress(address))
-          } else if let userProvidedAddress, userProvidedAddress.virtualSocket != nil {
+          } else if let addressOverride, addressOverride.virtualSocket != nil {
             self = .listening(listeningAddressPromise.futureResult)
-            return .succeedPromise(listeningAddressPromise, address: userProvidedAddress)
+            return .succeedPromise(listeningAddressPromise, address: addressOverride)
           } else {
             // In some cases (such as starting the server from an fd, it might not be possible to get
             // a socket address).
@@ -298,7 +298,7 @@ extension HTTP2ServerTransport {
       let action = self.listeningAddressState.withLock {
         $0.addressBound(
           serverChannel.channel.localAddress,
-          userProvidedAddress: self.factory.listeningAddress
+          addressOverride: self.factory.listeningAddressOverride
         )
       }
       switch action {
