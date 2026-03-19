@@ -578,7 +578,7 @@ struct HTTP2TransportTLSEnabledTests {
 
   @Test(
     "Server with additionalCertificates sends full chain, client verifies successfully",
-    .enabled(if: System.supportsIPv6)
+    .enabled(if: System.supportsNetworkFramework)
   )
   @available(gRPCSwiftNIOTransport 2.5, *)
   func testRPC_TLS_serverAdditionalCertificates_OK() async throws {
@@ -626,7 +626,7 @@ struct HTTP2TransportTLSEnabledTests {
 
   @Test(
     "Without additionalCertificates, client fails to verify server when only root is trusted",
-    .enabled(if: System.supportsIPv6)
+    .enabled(if: System.supportsNetworkFramework)
   )
   @available(gRPCSwiftNIOTransport 2.5, *)
   func testRPC_TLS_serverWithoutAdditionalCertificates_failsVerification() async throws {
