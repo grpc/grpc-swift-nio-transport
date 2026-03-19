@@ -32,13 +32,13 @@ import GRPCProtobuf
 
 /// Namespace containing generated types for the "grpc.testing.BenchmarkService" service.
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
-internal enum Grpc_Testing_BenchmarkService {
+internal enum Grpc_Testing_BenchmarkService: Sendable {
     /// Service descriptor for the "grpc.testing.BenchmarkService" service.
     internal static let descriptor = GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.BenchmarkService")
     /// Namespace for method metadata.
-    internal enum Method {
+    internal enum Method: Sendable {
         /// Namespace for "UnaryCall" metadata.
-        internal enum UnaryCall {
+        internal enum UnaryCall: Sendable {
             /// Request type for "UnaryCall".
             internal typealias Input = Grpc_Testing_SimpleRequest
             /// Response type for "UnaryCall".
@@ -46,11 +46,12 @@ internal enum Grpc_Testing_BenchmarkService {
             /// Descriptor for "UnaryCall".
             internal static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.BenchmarkService"),
-                method: "UnaryCall"
+                method: "UnaryCall",
+                type: .unary
             )
         }
         /// Namespace for "StreamingCall" metadata.
-        internal enum StreamingCall {
+        internal enum StreamingCall: Sendable {
             /// Request type for "StreamingCall".
             internal typealias Input = Grpc_Testing_SimpleRequest
             /// Response type for "StreamingCall".
@@ -58,11 +59,12 @@ internal enum Grpc_Testing_BenchmarkService {
             /// Descriptor for "StreamingCall".
             internal static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.BenchmarkService"),
-                method: "StreamingCall"
+                method: "StreamingCall",
+                type: .bidirectionalStreaming
             )
         }
         /// Namespace for "StreamingFromClient" metadata.
-        internal enum StreamingFromClient {
+        internal enum StreamingFromClient: Sendable {
             /// Request type for "StreamingFromClient".
             internal typealias Input = Grpc_Testing_SimpleRequest
             /// Response type for "StreamingFromClient".
@@ -70,11 +72,12 @@ internal enum Grpc_Testing_BenchmarkService {
             /// Descriptor for "StreamingFromClient".
             internal static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.BenchmarkService"),
-                method: "StreamingFromClient"
+                method: "StreamingFromClient",
+                type: .clientStreaming
             )
         }
         /// Namespace for "StreamingFromServer" metadata.
-        internal enum StreamingFromServer {
+        internal enum StreamingFromServer: Sendable {
             /// Request type for "StreamingFromServer".
             internal typealias Input = Grpc_Testing_SimpleRequest
             /// Response type for "StreamingFromServer".
@@ -82,11 +85,12 @@ internal enum Grpc_Testing_BenchmarkService {
             /// Descriptor for "StreamingFromServer".
             internal static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.BenchmarkService"),
-                method: "StreamingFromServer"
+                method: "StreamingFromServer",
+                type: .serverStreaming
             )
         }
         /// Namespace for "StreamingBothWays" metadata.
-        internal enum StreamingBothWays {
+        internal enum StreamingBothWays: Sendable {
             /// Request type for "StreamingBothWays".
             internal typealias Input = Grpc_Testing_SimpleRequest
             /// Response type for "StreamingBothWays".
@@ -94,7 +98,8 @@ internal enum Grpc_Testing_BenchmarkService {
             /// Descriptor for "StreamingBothWays".
             internal static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.BenchmarkService"),
-                method: "StreamingBothWays"
+                method: "StreamingBothWays",
+                type: .bidirectionalStreaming
             )
         }
         /// Descriptors for all methods in the "grpc.testing.BenchmarkService" service.

@@ -119,11 +119,15 @@ package enum DNSResolver {
     return try presentationAddressBytes.withUnsafeMutableBufferPointer {
       (presentationAddressBytesPtr: inout UnsafeMutableBufferPointer<CChar>) throws -> String in
 
+      guard let baseAddress = presentationAddressBytesPtr.baseAddress else {
+        throw Self.InetNetworkToPresentationError(errno: EINVAL)
+      }
+
       // Convert
       let presentationAddressStringPtr = inet_ntop(
         family,
         addressPtr,
-        presentationAddressBytesPtr.baseAddress!,
+        baseAddress,
         socklen_t(length)
       )
 
@@ -186,6 +190,13 @@ extension SocketAddress.IPv6 {
       )
     }
 
-    self = .init(host: presentationAddress, port: Int(in_port_t(bigEndian: address.sin6_port)))
+    // Preserve IPv6 scope ID (e.g., for link-local addresses like fe80::%eth0).
+    // getaddrinfo sets sin6_scope_id but inet_ntop doesn't include it in the string.
+    var host = presentationAddress
+    #if !os(Windows)
+    appendScopeIDIfNeeded(to: &host, scopeID: address.sin6_scope_id)
+    #endif
+
+    self = .init(host: host, port: Int(in_port_t(bigEndian: address.sin6_port)))
   }
 }

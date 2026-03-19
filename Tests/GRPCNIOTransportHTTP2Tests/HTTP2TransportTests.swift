@@ -1664,6 +1664,7 @@ final class HTTP2TransportTests: XCTestCase {
   }
 
   func testAuthorityIPv6() async throws {
+    try XCTSkipUnless(System.supportsIPv6)
     try await self.testAuthority(serverAddress: .ipv6(host: "::1", port: 0)) { address in
       return .ipv6(address: "::1", port: address.ipv6!.port)
     } expectedAuthority: { address in
@@ -1672,6 +1673,7 @@ final class HTTP2TransportTests: XCTestCase {
   }
 
   func testOverrideAuthorityIPv6() async throws {
+    try XCTSkipUnless(System.supportsIPv6)
     try await self.testAuthority(
       serverAddress: .ipv6(host: "::1", port: 0),
       authorityOverride: "respect-my-authority"
@@ -1733,6 +1735,7 @@ final class HTTP2TransportTests: XCTestCase {
   }
 
   func testPeerInfoIPv6() async throws {
+    try XCTSkipUnless(System.supportsIPv6)
     try await self.forEachTransportPair(
       serverAddress: .ipv6(host: "::1", port: 0)
     ) { control, _, _ in
