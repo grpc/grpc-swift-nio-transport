@@ -596,14 +596,12 @@ struct HTTP2TransportTLSEnabledTests {
 
     // Server: leaf identity + intermediate in additionalCertificates.
     var serverConfig = self.makeDefaultPlaintextTSServerConfig()
-    serverConfig.security = .tls(
-      identityProvider: {
-        try self.makeSecIdentityProvider(
-          certificateBytes: serverCertDER,
-          privateKeyBytes: serverKeyDER
-        )
-      }
-    ) { tls in
+    serverConfig.security = .tls {
+      try self.makeSecIdentityProvider(
+        certificateBytes: serverCertDER,
+        privateKeyBytes: serverKeyDER
+      )
+    } configure: { tls in
       tls.additionalCertificates = [intermediateSecCert]
     }
 
