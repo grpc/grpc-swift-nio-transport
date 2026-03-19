@@ -27,4 +27,12 @@ enum System {
       return false
     }
   }
+
+  static var supportsNetworkFramework: Bool {
+    #if canImport(Network)
+    true
+    #else
+    false
+    #endif
+  }
 }
