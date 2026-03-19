@@ -313,3 +313,12 @@ extension CertificateChain.CertificateKeyPair {
     try self.key.serializeAsPEM().pemString.write(to: keyPath, atomically: true, encoding: .utf8)
   }
 }
+
+extension Certificate {
+  /// Serialize this certificate to DER-encoded bytes.
+  func serializeToDER() throws -> [UInt8] {
+    var serializer = DER.Serializer()
+    try serializer.serialize(self)
+    return serializer.serializedBytes
+  }
+}
