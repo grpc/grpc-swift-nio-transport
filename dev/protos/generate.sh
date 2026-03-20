@@ -84,7 +84,7 @@ function generate_perf_test_services {
   )
   local output="$root/IntegrationTests/grpc-performance-tests/Sources/Generated"
 
-  generate_message "$here/upstream/grpc/core/stats.proto" "$here/upstream" "$output" "Visibility=Internal" "FileNaming=PathToUnderscores"
+  generate_message "$here/upstream/grpc/core/stats.proto" "$here/upstream" "$output" "Visibility=Package" "FileNaming=PathToUnderscores"
 
   for proto in "${protos[@]}"; do
     generate_message "$proto" "$here/upstream" "$output" "Visibility=Package" "FileNaming=PathToUnderscores"
