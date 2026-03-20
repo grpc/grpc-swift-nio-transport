@@ -370,7 +370,17 @@ extension NWProtocolTLS.Options {
     self.init()
 
     if let identityProvider = tlsConfig.identityProvider {
-      guard let sec_identity = sec_identity_create(try identityProvider()) else {
+      let identity = try identityProvider()
+      let maybeSecIdentity: sec_identity_t?
+
+      if tlsConfig.additionalCertificates.isEmpty {
+        maybeSecIdentity = sec_identity_create(identity)
+      } else {
+        let certificates = tlsConfig.additionalCertificates as CFArray
+        maybeSecIdentity = sec_identity_create_with_certificates(identity, certificates)
+      }
+
+      guard let sec_identity = maybeSecIdentity else {
         throw RuntimeError(
           code: .transportError,
           message: """

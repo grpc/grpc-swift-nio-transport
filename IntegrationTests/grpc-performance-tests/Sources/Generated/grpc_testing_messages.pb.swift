@@ -42,25 +42,25 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 }
 
 /// The type of payload that should be returned.
-enum Grpc_Testing_PayloadType: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
+package enum Grpc_Testing_PayloadType: SwiftProtobuf.Enum, Swift.CaseIterable {
+  package typealias RawValue = Int
 
   /// Compressable text format.
   case compressable // = 0
   case UNRECOGNIZED(Int)
 
-  init() {
+  package init() {
     self = .compressable
   }
 
-  init?(rawValue: Int) {
+  package init?(rawValue: Int) {
     switch rawValue {
     case 0: self = .compressable
     default: self = .UNRECOGNIZED(rawValue)
     }
   }
 
-  var rawValue: Int {
+  package var rawValue: Int {
     switch self {
     case .compressable: return 0
     case .UNRECOGNIZED(let i): return i
@@ -68,7 +68,7 @@ enum Grpc_Testing_PayloadType: SwiftProtobuf.Enum, Swift.CaseIterable {
   }
 
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Grpc_Testing_PayloadType] = [
+  package static let allCases: [Grpc_Testing_PayloadType] = [
     .compressable,
   ]
 
@@ -80,8 +80,8 @@ enum Grpc_Testing_PayloadType: SwiftProtobuf.Enum, Swift.CaseIterable {
 /// that the RPC reached the server via "gRPCLB backend" path (i.e. if it got
 /// the address of this server from the gRPCLB server BalanceLoad RPC). Exactly
 /// how this detection is done is context and server dependent.
-enum Grpc_Testing_GrpclbRouteType: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
+package enum Grpc_Testing_GrpclbRouteType: SwiftProtobuf.Enum, Swift.CaseIterable {
+  package typealias RawValue = Int
 
   /// Server didn't detect the route that a client took to reach it.
   case unknown // = 0
@@ -93,11 +93,11 @@ enum Grpc_Testing_GrpclbRouteType: SwiftProtobuf.Enum, Swift.CaseIterable {
   case backend // = 2
   case UNRECOGNIZED(Int)
 
-  init() {
+  package init() {
     self = .unknown
   }
 
-  init?(rawValue: Int) {
+  package init?(rawValue: Int) {
     switch rawValue {
     case 0: self = .unknown
     case 1: self = .fallback
@@ -106,7 +106,7 @@ enum Grpc_Testing_GrpclbRouteType: SwiftProtobuf.Enum, Swift.CaseIterable {
     }
   }
 
-  var rawValue: Int {
+  package var rawValue: Int {
     switch self {
     case .unknown: return 0
     case .fallback: return 1
@@ -116,7 +116,7 @@ enum Grpc_Testing_GrpclbRouteType: SwiftProtobuf.Enum, Swift.CaseIterable {
   }
 
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Grpc_Testing_GrpclbRouteType] = [
+  package static let allCases: [Grpc_Testing_GrpclbRouteType] = [
     .unknown,
     .fallback,
     .backend,
@@ -127,133 +127,133 @@ enum Grpc_Testing_GrpclbRouteType: SwiftProtobuf.Enum, Swift.CaseIterable {
 /// TODO(dgq): Go back to using well-known types once
 /// https://github.com/grpc/grpc/issues/6980 has been fixed.
 /// import "google/protobuf/wrappers.proto";
-struct Grpc_Testing_BoolValue: Sendable {
+package struct Grpc_Testing_BoolValue: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// The bool value.
-  var value: Bool = false
+  package var value: Bool = false
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
 /// A block of data, to simply increase gRPC message size.
-struct Grpc_Testing_Payload: Sendable {
+package struct Grpc_Testing_Payload: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// The type of data in body.
-  var type: Grpc_Testing_PayloadType = .compressable
+  package var type: Grpc_Testing_PayloadType = .compressable
 
   /// Primary contents of payload.
-  var body: Data = Data()
+  package var body: Data = Data()
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
 /// A protobuf representation for grpc status. This is used by test
 /// clients to specify a status that the server should attempt to return.
-struct Grpc_Testing_EchoStatus: Sendable {
+package struct Grpc_Testing_EchoStatus: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var code: Int32 = 0
+  package var code: Int32 = 0
 
-  var message: String = String()
+  package var message: String = String()
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
 /// Unary request.
-struct Grpc_Testing_SimpleRequest: Sendable {
+package struct Grpc_Testing_SimpleRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// Desired payload type in the response from the server.
   /// If response_type is RANDOM, server randomly chooses one from other formats.
-  var responseType: Grpc_Testing_PayloadType = .compressable
+  package var responseType: Grpc_Testing_PayloadType = .compressable
 
   /// Desired payload size in the response from the server.
-  var responseSize: Int32 = 0
+  package var responseSize: Int32 = 0
 
   /// Optional input payload sent along with the request.
-  var payload: Grpc_Testing_Payload {
+  package var payload: Grpc_Testing_Payload {
     get {_payload ?? Grpc_Testing_Payload()}
     set {_payload = newValue}
   }
   /// Returns true if `payload` has been explicitly set.
-  var hasPayload: Bool {self._payload != nil}
+  package var hasPayload: Bool {self._payload != nil}
   /// Clears the value of `payload`. Subsequent reads from it will return its default value.
-  mutating func clearPayload() {self._payload = nil}
+  package mutating func clearPayload() {self._payload = nil}
 
   /// Whether SimpleResponse should include username.
-  var fillUsername: Bool = false
+  package var fillUsername: Bool = false
 
   /// Whether SimpleResponse should include OAuth scope.
-  var fillOauthScope: Bool = false
+  package var fillOauthScope: Bool = false
 
   /// Whether to request the server to compress the response. This field is
   /// "nullable" in order to interoperate seamlessly with clients not able to
   /// implement the full compression tests by introspecting the call to verify
   /// the response's compression status.
-  var responseCompressed: Grpc_Testing_BoolValue {
+  package var responseCompressed: Grpc_Testing_BoolValue {
     get {_responseCompressed ?? Grpc_Testing_BoolValue()}
     set {_responseCompressed = newValue}
   }
   /// Returns true if `responseCompressed` has been explicitly set.
-  var hasResponseCompressed: Bool {self._responseCompressed != nil}
+  package var hasResponseCompressed: Bool {self._responseCompressed != nil}
   /// Clears the value of `responseCompressed`. Subsequent reads from it will return its default value.
-  mutating func clearResponseCompressed() {self._responseCompressed = nil}
+  package mutating func clearResponseCompressed() {self._responseCompressed = nil}
 
   /// Whether server should return a given status
-  var responseStatus: Grpc_Testing_EchoStatus {
+  package var responseStatus: Grpc_Testing_EchoStatus {
     get {_responseStatus ?? Grpc_Testing_EchoStatus()}
     set {_responseStatus = newValue}
   }
   /// Returns true if `responseStatus` has been explicitly set.
-  var hasResponseStatus: Bool {self._responseStatus != nil}
+  package var hasResponseStatus: Bool {self._responseStatus != nil}
   /// Clears the value of `responseStatus`. Subsequent reads from it will return its default value.
-  mutating func clearResponseStatus() {self._responseStatus = nil}
+  package mutating func clearResponseStatus() {self._responseStatus = nil}
 
   /// Whether the server should expect this request to be compressed.
-  var expectCompressed: Grpc_Testing_BoolValue {
+  package var expectCompressed: Grpc_Testing_BoolValue {
     get {_expectCompressed ?? Grpc_Testing_BoolValue()}
     set {_expectCompressed = newValue}
   }
   /// Returns true if `expectCompressed` has been explicitly set.
-  var hasExpectCompressed: Bool {self._expectCompressed != nil}
+  package var hasExpectCompressed: Bool {self._expectCompressed != nil}
   /// Clears the value of `expectCompressed`. Subsequent reads from it will return its default value.
-  mutating func clearExpectCompressed() {self._expectCompressed = nil}
+  package mutating func clearExpectCompressed() {self._expectCompressed = nil}
 
   /// Whether SimpleResponse should include server_id.
-  var fillServerID: Bool = false
+  package var fillServerID: Bool = false
 
   /// Whether SimpleResponse should include grpclb_route_type.
-  var fillGrpclbRouteType: Bool = false
+  package var fillGrpclbRouteType: Bool = false
 
   /// If set the server should record this metrics report data for the current RPC.
-  var orcaPerQueryReport: Grpc_Testing_TestOrcaReport {
+  package var orcaPerQueryReport: Grpc_Testing_TestOrcaReport {
     get {_orcaPerQueryReport ?? Grpc_Testing_TestOrcaReport()}
     set {_orcaPerQueryReport = newValue}
   }
   /// Returns true if `orcaPerQueryReport` has been explicitly set.
-  var hasOrcaPerQueryReport: Bool {self._orcaPerQueryReport != nil}
+  package var hasOrcaPerQueryReport: Bool {self._orcaPerQueryReport != nil}
   /// Clears the value of `orcaPerQueryReport`. Subsequent reads from it will return its default value.
-  mutating func clearOrcaPerQueryReport() {self._orcaPerQueryReport = nil}
+  package mutating func clearOrcaPerQueryReport() {self._orcaPerQueryReport = nil}
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 
   fileprivate var _payload: Grpc_Testing_Payload? = nil
   fileprivate var _responseCompressed: Grpc_Testing_BoolValue? = nil
@@ -263,131 +263,131 @@ struct Grpc_Testing_SimpleRequest: Sendable {
 }
 
 /// Unary response, as configured by the request.
-struct Grpc_Testing_SimpleResponse: Sendable {
+package struct Grpc_Testing_SimpleResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// Payload to increase message size.
-  var payload: Grpc_Testing_Payload {
+  package var payload: Grpc_Testing_Payload {
     get {_payload ?? Grpc_Testing_Payload()}
     set {_payload = newValue}
   }
   /// Returns true if `payload` has been explicitly set.
-  var hasPayload: Bool {self._payload != nil}
+  package var hasPayload: Bool {self._payload != nil}
   /// Clears the value of `payload`. Subsequent reads from it will return its default value.
-  mutating func clearPayload() {self._payload = nil}
+  package mutating func clearPayload() {self._payload = nil}
 
   /// The user the request came from, for verifying authentication was
   /// successful when the client expected it.
-  var username: String = String()
+  package var username: String = String()
 
   /// OAuth scope.
-  var oauthScope: String = String()
+  package var oauthScope: String = String()
 
   /// Server ID. This must be unique among different server instances,
   /// but the same across all RPC's made to a particular server instance.
-  var serverID: String = String()
+  package var serverID: String = String()
 
   /// gRPCLB Path.
-  var grpclbRouteType: Grpc_Testing_GrpclbRouteType = .unknown
+  package var grpclbRouteType: Grpc_Testing_GrpclbRouteType = .unknown
 
   /// Server hostname.
-  var hostname: String = String()
+  package var hostname: String = String()
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 
   fileprivate var _payload: Grpc_Testing_Payload? = nil
 }
 
 /// Client-streaming request.
-struct Grpc_Testing_StreamingInputCallRequest: Sendable {
+package struct Grpc_Testing_StreamingInputCallRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// Optional input payload sent along with the request.
-  var payload: Grpc_Testing_Payload {
+  package var payload: Grpc_Testing_Payload {
     get {_payload ?? Grpc_Testing_Payload()}
     set {_payload = newValue}
   }
   /// Returns true if `payload` has been explicitly set.
-  var hasPayload: Bool {self._payload != nil}
+  package var hasPayload: Bool {self._payload != nil}
   /// Clears the value of `payload`. Subsequent reads from it will return its default value.
-  mutating func clearPayload() {self._payload = nil}
+  package mutating func clearPayload() {self._payload = nil}
 
   /// Whether the server should expect this request to be compressed. This field
   /// is "nullable" in order to interoperate seamlessly with servers not able to
   /// implement the full compression tests by introspecting the call to verify
   /// the request's compression status.
-  var expectCompressed: Grpc_Testing_BoolValue {
+  package var expectCompressed: Grpc_Testing_BoolValue {
     get {_expectCompressed ?? Grpc_Testing_BoolValue()}
     set {_expectCompressed = newValue}
   }
   /// Returns true if `expectCompressed` has been explicitly set.
-  var hasExpectCompressed: Bool {self._expectCompressed != nil}
+  package var hasExpectCompressed: Bool {self._expectCompressed != nil}
   /// Clears the value of `expectCompressed`. Subsequent reads from it will return its default value.
-  mutating func clearExpectCompressed() {self._expectCompressed = nil}
+  package mutating func clearExpectCompressed() {self._expectCompressed = nil}
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 
   fileprivate var _payload: Grpc_Testing_Payload? = nil
   fileprivate var _expectCompressed: Grpc_Testing_BoolValue? = nil
 }
 
 /// Client-streaming response.
-struct Grpc_Testing_StreamingInputCallResponse: Sendable {
+package struct Grpc_Testing_StreamingInputCallResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// Aggregated size of payloads received from the client.
-  var aggregatedPayloadSize: Int32 = 0
+  package var aggregatedPayloadSize: Int32 = 0
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
 /// Configuration for a particular response.
-struct Grpc_Testing_ResponseParameters: Sendable {
+package struct Grpc_Testing_ResponseParameters: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// Desired payload sizes in responses from the server.
-  var size: Int32 = 0
+  package var size: Int32 = 0
 
   /// Desired interval between consecutive responses in the response stream in
   /// microseconds.
-  var intervalUs: Int32 = 0
+  package var intervalUs: Int32 = 0
 
   /// Whether to request the server to compress the response. This field is
   /// "nullable" in order to interoperate seamlessly with clients not able to
   /// implement the full compression tests by introspecting the call to verify
   /// the response's compression status.
-  var compressed: Grpc_Testing_BoolValue {
+  package var compressed: Grpc_Testing_BoolValue {
     get {_compressed ?? Grpc_Testing_BoolValue()}
     set {_compressed = newValue}
   }
   /// Returns true if `compressed` has been explicitly set.
-  var hasCompressed: Bool {self._compressed != nil}
+  package var hasCompressed: Bool {self._compressed != nil}
   /// Clears the value of `compressed`. Subsequent reads from it will return its default value.
-  mutating func clearCompressed() {self._compressed = nil}
+  package mutating func clearCompressed() {self._compressed = nil}
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 
   fileprivate var _compressed: Grpc_Testing_BoolValue? = nil
 }
 
 /// Server-streaming request.
-struct Grpc_Testing_StreamingOutputCallRequest: Sendable {
+package struct Grpc_Testing_StreamingOutputCallRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -396,44 +396,44 @@ struct Grpc_Testing_StreamingOutputCallRequest: Sendable {
   /// If response_type is RANDOM, the payload from each response in the stream
   /// might be of different types. This is to simulate a mixed type of payload
   /// stream.
-  var responseType: Grpc_Testing_PayloadType = .compressable
+  package var responseType: Grpc_Testing_PayloadType = .compressable
 
   /// Configuration for each expected response message.
-  var responseParameters: [Grpc_Testing_ResponseParameters] = []
+  package var responseParameters: [Grpc_Testing_ResponseParameters] = []
 
   /// Optional input payload sent along with the request.
-  var payload: Grpc_Testing_Payload {
+  package var payload: Grpc_Testing_Payload {
     get {_payload ?? Grpc_Testing_Payload()}
     set {_payload = newValue}
   }
   /// Returns true if `payload` has been explicitly set.
-  var hasPayload: Bool {self._payload != nil}
+  package var hasPayload: Bool {self._payload != nil}
   /// Clears the value of `payload`. Subsequent reads from it will return its default value.
-  mutating func clearPayload() {self._payload = nil}
+  package mutating func clearPayload() {self._payload = nil}
 
   /// Whether server should return a given status
-  var responseStatus: Grpc_Testing_EchoStatus {
+  package var responseStatus: Grpc_Testing_EchoStatus {
     get {_responseStatus ?? Grpc_Testing_EchoStatus()}
     set {_responseStatus = newValue}
   }
   /// Returns true if `responseStatus` has been explicitly set.
-  var hasResponseStatus: Bool {self._responseStatus != nil}
+  package var hasResponseStatus: Bool {self._responseStatus != nil}
   /// Clears the value of `responseStatus`. Subsequent reads from it will return its default value.
-  mutating func clearResponseStatus() {self._responseStatus = nil}
+  package mutating func clearResponseStatus() {self._responseStatus = nil}
 
   /// If set the server should update this metrics report data at the OOB server.
-  var orcaOobReport: Grpc_Testing_TestOrcaReport {
+  package var orcaOobReport: Grpc_Testing_TestOrcaReport {
     get {_orcaOobReport ?? Grpc_Testing_TestOrcaReport()}
     set {_orcaOobReport = newValue}
   }
   /// Returns true if `orcaOobReport` has been explicitly set.
-  var hasOrcaOobReport: Bool {self._orcaOobReport != nil}
+  package var hasOrcaOobReport: Bool {self._orcaOobReport != nil}
   /// Clears the value of `orcaOobReport`. Subsequent reads from it will return its default value.
-  mutating func clearOrcaOobReport() {self._orcaOobReport = nil}
+  package mutating func clearOrcaOobReport() {self._orcaOobReport = nil}
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 
   fileprivate var _payload: Grpc_Testing_Payload? = nil
   fileprivate var _responseStatus: Grpc_Testing_EchoStatus? = nil
@@ -441,110 +441,110 @@ struct Grpc_Testing_StreamingOutputCallRequest: Sendable {
 }
 
 /// Server-streaming response, as configured by the request and parameters.
-struct Grpc_Testing_StreamingOutputCallResponse: Sendable {
+package struct Grpc_Testing_StreamingOutputCallResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// Payload to increase response size.
-  var payload: Grpc_Testing_Payload {
+  package var payload: Grpc_Testing_Payload {
     get {_payload ?? Grpc_Testing_Payload()}
     set {_payload = newValue}
   }
   /// Returns true if `payload` has been explicitly set.
-  var hasPayload: Bool {self._payload != nil}
+  package var hasPayload: Bool {self._payload != nil}
   /// Clears the value of `payload`. Subsequent reads from it will return its default value.
-  mutating func clearPayload() {self._payload = nil}
+  package mutating func clearPayload() {self._payload = nil}
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 
   fileprivate var _payload: Grpc_Testing_Payload? = nil
 }
 
 /// For reconnect interop test only.
 /// Client tells server what reconnection parameters it used.
-struct Grpc_Testing_ReconnectParams: Sendable {
+package struct Grpc_Testing_ReconnectParams: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var maxReconnectBackoffMs: Int32 = 0
+  package var maxReconnectBackoffMs: Int32 = 0
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
 /// For reconnect interop test only.
 /// Server tells client whether its reconnects are following the spec and the
 /// reconnect backoffs it saw.
-struct Grpc_Testing_ReconnectInfo: Sendable {
+package struct Grpc_Testing_ReconnectInfo: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var passed: Bool = false
+  package var passed: Bool = false
 
-  var backoffMs: [Int32] = []
+  package var backoffMs: [Int32] = []
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
-struct Grpc_Testing_LoadBalancerStatsRequest: Sendable {
+package struct Grpc_Testing_LoadBalancerStatsRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// Request stats for the next num_rpcs sent by client.
-  var numRpcs: Int32 = 0
+  package var numRpcs: Int32 = 0
 
   /// If num_rpcs have not completed within timeout_sec, return partial results.
-  var timeoutSec: Int32 = 0
+  package var timeoutSec: Int32 = 0
 
   /// Response header + trailer metadata entries we want the values of.
   /// Matching of the keys is case-insensitive as per rfc7540#section-8.1.2
   /// * (asterisk) is a special value that will return all metadata entries
-  var metadataKeys: [String] = []
+  package var metadataKeys: [String] = []
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
-struct Grpc_Testing_LoadBalancerStatsResponse: Sendable {
+package struct Grpc_Testing_LoadBalancerStatsResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// The number of completed RPCs for each peer.
-  var rpcsByPeer: Dictionary<String,Int32> = [:]
+  package var rpcsByPeer: Dictionary<String,Int32> = [:]
 
   /// The number of RPCs that failed to record a remote peer.
-  var numFailures: Int32 = 0
+  package var numFailures: Int32 = 0
 
-  var rpcsByMethod: Dictionary<String,Grpc_Testing_LoadBalancerStatsResponse.RpcsByPeer> = [:]
+  package var rpcsByMethod: Dictionary<String,Grpc_Testing_LoadBalancerStatsResponse.RpcsByPeer> = [:]
 
   /// All the metadata of all RPCs for each peer.
-  var metadatasByPeer: Dictionary<String,Grpc_Testing_LoadBalancerStatsResponse.MetadataByPeer> = [:]
+  package var metadatasByPeer: Dictionary<String,Grpc_Testing_LoadBalancerStatsResponse.MetadataByPeer> = [:]
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  enum MetadataType: SwiftProtobuf.Enum, Swift.CaseIterable {
-    typealias RawValue = Int
+  package enum MetadataType: SwiftProtobuf.Enum, Swift.CaseIterable {
+    package typealias RawValue = Int
     case unknown // = 0
     case initial // = 1
     case trailing // = 2
     case UNRECOGNIZED(Int)
 
-    init() {
+    package init() {
       self = .unknown
     }
 
-    init?(rawValue: Int) {
+    package init?(rawValue: Int) {
       switch rawValue {
       case 0: self = .unknown
       case 1: self = .initial
@@ -553,7 +553,7 @@ struct Grpc_Testing_LoadBalancerStatsResponse: Sendable {
       }
     }
 
-    var rawValue: Int {
+    package var rawValue: Int {
       switch self {
       case .unknown: return 0
       case .initial: return 1
@@ -563,7 +563,7 @@ struct Grpc_Testing_LoadBalancerStatsResponse: Sendable {
     }
 
     // The compiler won't synthesize support with the UNRECOGNIZED case.
-    static let allCases: [Grpc_Testing_LoadBalancerStatsResponse.MetadataType] = [
+    package static let allCases: [Grpc_Testing_LoadBalancerStatsResponse.MetadataType] = [
       .unknown,
       .initial,
       .trailing,
@@ -571,82 +571,82 @@ struct Grpc_Testing_LoadBalancerStatsResponse: Sendable {
 
   }
 
-  struct MetadataEntry: Sendable {
+  package struct MetadataEntry: Sendable {
     // SwiftProtobuf.Message conformance is added in an extension below. See the
     // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
     // methods supported on all messages.
 
     /// Key, exactly as received from the server. Case may be different from what
     /// was requested in the LoadBalancerStatsRequest)
-    var key: String = String()
+    package var key: String = String()
 
     /// Value, exactly as received from the server.
-    var value: String = String()
+    package var value: String = String()
 
     /// Metadata type
-    var type: Grpc_Testing_LoadBalancerStatsResponse.MetadataType = .unknown
+    package var type: Grpc_Testing_LoadBalancerStatsResponse.MetadataType = .unknown
 
-    var unknownFields = SwiftProtobuf.UnknownStorage()
+    package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-    init() {}
+    package init() {}
   }
 
-  struct RpcMetadata: Sendable {
+  package struct RpcMetadata: Sendable {
     // SwiftProtobuf.Message conformance is added in an extension below. See the
     // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
     // methods supported on all messages.
 
     /// metadata values for each rpc for the keys specified in
     /// LoadBalancerStatsRequest.metadata_keys.
-    var metadata: [Grpc_Testing_LoadBalancerStatsResponse.MetadataEntry] = []
+    package var metadata: [Grpc_Testing_LoadBalancerStatsResponse.MetadataEntry] = []
 
-    var unknownFields = SwiftProtobuf.UnknownStorage()
+    package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-    init() {}
+    package init() {}
   }
 
-  struct MetadataByPeer: Sendable {
+  package struct MetadataByPeer: Sendable {
     // SwiftProtobuf.Message conformance is added in an extension below. See the
     // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
     // methods supported on all messages.
 
     /// List of RpcMetadata in for each RPC with a given peer
-    var rpcMetadata: [Grpc_Testing_LoadBalancerStatsResponse.RpcMetadata] = []
+    package var rpcMetadata: [Grpc_Testing_LoadBalancerStatsResponse.RpcMetadata] = []
 
-    var unknownFields = SwiftProtobuf.UnknownStorage()
+    package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-    init() {}
+    package init() {}
   }
 
-  struct RpcsByPeer: Sendable {
+  package struct RpcsByPeer: Sendable {
     // SwiftProtobuf.Message conformance is added in an extension below. See the
     // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
     // methods supported on all messages.
 
     /// The number of completed RPCs for each peer.
-    var rpcsByPeer: Dictionary<String,Int32> = [:]
+    package var rpcsByPeer: Dictionary<String,Int32> = [:]
 
-    var unknownFields = SwiftProtobuf.UnknownStorage()
+    package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-    init() {}
+    package init() {}
   }
 
-  init() {}
+  package init() {}
 }
 
 /// Request for retrieving a test client's accumulated stats.
-struct Grpc_Testing_LoadBalancerAccumulatedStatsRequest: Sendable {
+package struct Grpc_Testing_LoadBalancerAccumulatedStatsRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
 /// Accumulated stats for RPCs sent by a test client.
-struct Grpc_Testing_LoadBalancerAccumulatedStatsResponse: Sendable {
+package struct Grpc_Testing_LoadBalancerAccumulatedStatsResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -655,76 +655,76 @@ struct Grpc_Testing_LoadBalancerAccumulatedStatsResponse: Sendable {
   /// Deprecated: use stats_per_method.rpcs_started instead.
   ///
   /// NOTE: This field was marked as deprecated in the .proto file.
-  var numRpcsStartedByMethod: Dictionary<String,Int32> = [:]
+  package var numRpcsStartedByMethod: Dictionary<String,Int32> = [:]
 
   /// The total number of RPCs have ever completed successfully for each type.
   /// Deprecated: use stats_per_method.result instead.
   ///
   /// NOTE: This field was marked as deprecated in the .proto file.
-  var numRpcsSucceededByMethod: Dictionary<String,Int32> = [:]
+  package var numRpcsSucceededByMethod: Dictionary<String,Int32> = [:]
 
   /// The total number of RPCs have ever failed for each type.
   /// Deprecated: use stats_per_method.result instead.
   ///
   /// NOTE: This field was marked as deprecated in the .proto file.
-  var numRpcsFailedByMethod: Dictionary<String,Int32> = [:]
+  package var numRpcsFailedByMethod: Dictionary<String,Int32> = [:]
 
   /// Per-method RPC statistics.  The key is the RpcType in string form; e.g.
   /// 'EMPTY_CALL' or 'UNARY_CALL'
-  var statsPerMethod: Dictionary<String,Grpc_Testing_LoadBalancerAccumulatedStatsResponse.MethodStats> = [:]
+  package var statsPerMethod: Dictionary<String,Grpc_Testing_LoadBalancerAccumulatedStatsResponse.MethodStats> = [:]
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  struct MethodStats: Sendable {
+  package struct MethodStats: Sendable {
     // SwiftProtobuf.Message conformance is added in an extension below. See the
     // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
     // methods supported on all messages.
 
     /// The number of RPCs that were started for this method.
-    var rpcsStarted: Int32 = 0
+    package var rpcsStarted: Int32 = 0
 
     /// The number of RPCs that completed with each status for this method.  The
     /// key is the integral value of a google.rpc.Code; the value is the count.
-    var result: Dictionary<Int32,Int32> = [:]
+    package var result: Dictionary<Int32,Int32> = [:]
 
-    var unknownFields = SwiftProtobuf.UnknownStorage()
+    package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-    init() {}
+    package init() {}
   }
 
-  init() {}
+  package init() {}
 }
 
 /// Configurations for a test client.
-struct Grpc_Testing_ClientConfigureRequest: Sendable {
+package struct Grpc_Testing_ClientConfigureRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// The types of RPCs the client sends.
-  var types: [Grpc_Testing_ClientConfigureRequest.RpcType] = []
+  package var types: [Grpc_Testing_ClientConfigureRequest.RpcType] = []
 
   /// The collection of custom metadata to be attached to RPCs sent by the client.
-  var metadata: [Grpc_Testing_ClientConfigureRequest.Metadata] = []
+  package var metadata: [Grpc_Testing_ClientConfigureRequest.Metadata] = []
 
   /// The deadline to use, in seconds, for all RPCs.  If unset or zero, the
   /// client will use the default from the command-line.
-  var timeoutSec: Int32 = 0
+  package var timeoutSec: Int32 = 0
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
   /// Type of RPCs to send.
-  enum RpcType: SwiftProtobuf.Enum, Swift.CaseIterable {
-    typealias RawValue = Int
+  package enum RpcType: SwiftProtobuf.Enum, Swift.CaseIterable {
+    package typealias RawValue = Int
     case emptyCall // = 0
     case unaryCall // = 1
     case UNRECOGNIZED(Int)
 
-    init() {
+    package init() {
       self = .emptyCall
     }
 
-    init?(rawValue: Int) {
+    package init?(rawValue: Int) {
       switch rawValue {
       case 0: self = .emptyCall
       case 1: self = .unaryCall
@@ -732,7 +732,7 @@ struct Grpc_Testing_ClientConfigureRequest: Sendable {
       }
     }
 
-    var rawValue: Int {
+    package var rawValue: Int {
       switch self {
       case .emptyCall: return 0
       case .unaryCall: return 1
@@ -741,7 +741,7 @@ struct Grpc_Testing_ClientConfigureRequest: Sendable {
     }
 
     // The compiler won't synthesize support with the UNRECOGNIZED case.
-    static let allCases: [Grpc_Testing_ClientConfigureRequest.RpcType] = [
+    package static let allCases: [Grpc_Testing_ClientConfigureRequest.RpcType] = [
       .emptyCall,
       .unaryCall,
     ]
@@ -749,102 +749,102 @@ struct Grpc_Testing_ClientConfigureRequest: Sendable {
   }
 
   /// Metadata to be attached for the given type of RPCs.
-  struct Metadata: Sendable {
+  package struct Metadata: Sendable {
     // SwiftProtobuf.Message conformance is added in an extension below. See the
     // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
     // methods supported on all messages.
 
-    var type: Grpc_Testing_ClientConfigureRequest.RpcType = .emptyCall
+    package var type: Grpc_Testing_ClientConfigureRequest.RpcType = .emptyCall
 
-    var key: String = String()
+    package var key: String = String()
 
-    var value: String = String()
+    package var value: String = String()
 
-    var unknownFields = SwiftProtobuf.UnknownStorage()
+    package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-    init() {}
+    package init() {}
   }
 
-  init() {}
+  package init() {}
 }
 
 /// Response for updating a test client's configuration.
-struct Grpc_Testing_ClientConfigureResponse: Sendable {
+package struct Grpc_Testing_ClientConfigureResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
-struct Grpc_Testing_MemorySize: Sendable {
+package struct Grpc_Testing_MemorySize: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var rss: Int64 = 0
+  package var rss: Int64 = 0
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
 /// Metrics data the server will update and send to the client. It mirrors orca load report
 /// https://github.com/cncf/xds/blob/eded343319d09f30032952beda9840bbd3dcf7ac/xds/data/orca/v3/orca_load_report.proto#L15,
 /// but avoids orca dependency. Used by both per-query and out-of-band reporting tests.
-struct Grpc_Testing_TestOrcaReport: Sendable {
+package struct Grpc_Testing_TestOrcaReport: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var cpuUtilization: Double = 0
+  package var cpuUtilization: Double = 0
 
-  var memoryUtilization: Double = 0
+  package var memoryUtilization: Double = 0
 
-  var requestCost: Dictionary<String,Double> = [:]
+  package var requestCost: Dictionary<String,Double> = [:]
 
-  var utilization: Dictionary<String,Double> = [:]
+  package var utilization: Dictionary<String,Double> = [:]
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
 /// Status that will be return to callers of the Hook method
-struct Grpc_Testing_SetReturnStatusRequest: Sendable {
+package struct Grpc_Testing_SetReturnStatusRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var grpcCodeToReturn: Int32 = 0
+  package var grpcCodeToReturn: Int32 = 0
 
-  var grpcStatusDescription: String = String()
+  package var grpcStatusDescription: String = String()
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
-struct Grpc_Testing_HookRequest: Sendable {
+package struct Grpc_Testing_HookRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var command: Grpc_Testing_HookRequest.HookRequestCommand = .unspecified
+  package var command: Grpc_Testing_HookRequest.HookRequestCommand = .unspecified
 
-  var grpcCodeToReturn: Int32 = 0
+  package var grpcCodeToReturn: Int32 = 0
 
-  var grpcStatusDescription: String = String()
+  package var grpcStatusDescription: String = String()
 
   /// Server port to listen to
-  var serverPort: Int32 = 0
+  package var serverPort: Int32 = 0
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  enum HookRequestCommand: SwiftProtobuf.Enum, Swift.CaseIterable {
-    typealias RawValue = Int
+  package enum HookRequestCommand: SwiftProtobuf.Enum, Swift.CaseIterable {
+    package typealias RawValue = Int
 
     /// Default value
     case unspecified // = 0
@@ -859,11 +859,11 @@ struct Grpc_Testing_HookRequest: Sendable {
     case `return` // = 3
     case UNRECOGNIZED(Int)
 
-    init() {
+    package init() {
       self = .unspecified
     }
 
-    init?(rawValue: Int) {
+    package init?(rawValue: Int) {
       switch rawValue {
       case 0: self = .unspecified
       case 1: self = .start
@@ -873,7 +873,7 @@ struct Grpc_Testing_HookRequest: Sendable {
       }
     }
 
-    var rawValue: Int {
+    package var rawValue: Int {
       switch self {
       case .unspecified: return 0
       case .start: return 1
@@ -884,7 +884,7 @@ struct Grpc_Testing_HookRequest: Sendable {
     }
 
     // The compiler won't synthesize support with the UNRECOGNIZED case.
-    static let allCases: [Grpc_Testing_HookRequest.HookRequestCommand] = [
+    package static let allCases: [Grpc_Testing_HookRequest.HookRequestCommand] = [
       .unspecified,
       .start,
       .stop,
@@ -893,17 +893,17 @@ struct Grpc_Testing_HookRequest: Sendable {
 
   }
 
-  init() {}
+  package init() {}
 }
 
-struct Grpc_Testing_HookResponse: Sendable {
+package struct Grpc_Testing_HookResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -911,18 +911,18 @@ struct Grpc_Testing_HookResponse: Sendable {
 fileprivate let _protobuf_package = "grpc.testing"
 
 extension Grpc_Testing_PayloadType: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0COMPRESSABLE\0")
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0COMPRESSABLE\0")
 }
 
 extension Grpc_Testing_GrpclbRouteType: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0GRPCLB_ROUTE_TYPE_UNKNOWN\0\u{1}GRPCLB_ROUTE_TYPE_FALLBACK\0\u{1}GRPCLB_ROUTE_TYPE_BACKEND\0")
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0GRPCLB_ROUTE_TYPE_UNKNOWN\0\u{1}GRPCLB_ROUTE_TYPE_FALLBACK\0\u{1}GRPCLB_ROUTE_TYPE_BACKEND\0")
 }
 
 extension Grpc_Testing_BoolValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".BoolValue"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}value\0")
+  package static let protoMessageName: String = _protobuf_package + ".BoolValue"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}value\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -934,14 +934,14 @@ extension Grpc_Testing_BoolValue: SwiftProtobuf.Message, SwiftProtobuf._MessageI
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.value != false {
       try visitor.visitSingularBoolField(value: self.value, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_BoolValue, rhs: Grpc_Testing_BoolValue) -> Bool {
+  package static func ==(lhs: Grpc_Testing_BoolValue, rhs: Grpc_Testing_BoolValue) -> Bool {
     if lhs.value != rhs.value {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -949,10 +949,10 @@ extension Grpc_Testing_BoolValue: SwiftProtobuf.Message, SwiftProtobuf._MessageI
 }
 
 extension Grpc_Testing_Payload: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".Payload"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}type\0\u{1}body\0")
+  package static let protoMessageName: String = _protobuf_package + ".Payload"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}type\0\u{1}body\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -965,7 +965,7 @@ extension Grpc_Testing_Payload: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.type != .compressable {
       try visitor.visitSingularEnumField(value: self.type, fieldNumber: 1)
     }
@@ -975,7 +975,7 @@ extension Grpc_Testing_Payload: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_Payload, rhs: Grpc_Testing_Payload) -> Bool {
+  package static func ==(lhs: Grpc_Testing_Payload, rhs: Grpc_Testing_Payload) -> Bool {
     if lhs.type != rhs.type {return false}
     if lhs.body != rhs.body {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -984,10 +984,10 @@ extension Grpc_Testing_Payload: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
 }
 
 extension Grpc_Testing_EchoStatus: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".EchoStatus"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}code\0\u{1}message\0")
+  package static let protoMessageName: String = _protobuf_package + ".EchoStatus"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}code\0\u{1}message\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1000,7 +1000,7 @@ extension Grpc_Testing_EchoStatus: SwiftProtobuf.Message, SwiftProtobuf._Message
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.code != 0 {
       try visitor.visitSingularInt32Field(value: self.code, fieldNumber: 1)
     }
@@ -1010,7 +1010,7 @@ extension Grpc_Testing_EchoStatus: SwiftProtobuf.Message, SwiftProtobuf._Message
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_EchoStatus, rhs: Grpc_Testing_EchoStatus) -> Bool {
+  package static func ==(lhs: Grpc_Testing_EchoStatus, rhs: Grpc_Testing_EchoStatus) -> Bool {
     if lhs.code != rhs.code {return false}
     if lhs.message != rhs.message {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1019,10 +1019,10 @@ extension Grpc_Testing_EchoStatus: SwiftProtobuf.Message, SwiftProtobuf._Message
 }
 
 extension Grpc_Testing_SimpleRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".SimpleRequest"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}response_type\0\u{3}response_size\0\u{1}payload\0\u{3}fill_username\0\u{3}fill_oauth_scope\0\u{3}response_compressed\0\u{3}response_status\0\u{3}expect_compressed\0\u{3}fill_server_id\0\u{3}fill_grpclb_route_type\0\u{3}orca_per_query_report\0")
+  package static let protoMessageName: String = _protobuf_package + ".SimpleRequest"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}response_type\0\u{3}response_size\0\u{1}payload\0\u{3}fill_username\0\u{3}fill_oauth_scope\0\u{3}response_compressed\0\u{3}response_status\0\u{3}expect_compressed\0\u{3}fill_server_id\0\u{3}fill_grpclb_route_type\0\u{3}orca_per_query_report\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1044,7 +1044,7 @@ extension Grpc_Testing_SimpleRequest: SwiftProtobuf.Message, SwiftProtobuf._Mess
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1085,7 +1085,7 @@ extension Grpc_Testing_SimpleRequest: SwiftProtobuf.Message, SwiftProtobuf._Mess
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_SimpleRequest, rhs: Grpc_Testing_SimpleRequest) -> Bool {
+  package static func ==(lhs: Grpc_Testing_SimpleRequest, rhs: Grpc_Testing_SimpleRequest) -> Bool {
     if lhs.responseType != rhs.responseType {return false}
     if lhs.responseSize != rhs.responseSize {return false}
     if lhs._payload != rhs._payload {return false}
@@ -1103,10 +1103,10 @@ extension Grpc_Testing_SimpleRequest: SwiftProtobuf.Message, SwiftProtobuf._Mess
 }
 
 extension Grpc_Testing_SimpleResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".SimpleResponse"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}payload\0\u{1}username\0\u{3}oauth_scope\0\u{3}server_id\0\u{3}grpclb_route_type\0\u{1}hostname\0")
+  package static let protoMessageName: String = _protobuf_package + ".SimpleResponse"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}payload\0\u{1}username\0\u{3}oauth_scope\0\u{3}server_id\0\u{3}grpclb_route_type\0\u{1}hostname\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1123,7 +1123,7 @@ extension Grpc_Testing_SimpleResponse: SwiftProtobuf.Message, SwiftProtobuf._Mes
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1149,7 +1149,7 @@ extension Grpc_Testing_SimpleResponse: SwiftProtobuf.Message, SwiftProtobuf._Mes
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_SimpleResponse, rhs: Grpc_Testing_SimpleResponse) -> Bool {
+  package static func ==(lhs: Grpc_Testing_SimpleResponse, rhs: Grpc_Testing_SimpleResponse) -> Bool {
     if lhs._payload != rhs._payload {return false}
     if lhs.username != rhs.username {return false}
     if lhs.oauthScope != rhs.oauthScope {return false}
@@ -1162,10 +1162,10 @@ extension Grpc_Testing_SimpleResponse: SwiftProtobuf.Message, SwiftProtobuf._Mes
 }
 
 extension Grpc_Testing_StreamingInputCallRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".StreamingInputCallRequest"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}payload\0\u{3}expect_compressed\0")
+  package static let protoMessageName: String = _protobuf_package + ".StreamingInputCallRequest"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}payload\0\u{3}expect_compressed\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1178,7 +1178,7 @@ extension Grpc_Testing_StreamingInputCallRequest: SwiftProtobuf.Message, SwiftPr
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1192,7 +1192,7 @@ extension Grpc_Testing_StreamingInputCallRequest: SwiftProtobuf.Message, SwiftPr
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_StreamingInputCallRequest, rhs: Grpc_Testing_StreamingInputCallRequest) -> Bool {
+  package static func ==(lhs: Grpc_Testing_StreamingInputCallRequest, rhs: Grpc_Testing_StreamingInputCallRequest) -> Bool {
     if lhs._payload != rhs._payload {return false}
     if lhs._expectCompressed != rhs._expectCompressed {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1201,10 +1201,10 @@ extension Grpc_Testing_StreamingInputCallRequest: SwiftProtobuf.Message, SwiftPr
 }
 
 extension Grpc_Testing_StreamingInputCallResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".StreamingInputCallResponse"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}aggregated_payload_size\0")
+  package static let protoMessageName: String = _protobuf_package + ".StreamingInputCallResponse"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}aggregated_payload_size\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1216,14 +1216,14 @@ extension Grpc_Testing_StreamingInputCallResponse: SwiftProtobuf.Message, SwiftP
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.aggregatedPayloadSize != 0 {
       try visitor.visitSingularInt32Field(value: self.aggregatedPayloadSize, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_StreamingInputCallResponse, rhs: Grpc_Testing_StreamingInputCallResponse) -> Bool {
+  package static func ==(lhs: Grpc_Testing_StreamingInputCallResponse, rhs: Grpc_Testing_StreamingInputCallResponse) -> Bool {
     if lhs.aggregatedPayloadSize != rhs.aggregatedPayloadSize {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -1231,10 +1231,10 @@ extension Grpc_Testing_StreamingInputCallResponse: SwiftProtobuf.Message, SwiftP
 }
 
 extension Grpc_Testing_ResponseParameters: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ResponseParameters"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}size\0\u{3}interval_us\0\u{1}compressed\0")
+  package static let protoMessageName: String = _protobuf_package + ".ResponseParameters"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}size\0\u{3}interval_us\0\u{1}compressed\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1248,7 +1248,7 @@ extension Grpc_Testing_ResponseParameters: SwiftProtobuf.Message, SwiftProtobuf.
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1265,7 +1265,7 @@ extension Grpc_Testing_ResponseParameters: SwiftProtobuf.Message, SwiftProtobuf.
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_ResponseParameters, rhs: Grpc_Testing_ResponseParameters) -> Bool {
+  package static func ==(lhs: Grpc_Testing_ResponseParameters, rhs: Grpc_Testing_ResponseParameters) -> Bool {
     if lhs.size != rhs.size {return false}
     if lhs.intervalUs != rhs.intervalUs {return false}
     if lhs._compressed != rhs._compressed {return false}
@@ -1275,10 +1275,10 @@ extension Grpc_Testing_ResponseParameters: SwiftProtobuf.Message, SwiftProtobuf.
 }
 
 extension Grpc_Testing_StreamingOutputCallRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".StreamingOutputCallRequest"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}response_type\0\u{3}response_parameters\0\u{1}payload\0\u{4}\u{4}response_status\0\u{3}orca_oob_report\0")
+  package static let protoMessageName: String = _protobuf_package + ".StreamingOutputCallRequest"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}response_type\0\u{3}response_parameters\0\u{1}payload\0\u{4}\u{4}response_status\0\u{3}orca_oob_report\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1294,7 +1294,7 @@ extension Grpc_Testing_StreamingOutputCallRequest: SwiftProtobuf.Message, SwiftP
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1317,7 +1317,7 @@ extension Grpc_Testing_StreamingOutputCallRequest: SwiftProtobuf.Message, SwiftP
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_StreamingOutputCallRequest, rhs: Grpc_Testing_StreamingOutputCallRequest) -> Bool {
+  package static func ==(lhs: Grpc_Testing_StreamingOutputCallRequest, rhs: Grpc_Testing_StreamingOutputCallRequest) -> Bool {
     if lhs.responseType != rhs.responseType {return false}
     if lhs.responseParameters != rhs.responseParameters {return false}
     if lhs._payload != rhs._payload {return false}
@@ -1329,10 +1329,10 @@ extension Grpc_Testing_StreamingOutputCallRequest: SwiftProtobuf.Message, SwiftP
 }
 
 extension Grpc_Testing_StreamingOutputCallResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".StreamingOutputCallResponse"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}payload\0")
+  package static let protoMessageName: String = _protobuf_package + ".StreamingOutputCallResponse"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}payload\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1344,7 +1344,7 @@ extension Grpc_Testing_StreamingOutputCallResponse: SwiftProtobuf.Message, Swift
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1355,7 +1355,7 @@ extension Grpc_Testing_StreamingOutputCallResponse: SwiftProtobuf.Message, Swift
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_StreamingOutputCallResponse, rhs: Grpc_Testing_StreamingOutputCallResponse) -> Bool {
+  package static func ==(lhs: Grpc_Testing_StreamingOutputCallResponse, rhs: Grpc_Testing_StreamingOutputCallResponse) -> Bool {
     if lhs._payload != rhs._payload {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -1363,10 +1363,10 @@ extension Grpc_Testing_StreamingOutputCallResponse: SwiftProtobuf.Message, Swift
 }
 
 extension Grpc_Testing_ReconnectParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ReconnectParams"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}max_reconnect_backoff_ms\0")
+  package static let protoMessageName: String = _protobuf_package + ".ReconnectParams"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}max_reconnect_backoff_ms\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1378,14 +1378,14 @@ extension Grpc_Testing_ReconnectParams: SwiftProtobuf.Message, SwiftProtobuf._Me
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.maxReconnectBackoffMs != 0 {
       try visitor.visitSingularInt32Field(value: self.maxReconnectBackoffMs, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_ReconnectParams, rhs: Grpc_Testing_ReconnectParams) -> Bool {
+  package static func ==(lhs: Grpc_Testing_ReconnectParams, rhs: Grpc_Testing_ReconnectParams) -> Bool {
     if lhs.maxReconnectBackoffMs != rhs.maxReconnectBackoffMs {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -1393,10 +1393,10 @@ extension Grpc_Testing_ReconnectParams: SwiftProtobuf.Message, SwiftProtobuf._Me
 }
 
 extension Grpc_Testing_ReconnectInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ReconnectInfo"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}passed\0\u{3}backoff_ms\0")
+  package static let protoMessageName: String = _protobuf_package + ".ReconnectInfo"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}passed\0\u{3}backoff_ms\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1409,7 +1409,7 @@ extension Grpc_Testing_ReconnectInfo: SwiftProtobuf.Message, SwiftProtobuf._Mess
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.passed != false {
       try visitor.visitSingularBoolField(value: self.passed, fieldNumber: 1)
     }
@@ -1419,7 +1419,7 @@ extension Grpc_Testing_ReconnectInfo: SwiftProtobuf.Message, SwiftProtobuf._Mess
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_ReconnectInfo, rhs: Grpc_Testing_ReconnectInfo) -> Bool {
+  package static func ==(lhs: Grpc_Testing_ReconnectInfo, rhs: Grpc_Testing_ReconnectInfo) -> Bool {
     if lhs.passed != rhs.passed {return false}
     if lhs.backoffMs != rhs.backoffMs {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1428,10 +1428,10 @@ extension Grpc_Testing_ReconnectInfo: SwiftProtobuf.Message, SwiftProtobuf._Mess
 }
 
 extension Grpc_Testing_LoadBalancerStatsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".LoadBalancerStatsRequest"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}num_rpcs\0\u{3}timeout_sec\0\u{3}metadata_keys\0")
+  package static let protoMessageName: String = _protobuf_package + ".LoadBalancerStatsRequest"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}num_rpcs\0\u{3}timeout_sec\0\u{3}metadata_keys\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1445,7 +1445,7 @@ extension Grpc_Testing_LoadBalancerStatsRequest: SwiftProtobuf.Message, SwiftPro
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.numRpcs != 0 {
       try visitor.visitSingularInt32Field(value: self.numRpcs, fieldNumber: 1)
     }
@@ -1458,7 +1458,7 @@ extension Grpc_Testing_LoadBalancerStatsRequest: SwiftProtobuf.Message, SwiftPro
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_LoadBalancerStatsRequest, rhs: Grpc_Testing_LoadBalancerStatsRequest) -> Bool {
+  package static func ==(lhs: Grpc_Testing_LoadBalancerStatsRequest, rhs: Grpc_Testing_LoadBalancerStatsRequest) -> Bool {
     if lhs.numRpcs != rhs.numRpcs {return false}
     if lhs.timeoutSec != rhs.timeoutSec {return false}
     if lhs.metadataKeys != rhs.metadataKeys {return false}
@@ -1468,10 +1468,10 @@ extension Grpc_Testing_LoadBalancerStatsRequest: SwiftProtobuf.Message, SwiftPro
 }
 
 extension Grpc_Testing_LoadBalancerStatsResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".LoadBalancerStatsResponse"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}rpcs_by_peer\0\u{3}num_failures\0\u{3}rpcs_by_method\0\u{3}metadatas_by_peer\0")
+  package static let protoMessageName: String = _protobuf_package + ".LoadBalancerStatsResponse"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}rpcs_by_peer\0\u{3}num_failures\0\u{3}rpcs_by_method\0\u{3}metadatas_by_peer\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1486,7 +1486,7 @@ extension Grpc_Testing_LoadBalancerStatsResponse: SwiftProtobuf.Message, SwiftPr
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.rpcsByPeer.isEmpty {
       try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufInt32>.self, value: self.rpcsByPeer, fieldNumber: 1)
     }
@@ -1502,7 +1502,7 @@ extension Grpc_Testing_LoadBalancerStatsResponse: SwiftProtobuf.Message, SwiftPr
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_LoadBalancerStatsResponse, rhs: Grpc_Testing_LoadBalancerStatsResponse) -> Bool {
+  package static func ==(lhs: Grpc_Testing_LoadBalancerStatsResponse, rhs: Grpc_Testing_LoadBalancerStatsResponse) -> Bool {
     if lhs.rpcsByPeer != rhs.rpcsByPeer {return false}
     if lhs.numFailures != rhs.numFailures {return false}
     if lhs.rpcsByMethod != rhs.rpcsByMethod {return false}
@@ -1513,14 +1513,14 @@ extension Grpc_Testing_LoadBalancerStatsResponse: SwiftProtobuf.Message, SwiftPr
 }
 
 extension Grpc_Testing_LoadBalancerStatsResponse.MetadataType: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0UNKNOWN\0\u{1}INITIAL\0\u{1}TRAILING\0")
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0UNKNOWN\0\u{1}INITIAL\0\u{1}TRAILING\0")
 }
 
 extension Grpc_Testing_LoadBalancerStatsResponse.MetadataEntry: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = Grpc_Testing_LoadBalancerStatsResponse.protoMessageName + ".MetadataEntry"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}key\0\u{1}value\0\u{1}type\0")
+  package static let protoMessageName: String = Grpc_Testing_LoadBalancerStatsResponse.protoMessageName + ".MetadataEntry"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}key\0\u{1}value\0\u{1}type\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1534,7 +1534,7 @@ extension Grpc_Testing_LoadBalancerStatsResponse.MetadataEntry: SwiftProtobuf.Me
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.key.isEmpty {
       try visitor.visitSingularStringField(value: self.key, fieldNumber: 1)
     }
@@ -1547,7 +1547,7 @@ extension Grpc_Testing_LoadBalancerStatsResponse.MetadataEntry: SwiftProtobuf.Me
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_LoadBalancerStatsResponse.MetadataEntry, rhs: Grpc_Testing_LoadBalancerStatsResponse.MetadataEntry) -> Bool {
+  package static func ==(lhs: Grpc_Testing_LoadBalancerStatsResponse.MetadataEntry, rhs: Grpc_Testing_LoadBalancerStatsResponse.MetadataEntry) -> Bool {
     if lhs.key != rhs.key {return false}
     if lhs.value != rhs.value {return false}
     if lhs.type != rhs.type {return false}
@@ -1557,10 +1557,10 @@ extension Grpc_Testing_LoadBalancerStatsResponse.MetadataEntry: SwiftProtobuf.Me
 }
 
 extension Grpc_Testing_LoadBalancerStatsResponse.RpcMetadata: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = Grpc_Testing_LoadBalancerStatsResponse.protoMessageName + ".RpcMetadata"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}metadata\0")
+  package static let protoMessageName: String = Grpc_Testing_LoadBalancerStatsResponse.protoMessageName + ".RpcMetadata"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}metadata\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1572,14 +1572,14 @@ extension Grpc_Testing_LoadBalancerStatsResponse.RpcMetadata: SwiftProtobuf.Mess
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.metadata.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.metadata, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_LoadBalancerStatsResponse.RpcMetadata, rhs: Grpc_Testing_LoadBalancerStatsResponse.RpcMetadata) -> Bool {
+  package static func ==(lhs: Grpc_Testing_LoadBalancerStatsResponse.RpcMetadata, rhs: Grpc_Testing_LoadBalancerStatsResponse.RpcMetadata) -> Bool {
     if lhs.metadata != rhs.metadata {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -1587,10 +1587,10 @@ extension Grpc_Testing_LoadBalancerStatsResponse.RpcMetadata: SwiftProtobuf.Mess
 }
 
 extension Grpc_Testing_LoadBalancerStatsResponse.MetadataByPeer: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = Grpc_Testing_LoadBalancerStatsResponse.protoMessageName + ".MetadataByPeer"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}rpc_metadata\0")
+  package static let protoMessageName: String = Grpc_Testing_LoadBalancerStatsResponse.protoMessageName + ".MetadataByPeer"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}rpc_metadata\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1602,14 +1602,14 @@ extension Grpc_Testing_LoadBalancerStatsResponse.MetadataByPeer: SwiftProtobuf.M
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.rpcMetadata.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.rpcMetadata, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_LoadBalancerStatsResponse.MetadataByPeer, rhs: Grpc_Testing_LoadBalancerStatsResponse.MetadataByPeer) -> Bool {
+  package static func ==(lhs: Grpc_Testing_LoadBalancerStatsResponse.MetadataByPeer, rhs: Grpc_Testing_LoadBalancerStatsResponse.MetadataByPeer) -> Bool {
     if lhs.rpcMetadata != rhs.rpcMetadata {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -1617,10 +1617,10 @@ extension Grpc_Testing_LoadBalancerStatsResponse.MetadataByPeer: SwiftProtobuf.M
 }
 
 extension Grpc_Testing_LoadBalancerStatsResponse.RpcsByPeer: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = Grpc_Testing_LoadBalancerStatsResponse.protoMessageName + ".RpcsByPeer"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}rpcs_by_peer\0")
+  package static let protoMessageName: String = Grpc_Testing_LoadBalancerStatsResponse.protoMessageName + ".RpcsByPeer"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}rpcs_by_peer\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1632,14 +1632,14 @@ extension Grpc_Testing_LoadBalancerStatsResponse.RpcsByPeer: SwiftProtobuf.Messa
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.rpcsByPeer.isEmpty {
       try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufInt32>.self, value: self.rpcsByPeer, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_LoadBalancerStatsResponse.RpcsByPeer, rhs: Grpc_Testing_LoadBalancerStatsResponse.RpcsByPeer) -> Bool {
+  package static func ==(lhs: Grpc_Testing_LoadBalancerStatsResponse.RpcsByPeer, rhs: Grpc_Testing_LoadBalancerStatsResponse.RpcsByPeer) -> Bool {
     if lhs.rpcsByPeer != rhs.rpcsByPeer {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -1647,29 +1647,29 @@ extension Grpc_Testing_LoadBalancerStatsResponse.RpcsByPeer: SwiftProtobuf.Messa
 }
 
 extension Grpc_Testing_LoadBalancerAccumulatedStatsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".LoadBalancerAccumulatedStatsRequest"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+  package static let protoMessageName: String = _protobuf_package + ".LoadBalancerAccumulatedStatsRequest"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     // Load everything into unknown fields
     while try decoder.nextFieldNumber() != nil {}
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_LoadBalancerAccumulatedStatsRequest, rhs: Grpc_Testing_LoadBalancerAccumulatedStatsRequest) -> Bool {
+  package static func ==(lhs: Grpc_Testing_LoadBalancerAccumulatedStatsRequest, rhs: Grpc_Testing_LoadBalancerAccumulatedStatsRequest) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
 extension Grpc_Testing_LoadBalancerAccumulatedStatsResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".LoadBalancerAccumulatedStatsResponse"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}num_rpcs_started_by_method\0\u{3}num_rpcs_succeeded_by_method\0\u{3}num_rpcs_failed_by_method\0\u{3}stats_per_method\0")
+  package static let protoMessageName: String = _protobuf_package + ".LoadBalancerAccumulatedStatsResponse"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}num_rpcs_started_by_method\0\u{3}num_rpcs_succeeded_by_method\0\u{3}num_rpcs_failed_by_method\0\u{3}stats_per_method\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1684,7 +1684,7 @@ extension Grpc_Testing_LoadBalancerAccumulatedStatsResponse: SwiftProtobuf.Messa
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.numRpcsStartedByMethod.isEmpty {
       try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufInt32>.self, value: self.numRpcsStartedByMethod, fieldNumber: 1)
     }
@@ -1700,7 +1700,7 @@ extension Grpc_Testing_LoadBalancerAccumulatedStatsResponse: SwiftProtobuf.Messa
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_LoadBalancerAccumulatedStatsResponse, rhs: Grpc_Testing_LoadBalancerAccumulatedStatsResponse) -> Bool {
+  package static func ==(lhs: Grpc_Testing_LoadBalancerAccumulatedStatsResponse, rhs: Grpc_Testing_LoadBalancerAccumulatedStatsResponse) -> Bool {
     if lhs.numRpcsStartedByMethod != rhs.numRpcsStartedByMethod {return false}
     if lhs.numRpcsSucceededByMethod != rhs.numRpcsSucceededByMethod {return false}
     if lhs.numRpcsFailedByMethod != rhs.numRpcsFailedByMethod {return false}
@@ -1711,10 +1711,10 @@ extension Grpc_Testing_LoadBalancerAccumulatedStatsResponse: SwiftProtobuf.Messa
 }
 
 extension Grpc_Testing_LoadBalancerAccumulatedStatsResponse.MethodStats: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = Grpc_Testing_LoadBalancerAccumulatedStatsResponse.protoMessageName + ".MethodStats"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}rpcs_started\0\u{1}result\0")
+  package static let protoMessageName: String = Grpc_Testing_LoadBalancerAccumulatedStatsResponse.protoMessageName + ".MethodStats"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}rpcs_started\0\u{1}result\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1727,7 +1727,7 @@ extension Grpc_Testing_LoadBalancerAccumulatedStatsResponse.MethodStats: SwiftPr
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.rpcsStarted != 0 {
       try visitor.visitSingularInt32Field(value: self.rpcsStarted, fieldNumber: 1)
     }
@@ -1737,7 +1737,7 @@ extension Grpc_Testing_LoadBalancerAccumulatedStatsResponse.MethodStats: SwiftPr
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_LoadBalancerAccumulatedStatsResponse.MethodStats, rhs: Grpc_Testing_LoadBalancerAccumulatedStatsResponse.MethodStats) -> Bool {
+  package static func ==(lhs: Grpc_Testing_LoadBalancerAccumulatedStatsResponse.MethodStats, rhs: Grpc_Testing_LoadBalancerAccumulatedStatsResponse.MethodStats) -> Bool {
     if lhs.rpcsStarted != rhs.rpcsStarted {return false}
     if lhs.result != rhs.result {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1746,10 +1746,10 @@ extension Grpc_Testing_LoadBalancerAccumulatedStatsResponse.MethodStats: SwiftPr
 }
 
 extension Grpc_Testing_ClientConfigureRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ClientConfigureRequest"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}types\0\u{1}metadata\0\u{3}timeout_sec\0")
+  package static let protoMessageName: String = _protobuf_package + ".ClientConfigureRequest"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}types\0\u{1}metadata\0\u{3}timeout_sec\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1763,7 +1763,7 @@ extension Grpc_Testing_ClientConfigureRequest: SwiftProtobuf.Message, SwiftProto
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.types.isEmpty {
       try visitor.visitPackedEnumField(value: self.types, fieldNumber: 1)
     }
@@ -1776,7 +1776,7 @@ extension Grpc_Testing_ClientConfigureRequest: SwiftProtobuf.Message, SwiftProto
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_ClientConfigureRequest, rhs: Grpc_Testing_ClientConfigureRequest) -> Bool {
+  package static func ==(lhs: Grpc_Testing_ClientConfigureRequest, rhs: Grpc_Testing_ClientConfigureRequest) -> Bool {
     if lhs.types != rhs.types {return false}
     if lhs.metadata != rhs.metadata {return false}
     if lhs.timeoutSec != rhs.timeoutSec {return false}
@@ -1786,14 +1786,14 @@ extension Grpc_Testing_ClientConfigureRequest: SwiftProtobuf.Message, SwiftProto
 }
 
 extension Grpc_Testing_ClientConfigureRequest.RpcType: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0EMPTY_CALL\0\u{1}UNARY_CALL\0")
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0EMPTY_CALL\0\u{1}UNARY_CALL\0")
 }
 
 extension Grpc_Testing_ClientConfigureRequest.Metadata: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = Grpc_Testing_ClientConfigureRequest.protoMessageName + ".Metadata"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}type\0\u{1}key\0\u{1}value\0")
+  package static let protoMessageName: String = Grpc_Testing_ClientConfigureRequest.protoMessageName + ".Metadata"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}type\0\u{1}key\0\u{1}value\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1807,7 +1807,7 @@ extension Grpc_Testing_ClientConfigureRequest.Metadata: SwiftProtobuf.Message, S
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.type != .emptyCall {
       try visitor.visitSingularEnumField(value: self.type, fieldNumber: 1)
     }
@@ -1820,7 +1820,7 @@ extension Grpc_Testing_ClientConfigureRequest.Metadata: SwiftProtobuf.Message, S
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_ClientConfigureRequest.Metadata, rhs: Grpc_Testing_ClientConfigureRequest.Metadata) -> Bool {
+  package static func ==(lhs: Grpc_Testing_ClientConfigureRequest.Metadata, rhs: Grpc_Testing_ClientConfigureRequest.Metadata) -> Bool {
     if lhs.type != rhs.type {return false}
     if lhs.key != rhs.key {return false}
     if lhs.value != rhs.value {return false}
@@ -1830,29 +1830,29 @@ extension Grpc_Testing_ClientConfigureRequest.Metadata: SwiftProtobuf.Message, S
 }
 
 extension Grpc_Testing_ClientConfigureResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ClientConfigureResponse"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+  package static let protoMessageName: String = _protobuf_package + ".ClientConfigureResponse"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     // Load everything into unknown fields
     while try decoder.nextFieldNumber() != nil {}
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_ClientConfigureResponse, rhs: Grpc_Testing_ClientConfigureResponse) -> Bool {
+  package static func ==(lhs: Grpc_Testing_ClientConfigureResponse, rhs: Grpc_Testing_ClientConfigureResponse) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
 extension Grpc_Testing_MemorySize: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".MemorySize"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}rss\0")
+  package static let protoMessageName: String = _protobuf_package + ".MemorySize"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}rss\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1864,14 +1864,14 @@ extension Grpc_Testing_MemorySize: SwiftProtobuf.Message, SwiftProtobuf._Message
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.rss != 0 {
       try visitor.visitSingularInt64Field(value: self.rss, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_MemorySize, rhs: Grpc_Testing_MemorySize) -> Bool {
+  package static func ==(lhs: Grpc_Testing_MemorySize, rhs: Grpc_Testing_MemorySize) -> Bool {
     if lhs.rss != rhs.rss {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -1879,10 +1879,10 @@ extension Grpc_Testing_MemorySize: SwiftProtobuf.Message, SwiftProtobuf._Message
 }
 
 extension Grpc_Testing_TestOrcaReport: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".TestOrcaReport"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}cpu_utilization\0\u{3}memory_utilization\0\u{3}request_cost\0\u{1}utilization\0")
+  package static let protoMessageName: String = _protobuf_package + ".TestOrcaReport"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}cpu_utilization\0\u{3}memory_utilization\0\u{3}request_cost\0\u{1}utilization\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1897,7 +1897,7 @@ extension Grpc_Testing_TestOrcaReport: SwiftProtobuf.Message, SwiftProtobuf._Mes
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.cpuUtilization.bitPattern != 0 {
       try visitor.visitSingularDoubleField(value: self.cpuUtilization, fieldNumber: 1)
     }
@@ -1913,7 +1913,7 @@ extension Grpc_Testing_TestOrcaReport: SwiftProtobuf.Message, SwiftProtobuf._Mes
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_TestOrcaReport, rhs: Grpc_Testing_TestOrcaReport) -> Bool {
+  package static func ==(lhs: Grpc_Testing_TestOrcaReport, rhs: Grpc_Testing_TestOrcaReport) -> Bool {
     if lhs.cpuUtilization != rhs.cpuUtilization {return false}
     if lhs.memoryUtilization != rhs.memoryUtilization {return false}
     if lhs.requestCost != rhs.requestCost {return false}
@@ -1924,10 +1924,10 @@ extension Grpc_Testing_TestOrcaReport: SwiftProtobuf.Message, SwiftProtobuf._Mes
 }
 
 extension Grpc_Testing_SetReturnStatusRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".SetReturnStatusRequest"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}grpc_code_to_return\0\u{3}grpc_status_description\0")
+  package static let protoMessageName: String = _protobuf_package + ".SetReturnStatusRequest"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}grpc_code_to_return\0\u{3}grpc_status_description\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1940,7 +1940,7 @@ extension Grpc_Testing_SetReturnStatusRequest: SwiftProtobuf.Message, SwiftProto
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.grpcCodeToReturn != 0 {
       try visitor.visitSingularInt32Field(value: self.grpcCodeToReturn, fieldNumber: 1)
     }
@@ -1950,7 +1950,7 @@ extension Grpc_Testing_SetReturnStatusRequest: SwiftProtobuf.Message, SwiftProto
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_SetReturnStatusRequest, rhs: Grpc_Testing_SetReturnStatusRequest) -> Bool {
+  package static func ==(lhs: Grpc_Testing_SetReturnStatusRequest, rhs: Grpc_Testing_SetReturnStatusRequest) -> Bool {
     if lhs.grpcCodeToReturn != rhs.grpcCodeToReturn {return false}
     if lhs.grpcStatusDescription != rhs.grpcStatusDescription {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1959,10 +1959,10 @@ extension Grpc_Testing_SetReturnStatusRequest: SwiftProtobuf.Message, SwiftProto
 }
 
 extension Grpc_Testing_HookRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".HookRequest"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}command\0\u{3}grpc_code_to_return\0\u{3}grpc_status_description\0\u{3}server_port\0")
+  package static let protoMessageName: String = _protobuf_package + ".HookRequest"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}command\0\u{3}grpc_code_to_return\0\u{3}grpc_status_description\0\u{3}server_port\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1977,7 +1977,7 @@ extension Grpc_Testing_HookRequest: SwiftProtobuf.Message, SwiftProtobuf._Messag
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.command != .unspecified {
       try visitor.visitSingularEnumField(value: self.command, fieldNumber: 1)
     }
@@ -1993,7 +1993,7 @@ extension Grpc_Testing_HookRequest: SwiftProtobuf.Message, SwiftProtobuf._Messag
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_HookRequest, rhs: Grpc_Testing_HookRequest) -> Bool {
+  package static func ==(lhs: Grpc_Testing_HookRequest, rhs: Grpc_Testing_HookRequest) -> Bool {
     if lhs.command != rhs.command {return false}
     if lhs.grpcCodeToReturn != rhs.grpcCodeToReturn {return false}
     if lhs.grpcStatusDescription != rhs.grpcStatusDescription {return false}
@@ -2004,23 +2004,23 @@ extension Grpc_Testing_HookRequest: SwiftProtobuf.Message, SwiftProtobuf._Messag
 }
 
 extension Grpc_Testing_HookRequest.HookRequestCommand: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0UNSPECIFIED\0\u{1}START\0\u{1}STOP\0\u{1}RETURN\0")
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0UNSPECIFIED\0\u{1}START\0\u{1}STOP\0\u{1}RETURN\0")
 }
 
 extension Grpc_Testing_HookResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".HookResponse"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+  package static let protoMessageName: String = _protobuf_package + ".HookResponse"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     // Load everything into unknown fields
     while try decoder.nextFieldNumber() != nil {}
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_HookResponse, rhs: Grpc_Testing_HookResponse) -> Bool {
+  package static func ==(lhs: Grpc_Testing_HookResponse, rhs: Grpc_Testing_HookResponse) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

@@ -278,7 +278,17 @@ extension NWProtocolTLS.Options {
   convenience init(_ tlsConfig: HTTP2ServerTransport.TransportServices.TLS) throws {
     self.init()
 
-    guard let sec_identity = sec_identity_create(try tlsConfig.identityProvider()) else {
+    let identity = try tlsConfig.identityProvider()
+    let maybeSecIdentity: sec_identity_t?
+
+    if tlsConfig.additionalCertificates.isEmpty {
+      maybeSecIdentity = sec_identity_create(identity)
+    } else {
+      let certificates = tlsConfig.additionalCertificates as CFArray
+      maybeSecIdentity = sec_identity_create_with_certificates(identity, certificates)
+    }
+
+    guard let sec_identity = maybeSecIdentity else {
       throw RuntimeError(
         code: .transportError,
         message: """

@@ -32,78 +32,78 @@ import GRPCProtobuf
 
 /// Namespace containing generated types for the "grpc.testing.BenchmarkService" service.
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
-internal enum Grpc_Testing_BenchmarkService: Sendable {
+package enum Grpc_Testing_BenchmarkService: Sendable {
     /// Service descriptor for the "grpc.testing.BenchmarkService" service.
-    internal static let descriptor = GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.BenchmarkService")
+    package static let descriptor = GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.BenchmarkService")
     /// Namespace for method metadata.
-    internal enum Method: Sendable {
+    package enum Method: Sendable {
         /// Namespace for "UnaryCall" metadata.
-        internal enum UnaryCall: Sendable {
+        package enum UnaryCall: Sendable {
             /// Request type for "UnaryCall".
-            internal typealias Input = Grpc_Testing_SimpleRequest
+            package typealias Input = Grpc_Testing_SimpleRequest
             /// Response type for "UnaryCall".
-            internal typealias Output = Grpc_Testing_SimpleResponse
+            package typealias Output = Grpc_Testing_SimpleResponse
             /// Descriptor for "UnaryCall".
-            internal static let descriptor = GRPCCore.MethodDescriptor(
+            package static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.BenchmarkService"),
                 method: "UnaryCall",
                 type: .unary
             )
         }
         /// Namespace for "StreamingCall" metadata.
-        internal enum StreamingCall: Sendable {
+        package enum StreamingCall: Sendable {
             /// Request type for "StreamingCall".
-            internal typealias Input = Grpc_Testing_SimpleRequest
+            package typealias Input = Grpc_Testing_SimpleRequest
             /// Response type for "StreamingCall".
-            internal typealias Output = Grpc_Testing_SimpleResponse
+            package typealias Output = Grpc_Testing_SimpleResponse
             /// Descriptor for "StreamingCall".
-            internal static let descriptor = GRPCCore.MethodDescriptor(
+            package static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.BenchmarkService"),
                 method: "StreamingCall",
                 type: .bidirectionalStreaming
             )
         }
         /// Namespace for "StreamingFromClient" metadata.
-        internal enum StreamingFromClient: Sendable {
+        package enum StreamingFromClient: Sendable {
             /// Request type for "StreamingFromClient".
-            internal typealias Input = Grpc_Testing_SimpleRequest
+            package typealias Input = Grpc_Testing_SimpleRequest
             /// Response type for "StreamingFromClient".
-            internal typealias Output = Grpc_Testing_SimpleResponse
+            package typealias Output = Grpc_Testing_SimpleResponse
             /// Descriptor for "StreamingFromClient".
-            internal static let descriptor = GRPCCore.MethodDescriptor(
+            package static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.BenchmarkService"),
                 method: "StreamingFromClient",
                 type: .clientStreaming
             )
         }
         /// Namespace for "StreamingFromServer" metadata.
-        internal enum StreamingFromServer: Sendable {
+        package enum StreamingFromServer: Sendable {
             /// Request type for "StreamingFromServer".
-            internal typealias Input = Grpc_Testing_SimpleRequest
+            package typealias Input = Grpc_Testing_SimpleRequest
             /// Response type for "StreamingFromServer".
-            internal typealias Output = Grpc_Testing_SimpleResponse
+            package typealias Output = Grpc_Testing_SimpleResponse
             /// Descriptor for "StreamingFromServer".
-            internal static let descriptor = GRPCCore.MethodDescriptor(
+            package static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.BenchmarkService"),
                 method: "StreamingFromServer",
                 type: .serverStreaming
             )
         }
         /// Namespace for "StreamingBothWays" metadata.
-        internal enum StreamingBothWays: Sendable {
+        package enum StreamingBothWays: Sendable {
             /// Request type for "StreamingBothWays".
-            internal typealias Input = Grpc_Testing_SimpleRequest
+            package typealias Input = Grpc_Testing_SimpleRequest
             /// Response type for "StreamingBothWays".
-            internal typealias Output = Grpc_Testing_SimpleResponse
+            package typealias Output = Grpc_Testing_SimpleResponse
             /// Descriptor for "StreamingBothWays".
-            internal static let descriptor = GRPCCore.MethodDescriptor(
+            package static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.BenchmarkService"),
                 method: "StreamingBothWays",
                 type: .bidirectionalStreaming
             )
         }
         /// Descriptors for all methods in the "grpc.testing.BenchmarkService" service.
-        internal static let descriptors: [GRPCCore.MethodDescriptor] = [
+        package static let descriptors: [GRPCCore.MethodDescriptor] = [
             UnaryCall.descriptor,
             StreamingCall.descriptor,
             StreamingFromClient.descriptor,
@@ -116,7 +116,7 @@ internal enum Grpc_Testing_BenchmarkService: Sendable {
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension GRPCCore.ServiceDescriptor {
     /// Service descriptor for the "grpc.testing.BenchmarkService" service.
-    internal static let grpc_testing_BenchmarkService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.BenchmarkService")
+    package static let grpc_testing_BenchmarkService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.BenchmarkService")
 }
 
 // MARK: grpc.testing.BenchmarkService (server)
@@ -133,7 +133,7 @@ extension Grpc_Testing_BenchmarkService {
     ///
     /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
     /// or ``SimpleServiceProtocol`` instead.
-    internal protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+    package protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
         /// Handle the "UnaryCall" method.
         ///
         /// > Source IDL Documentation:
@@ -238,7 +238,7 @@ extension Grpc_Testing_BenchmarkService {
     /// trailing response metadata. If you don't need these then consider using
     /// the ``SimpleServiceProtocol``. If you need fine grained control over your RPCs then
     /// use ``StreamingServiceProtocol``.
-    internal protocol ServiceProtocol: Grpc_Testing_BenchmarkService.StreamingServiceProtocol {
+    package protocol ServiceProtocol: Grpc_Testing_BenchmarkService.StreamingServiceProtocol {
         /// Handle the "UnaryCall" method.
         ///
         /// > Source IDL Documentation:
@@ -341,7 +341,7 @@ extension Grpc_Testing_BenchmarkService {
     /// This is the highest level protocol for the service. The API is the easiest to use but
     /// doesn't provide access to request or response metadata. If you need access to these
     /// then use ``ServiceProtocol`` instead.
-    internal protocol SimpleServiceProtocol: Grpc_Testing_BenchmarkService.ServiceProtocol {
+    package protocol SimpleServiceProtocol: Grpc_Testing_BenchmarkService.ServiceProtocol {
         /// Handle the "UnaryCall" method.
         ///
         /// > Source IDL Documentation:
@@ -446,7 +446,7 @@ extension Grpc_Testing_BenchmarkService {
 // Default implementation of 'registerMethods(with:)'.
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension Grpc_Testing_BenchmarkService.StreamingServiceProtocol {
-    internal func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
+    package func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
         router.registerHandler(
             forMethod: Grpc_Testing_BenchmarkService.Method.UnaryCall.descriptor,
             deserializer: GRPCProtobuf.ProtobufDeserializer<Grpc_Testing_SimpleRequest>(),
@@ -508,7 +508,7 @@ extension Grpc_Testing_BenchmarkService.StreamingServiceProtocol {
 // Default implementation of streaming methods from 'StreamingServiceProtocol'.
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension Grpc_Testing_BenchmarkService.ServiceProtocol {
-    internal func unaryCall(
+    package func unaryCall(
         request: GRPCCore.StreamingServerRequest<Grpc_Testing_SimpleRequest>,
         context: GRPCCore.ServerContext
     ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_SimpleResponse> {
@@ -519,7 +519,7 @@ extension Grpc_Testing_BenchmarkService.ServiceProtocol {
         return GRPCCore.StreamingServerResponse(single: response)
     }
 
-    internal func streamingFromClient(
+    package func streamingFromClient(
         request: GRPCCore.StreamingServerRequest<Grpc_Testing_SimpleRequest>,
         context: GRPCCore.ServerContext
     ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_SimpleResponse> {
@@ -530,7 +530,7 @@ extension Grpc_Testing_BenchmarkService.ServiceProtocol {
         return GRPCCore.StreamingServerResponse(single: response)
     }
 
-    internal func streamingFromServer(
+    package func streamingFromServer(
         request: GRPCCore.StreamingServerRequest<Grpc_Testing_SimpleRequest>,
         context: GRPCCore.ServerContext
     ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_SimpleResponse> {
@@ -545,7 +545,7 @@ extension Grpc_Testing_BenchmarkService.ServiceProtocol {
 // Default implementation of methods from 'ServiceProtocol'.
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension Grpc_Testing_BenchmarkService.SimpleServiceProtocol {
-    internal func unaryCall(
+    package func unaryCall(
         request: GRPCCore.ServerRequest<Grpc_Testing_SimpleRequest>,
         context: GRPCCore.ServerContext
     ) async throws -> GRPCCore.ServerResponse<Grpc_Testing_SimpleResponse> {
@@ -558,7 +558,7 @@ extension Grpc_Testing_BenchmarkService.SimpleServiceProtocol {
         )
     }
 
-    internal func streamingCall(
+    package func streamingCall(
         request: GRPCCore.StreamingServerRequest<Grpc_Testing_SimpleRequest>,
         context: GRPCCore.ServerContext
     ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_SimpleResponse> {
@@ -575,7 +575,7 @@ extension Grpc_Testing_BenchmarkService.SimpleServiceProtocol {
         )
     }
 
-    internal func streamingFromClient(
+    package func streamingFromClient(
         request: GRPCCore.StreamingServerRequest<Grpc_Testing_SimpleRequest>,
         context: GRPCCore.ServerContext
     ) async throws -> GRPCCore.ServerResponse<Grpc_Testing_SimpleResponse> {
@@ -588,7 +588,7 @@ extension Grpc_Testing_BenchmarkService.SimpleServiceProtocol {
         )
     }
 
-    internal func streamingFromServer(
+    package func streamingFromServer(
         request: GRPCCore.ServerRequest<Grpc_Testing_SimpleRequest>,
         context: GRPCCore.ServerContext
     ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_SimpleResponse> {
@@ -605,7 +605,7 @@ extension Grpc_Testing_BenchmarkService.SimpleServiceProtocol {
         )
     }
 
-    internal func streamingBothWays(
+    package func streamingBothWays(
         request: GRPCCore.StreamingServerRequest<Grpc_Testing_SimpleRequest>,
         context: GRPCCore.ServerContext
     ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_SimpleResponse> {
@@ -631,7 +631,7 @@ extension Grpc_Testing_BenchmarkService {
     ///
     /// You don't need to implement this protocol directly, use the generated
     /// implementation, ``Client``.
-    internal protocol ClientProtocol: Sendable {
+    package protocol ClientProtocol: Sendable {
         /// Call the "UnaryCall" method.
         ///
         /// > Source IDL Documentation:
@@ -759,14 +759,14 @@ extension Grpc_Testing_BenchmarkService {
     /// The ``Client`` provides an implementation of ``ClientProtocol`` which wraps
     /// a `GRPCCore.GRPCCClient`. The underlying `GRPCClient` provides the long-lived
     /// means of communication with the remote peer.
-    internal struct Client<Transport>: ClientProtocol where Transport: GRPCCore.ClientTransport {
+    package struct Client<Transport>: ClientProtocol where Transport: GRPCCore.ClientTransport {
         private let client: GRPCCore.GRPCClient<Transport>
 
         /// Creates a new client wrapping the provided `GRPCCore.GRPCClient`.
         ///
         /// - Parameters:
         ///   - client: A `GRPCCore.GRPCClient` providing a communication channel to the service.
-        internal init(wrapping client: GRPCCore.GRPCClient<Transport>) {
+        package init(wrapping client: GRPCCore.GRPCClient<Transport>) {
             self.client = client
         }
 
@@ -786,7 +786,7 @@ extension Grpc_Testing_BenchmarkService {
         ///       returned to the caller. Returning from the closure will cancel the RPC if it
         ///       hasn't already finished.
         /// - Returns: The result of `handleResponse`.
-        internal func unaryCall<Result>(
+        package func unaryCall<Result>(
             request: GRPCCore.ClientRequest<Grpc_Testing_SimpleRequest>,
             serializer: some GRPCCore.MessageSerializer<Grpc_Testing_SimpleRequest>,
             deserializer: some GRPCCore.MessageDeserializer<Grpc_Testing_SimpleResponse>,
@@ -822,7 +822,7 @@ extension Grpc_Testing_BenchmarkService {
         ///       returned to the caller. Returning from the closure will cancel the RPC if it
         ///       hasn't already finished.
         /// - Returns: The result of `handleResponse`.
-        internal func streamingCall<Result>(
+        package func streamingCall<Result>(
             request: GRPCCore.StreamingClientRequest<Grpc_Testing_SimpleRequest>,
             serializer: some GRPCCore.MessageSerializer<Grpc_Testing_SimpleRequest>,
             deserializer: some GRPCCore.MessageDeserializer<Grpc_Testing_SimpleResponse>,
@@ -855,7 +855,7 @@ extension Grpc_Testing_BenchmarkService {
         ///       returned to the caller. Returning from the closure will cancel the RPC if it
         ///       hasn't already finished.
         /// - Returns: The result of `handleResponse`.
-        internal func streamingFromClient<Result>(
+        package func streamingFromClient<Result>(
             request: GRPCCore.StreamingClientRequest<Grpc_Testing_SimpleRequest>,
             serializer: some GRPCCore.MessageSerializer<Grpc_Testing_SimpleRequest>,
             deserializer: some GRPCCore.MessageDeserializer<Grpc_Testing_SimpleResponse>,
@@ -890,7 +890,7 @@ extension Grpc_Testing_BenchmarkService {
         ///       returned to the caller. Returning from the closure will cancel the RPC if it
         ///       hasn't already finished.
         /// - Returns: The result of `handleResponse`.
-        internal func streamingFromServer<Result>(
+        package func streamingFromServer<Result>(
             request: GRPCCore.ClientRequest<Grpc_Testing_SimpleRequest>,
             serializer: some GRPCCore.MessageSerializer<Grpc_Testing_SimpleRequest>,
             deserializer: some GRPCCore.MessageDeserializer<Grpc_Testing_SimpleResponse>,
@@ -923,7 +923,7 @@ extension Grpc_Testing_BenchmarkService {
         ///       returned to the caller. Returning from the closure will cancel the RPC if it
         ///       hasn't already finished.
         /// - Returns: The result of `handleResponse`.
-        internal func streamingBothWays<Result>(
+        package func streamingBothWays<Result>(
             request: GRPCCore.StreamingClientRequest<Grpc_Testing_SimpleRequest>,
             serializer: some GRPCCore.MessageSerializer<Grpc_Testing_SimpleRequest>,
             deserializer: some GRPCCore.MessageDeserializer<Grpc_Testing_SimpleResponse>,
@@ -959,7 +959,7 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     ///       returned to the caller. Returning from the closure will cancel the RPC if it
     ///       hasn't already finished.
     /// - Returns: The result of `handleResponse`.
-    internal func unaryCall<Result>(
+    package func unaryCall<Result>(
         request: GRPCCore.ClientRequest<Grpc_Testing_SimpleRequest>,
         options: GRPCCore.CallOptions = .defaults,
         onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Grpc_Testing_SimpleResponse>) async throws -> Result = { response in
@@ -990,7 +990,7 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     ///       returned to the caller. Returning from the closure will cancel the RPC if it
     ///       hasn't already finished.
     /// - Returns: The result of `handleResponse`.
-    internal func streamingCall<Result>(
+    package func streamingCall<Result>(
         request: GRPCCore.StreamingClientRequest<Grpc_Testing_SimpleRequest>,
         options: GRPCCore.CallOptions = .defaults,
         onResponse handleResponse: @Sendable @escaping (GRPCCore.StreamingClientResponse<Grpc_Testing_SimpleResponse>) async throws -> Result
@@ -1018,7 +1018,7 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     ///       returned to the caller. Returning from the closure will cancel the RPC if it
     ///       hasn't already finished.
     /// - Returns: The result of `handleResponse`.
-    internal func streamingFromClient<Result>(
+    package func streamingFromClient<Result>(
         request: GRPCCore.StreamingClientRequest<Grpc_Testing_SimpleRequest>,
         options: GRPCCore.CallOptions = .defaults,
         onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Grpc_Testing_SimpleResponse>) async throws -> Result = { response in
@@ -1048,7 +1048,7 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     ///       returned to the caller. Returning from the closure will cancel the RPC if it
     ///       hasn't already finished.
     /// - Returns: The result of `handleResponse`.
-    internal func streamingFromServer<Result>(
+    package func streamingFromServer<Result>(
         request: GRPCCore.ClientRequest<Grpc_Testing_SimpleRequest>,
         options: GRPCCore.CallOptions = .defaults,
         onResponse handleResponse: @Sendable @escaping (GRPCCore.StreamingClientResponse<Grpc_Testing_SimpleResponse>) async throws -> Result
@@ -1076,7 +1076,7 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     ///       returned to the caller. Returning from the closure will cancel the RPC if it
     ///       hasn't already finished.
     /// - Returns: The result of `handleResponse`.
-    internal func streamingBothWays<Result>(
+    package func streamingBothWays<Result>(
         request: GRPCCore.StreamingClientRequest<Grpc_Testing_SimpleRequest>,
         options: GRPCCore.CallOptions = .defaults,
         onResponse handleResponse: @Sendable @escaping (GRPCCore.StreamingClientResponse<Grpc_Testing_SimpleResponse>) async throws -> Result
@@ -1109,7 +1109,7 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     ///       returned to the caller. Returning from the closure will cancel the RPC if it
     ///       hasn't already finished.
     /// - Returns: The result of `handleResponse`.
-    internal func unaryCall<Result>(
+    package func unaryCall<Result>(
         _ message: Grpc_Testing_SimpleRequest,
         metadata: GRPCCore.Metadata = [:],
         options: GRPCCore.CallOptions = .defaults,
@@ -1145,7 +1145,7 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     ///       returned to the caller. Returning from the closure will cancel the RPC if it
     ///       hasn't already finished.
     /// - Returns: The result of `handleResponse`.
-    internal func streamingCall<Result>(
+    package func streamingCall<Result>(
         metadata: GRPCCore.Metadata = [:],
         options: GRPCCore.CallOptions = .defaults,
         requestProducer producer: @Sendable @escaping (GRPCCore.RPCWriter<Grpc_Testing_SimpleRequest>) async throws -> Void,
@@ -1178,7 +1178,7 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     ///       returned to the caller. Returning from the closure will cancel the RPC if it
     ///       hasn't already finished.
     /// - Returns: The result of `handleResponse`.
-    internal func streamingFromClient<Result>(
+    package func streamingFromClient<Result>(
         metadata: GRPCCore.Metadata = [:],
         options: GRPCCore.CallOptions = .defaults,
         requestProducer producer: @Sendable @escaping (GRPCCore.RPCWriter<Grpc_Testing_SimpleRequest>) async throws -> Void,
@@ -1212,7 +1212,7 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     ///       returned to the caller. Returning from the closure will cancel the RPC if it
     ///       hasn't already finished.
     /// - Returns: The result of `handleResponse`.
-    internal func streamingFromServer<Result>(
+    package func streamingFromServer<Result>(
         _ message: Grpc_Testing_SimpleRequest,
         metadata: GRPCCore.Metadata = [:],
         options: GRPCCore.CallOptions = .defaults,
@@ -1245,7 +1245,7 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     ///       returned to the caller. Returning from the closure will cancel the RPC if it
     ///       hasn't already finished.
     /// - Returns: The result of `handleResponse`.
-    internal func streamingBothWays<Result>(
+    package func streamingBothWays<Result>(
         metadata: GRPCCore.Metadata = [:],
         options: GRPCCore.CallOptions = .defaults,
         requestProducer producer: @Sendable @escaping (GRPCCore.RPCWriter<Grpc_Testing_SimpleRequest>) async throws -> Void,

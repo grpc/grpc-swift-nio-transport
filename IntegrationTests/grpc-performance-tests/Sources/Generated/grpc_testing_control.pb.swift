@@ -34,8 +34,8 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-enum Grpc_Testing_ClientType: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
+package enum Grpc_Testing_ClientType: SwiftProtobuf.Enum, Swift.CaseIterable {
+  package typealias RawValue = Int
 
   /// Many languages support a basic distinction between using
   /// sync or async client, and this allows the specification
@@ -47,11 +47,11 @@ enum Grpc_Testing_ClientType: SwiftProtobuf.Enum, Swift.CaseIterable {
   case callbackClient // = 3
   case UNRECOGNIZED(Int)
 
-  init() {
+  package init() {
     self = .syncClient
   }
 
-  init?(rawValue: Int) {
+  package init?(rawValue: Int) {
     switch rawValue {
     case 0: self = .syncClient
     case 1: self = .asyncClient
@@ -61,7 +61,7 @@ enum Grpc_Testing_ClientType: SwiftProtobuf.Enum, Swift.CaseIterable {
     }
   }
 
-  var rawValue: Int {
+  package var rawValue: Int {
     switch self {
     case .syncClient: return 0
     case .asyncClient: return 1
@@ -72,7 +72,7 @@ enum Grpc_Testing_ClientType: SwiftProtobuf.Enum, Swift.CaseIterable {
   }
 
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Grpc_Testing_ClientType] = [
+  package static let allCases: [Grpc_Testing_ClientType] = [
     .syncClient,
     .asyncClient,
     .otherClient,
@@ -81,8 +81,8 @@ enum Grpc_Testing_ClientType: SwiftProtobuf.Enum, Swift.CaseIterable {
 
 }
 
-enum Grpc_Testing_ServerType: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
+package enum Grpc_Testing_ServerType: SwiftProtobuf.Enum, Swift.CaseIterable {
+  package typealias RawValue = Int
   case syncServer // = 0
   case asyncServer // = 1
   case asyncGenericServer // = 2
@@ -92,11 +92,11 @@ enum Grpc_Testing_ServerType: SwiftProtobuf.Enum, Swift.CaseIterable {
   case callbackServer // = 4
   case UNRECOGNIZED(Int)
 
-  init() {
+  package init() {
     self = .syncServer
   }
 
-  init?(rawValue: Int) {
+  package init?(rawValue: Int) {
     switch rawValue {
     case 0: self = .syncServer
     case 1: self = .asyncServer
@@ -107,7 +107,7 @@ enum Grpc_Testing_ServerType: SwiftProtobuf.Enum, Swift.CaseIterable {
     }
   }
 
-  var rawValue: Int {
+  package var rawValue: Int {
     switch self {
     case .syncServer: return 0
     case .asyncServer: return 1
@@ -119,7 +119,7 @@ enum Grpc_Testing_ServerType: SwiftProtobuf.Enum, Swift.CaseIterable {
   }
 
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Grpc_Testing_ServerType] = [
+  package static let allCases: [Grpc_Testing_ServerType] = [
     .syncServer,
     .asyncServer,
     .asyncGenericServer,
@@ -129,8 +129,8 @@ enum Grpc_Testing_ServerType: SwiftProtobuf.Enum, Swift.CaseIterable {
 
 }
 
-enum Grpc_Testing_RpcType: SwiftProtobuf.Enum, Swift.CaseIterable {
-  typealias RawValue = Int
+package enum Grpc_Testing_RpcType: SwiftProtobuf.Enum, Swift.CaseIterable {
+  package typealias RawValue = Int
   case unary // = 0
   case streaming // = 1
   case streamingFromClient // = 2
@@ -138,11 +138,11 @@ enum Grpc_Testing_RpcType: SwiftProtobuf.Enum, Swift.CaseIterable {
   case streamingBothWays // = 4
   case UNRECOGNIZED(Int)
 
-  init() {
+  package init() {
     self = .unary
   }
 
-  init?(rawValue: Int) {
+  package init?(rawValue: Int) {
     switch rawValue {
     case 0: self = .unary
     case 1: self = .streaming
@@ -153,7 +153,7 @@ enum Grpc_Testing_RpcType: SwiftProtobuf.Enum, Swift.CaseIterable {
     }
   }
 
-  var rawValue: Int {
+  package var rawValue: Int {
     switch self {
     case .unary: return 0
     case .streaming: return 1
@@ -165,7 +165,7 @@ enum Grpc_Testing_RpcType: SwiftProtobuf.Enum, Swift.CaseIterable {
   }
 
   // The compiler won't synthesize support with the UNRECOGNIZED case.
-  static let allCases: [Grpc_Testing_RpcType] = [
+  package static let allCases: [Grpc_Testing_RpcType] = [
     .unary,
     .streaming,
     .streamingFromClient,
@@ -177,39 +177,39 @@ enum Grpc_Testing_RpcType: SwiftProtobuf.Enum, Swift.CaseIterable {
 
 /// Parameters of poisson process distribution, which is a good representation
 /// of activity coming in from independent identical stationary sources.
-struct Grpc_Testing_PoissonParams: Sendable {
+package struct Grpc_Testing_PoissonParams: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// The rate of arrivals (a.k.a. lambda parameter of the exp distribution).
-  var offeredLoad: Double = 0
+  package var offeredLoad: Double = 0
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
 /// Once an RPC finishes, immediately start a new one.
 /// No configuration parameters needed.
-struct Grpc_Testing_ClosedLoopParams: Sendable {
+package struct Grpc_Testing_ClosedLoopParams: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
-struct Grpc_Testing_LoadParams: Sendable {
+package struct Grpc_Testing_LoadParams: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var load: Grpc_Testing_LoadParams.OneOf_Load? = nil
+  package var load: Grpc_Testing_LoadParams.OneOf_Load? = nil
 
-  var closedLoop: Grpc_Testing_ClosedLoopParams {
+  package var closedLoop: Grpc_Testing_ClosedLoopParams {
     get {
       if case .closedLoop(let v)? = load {return v}
       return Grpc_Testing_ClosedLoopParams()
@@ -217,7 +217,7 @@ struct Grpc_Testing_LoadParams: Sendable {
     set {load = .closedLoop(newValue)}
   }
 
-  var poisson: Grpc_Testing_PoissonParams {
+  package var poisson: Grpc_Testing_PoissonParams {
     get {
       if case .poisson(let v)? = load {return v}
       return Grpc_Testing_PoissonParams()
@@ -225,44 +225,44 @@ struct Grpc_Testing_LoadParams: Sendable {
     set {load = .poisson(newValue)}
   }
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  enum OneOf_Load: Equatable, Sendable {
+  package enum OneOf_Load: Equatable, Sendable {
     case closedLoop(Grpc_Testing_ClosedLoopParams)
     case poisson(Grpc_Testing_PoissonParams)
 
   }
 
-  init() {}
+  package init() {}
 }
 
 /// presence of SecurityParams implies use of TLS
-struct Grpc_Testing_SecurityParams: Sendable {
+package struct Grpc_Testing_SecurityParams: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var useTestCa: Bool = false
+  package var useTestCa: Bool = false
 
-  var serverHostOverride: String = String()
+  package var serverHostOverride: String = String()
 
-  var credType: String = String()
+  package var credType: String = String()
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
-struct Grpc_Testing_ChannelArg: Sendable {
+package struct Grpc_Testing_ChannelArg: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var name: String = String()
+  package var name: String = String()
 
-  var value: Grpc_Testing_ChannelArg.OneOf_Value? = nil
+  package var value: Grpc_Testing_ChannelArg.OneOf_Value? = nil
 
-  var strValue: String {
+  package var strValue: String {
     get {
       if case .strValue(let v)? = value {return v}
       return String()
@@ -270,7 +270,7 @@ struct Grpc_Testing_ChannelArg: Sendable {
     set {value = .strValue(newValue)}
   }
 
-  var intValue: Int32 {
+  package var intValue: Int32 {
     get {
       if case .intValue(let v)? = value {return v}
       return 0
@@ -278,198 +278,198 @@ struct Grpc_Testing_ChannelArg: Sendable {
     set {value = .intValue(newValue)}
   }
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  enum OneOf_Value: Equatable, Sendable {
+  package enum OneOf_Value: Equatable, Sendable {
     case strValue(String)
     case intValue(Int32)
 
   }
 
-  init() {}
+  package init() {}
 }
 
-struct Grpc_Testing_ClientConfig: @unchecked Sendable {
+package struct Grpc_Testing_ClientConfig: @unchecked Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// List of targets to connect to. At least one target needs to be specified.
-  var serverTargets: [String] {
+  package var serverTargets: [String] {
     get {_storage._serverTargets}
     set {_uniqueStorage()._serverTargets = newValue}
   }
 
-  var clientType: Grpc_Testing_ClientType {
+  package var clientType: Grpc_Testing_ClientType {
     get {_storage._clientType}
     set {_uniqueStorage()._clientType = newValue}
   }
 
-  var securityParams: Grpc_Testing_SecurityParams {
+  package var securityParams: Grpc_Testing_SecurityParams {
     get {_storage._securityParams ?? Grpc_Testing_SecurityParams()}
     set {_uniqueStorage()._securityParams = newValue}
   }
   /// Returns true if `securityParams` has been explicitly set.
-  var hasSecurityParams: Bool {_storage._securityParams != nil}
+  package var hasSecurityParams: Bool {_storage._securityParams != nil}
   /// Clears the value of `securityParams`. Subsequent reads from it will return its default value.
-  mutating func clearSecurityParams() {_uniqueStorage()._securityParams = nil}
+  package mutating func clearSecurityParams() {_uniqueStorage()._securityParams = nil}
 
   /// How many concurrent RPCs to start for each channel.
   /// For synchronous client, use a separate thread for each outstanding RPC.
-  var outstandingRpcsPerChannel: Int32 {
+  package var outstandingRpcsPerChannel: Int32 {
     get {_storage._outstandingRpcsPerChannel}
     set {_uniqueStorage()._outstandingRpcsPerChannel = newValue}
   }
 
   /// Number of independent client channels to create.
   /// i-th channel will connect to server_target[i % server_targets.size()]
-  var clientChannels: Int32 {
+  package var clientChannels: Int32 {
     get {_storage._clientChannels}
     set {_uniqueStorage()._clientChannels = newValue}
   }
 
   /// Only for async client. Number of threads to use to start/manage RPCs.
-  var asyncClientThreads: Int32 {
+  package var asyncClientThreads: Int32 {
     get {_storage._asyncClientThreads}
     set {_uniqueStorage()._asyncClientThreads = newValue}
   }
 
-  var rpcType: Grpc_Testing_RpcType {
+  package var rpcType: Grpc_Testing_RpcType {
     get {_storage._rpcType}
     set {_uniqueStorage()._rpcType = newValue}
   }
 
   /// The requested load for the entire client (aggregated over all the threads).
-  var loadParams: Grpc_Testing_LoadParams {
+  package var loadParams: Grpc_Testing_LoadParams {
     get {_storage._loadParams ?? Grpc_Testing_LoadParams()}
     set {_uniqueStorage()._loadParams = newValue}
   }
   /// Returns true if `loadParams` has been explicitly set.
-  var hasLoadParams: Bool {_storage._loadParams != nil}
+  package var hasLoadParams: Bool {_storage._loadParams != nil}
   /// Clears the value of `loadParams`. Subsequent reads from it will return its default value.
-  mutating func clearLoadParams() {_uniqueStorage()._loadParams = nil}
+  package mutating func clearLoadParams() {_uniqueStorage()._loadParams = nil}
 
-  var payloadConfig: Grpc_Testing_PayloadConfig {
+  package var payloadConfig: Grpc_Testing_PayloadConfig {
     get {_storage._payloadConfig ?? Grpc_Testing_PayloadConfig()}
     set {_uniqueStorage()._payloadConfig = newValue}
   }
   /// Returns true if `payloadConfig` has been explicitly set.
-  var hasPayloadConfig: Bool {_storage._payloadConfig != nil}
+  package var hasPayloadConfig: Bool {_storage._payloadConfig != nil}
   /// Clears the value of `payloadConfig`. Subsequent reads from it will return its default value.
-  mutating func clearPayloadConfig() {_uniqueStorage()._payloadConfig = nil}
+  package mutating func clearPayloadConfig() {_uniqueStorage()._payloadConfig = nil}
 
-  var histogramParams: Grpc_Testing_HistogramParams {
+  package var histogramParams: Grpc_Testing_HistogramParams {
     get {_storage._histogramParams ?? Grpc_Testing_HistogramParams()}
     set {_uniqueStorage()._histogramParams = newValue}
   }
   /// Returns true if `histogramParams` has been explicitly set.
-  var hasHistogramParams: Bool {_storage._histogramParams != nil}
+  package var hasHistogramParams: Bool {_storage._histogramParams != nil}
   /// Clears the value of `histogramParams`. Subsequent reads from it will return its default value.
-  mutating func clearHistogramParams() {_uniqueStorage()._histogramParams = nil}
+  package mutating func clearHistogramParams() {_uniqueStorage()._histogramParams = nil}
 
   /// Specify the cores we should run the client on, if desired
-  var coreList: [Int32] {
+  package var coreList: [Int32] {
     get {_storage._coreList}
     set {_uniqueStorage()._coreList = newValue}
   }
 
-  var coreLimit: Int32 {
+  package var coreLimit: Int32 {
     get {_storage._coreLimit}
     set {_uniqueStorage()._coreLimit = newValue}
   }
 
   /// If we use an OTHER_CLIENT client_type, this string gives more detail
-  var otherClientApi: String {
+  package var otherClientApi: String {
     get {_storage._otherClientApi}
     set {_uniqueStorage()._otherClientApi = newValue}
   }
 
-  var channelArgs: [Grpc_Testing_ChannelArg] {
+  package var channelArgs: [Grpc_Testing_ChannelArg] {
     get {_storage._channelArgs}
     set {_uniqueStorage()._channelArgs = newValue}
   }
 
   /// Number of threads that share each completion queue
-  var threadsPerCq: Int32 {
+  package var threadsPerCq: Int32 {
     get {_storage._threadsPerCq}
     set {_uniqueStorage()._threadsPerCq = newValue}
   }
 
   /// Number of messages on a stream before it gets finished/restarted
-  var messagesPerStream: Int32 {
+  package var messagesPerStream: Int32 {
     get {_storage._messagesPerStream}
     set {_uniqueStorage()._messagesPerStream = newValue}
   }
 
   /// Use coalescing API when possible.
-  var useCoalesceApi: Bool {
+  package var useCoalesceApi: Bool {
     get {_storage._useCoalesceApi}
     set {_uniqueStorage()._useCoalesceApi = newValue}
   }
 
   /// If 0, disabled. Else, specifies the period between gathering latency
   /// medians in milliseconds.
-  var medianLatencyCollectionIntervalMillis: Int32 {
+  package var medianLatencyCollectionIntervalMillis: Int32 {
     get {_storage._medianLatencyCollectionIntervalMillis}
     set {_uniqueStorage()._medianLatencyCollectionIntervalMillis = newValue}
   }
 
   /// Number of client processes. 0 indicates no restriction.
-  var clientProcesses: Int32 {
+  package var clientProcesses: Int32 {
     get {_storage._clientProcesses}
     set {_uniqueStorage()._clientProcesses = newValue}
   }
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 
   fileprivate var _storage = _StorageClass.defaultInstance
 }
 
-struct Grpc_Testing_ClientStatus: Sendable {
+package struct Grpc_Testing_ClientStatus: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var stats: Grpc_Testing_ClientStats {
+  package var stats: Grpc_Testing_ClientStats {
     get {_stats ?? Grpc_Testing_ClientStats()}
     set {_stats = newValue}
   }
   /// Returns true if `stats` has been explicitly set.
-  var hasStats: Bool {self._stats != nil}
+  package var hasStats: Bool {self._stats != nil}
   /// Clears the value of `stats`. Subsequent reads from it will return its default value.
-  mutating func clearStats() {self._stats = nil}
+  package mutating func clearStats() {self._stats = nil}
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 
   fileprivate var _stats: Grpc_Testing_ClientStats? = nil
 }
 
 /// Request current stats
-struct Grpc_Testing_Mark: Sendable {
+package struct Grpc_Testing_Mark: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// if true, the stats will be reset after taking their snapshot.
-  var reset: Bool = false
+  package var reset: Bool = false
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
-struct Grpc_Testing_ClientArgs: Sendable {
+package struct Grpc_Testing_ClientArgs: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var argtype: Grpc_Testing_ClientArgs.OneOf_Argtype? = nil
+  package var argtype: Grpc_Testing_ClientArgs.OneOf_Argtype? = nil
 
-  var setup: Grpc_Testing_ClientConfig {
+  package var setup: Grpc_Testing_ClientConfig {
     get {
       if case .setup(let v)? = argtype {return v}
       return Grpc_Testing_ClientConfig()
@@ -477,7 +477,7 @@ struct Grpc_Testing_ClientArgs: Sendable {
     set {argtype = .setup(newValue)}
   }
 
-  var mark: Grpc_Testing_Mark {
+  package var mark: Grpc_Testing_Mark {
     get {
       if case .mark(let v)? = argtype {return v}
       return Grpc_Testing_Mark()
@@ -485,88 +485,88 @@ struct Grpc_Testing_ClientArgs: Sendable {
     set {argtype = .mark(newValue)}
   }
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  enum OneOf_Argtype: Equatable, Sendable {
+  package enum OneOf_Argtype: Equatable, Sendable {
     case setup(Grpc_Testing_ClientConfig)
     case mark(Grpc_Testing_Mark)
 
   }
 
-  init() {}
+  package init() {}
 }
 
-struct Grpc_Testing_ServerConfig: Sendable {
+package struct Grpc_Testing_ServerConfig: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var serverType: Grpc_Testing_ServerType = .syncServer
+  package var serverType: Grpc_Testing_ServerType = .syncServer
 
-  var securityParams: Grpc_Testing_SecurityParams {
+  package var securityParams: Grpc_Testing_SecurityParams {
     get {_securityParams ?? Grpc_Testing_SecurityParams()}
     set {_securityParams = newValue}
   }
   /// Returns true if `securityParams` has been explicitly set.
-  var hasSecurityParams: Bool {self._securityParams != nil}
+  package var hasSecurityParams: Bool {self._securityParams != nil}
   /// Clears the value of `securityParams`. Subsequent reads from it will return its default value.
-  mutating func clearSecurityParams() {self._securityParams = nil}
+  package mutating func clearSecurityParams() {self._securityParams = nil}
 
   /// Port on which to listen. Zero means pick unused port.
-  var port: Int32 = 0
+  package var port: Int32 = 0
 
   /// Only for async server. Number of threads used to serve the requests.
-  var asyncServerThreads: Int32 = 0
+  package var asyncServerThreads: Int32 = 0
 
   /// Specify the number of cores to limit server to, if desired
-  var coreLimit: Int32 = 0
+  package var coreLimit: Int32 = 0
 
   /// payload config, used in generic server.
   /// Note this must NOT be used in proto (non-generic) servers. For proto servers,
   /// 'response sizes' must be configured from the 'response_size' field of the
   /// 'SimpleRequest' objects in RPC requests.
-  var payloadConfig: Grpc_Testing_PayloadConfig {
+  package var payloadConfig: Grpc_Testing_PayloadConfig {
     get {_payloadConfig ?? Grpc_Testing_PayloadConfig()}
     set {_payloadConfig = newValue}
   }
   /// Returns true if `payloadConfig` has been explicitly set.
-  var hasPayloadConfig: Bool {self._payloadConfig != nil}
+  package var hasPayloadConfig: Bool {self._payloadConfig != nil}
   /// Clears the value of `payloadConfig`. Subsequent reads from it will return its default value.
-  mutating func clearPayloadConfig() {self._payloadConfig = nil}
+  package mutating func clearPayloadConfig() {self._payloadConfig = nil}
 
   /// Specify the cores we should run the server on, if desired
-  var coreList: [Int32] = []
+  package var coreList: [Int32] = []
 
   /// If we use an OTHER_SERVER client_type, this string gives more detail
-  var otherServerApi: String = String()
+  package var otherServerApi: String = String()
 
   /// Number of threads that share each completion queue
-  var threadsPerCq: Int32 = 0
+  package var threadsPerCq: Int32 = 0
 
   /// Buffer pool size (no buffer pool specified if unset)
-  var resourceQuotaSize: Int32 = 0
+  package var resourceQuotaSize: Int32 = 0
 
-  var channelArgs: [Grpc_Testing_ChannelArg] = []
+  package var channelArgs: [Grpc_Testing_ChannelArg] = []
 
   /// Number of server processes. 0 indicates no restriction.
-  var serverProcesses: Int32 = 0
+  package var serverProcesses: Int32 = 0
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 
   fileprivate var _securityParams: Grpc_Testing_SecurityParams? = nil
   fileprivate var _payloadConfig: Grpc_Testing_PayloadConfig? = nil
 }
 
-struct Grpc_Testing_ServerArgs: Sendable {
+package struct Grpc_Testing_ServerArgs: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var argtype: Grpc_Testing_ServerArgs.OneOf_Argtype? = nil
+  package var argtype: Grpc_Testing_ServerArgs.OneOf_Argtype? = nil
 
-  var setup: Grpc_Testing_ServerConfig {
+  package var setup: Grpc_Testing_ServerConfig {
     get {
       if case .setup(let v)? = argtype {return v}
       return Grpc_Testing_ServerConfig()
@@ -574,7 +574,7 @@ struct Grpc_Testing_ServerArgs: Sendable {
     set {argtype = .setup(newValue)}
   }
 
-  var mark: Grpc_Testing_Mark {
+  package var mark: Grpc_Testing_Mark {
     get {
       if case .mark(let v)? = argtype {return v}
       return Grpc_Testing_Mark()
@@ -582,162 +582,162 @@ struct Grpc_Testing_ServerArgs: Sendable {
     set {argtype = .mark(newValue)}
   }
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  enum OneOf_Argtype: Equatable, Sendable {
+  package enum OneOf_Argtype: Equatable, Sendable {
     case setup(Grpc_Testing_ServerConfig)
     case mark(Grpc_Testing_Mark)
 
   }
 
-  init() {}
+  package init() {}
 }
 
-struct Grpc_Testing_ServerStatus: Sendable {
+package struct Grpc_Testing_ServerStatus: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var stats: Grpc_Testing_ServerStats {
+  package var stats: Grpc_Testing_ServerStats {
     get {_stats ?? Grpc_Testing_ServerStats()}
     set {_stats = newValue}
   }
   /// Returns true if `stats` has been explicitly set.
-  var hasStats: Bool {self._stats != nil}
+  package var hasStats: Bool {self._stats != nil}
   /// Clears the value of `stats`. Subsequent reads from it will return its default value.
-  mutating func clearStats() {self._stats = nil}
+  package mutating func clearStats() {self._stats = nil}
 
   /// the port bound by the server
-  var port: Int32 = 0
+  package var port: Int32 = 0
 
   /// Number of cores available to the server
-  var cores: Int32 = 0
+  package var cores: Int32 = 0
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 
   fileprivate var _stats: Grpc_Testing_ServerStats? = nil
 }
 
-struct Grpc_Testing_CoreRequest: Sendable {
+package struct Grpc_Testing_CoreRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
-struct Grpc_Testing_CoreResponse: Sendable {
+package struct Grpc_Testing_CoreResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// Number of cores available on the server
-  var cores: Int32 = 0
+  package var cores: Int32 = 0
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
-struct Grpc_Testing_Void: Sendable {
+package struct Grpc_Testing_Void: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
 /// A single performance scenario: input to qps_json_driver
-struct Grpc_Testing_Scenario: @unchecked Sendable {
+package struct Grpc_Testing_Scenario: @unchecked Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// Human readable name for this scenario
-  var name: String {
+  package var name: String {
     get {_storage._name}
     set {_uniqueStorage()._name = newValue}
   }
 
   /// Client configuration
-  var clientConfig: Grpc_Testing_ClientConfig {
+  package var clientConfig: Grpc_Testing_ClientConfig {
     get {_storage._clientConfig ?? Grpc_Testing_ClientConfig()}
     set {_uniqueStorage()._clientConfig = newValue}
   }
   /// Returns true if `clientConfig` has been explicitly set.
-  var hasClientConfig: Bool {_storage._clientConfig != nil}
+  package var hasClientConfig: Bool {_storage._clientConfig != nil}
   /// Clears the value of `clientConfig`. Subsequent reads from it will return its default value.
-  mutating func clearClientConfig() {_uniqueStorage()._clientConfig = nil}
+  package mutating func clearClientConfig() {_uniqueStorage()._clientConfig = nil}
 
   /// Number of clients to start for the test
-  var numClients: Int32 {
+  package var numClients: Int32 {
     get {_storage._numClients}
     set {_uniqueStorage()._numClients = newValue}
   }
 
   /// Server configuration
-  var serverConfig: Grpc_Testing_ServerConfig {
+  package var serverConfig: Grpc_Testing_ServerConfig {
     get {_storage._serverConfig ?? Grpc_Testing_ServerConfig()}
     set {_uniqueStorage()._serverConfig = newValue}
   }
   /// Returns true if `serverConfig` has been explicitly set.
-  var hasServerConfig: Bool {_storage._serverConfig != nil}
+  package var hasServerConfig: Bool {_storage._serverConfig != nil}
   /// Clears the value of `serverConfig`. Subsequent reads from it will return its default value.
-  mutating func clearServerConfig() {_uniqueStorage()._serverConfig = nil}
+  package mutating func clearServerConfig() {_uniqueStorage()._serverConfig = nil}
 
   /// Number of servers to start for the test
-  var numServers: Int32 {
+  package var numServers: Int32 {
     get {_storage._numServers}
     set {_uniqueStorage()._numServers = newValue}
   }
 
   /// Warmup period, in seconds
-  var warmupSeconds: Int32 {
+  package var warmupSeconds: Int32 {
     get {_storage._warmupSeconds}
     set {_uniqueStorage()._warmupSeconds = newValue}
   }
 
   /// Benchmark time, in seconds
-  var benchmarkSeconds: Int32 {
+  package var benchmarkSeconds: Int32 {
     get {_storage._benchmarkSeconds}
     set {_uniqueStorage()._benchmarkSeconds = newValue}
   }
 
   /// Number of workers to spawn locally (usually zero)
-  var spawnLocalWorkerCount: Int32 {
+  package var spawnLocalWorkerCount: Int32 {
     get {_storage._spawnLocalWorkerCount}
     set {_uniqueStorage()._spawnLocalWorkerCount = newValue}
   }
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 
   fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 /// A set of scenarios to be run with qps_json_driver
-struct Grpc_Testing_Scenarios: Sendable {
+package struct Grpc_Testing_Scenarios: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var scenarios: [Grpc_Testing_Scenario] = []
+  package var scenarios: [Grpc_Testing_Scenario] = []
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
 /// Basic summary that can be computed from ClientStats and ServerStats
 /// once the scenario has finished.
-struct Grpc_Testing_ScenarioResultSummary: @unchecked Sendable {
+package struct Grpc_Testing_ScenarioResultSummary: @unchecked Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -745,13 +745,13 @@ struct Grpc_Testing_ScenarioResultSummary: @unchecked Sendable {
   /// Total number of operations per second over all clients. What is counted as 1 'operation' depends on the benchmark scenarios:
   /// For unary benchmarks, an operation is processing of a single unary RPC. 
   /// For streaming benchmarks, an operation is processing of a single ping pong of request and response. 
-  var qps: Double {
+  package var qps: Double {
     get {_storage._qps}
     set {_uniqueStorage()._qps = newValue}
   }
 
   /// QPS per server core.
-  var qpsPerServerCore: Double {
+  package var qpsPerServerCore: Double {
     get {_storage._qpsPerServerCore}
     set {_uniqueStorage()._qpsPerServerCore = newValue}
   }
@@ -760,176 +760,176 @@ struct Grpc_Testing_ScenarioResultSummary: @unchecked Sendable {
   /// For example, 85 implies 85% of a cpu core, 125 implies 125% of a cpu core. Since we are accumulating the cpu load across all the server 
   /// processes, the value could > 100 when there are multiple servers or a single server using multiple threads and cores. 
   /// Same explanation for the total client cpu load below.
-  var serverSystemTime: Double {
+  package var serverSystemTime: Double {
     get {_storage._serverSystemTime}
     set {_uniqueStorage()._serverSystemTime = newValue}
   }
 
   /// The total server cpu load based on user time across all server processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
-  var serverUserTime: Double {
+  package var serverUserTime: Double {
     get {_storage._serverUserTime}
     set {_uniqueStorage()._serverUserTime = newValue}
   }
 
   /// The total client cpu load based on system time across all client processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
-  var clientSystemTime: Double {
+  package var clientSystemTime: Double {
     get {_storage._clientSystemTime}
     set {_uniqueStorage()._clientSystemTime = newValue}
   }
 
   /// The total client cpu load based on user time across all client processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
-  var clientUserTime: Double {
+  package var clientUserTime: Double {
     get {_storage._clientUserTime}
     set {_uniqueStorage()._clientUserTime = newValue}
   }
 
   /// X% latency percentiles (in nanoseconds)
-  var latency50: Double {
+  package var latency50: Double {
     get {_storage._latency50}
     set {_uniqueStorage()._latency50 = newValue}
   }
 
-  var latency90: Double {
+  package var latency90: Double {
     get {_storage._latency90}
     set {_uniqueStorage()._latency90 = newValue}
   }
 
-  var latency95: Double {
+  package var latency95: Double {
     get {_storage._latency95}
     set {_uniqueStorage()._latency95 = newValue}
   }
 
-  var latency99: Double {
+  package var latency99: Double {
     get {_storage._latency99}
     set {_uniqueStorage()._latency99 = newValue}
   }
 
-  var latency999: Double {
+  package var latency999: Double {
     get {_storage._latency999}
     set {_uniqueStorage()._latency999 = newValue}
   }
 
   /// server cpu usage percentage
-  var serverCpuUsage: Double {
+  package var serverCpuUsage: Double {
     get {_storage._serverCpuUsage}
     set {_uniqueStorage()._serverCpuUsage = newValue}
   }
 
   /// Number of requests that succeeded/failed
-  var successfulRequestsPerSecond: Double {
+  package var successfulRequestsPerSecond: Double {
     get {_storage._successfulRequestsPerSecond}
     set {_uniqueStorage()._successfulRequestsPerSecond = newValue}
   }
 
-  var failedRequestsPerSecond: Double {
+  package var failedRequestsPerSecond: Double {
     get {_storage._failedRequestsPerSecond}
     set {_uniqueStorage()._failedRequestsPerSecond = newValue}
   }
 
   /// Number of polls called inside completion queue per request
-  var clientPollsPerRequest: Double {
+  package var clientPollsPerRequest: Double {
     get {_storage._clientPollsPerRequest}
     set {_uniqueStorage()._clientPollsPerRequest = newValue}
   }
 
-  var serverPollsPerRequest: Double {
+  package var serverPollsPerRequest: Double {
     get {_storage._serverPollsPerRequest}
     set {_uniqueStorage()._serverPollsPerRequest = newValue}
   }
 
   /// Queries per CPU-sec over all servers or clients
-  var serverQueriesPerCpuSec: Double {
+  package var serverQueriesPerCpuSec: Double {
     get {_storage._serverQueriesPerCpuSec}
     set {_uniqueStorage()._serverQueriesPerCpuSec = newValue}
   }
 
-  var clientQueriesPerCpuSec: Double {
+  package var clientQueriesPerCpuSec: Double {
     get {_storage._clientQueriesPerCpuSec}
     set {_uniqueStorage()._clientQueriesPerCpuSec = newValue}
   }
 
   /// Start and end time for the test scenario
-  var startTime: SwiftProtobuf.Google_Protobuf_Timestamp {
+  package var startTime: SwiftProtobuf.Google_Protobuf_Timestamp {
     get {_storage._startTime ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
     set {_uniqueStorage()._startTime = newValue}
   }
   /// Returns true if `startTime` has been explicitly set.
-  var hasStartTime: Bool {_storage._startTime != nil}
+  package var hasStartTime: Bool {_storage._startTime != nil}
   /// Clears the value of `startTime`. Subsequent reads from it will return its default value.
-  mutating func clearStartTime() {_uniqueStorage()._startTime = nil}
+  package mutating func clearStartTime() {_uniqueStorage()._startTime = nil}
 
-  var endTime: SwiftProtobuf.Google_Protobuf_Timestamp {
+  package var endTime: SwiftProtobuf.Google_Protobuf_Timestamp {
     get {_storage._endTime ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
     set {_uniqueStorage()._endTime = newValue}
   }
   /// Returns true if `endTime` has been explicitly set.
-  var hasEndTime: Bool {_storage._endTime != nil}
+  package var hasEndTime: Bool {_storage._endTime != nil}
   /// Clears the value of `endTime`. Subsequent reads from it will return its default value.
-  mutating func clearEndTime() {_uniqueStorage()._endTime = nil}
+  package mutating func clearEndTime() {_uniqueStorage()._endTime = nil}
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 
   fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 /// Results of a single benchmark scenario.
-struct Grpc_Testing_ScenarioResult: Sendable {
+package struct Grpc_Testing_ScenarioResult: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// Inputs used to run the scenario.
-  var scenario: Grpc_Testing_Scenario {
+  package var scenario: Grpc_Testing_Scenario {
     get {_scenario ?? Grpc_Testing_Scenario()}
     set {_scenario = newValue}
   }
   /// Returns true if `scenario` has been explicitly set.
-  var hasScenario: Bool {self._scenario != nil}
+  package var hasScenario: Bool {self._scenario != nil}
   /// Clears the value of `scenario`. Subsequent reads from it will return its default value.
-  mutating func clearScenario() {self._scenario = nil}
+  package mutating func clearScenario() {self._scenario = nil}
 
   /// Histograms from all clients merged into one histogram.
-  var latencies: Grpc_Testing_HistogramData {
+  package var latencies: Grpc_Testing_HistogramData {
     get {_latencies ?? Grpc_Testing_HistogramData()}
     set {_latencies = newValue}
   }
   /// Returns true if `latencies` has been explicitly set.
-  var hasLatencies: Bool {self._latencies != nil}
+  package var hasLatencies: Bool {self._latencies != nil}
   /// Clears the value of `latencies`. Subsequent reads from it will return its default value.
-  mutating func clearLatencies() {self._latencies = nil}
+  package mutating func clearLatencies() {self._latencies = nil}
 
   /// Client stats for each client
-  var clientStats: [Grpc_Testing_ClientStats] = []
+  package var clientStats: [Grpc_Testing_ClientStats] = []
 
   /// Server stats for each server
-  var serverStats: [Grpc_Testing_ServerStats] = []
+  package var serverStats: [Grpc_Testing_ServerStats] = []
 
   /// Number of cores available to each server
-  var serverCores: [Int32] = []
+  package var serverCores: [Int32] = []
 
   /// An after-the-fact computed summary
-  var summary: Grpc_Testing_ScenarioResultSummary {
+  package var summary: Grpc_Testing_ScenarioResultSummary {
     get {_summary ?? Grpc_Testing_ScenarioResultSummary()}
     set {_summary = newValue}
   }
   /// Returns true if `summary` has been explicitly set.
-  var hasSummary: Bool {self._summary != nil}
+  package var hasSummary: Bool {self._summary != nil}
   /// Clears the value of `summary`. Subsequent reads from it will return its default value.
-  mutating func clearSummary() {self._summary = nil}
+  package mutating func clearSummary() {self._summary = nil}
 
   /// Information on success or failure of each worker
-  var clientSuccess: [Bool] = []
+  package var clientSuccess: [Bool] = []
 
-  var serverSuccess: [Bool] = []
+  package var serverSuccess: [Bool] = []
 
   /// Number of failed requests (one row per status code seen)
-  var requestResults: [Grpc_Testing_RequestResultCount] = []
+  package var requestResults: [Grpc_Testing_RequestResultCount] = []
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 
   fileprivate var _scenario: Grpc_Testing_Scenario? = nil
   fileprivate var _latencies: Grpc_Testing_HistogramData? = nil
@@ -941,22 +941,22 @@ struct Grpc_Testing_ScenarioResult: Sendable {
 fileprivate let _protobuf_package = "grpc.testing"
 
 extension Grpc_Testing_ClientType: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0SYNC_CLIENT\0\u{1}ASYNC_CLIENT\0\u{1}OTHER_CLIENT\0\u{1}CALLBACK_CLIENT\0")
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0SYNC_CLIENT\0\u{1}ASYNC_CLIENT\0\u{1}OTHER_CLIENT\0\u{1}CALLBACK_CLIENT\0")
 }
 
 extension Grpc_Testing_ServerType: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0SYNC_SERVER\0\u{1}ASYNC_SERVER\0\u{1}ASYNC_GENERIC_SERVER\0\u{1}OTHER_SERVER\0\u{1}CALLBACK_SERVER\0")
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0SYNC_SERVER\0\u{1}ASYNC_SERVER\0\u{1}ASYNC_GENERIC_SERVER\0\u{1}OTHER_SERVER\0\u{1}CALLBACK_SERVER\0")
 }
 
 extension Grpc_Testing_RpcType: SwiftProtobuf._ProtoNameProviding {
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0UNARY\0\u{1}STREAMING\0\u{1}STREAMING_FROM_CLIENT\0\u{1}STREAMING_FROM_SERVER\0\u{1}STREAMING_BOTH_WAYS\0")
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0UNARY\0\u{1}STREAMING\0\u{1}STREAMING_FROM_CLIENT\0\u{1}STREAMING_FROM_SERVER\0\u{1}STREAMING_BOTH_WAYS\0")
 }
 
 extension Grpc_Testing_PoissonParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".PoissonParams"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}offered_load\0")
+  package static let protoMessageName: String = _protobuf_package + ".PoissonParams"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}offered_load\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -968,14 +968,14 @@ extension Grpc_Testing_PoissonParams: SwiftProtobuf.Message, SwiftProtobuf._Mess
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.offeredLoad.bitPattern != 0 {
       try visitor.visitSingularDoubleField(value: self.offeredLoad, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_PoissonParams, rhs: Grpc_Testing_PoissonParams) -> Bool {
+  package static func ==(lhs: Grpc_Testing_PoissonParams, rhs: Grpc_Testing_PoissonParams) -> Bool {
     if lhs.offeredLoad != rhs.offeredLoad {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -983,29 +983,29 @@ extension Grpc_Testing_PoissonParams: SwiftProtobuf.Message, SwiftProtobuf._Mess
 }
 
 extension Grpc_Testing_ClosedLoopParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ClosedLoopParams"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+  package static let protoMessageName: String = _protobuf_package + ".ClosedLoopParams"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     // Load everything into unknown fields
     while try decoder.nextFieldNumber() != nil {}
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_ClosedLoopParams, rhs: Grpc_Testing_ClosedLoopParams) -> Bool {
+  package static func ==(lhs: Grpc_Testing_ClosedLoopParams, rhs: Grpc_Testing_ClosedLoopParams) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
 extension Grpc_Testing_LoadParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".LoadParams"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}closed_loop\0\u{1}poisson\0")
+  package static let protoMessageName: String = _protobuf_package + ".LoadParams"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}closed_loop\0\u{1}poisson\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1042,7 +1042,7 @@ extension Grpc_Testing_LoadParams: SwiftProtobuf.Message, SwiftProtobuf._Message
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1061,7 +1061,7 @@ extension Grpc_Testing_LoadParams: SwiftProtobuf.Message, SwiftProtobuf._Message
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_LoadParams, rhs: Grpc_Testing_LoadParams) -> Bool {
+  package static func ==(lhs: Grpc_Testing_LoadParams, rhs: Grpc_Testing_LoadParams) -> Bool {
     if lhs.load != rhs.load {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -1069,10 +1069,10 @@ extension Grpc_Testing_LoadParams: SwiftProtobuf.Message, SwiftProtobuf._Message
 }
 
 extension Grpc_Testing_SecurityParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".SecurityParams"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}use_test_ca\0\u{3}server_host_override\0\u{3}cred_type\0")
+  package static let protoMessageName: String = _protobuf_package + ".SecurityParams"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}use_test_ca\0\u{3}server_host_override\0\u{3}cred_type\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1086,7 +1086,7 @@ extension Grpc_Testing_SecurityParams: SwiftProtobuf.Message, SwiftProtobuf._Mes
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.useTestCa != false {
       try visitor.visitSingularBoolField(value: self.useTestCa, fieldNumber: 1)
     }
@@ -1099,7 +1099,7 @@ extension Grpc_Testing_SecurityParams: SwiftProtobuf.Message, SwiftProtobuf._Mes
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_SecurityParams, rhs: Grpc_Testing_SecurityParams) -> Bool {
+  package static func ==(lhs: Grpc_Testing_SecurityParams, rhs: Grpc_Testing_SecurityParams) -> Bool {
     if lhs.useTestCa != rhs.useTestCa {return false}
     if lhs.serverHostOverride != rhs.serverHostOverride {return false}
     if lhs.credType != rhs.credType {return false}
@@ -1109,10 +1109,10 @@ extension Grpc_Testing_SecurityParams: SwiftProtobuf.Message, SwiftProtobuf._Mes
 }
 
 extension Grpc_Testing_ChannelArg: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ChannelArg"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{3}str_value\0\u{3}int_value\0")
+  package static let protoMessageName: String = _protobuf_package + ".ChannelArg"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{3}str_value\0\u{3}int_value\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1140,7 +1140,7 @@ extension Grpc_Testing_ChannelArg: SwiftProtobuf.Message, SwiftProtobuf._Message
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1162,7 +1162,7 @@ extension Grpc_Testing_ChannelArg: SwiftProtobuf.Message, SwiftProtobuf._Message
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_ChannelArg, rhs: Grpc_Testing_ChannelArg) -> Bool {
+  package static func ==(lhs: Grpc_Testing_ChannelArg, rhs: Grpc_Testing_ChannelArg) -> Bool {
     if lhs.name != rhs.name {return false}
     if lhs.value != rhs.value {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -1171,8 +1171,8 @@ extension Grpc_Testing_ChannelArg: SwiftProtobuf.Message, SwiftProtobuf._Message
 }
 
 extension Grpc_Testing_ClientConfig: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ClientConfig"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}server_targets\0\u{3}client_type\0\u{3}security_params\0\u{3}outstanding_rpcs_per_channel\0\u{3}client_channels\0\u{4}\u{2}async_client_threads\0\u{3}rpc_type\0\u{4}\u{2}load_params\0\u{3}payload_config\0\u{3}histogram_params\0\u{3}core_list\0\u{3}core_limit\0\u{3}other_client_api\0\u{3}channel_args\0\u{3}threads_per_cq\0\u{3}messages_per_stream\0\u{3}use_coalesce_api\0\u{3}median_latency_collection_interval_millis\0\u{3}client_processes\0")
+  package static let protoMessageName: String = _protobuf_package + ".ClientConfig"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}server_targets\0\u{3}client_type\0\u{3}security_params\0\u{3}outstanding_rpcs_per_channel\0\u{3}client_channels\0\u{4}\u{2}async_client_threads\0\u{3}rpc_type\0\u{4}\u{2}load_params\0\u{3}payload_config\0\u{3}histogram_params\0\u{3}core_list\0\u{3}core_limit\0\u{3}other_client_api\0\u{3}channel_args\0\u{3}threads_per_cq\0\u{3}messages_per_stream\0\u{3}use_coalesce_api\0\u{3}median_latency_collection_interval_millis\0\u{3}client_processes\0")
 
   fileprivate class _StorageClass {
     var _serverTargets: [String] = []
@@ -1233,7 +1233,7 @@ extension Grpc_Testing_ClientConfig: SwiftProtobuf.Message, SwiftProtobuf._Messa
     return _storage
   }
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     _ = _uniqueStorage()
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1266,7 +1266,7 @@ extension Grpc_Testing_ClientConfig: SwiftProtobuf.Message, SwiftProtobuf._Messa
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every if/case branch local when no optimizations
@@ -1333,7 +1333,7 @@ extension Grpc_Testing_ClientConfig: SwiftProtobuf.Message, SwiftProtobuf._Messa
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_ClientConfig, rhs: Grpc_Testing_ClientConfig) -> Bool {
+  package static func ==(lhs: Grpc_Testing_ClientConfig, rhs: Grpc_Testing_ClientConfig) -> Bool {
     if lhs._storage !== rhs._storage {
       let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
         let _storage = _args.0
@@ -1367,10 +1367,10 @@ extension Grpc_Testing_ClientConfig: SwiftProtobuf.Message, SwiftProtobuf._Messa
 }
 
 extension Grpc_Testing_ClientStatus: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ClientStatus"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}stats\0")
+  package static let protoMessageName: String = _protobuf_package + ".ClientStatus"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}stats\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1382,7 +1382,7 @@ extension Grpc_Testing_ClientStatus: SwiftProtobuf.Message, SwiftProtobuf._Messa
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1393,7 +1393,7 @@ extension Grpc_Testing_ClientStatus: SwiftProtobuf.Message, SwiftProtobuf._Messa
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_ClientStatus, rhs: Grpc_Testing_ClientStatus) -> Bool {
+  package static func ==(lhs: Grpc_Testing_ClientStatus, rhs: Grpc_Testing_ClientStatus) -> Bool {
     if lhs._stats != rhs._stats {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -1401,10 +1401,10 @@ extension Grpc_Testing_ClientStatus: SwiftProtobuf.Message, SwiftProtobuf._Messa
 }
 
 extension Grpc_Testing_Mark: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".Mark"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}reset\0")
+  package static let protoMessageName: String = _protobuf_package + ".Mark"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}reset\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1416,14 +1416,14 @@ extension Grpc_Testing_Mark: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.reset != false {
       try visitor.visitSingularBoolField(value: self.reset, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_Mark, rhs: Grpc_Testing_Mark) -> Bool {
+  package static func ==(lhs: Grpc_Testing_Mark, rhs: Grpc_Testing_Mark) -> Bool {
     if lhs.reset != rhs.reset {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -1431,10 +1431,10 @@ extension Grpc_Testing_Mark: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
 }
 
 extension Grpc_Testing_ClientArgs: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ClientArgs"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}setup\0\u{1}mark\0")
+  package static let protoMessageName: String = _protobuf_package + ".ClientArgs"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}setup\0\u{1}mark\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1471,7 +1471,7 @@ extension Grpc_Testing_ClientArgs: SwiftProtobuf.Message, SwiftProtobuf._Message
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1490,7 +1490,7 @@ extension Grpc_Testing_ClientArgs: SwiftProtobuf.Message, SwiftProtobuf._Message
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_ClientArgs, rhs: Grpc_Testing_ClientArgs) -> Bool {
+  package static func ==(lhs: Grpc_Testing_ClientArgs, rhs: Grpc_Testing_ClientArgs) -> Bool {
     if lhs.argtype != rhs.argtype {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -1498,10 +1498,10 @@ extension Grpc_Testing_ClientArgs: SwiftProtobuf.Message, SwiftProtobuf._Message
 }
 
 extension Grpc_Testing_ServerConfig: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ServerConfig"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}server_type\0\u{3}security_params\0\u{2}\u{2}port\0\u{4}\u{3}async_server_threads\0\u{3}core_limit\0\u{3}payload_config\0\u{3}core_list\0\u{3}other_server_api\0\u{3}threads_per_cq\0\u{4}\u{9}server_processes\0\u{4}T\u{f}resource_quota_size\0\u{3}channel_args\0")
+  package static let protoMessageName: String = _protobuf_package + ".ServerConfig"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}server_type\0\u{3}security_params\0\u{2}\u{2}port\0\u{4}\u{3}async_server_threads\0\u{3}core_limit\0\u{3}payload_config\0\u{3}core_list\0\u{3}other_server_api\0\u{3}threads_per_cq\0\u{4}\u{9}server_processes\0\u{4}T\u{f}resource_quota_size\0\u{3}channel_args\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1524,7 +1524,7 @@ extension Grpc_Testing_ServerConfig: SwiftProtobuf.Message, SwiftProtobuf._Messa
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1568,7 +1568,7 @@ extension Grpc_Testing_ServerConfig: SwiftProtobuf.Message, SwiftProtobuf._Messa
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_ServerConfig, rhs: Grpc_Testing_ServerConfig) -> Bool {
+  package static func ==(lhs: Grpc_Testing_ServerConfig, rhs: Grpc_Testing_ServerConfig) -> Bool {
     if lhs.serverType != rhs.serverType {return false}
     if lhs._securityParams != rhs._securityParams {return false}
     if lhs.port != rhs.port {return false}
@@ -1587,10 +1587,10 @@ extension Grpc_Testing_ServerConfig: SwiftProtobuf.Message, SwiftProtobuf._Messa
 }
 
 extension Grpc_Testing_ServerArgs: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ServerArgs"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}setup\0\u{1}mark\0")
+  package static let protoMessageName: String = _protobuf_package + ".ServerArgs"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}setup\0\u{1}mark\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1627,7 +1627,7 @@ extension Grpc_Testing_ServerArgs: SwiftProtobuf.Message, SwiftProtobuf._Message
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1646,7 +1646,7 @@ extension Grpc_Testing_ServerArgs: SwiftProtobuf.Message, SwiftProtobuf._Message
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_ServerArgs, rhs: Grpc_Testing_ServerArgs) -> Bool {
+  package static func ==(lhs: Grpc_Testing_ServerArgs, rhs: Grpc_Testing_ServerArgs) -> Bool {
     if lhs.argtype != rhs.argtype {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -1654,10 +1654,10 @@ extension Grpc_Testing_ServerArgs: SwiftProtobuf.Message, SwiftProtobuf._Message
 }
 
 extension Grpc_Testing_ServerStatus: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ServerStatus"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}stats\0\u{1}port\0\u{1}cores\0")
+  package static let protoMessageName: String = _protobuf_package + ".ServerStatus"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}stats\0\u{1}port\0\u{1}cores\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1671,7 +1671,7 @@ extension Grpc_Testing_ServerStatus: SwiftProtobuf.Message, SwiftProtobuf._Messa
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -1688,7 +1688,7 @@ extension Grpc_Testing_ServerStatus: SwiftProtobuf.Message, SwiftProtobuf._Messa
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_ServerStatus, rhs: Grpc_Testing_ServerStatus) -> Bool {
+  package static func ==(lhs: Grpc_Testing_ServerStatus, rhs: Grpc_Testing_ServerStatus) -> Bool {
     if lhs._stats != rhs._stats {return false}
     if lhs.port != rhs.port {return false}
     if lhs.cores != rhs.cores {return false}
@@ -1698,29 +1698,29 @@ extension Grpc_Testing_ServerStatus: SwiftProtobuf.Message, SwiftProtobuf._Messa
 }
 
 extension Grpc_Testing_CoreRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".CoreRequest"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+  package static let protoMessageName: String = _protobuf_package + ".CoreRequest"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     // Load everything into unknown fields
     while try decoder.nextFieldNumber() != nil {}
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_CoreRequest, rhs: Grpc_Testing_CoreRequest) -> Bool {
+  package static func ==(lhs: Grpc_Testing_CoreRequest, rhs: Grpc_Testing_CoreRequest) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
 extension Grpc_Testing_CoreResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".CoreResponse"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}cores\0")
+  package static let protoMessageName: String = _protobuf_package + ".CoreResponse"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}cores\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1732,14 +1732,14 @@ extension Grpc_Testing_CoreResponse: SwiftProtobuf.Message, SwiftProtobuf._Messa
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.cores != 0 {
       try visitor.visitSingularInt32Field(value: self.cores, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_CoreResponse, rhs: Grpc_Testing_CoreResponse) -> Bool {
+  package static func ==(lhs: Grpc_Testing_CoreResponse, rhs: Grpc_Testing_CoreResponse) -> Bool {
     if lhs.cores != rhs.cores {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -1747,27 +1747,27 @@ extension Grpc_Testing_CoreResponse: SwiftProtobuf.Message, SwiftProtobuf._Messa
 }
 
 extension Grpc_Testing_Void: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".Void"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+  package static let protoMessageName: String = _protobuf_package + ".Void"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     // Load everything into unknown fields
     while try decoder.nextFieldNumber() != nil {}
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_Void, rhs: Grpc_Testing_Void) -> Bool {
+  package static func ==(lhs: Grpc_Testing_Void, rhs: Grpc_Testing_Void) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
 extension Grpc_Testing_Scenario: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".Scenario"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{3}client_config\0\u{3}num_clients\0\u{3}server_config\0\u{3}num_servers\0\u{3}warmup_seconds\0\u{3}benchmark_seconds\0\u{3}spawn_local_worker_count\0")
+  package static let protoMessageName: String = _protobuf_package + ".Scenario"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{3}client_config\0\u{3}num_clients\0\u{3}server_config\0\u{3}num_servers\0\u{3}warmup_seconds\0\u{3}benchmark_seconds\0\u{3}spawn_local_worker_count\0")
 
   fileprivate class _StorageClass {
     var _name: String = String()
@@ -1806,7 +1806,7 @@ extension Grpc_Testing_Scenario: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
     return _storage
   }
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     _ = _uniqueStorage()
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1828,7 +1828,7 @@ extension Grpc_Testing_Scenario: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every if/case branch local when no optimizations
@@ -1862,7 +1862,7 @@ extension Grpc_Testing_Scenario: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_Scenario, rhs: Grpc_Testing_Scenario) -> Bool {
+  package static func ==(lhs: Grpc_Testing_Scenario, rhs: Grpc_Testing_Scenario) -> Bool {
     if lhs._storage !== rhs._storage {
       let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
         let _storage = _args.0
@@ -1885,10 +1885,10 @@ extension Grpc_Testing_Scenario: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
 }
 
 extension Grpc_Testing_Scenarios: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".Scenarios"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}scenarios\0")
+  package static let protoMessageName: String = _protobuf_package + ".Scenarios"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}scenarios\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -1900,14 +1900,14 @@ extension Grpc_Testing_Scenarios: SwiftProtobuf.Message, SwiftProtobuf._MessageI
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.scenarios.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.scenarios, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_Scenarios, rhs: Grpc_Testing_Scenarios) -> Bool {
+  package static func ==(lhs: Grpc_Testing_Scenarios, rhs: Grpc_Testing_Scenarios) -> Bool {
     if lhs.scenarios != rhs.scenarios {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -1915,8 +1915,8 @@ extension Grpc_Testing_Scenarios: SwiftProtobuf.Message, SwiftProtobuf._MessageI
 }
 
 extension Grpc_Testing_ScenarioResultSummary: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ScenarioResultSummary"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}qps\0\u{3}qps_per_server_core\0\u{3}server_system_time\0\u{3}server_user_time\0\u{3}client_system_time\0\u{3}client_user_time\0\u{3}latency_50\0\u{3}latency_90\0\u{3}latency_95\0\u{3}latency_99\0\u{3}latency_999\0\u{3}server_cpu_usage\0\u{3}successful_requests_per_second\0\u{3}failed_requests_per_second\0\u{3}client_polls_per_request\0\u{3}server_polls_per_request\0\u{3}server_queries_per_cpu_sec\0\u{3}client_queries_per_cpu_sec\0\u{3}start_time\0\u{3}end_time\0")
+  package static let protoMessageName: String = _protobuf_package + ".ScenarioResultSummary"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}qps\0\u{3}qps_per_server_core\0\u{3}server_system_time\0\u{3}server_user_time\0\u{3}client_system_time\0\u{3}client_user_time\0\u{3}latency_50\0\u{3}latency_90\0\u{3}latency_95\0\u{3}latency_99\0\u{3}latency_999\0\u{3}server_cpu_usage\0\u{3}successful_requests_per_second\0\u{3}failed_requests_per_second\0\u{3}client_polls_per_request\0\u{3}server_polls_per_request\0\u{3}server_queries_per_cpu_sec\0\u{3}client_queries_per_cpu_sec\0\u{3}start_time\0\u{3}end_time\0")
 
   fileprivate class _StorageClass {
     var _qps: Double = 0
@@ -1979,7 +1979,7 @@ extension Grpc_Testing_ScenarioResultSummary: SwiftProtobuf.Message, SwiftProtob
     return _storage
   }
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     _ = _uniqueStorage()
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       while let fieldNumber = try decoder.nextFieldNumber() {
@@ -2013,7 +2013,7 @@ extension Grpc_Testing_ScenarioResultSummary: SwiftProtobuf.Message, SwiftProtob
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every if/case branch local when no optimizations
@@ -2083,7 +2083,7 @@ extension Grpc_Testing_ScenarioResultSummary: SwiftProtobuf.Message, SwiftProtob
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_ScenarioResultSummary, rhs: Grpc_Testing_ScenarioResultSummary) -> Bool {
+  package static func ==(lhs: Grpc_Testing_ScenarioResultSummary, rhs: Grpc_Testing_ScenarioResultSummary) -> Bool {
     if lhs._storage !== rhs._storage {
       let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
         let _storage = _args.0
@@ -2118,10 +2118,10 @@ extension Grpc_Testing_ScenarioResultSummary: SwiftProtobuf.Message, SwiftProtob
 }
 
 extension Grpc_Testing_ScenarioResult: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ScenarioResult"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}scenario\0\u{1}latencies\0\u{3}client_stats\0\u{3}server_stats\0\u{3}server_cores\0\u{1}summary\0\u{3}client_success\0\u{3}server_success\0\u{3}request_results\0")
+  package static let protoMessageName: String = _protobuf_package + ".ScenarioResult"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}scenario\0\u{1}latencies\0\u{3}client_stats\0\u{3}server_stats\0\u{3}server_cores\0\u{1}summary\0\u{3}client_success\0\u{3}server_success\0\u{3}request_results\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -2141,7 +2141,7 @@ extension Grpc_Testing_ScenarioResult: SwiftProtobuf.Message, SwiftProtobuf._Mes
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -2176,7 +2176,7 @@ extension Grpc_Testing_ScenarioResult: SwiftProtobuf.Message, SwiftProtobuf._Mes
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_ScenarioResult, rhs: Grpc_Testing_ScenarioResult) -> Bool {
+  package static func ==(lhs: Grpc_Testing_ScenarioResult, rhs: Grpc_Testing_ScenarioResult) -> Bool {
     if lhs._scenario != rhs._scenario {return false}
     if lhs._latencies != rhs._latencies {return false}
     if lhs.clientStats != rhs.clientStats {return false}

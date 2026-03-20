@@ -453,11 +453,16 @@ extension WorkerService {
     }
 
     // Parse the server targets into resolvable targets.
-    let ipv4Addresses = try self.parseServerTargets(config.serverTargets)
-    let target = ResolvableTargets.IPv4(addresses: ipv4Addresses)
+    let dnsTargets = try self.parseServerTargets(config.serverTargets)
+
+    if dnsTargets.isEmpty {
+      throw RPCError(code: .invalidArgument, message: "No usable server targets")
+    }
 
     var clients = [BenchmarkClient]()
-    for _ in 0 ..< config.clientChannels {
+    for i in 0 ..< Int(config.clientChannels) {
+      // Round-robin the targets.
+      let target = dnsTargets[i % dnsTargets.count]
       let client = BenchmarkClient(
         client: GRPCClient(
           transport: try .http2NIOPosix(
@@ -497,12 +502,12 @@ extension WorkerService {
     }
   }
 
-  private func parseServerTarget(_ target: String) -> GRPCNIOTransportCore.SocketAddress.IPv4? {
-    guard let index = target.firstIndex(of: ":") else { return nil }
+  private func splitHostPort(_ target: String) -> (String, Int)? {
+    guard let index = target.utf8.lastIndex(of: UInt8(ascii: ":")) else { return nil }
 
     let host = target[..<index]
     if let port = Int(target[target.index(after: index)...]) {
-      return SocketAddress.IPv4(host: String(host), port: port)
+      return (String(host), port)
     } else {
       return nil
     }
@@ -510,16 +515,16 @@ extension WorkerService {
 
   private func parseServerTargets(
     _ targets: [String]
-  ) throws -> [GRPCNIOTransportCore.SocketAddress.IPv4] {
+  ) throws -> [ResolvableTargets.DNS] {
     try targets.map { target in
-      if let ipv4 = self.parseServerTarget(target) {
-        return ipv4
+      if let (host, port) = self.splitHostPort(target) {
+        return .dns(host: host, port: port)
       } else {
         throw RPCError(
           code: .invalidArgument,
           message: """
-            Couldn't parse target '\(target)'. Must be in the format '<host>:<port>' for IPv4 \
-            or '[<host>]:<port>' for IPv6.
+            Couldn't parse target '\(target)'. Must be in the format '<host>:<port>'. This is the \
+            value specified to the driver (e.g. 'QPS_WORKERS=<host-1>:<port-1>,<host-2>:<port-2>')
             """
         )
       }
