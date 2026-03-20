@@ -39,8 +39,9 @@ extension HTTP2ServerTransport {
     /// - Parameters:
     ///   - listenerConfigurator: A configurator for the listening channel.
     ///   - connectionConfigurator: A configurator for each accepted connection channel.
-    /// - Returns: A `NIOAsyncChannel` that produces ``ConnectionChannel`` values for
-    ///   each accepted connection.
+    /// - Returns: A `NIOAsyncChannel` that produces
+    /// ``HTTP2ServerTransport/ConnectionConfigurator/ConnectionChannel`` values for each accepted
+    /// connection.
     func makeListeningChannel(
       listenerConfigurator: ListenerConfigurator,
       connectionConfigurator: ConnectionConfigurator

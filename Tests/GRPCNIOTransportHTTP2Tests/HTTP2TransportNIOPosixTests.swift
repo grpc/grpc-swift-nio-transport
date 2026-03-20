@@ -493,7 +493,11 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
   /// Creates a pre-bound TCP listening socket on the loopback address with an
   /// ephemeral port. Returns the file descriptor and the port it was bound to.
   private func makeListeningSocket() throws -> (fd: Int, port: Int) {
+    #if canImport(Darwin)
     let fd = socket(AF_INET, SOCK_STREAM, 0)
+    #else
+    let fd = socket(AF_INET, Int32(SOCK_STREAM.rawValue), 0)
+    #endif
     guard fd != -1 else {
       throw TestSetupError(description: "Couldn't create a TCP socket.")
     }
