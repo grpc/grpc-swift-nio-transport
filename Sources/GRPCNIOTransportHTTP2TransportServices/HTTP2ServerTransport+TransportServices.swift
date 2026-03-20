@@ -99,7 +99,16 @@ extension HTTP2ServerTransport {
     /// invalid address.
     public var listeningAddress: GRPCNIOTransportCore.SocketAddress {
       get async throws {
-        try await self.underlyingTransport.listeningAddress
+        guard let address = await self.underlyingTransport.listeningAddress else {
+          throw RuntimeError(
+            code: .serverIsStopped,
+            message: """
+              There is no listening address bound for this server: there may have been \
+              an error which caused the transport to close, or it may have shut down.
+              """
+          )
+        }
+        return address
       }
     }
 

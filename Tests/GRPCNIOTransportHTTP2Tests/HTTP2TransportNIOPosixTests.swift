@@ -634,8 +634,8 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
       }
 
       group.addTask {
-        let address = try await transport.listeningAddress
-        let ipv4Address = try XCTUnwrap(address.ipv4)
+        let address = await transport.listeningAddress
+        let ipv4Address = try XCTUnwrap(address?.ipv4)
         XCTAssertNotEqual(ipv4Address.port, 0)
 
         try await withGRPCClient(

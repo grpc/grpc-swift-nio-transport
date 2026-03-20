@@ -114,53 +114,33 @@ extension HTTP2ServerTransport {
       )?
 
     private enum State {
-      case idle(EventLoopPromise<SocketAddress>)
-      case listening(EventLoopFuture<SocketAddress>)
-      case closedOrInvalidAddress(RuntimeError)
+      case idle(EventLoopPromise<SocketAddress?>)
+      case listening(EventLoopFuture<SocketAddress?>)
+      case closed
 
-      var listeningAddressFuture: EventLoopFuture<SocketAddress> {
-        get throws {
-          switch self {
-          case .idle(let eventLoopPromise):
-            return eventLoopPromise.futureResult
-          case .listening(let eventLoopFuture):
-            return eventLoopFuture
-          case .closedOrInvalidAddress(let runtimeError):
-            throw runtimeError
-          }
+      var listeningAddress: EventLoopFuture<SocketAddress?>? {
+        switch self {
+        case .idle(let eventLoopPromise):
+          return eventLoopPromise.futureResult
+        case .listening(let eventLoopFuture):
+          return eventLoopFuture
+        case .closed:
+          return nil
         }
       }
 
       enum OnBound {
-        case succeedPromise(_ promise: EventLoopPromise<SocketAddress>, address: SocketAddress)
-        case failPromise(_ promise: EventLoopPromise<SocketAddress>, error: RuntimeError)
+        case succeedPromise(_ promise: EventLoopPromise<SocketAddress?>, address: SocketAddress?)
       }
 
-      mutating func addressBound(
-        _ address: NIOCore.SocketAddress?,
-        addressOverride: SocketAddress?
-      ) -> OnBound {
+      mutating func addressBound(_ address: NIOCore.SocketAddress?) -> OnBound {
         switch self {
         case .idle(let listeningAddressPromise):
-          if let address {
-            self = .listening(listeningAddressPromise.futureResult)
-            return .succeedPromise(listeningAddressPromise, address: SocketAddress(address))
-          } else if let addressOverride, addressOverride.virtualSocket != nil {
-            self = .listening(listeningAddressPromise.futureResult)
-            return .succeedPromise(listeningAddressPromise, address: addressOverride)
-          } else {
-            // In some cases (such as starting the server from an fd, it might not be possible to get
-            // a socket address).
-            let unavailableAddress = RuntimeError(
-              code: .transportError,
-              message:
-                "Listener address isn't available. It may not correspond to a socket address."
-            )
-            self = .closedOrInvalidAddress(unavailableAddress)
-            return .failPromise(listeningAddressPromise, error: unavailableAddress)
-          }
+          let mapped = address.map { SocketAddress($0) }
+          self = .listening(listeningAddressPromise.futureResult)
+          return .succeedPromise(listeningAddressPromise, address: mapped)
 
-        case .listening, .closedOrInvalidAddress:
+        case .listening, .closed:
           fatalError(
             "Invalid state: addressBound should only be called once and when in idle state"
           )
@@ -168,47 +148,40 @@ extension HTTP2ServerTransport {
       }
 
       enum OnClose {
-        case failPromise(EventLoopPromise<SocketAddress>, error: RuntimeError)
+        case succeedPromise(EventLoopPromise<SocketAddress?>)
         case doNothing
       }
 
       mutating func close() -> OnClose {
-        let serverStoppedError = RuntimeError(
-          code: .serverIsStopped,
-          message: """
-            There is no listening address bound for this server: there may have been \
-            an error which caused the transport to close, or it may have shut down.
-            """
-        )
-
         switch self {
         case .idle(let listeningAddressPromise):
-          self = .closedOrInvalidAddress(serverStoppedError)
-          return .failPromise(listeningAddressPromise, error: serverStoppedError)
+          self = .closed
+          return .succeedPromise(listeningAddressPromise)
 
         case .listening:
-          self = .closedOrInvalidAddress(serverStoppedError)
+          self = .closed
           return .doNothing
 
-        case .closedOrInvalidAddress:
+        case .closed:
           return .doNothing
         }
       }
     }
 
-    /// The listening address for this server transport.
+    /// The listening address for this server transport, if one is available.
     ///
-    /// It is an `async` property because it will only return once the address has been successfully bound.
-    ///
-    /// - Throws: A runtime error will be thrown if the address could not be bound or is not bound any
-    /// longer, because the transport isn't listening anymore. It can also throw if the transport returned an
-    /// invalid address, or if the listener doesn't have a corresponding socket address (e.g. when
-    /// started from a file descriptor).
-    public var listeningAddress: SocketAddress {
-      get async throws {
-        try await self.listeningAddressState
-          .withLock { try $0.listeningAddressFuture }
-          .get()
+    /// It is an `async` property because it will only return once the listening channel has been
+    /// created. Returns `nil` if the listening channel doesn't have a corresponding socket address
+    /// (e.g. when using a non-socket-based transport) or if the server has been closed.
+    public var listeningAddress: SocketAddress? {
+      get async {
+        switch self.listeningAddressState.withLock({ $0.listeningAddress }) {
+        case .some(let future):
+          // The promise is always succeeded (never failed), so this will never throw.
+          return try! await future.get()
+        case .none:
+          return nil
+        }
       }
     }
 
@@ -249,11 +222,11 @@ extension HTTP2ServerTransport {
     }
 
     deinit {
-      // Fail the promise if this transport is deallocated without ever being started.
+      // Succeed the promise with nil if this transport is deallocated without ever being started.
       self.listeningAddressState.withLock { state in
         switch state.close() {
-        case .failPromise(let promise, let error):
-          promise.fail(error)
+        case .succeedPromise(let promise):
+          promise.succeed(nil)
         case .doNothing:
           ()
         }
@@ -269,8 +242,8 @@ extension HTTP2ServerTransport {
     ) async throws {
       defer {
         switch self.listeningAddressState.withLock({ $0.close() }) {
-        case .failPromise(let promise, let error):
-          promise.fail(error)
+        case .succeedPromise(let promise):
+          promise.succeed(nil)
         case .doNothing:
           ()
         }
@@ -295,16 +268,11 @@ extension HTTP2ServerTransport {
       )
 
       let action = self.listeningAddressState.withLock {
-        $0.addressBound(
-          serverChannel.channel.localAddress,
-          addressOverride: self.factory.listeningAddressOverride
-        )
+        $0.addressBound(serverChannel.channel.localAddress)
       }
       switch action {
       case .succeedPromise(let promise, let address):
         promise.succeed(address)
-      case .failPromise(let promise, let error):
-        promise.fail(error)
       }
 
       try await serverChannel.executeThenClose { inbound in

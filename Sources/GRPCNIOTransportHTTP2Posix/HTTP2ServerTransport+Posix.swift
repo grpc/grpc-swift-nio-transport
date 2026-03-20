@@ -153,6 +153,7 @@ extension HTTP2ServerTransport {
     }
 
     private let underlyingTransport: Custom<ListenerFactory>
+    private let address: ListenerFactory.Address
 
     /// The listening address for this server transport.
     ///
@@ -163,7 +164,24 @@ extension HTTP2ServerTransport {
     /// invalid address.
     public var listeningAddress: GRPCNIOTransportCore.SocketAddress {
       get async throws {
-        try await self.underlyingTransport.listeningAddress
+        if let address = await self.underlyingTransport.listeningAddress {
+          return address
+        }
+
+        // The channel didn't have a local address. This can happen for vsock channels
+        // because NIO's SocketAddress can't represent vsock addresses.
+        if case .socketAddress(let socketAddress) = self.address,
+          socketAddress.virtualSocket != nil {
+          return socketAddress
+        }
+
+        throw RuntimeError(
+          code: .serverIsStopped,
+          message: """
+            There is no listening address bound for this server: there may have been \
+            an error which caused the transport to close, or it may have shut down.
+            """
+        )
       }
     }
 
@@ -218,6 +236,7 @@ extension HTTP2ServerTransport {
       config: Config = .defaults,
       eventLoopGroup: MultiThreadedEventLoopGroup = .singletonMultiThreadedEventLoopGroup
     ) {
+      self.address = address
       self.underlyingTransport = Custom(
         eventLoopGroup: eventLoopGroup,
         quiescingHelper: ServerQuiescingHelper(group: eventLoopGroup),
