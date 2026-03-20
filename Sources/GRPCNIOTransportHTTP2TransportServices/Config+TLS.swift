@@ -91,6 +91,14 @@ extension HTTP2ServerTransport.TransportServices {
     /// A provider for the `SecIdentity` to be used when setting up TLS.
     public var identityProvider: @Sendable () throws -> SecIdentity
 
+    /// Additional certificates to include in the TLS handshake alongside the
+    /// leaf certificate from the `SecIdentity`.
+    ///
+    /// Use this to provide intermediate (and optionally root) certificates
+    /// when the peer requires the full chain for verification.
+    @available(gRPCSwiftNIOTransport 2.5, *)
+    public var additionalCertificates: [SecCertificate]
+
     /// Create a new HTTP2 NIO Transport Services transport TLS config.
     /// - Parameters:
     ///   - clientCertificateVerification: How to verify the client certificate, if one is presented.
@@ -107,6 +115,7 @@ extension HTTP2ServerTransport.TransportServices {
       self.trustRoots = trustRoots
       self.requireALPN = requireALPN
       self.identityProvider = identityProvider
+      self.additionalCertificates = []
     }
 
     /// Create a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted:
@@ -224,6 +233,14 @@ extension HTTP2ClientTransport.TransportServices {
     /// An optional provider for the `SecIdentity` to be used when setting up TLS.
     public var identityProvider: (@Sendable () throws -> SecIdentity)?
 
+    /// Additional certificates to include in the TLS handshake alongside the
+    /// leaf certificate from the `SecIdentity`.
+    ///
+    /// Use this to provide intermediate (and optionally root) certificates
+    /// when the peer requires the full chain for verification.
+    @available(gRPCSwiftNIOTransport 2.5, *)
+    public var additionalCertificates: [SecCertificate]
+
     /// Create a new HTTP2 NIO Transport Services transport TLS config.
     /// - Parameters:
     ///   - serverCertificateVerification: How to verify the server certificate, if one is presented.
@@ -237,6 +254,7 @@ extension HTTP2ClientTransport.TransportServices {
       self.serverCertificateVerification = serverCertificateVerification
       self.trustRoots = trustRoots
       self.identityProvider = identityProvider
+      self.additionalCertificates = []
     }
 
     /// Create a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted:

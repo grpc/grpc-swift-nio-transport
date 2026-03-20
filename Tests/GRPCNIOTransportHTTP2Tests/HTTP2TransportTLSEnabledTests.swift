@@ -576,6 +576,100 @@ struct HTTP2TransportTLSEnabledTests {
     }
   }
 
+  @Test(
+    "Server with additionalCertificates sends full chain, client verifies successfully",
+    .enabled(if: System.supportsNetworkFramework)
+  )
+  @available(gRPCSwiftNIOTransport 2.5, *)
+  func testRPC_TLS_serverAdditionalCertificates_OK() async throws {
+    #if canImport(Network)
+    let certificateChain = try CertificateChain()
+    let serverCertDER = try certificateChain.server.certificate.serializeToDER()
+    let serverKeyDER = try certificateChain.server.key.serializeAsPEM().derBytes
+    let intermediateCertDER = try certificateChain.intermediate.certificate.serializeToDER()
+    let rootCertDER = try certificateChain.root.certificate.serializeToDER()
+
+    let intermediateSecCert = SecCertificateCreateWithData(
+      nil,
+      Data(intermediateCertDER) as CFData
+    )!
+
+    // Server: leaf identity + intermediate in additionalCertificates.
+    var serverConfig = self.makeDefaultPlaintextTSServerConfig()
+    serverConfig.security = .tls {
+      try self.makeSecIdentityProvider(
+        certificateBytes: serverCertDER,
+        privateKeyBytes: serverKeyDER
+      )
+    } configure: { tls in
+      tls.additionalCertificates = [intermediateSecCert]
+    }
+
+    // Client trusts only the root cert (not the intermediate). The handshake succeeds because
+    // the server sends leaf + intermediate, so the client can build the chain to the root.
+    var clientConfig = self.makeDefaultPlaintextTSClientConfig()
+    clientConfig.transport.http2.authority = CertificateChain.serverName
+    clientConfig.security = .tls { tls in
+      tls.trustRoots = .certificates([.bytes(rootCertDER, format: .der)])
+    }
+
+    try await self.withClientAndServer(
+      clientConfig: .transportServices(clientConfig),
+      serverConfig: .transportServices(serverConfig)
+    ) { control in
+      await #expect(throws: Never.self) {
+        try await self.executeUnaryRPC(control: control)
+      }
+    }
+    #endif
+  }
+
+  @Test(
+    "Without additionalCertificates, client fails to verify server when only root is trusted",
+    .enabled(if: System.supportsNetworkFramework)
+  )
+  @available(gRPCSwiftNIOTransport 2.5, *)
+  func testRPC_TLS_serverWithoutAdditionalCertificates_failsVerification() async throws {
+    #if canImport(Network)
+    let certificateChain = try CertificateChain()
+    let serverCertDER = try certificateChain.server.certificate.serializeToDER()
+    let serverKeyDER = try certificateChain.server.key.serializeAsPEM().derBytes
+    let rootCertDER = try certificateChain.root.certificate.serializeToDER()
+
+    // Server: leaf identity only, NO additionalCertificates.
+    var serverConfig = self.makeDefaultPlaintextTSServerConfig()
+    serverConfig.security = .tls(
+      identityProvider: {
+        try self.makeSecIdentityProvider(
+          certificateBytes: serverCertDER,
+          privateKeyBytes: serverKeyDER
+        )
+      }
+    )
+
+    // Client trusts only the root cert. The handshake should fail because the server only sends
+    // the leaf and the client has no way to obtain the intermediate to build the chain.
+    var clientConfig = self.makeDefaultPlaintextTSClientConfig()
+    clientConfig.transport.http2.authority = CertificateChain.serverName
+    clientConfig.security = .tls { tls in
+      tls.trustRoots = .certificates([.bytes(rootCertDER, format: .der)])
+    }
+
+    await #expect {
+      try await self.withClientAndServer(
+        clientConfig: .transportServices(clientConfig),
+        serverConfig: .transportServices(serverConfig)
+      ) { control in
+        try await self.executeUnaryRPC(control: control)
+      }
+    } throws: { error in
+      let rootError = try #require(error as? RPCError)
+      #expect(rootError.code == .unavailable)
+      return true
+    }
+    #endif
+  }
+
   // - MARK: Test Utilities
 
   enum TLSEnabledTestsError: Error {
