@@ -87,12 +87,8 @@ function generate_perf_test_services {
   generate_message "$here/upstream/grpc/core/stats.proto" "$here/upstream" "$output" "Visibility=Internal" "FileNaming=PathToUnderscores"
 
   for proto in "${protos[@]}"; do
-    generate_message "$proto" "$here/upstream" "$output" "Visibility=Internal" "FileNaming=PathToUnderscores"
-    if [ "$proto" == "$here/upstream/grpc/testing/worker_service.proto" ]; then
-      generate_grpc "$proto" "$here/upstream" "$output" "Visibility=Internal" "Client=false" "FileNaming=PathToUnderscores"
-    else
-      generate_grpc "$proto" "$here/upstream" "$output" "Visibility=Internal" "FileNaming=PathToUnderscores"
-    fi
+    generate_message "$proto" "$here/upstream" "$output" "Visibility=Package" "FileNaming=PathToUnderscores"
+    generate_grpc "$proto" "$here/upstream" "$output" "Visibility=Package" "FileNaming=PathToUnderscores"
   done
 }
 
