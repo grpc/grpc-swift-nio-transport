@@ -18,6 +18,7 @@ import ArgumentParser
 import GRPCCore
 import GRPCNIOTransportHTTP2
 import NIOPosix
+import WorkerService
 
 @main
 struct PerformanceWorker: AsyncParsableCommand {
@@ -66,13 +67,20 @@ struct PerformanceWorker: AsyncParsableCommand {
       print("[WARNING] performance-worker built in DEBUG mode, results won't be representative.")
     }
 
+    let worker = WorkerService(serverHost: self.serverHost, serverPort: self.serverPort)
     let server = GRPCServer(
       transport: .http2NIOPosix(
         address: .ipv4(host: self.driverHost, port: self.driverPort),
         transportSecurity: .plaintext
       ),
-      services: [WorkerService(serverHost: self.serverHost, serverPort: self.serverPort)]
+      services: [worker]
     )
+
+    // The "Quit" RPC should signal the server to shutdown.
+    worker.onQuit {
+      server.beginGracefulShutdown()
+    }
+
     try await server.serve()
   }
 }

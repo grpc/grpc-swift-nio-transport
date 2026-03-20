@@ -20,19 +20,26 @@ import NIOConcurrencyHelpers
 import NIOCore
 import NIOPosix
 
-final class WorkerService: Sendable {
+package final class WorkerService: Sendable {
   private let state: NIOLockedValueBox<State>
   private let serverHost: String
   private let serverPort: Int?
 
-  init(serverHost: String, serverPort: Int?) {
+  package init(serverHost: String, serverPort: Int?) {
     self.state = NIOLockedValueBox(State())
     self.serverHost = serverHost
     self.serverPort = serverPort
   }
 
+  package func onQuit(_ callback: @Sendable @escaping () -> Void) {
+    self.state.withLockedValue {
+      $0.onQuit = callback
+    }
+  }
+
   private struct State {
     private var role: Role
+    var onQuit: Optional<@Sendable () -> Void>
 
     enum Role {
       case none
@@ -54,6 +61,7 @@ final class WorkerService: Sendable {
 
     init() {
       self.role = .none
+      self.onQuit = .none
     }
 
     mutating func collectServerStats(replaceWith newStats: ServerStats? = nil) -> ServerStats? {
@@ -204,50 +212,55 @@ final class WorkerService: Sendable {
     }
 
     enum OnQuitWorker {
-      case shutDownServer(GRPCServer<HTTP2ServerTransport.Posix>)
-      case shutDownClients([BenchmarkClient])
-      case nothing
+      case shutDownServer(GRPCServer<HTTP2ServerTransport.Posix>, (@Sendable () -> Void)?)
+      case shutDownClients([BenchmarkClient], (@Sendable () -> Void)?)
+      case callback((@Sendable () -> Void)?)
     }
 
     mutating func quit() -> OnQuitWorker {
       switch self.role {
       case .none:
-        return .nothing
+        let onQuit = self.onQuit.take()
+        return .callback(onQuit)
       case .client(let state):
         self.role = .none
-        return .shutDownClients(state.clients)
+        let onQuit = self.onQuit.take()
+        return .shutDownClients(state.clients, onQuit)
       case .server(let state):
         self.role = .none
-        return .shutDownServer(state.server)
+        let onQuit = self.onQuit.take()
+        return .shutDownServer(state.server, onQuit)
       }
     }
   }
 }
 
 extension WorkerService: Grpc_Testing_WorkerService.ServiceProtocol {
-  func quitWorker(
+  package func quitWorker(
     request: ServerRequest<Grpc_Testing_Void>,
     context: ServerContext
   ) async throws -> ServerResponse<Grpc_Testing_Void> {
     let onQuit = self.state.withLockedValue { $0.quit() }
 
     switch onQuit {
-    case .nothing:
-      ()
+    case .callback(let onQuit):
+      onQuit?()
 
-    case .shutDownClients(let clients):
+    case .shutDownClients(let clients, let onQuit):
       for client in clients {
         client.shutdown()
       }
+      onQuit?()
 
-    case .shutDownServer(let server):
+    case .shutDownServer(let server, let onQuit):
       server.beginGracefulShutdown()
+      onQuit?()
     }
 
     return ServerResponse(message: Grpc_Testing_Void())
   }
 
-  func coreCount(
+  package func coreCount(
     request: ServerRequest<Grpc_Testing_CoreRequest>,
     context: ServerContext
   ) async throws -> ServerResponse<Grpc_Testing_CoreResponse> {
@@ -259,7 +272,7 @@ extension WorkerService: Grpc_Testing_WorkerService.ServiceProtocol {
     )
   }
 
-  func runServer(
+  package func runServer(
     request: StreamingServerRequest<Grpc_Testing_ServerArgs>,
     context: ServerContext
   ) async throws -> StreamingServerResponse<Grpc_Testing_ServerStatus> {
@@ -331,7 +344,7 @@ extension WorkerService: Grpc_Testing_WorkerService.ServiceProtocol {
     }
   }
 
-  func runClient(
+  package func runClient(
     request: StreamingServerRequest<Grpc_Testing_ClientArgs>,
     context: ServerContext
   ) async throws -> StreamingServerResponse<Grpc_Testing_ClientStatus> {

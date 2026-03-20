@@ -23,6 +23,10 @@ let package = Package(
   dependencies: [
     .package(path: "../.."),
     .package(
+      url: "https://github.com/grpc/grpc-swift-2",
+      from: "2.3.0"
+    ),
+    .package(
       url: "https://github.com/grpc/grpc-swift-protobuf",
       from: "2.0.0"
     ),
@@ -39,13 +43,31 @@ let package = Package(
     .executableTarget(
       name: "grpc-performance-tests",
       dependencies: [
+        .target(name: "WorkerService"),
+        .product(name: "GRPCNIOTransportHTTP2", package: "grpc-swift-nio-transport"),
+        .product(name: "GRPCProtobuf", package: "grpc-swift-protobuf"),
+        .product(name: "NIOPosix", package: "swift-nio"),
+        .product(name: "ArgumentParser", package: "swift-argument-parser"),
+      ]
+    ),
+    .target(
+      name: "WorkerService",
+      dependencies: [
         .product(name: "GRPCNIOTransportHTTP2", package: "grpc-swift-nio-transport"),
         .product(name: "GRPCProtobuf", package: "grpc-swift-protobuf"),
         .product(name: "NIOPosix", package: "swift-nio"),
         .product(name: "NIOConcurrencyHelpers", package: "swift-nio"),
         .product(name: "_NIOFileSystem", package: "swift-nio"),
-        .product(name: "ArgumentParser", package: "swift-argument-parser"),
       ]
-    )
+    ),
+    .testTarget(
+      name: "WorkerServiceTests",
+      dependencies: [
+        .target(name: "WorkerService"),
+        .product(name: "GRPCInProcessTransport", package: "grpc-swift-2"),
+        .product(name: "GRPCProtobuf", package: "grpc-swift-protobuf"),
+        .product(name: "NIOPosix", package: "swift-nio"),
+      ]
+    ),
   ]
 )
