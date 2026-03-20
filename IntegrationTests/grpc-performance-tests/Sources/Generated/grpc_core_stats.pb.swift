@@ -34,42 +34,42 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-struct Grpc_Core_Bucket: Sendable {
+package struct Grpc_Core_Bucket: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var start: Double = 0
+  package var start: Double = 0
 
-  var count: UInt64 = 0
+  package var count: UInt64 = 0
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
-struct Grpc_Core_Histogram: Sendable {
+package struct Grpc_Core_Histogram: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var buckets: [Grpc_Core_Bucket] = []
+  package var buckets: [Grpc_Core_Bucket] = []
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
-struct Grpc_Core_Metric: Sendable {
+package struct Grpc_Core_Metric: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var name: String = String()
+  package var name: String = String()
 
-  var value: Grpc_Core_Metric.OneOf_Value? = nil
+  package var value: Grpc_Core_Metric.OneOf_Value? = nil
 
-  var count: UInt64 {
+  package var count: UInt64 {
     get {
       if case .count(let v)? = value {return v}
       return 0
@@ -77,7 +77,7 @@ struct Grpc_Core_Metric: Sendable {
     set {value = .count(newValue)}
   }
 
-  var histogram: Grpc_Core_Histogram {
+  package var histogram: Grpc_Core_Histogram {
     get {
       if case .histogram(let v)? = value {return v}
       return Grpc_Core_Histogram()
@@ -85,27 +85,27 @@ struct Grpc_Core_Metric: Sendable {
     set {value = .histogram(newValue)}
   }
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  enum OneOf_Value: Equatable, Sendable {
+  package enum OneOf_Value: Equatable, Sendable {
     case count(UInt64)
     case histogram(Grpc_Core_Histogram)
 
   }
 
-  init() {}
+  package init() {}
 }
 
-struct Grpc_Core_Stats: Sendable {
+package struct Grpc_Core_Stats: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var metrics: [Grpc_Core_Metric] = []
+  package var metrics: [Grpc_Core_Metric] = []
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -113,10 +113,10 @@ struct Grpc_Core_Stats: Sendable {
 fileprivate let _protobuf_package = "grpc.core"
 
 extension Grpc_Core_Bucket: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".Bucket"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}start\0\u{1}count\0")
+  package static let protoMessageName: String = _protobuf_package + ".Bucket"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}start\0\u{1}count\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -129,7 +129,7 @@ extension Grpc_Core_Bucket: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.start.bitPattern != 0 {
       try visitor.visitSingularDoubleField(value: self.start, fieldNumber: 1)
     }
@@ -139,7 +139,7 @@ extension Grpc_Core_Bucket: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Core_Bucket, rhs: Grpc_Core_Bucket) -> Bool {
+  package static func ==(lhs: Grpc_Core_Bucket, rhs: Grpc_Core_Bucket) -> Bool {
     if lhs.start != rhs.start {return false}
     if lhs.count != rhs.count {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -148,10 +148,10 @@ extension Grpc_Core_Bucket: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
 }
 
 extension Grpc_Core_Histogram: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".Histogram"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}buckets\0")
+  package static let protoMessageName: String = _protobuf_package + ".Histogram"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}buckets\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -163,14 +163,14 @@ extension Grpc_Core_Histogram: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.buckets.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.buckets, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Core_Histogram, rhs: Grpc_Core_Histogram) -> Bool {
+  package static func ==(lhs: Grpc_Core_Histogram, rhs: Grpc_Core_Histogram) -> Bool {
     if lhs.buckets != rhs.buckets {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -178,10 +178,10 @@ extension Grpc_Core_Histogram: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
 }
 
 extension Grpc_Core_Metric: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".Metric"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{2}\u{9}count\0\u{1}histogram\0")
+  package static let protoMessageName: String = _protobuf_package + ".Metric"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{2}\u{9}count\0\u{1}histogram\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -214,7 +214,7 @@ extension Grpc_Core_Metric: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -236,7 +236,7 @@ extension Grpc_Core_Metric: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Core_Metric, rhs: Grpc_Core_Metric) -> Bool {
+  package static func ==(lhs: Grpc_Core_Metric, rhs: Grpc_Core_Metric) -> Bool {
     if lhs.name != rhs.name {return false}
     if lhs.value != rhs.value {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -245,10 +245,10 @@ extension Grpc_Core_Metric: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
 }
 
 extension Grpc_Core_Stats: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".Stats"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}metrics\0")
+  package static let protoMessageName: String = _protobuf_package + ".Stats"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}metrics\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -260,14 +260,14 @@ extension Grpc_Core_Stats: SwiftProtobuf.Message, SwiftProtobuf._MessageImplemen
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if !self.metrics.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.metrics, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Core_Stats, rhs: Grpc_Core_Stats) -> Bool {
+  package static func ==(lhs: Grpc_Core_Stats, rhs: Grpc_Core_Stats) -> Bool {
     if lhs.metrics != rhs.metrics {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

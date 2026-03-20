@@ -32,65 +32,65 @@ import GRPCProtobuf
 
 /// Namespace containing generated types for the "grpc.testing.WorkerService" service.
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
-internal enum Grpc_Testing_WorkerService: Sendable {
+package enum Grpc_Testing_WorkerService: Sendable {
     /// Service descriptor for the "grpc.testing.WorkerService" service.
-    internal static let descriptor = GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.WorkerService")
+    package static let descriptor = GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.WorkerService")
     /// Namespace for method metadata.
-    internal enum Method: Sendable {
+    package enum Method: Sendable {
         /// Namespace for "RunServer" metadata.
-        internal enum RunServer: Sendable {
+        package enum RunServer: Sendable {
             /// Request type for "RunServer".
-            internal typealias Input = Grpc_Testing_ServerArgs
+            package typealias Input = Grpc_Testing_ServerArgs
             /// Response type for "RunServer".
-            internal typealias Output = Grpc_Testing_ServerStatus
+            package typealias Output = Grpc_Testing_ServerStatus
             /// Descriptor for "RunServer".
-            internal static let descriptor = GRPCCore.MethodDescriptor(
+            package static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.WorkerService"),
                 method: "RunServer",
                 type: .bidirectionalStreaming
             )
         }
         /// Namespace for "RunClient" metadata.
-        internal enum RunClient: Sendable {
+        package enum RunClient: Sendable {
             /// Request type for "RunClient".
-            internal typealias Input = Grpc_Testing_ClientArgs
+            package typealias Input = Grpc_Testing_ClientArgs
             /// Response type for "RunClient".
-            internal typealias Output = Grpc_Testing_ClientStatus
+            package typealias Output = Grpc_Testing_ClientStatus
             /// Descriptor for "RunClient".
-            internal static let descriptor = GRPCCore.MethodDescriptor(
+            package static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.WorkerService"),
                 method: "RunClient",
                 type: .bidirectionalStreaming
             )
         }
         /// Namespace for "CoreCount" metadata.
-        internal enum CoreCount: Sendable {
+        package enum CoreCount: Sendable {
             /// Request type for "CoreCount".
-            internal typealias Input = Grpc_Testing_CoreRequest
+            package typealias Input = Grpc_Testing_CoreRequest
             /// Response type for "CoreCount".
-            internal typealias Output = Grpc_Testing_CoreResponse
+            package typealias Output = Grpc_Testing_CoreResponse
             /// Descriptor for "CoreCount".
-            internal static let descriptor = GRPCCore.MethodDescriptor(
+            package static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.WorkerService"),
                 method: "CoreCount",
                 type: .unary
             )
         }
         /// Namespace for "QuitWorker" metadata.
-        internal enum QuitWorker: Sendable {
+        package enum QuitWorker: Sendable {
             /// Request type for "QuitWorker".
-            internal typealias Input = Grpc_Testing_Void
+            package typealias Input = Grpc_Testing_Void
             /// Response type for "QuitWorker".
-            internal typealias Output = Grpc_Testing_Void
+            package typealias Output = Grpc_Testing_Void
             /// Descriptor for "QuitWorker".
-            internal static let descriptor = GRPCCore.MethodDescriptor(
+            package static let descriptor = GRPCCore.MethodDescriptor(
                 service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.WorkerService"),
                 method: "QuitWorker",
                 type: .unary
             )
         }
         /// Descriptors for all methods in the "grpc.testing.WorkerService" service.
-        internal static let descriptors: [GRPCCore.MethodDescriptor] = [
+        package static let descriptors: [GRPCCore.MethodDescriptor] = [
             RunServer.descriptor,
             RunClient.descriptor,
             CoreCount.descriptor,
@@ -102,7 +102,7 @@ internal enum Grpc_Testing_WorkerService: Sendable {
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension GRPCCore.ServiceDescriptor {
     /// Service descriptor for the "grpc.testing.WorkerService" service.
-    internal static let grpc_testing_WorkerService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.WorkerService")
+    package static let grpc_testing_WorkerService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "grpc.testing.WorkerService")
 }
 
 // MARK: grpc.testing.WorkerService (server)
@@ -119,7 +119,7 @@ extension Grpc_Testing_WorkerService {
     ///
     /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
     /// or ``SimpleServiceProtocol`` instead.
-    internal protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+    package protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
         /// Handle the "RunServer" method.
         ///
         /// > Source IDL Documentation:
@@ -210,7 +210,7 @@ extension Grpc_Testing_WorkerService {
     /// trailing response metadata. If you don't need these then consider using
     /// the ``SimpleServiceProtocol``. If you need fine grained control over your RPCs then
     /// use ``StreamingServiceProtocol``.
-    internal protocol ServiceProtocol: Grpc_Testing_WorkerService.StreamingServiceProtocol {
+    package protocol ServiceProtocol: Grpc_Testing_WorkerService.StreamingServiceProtocol {
         /// Handle the "RunServer" method.
         ///
         /// > Source IDL Documentation:
@@ -299,7 +299,7 @@ extension Grpc_Testing_WorkerService {
     /// This is the highest level protocol for the service. The API is the easiest to use but
     /// doesn't provide access to request or response metadata. If you need access to these
     /// then use ``ServiceProtocol`` instead.
-    internal protocol SimpleServiceProtocol: Grpc_Testing_WorkerService.ServiceProtocol {
+    package protocol SimpleServiceProtocol: Grpc_Testing_WorkerService.ServiceProtocol {
         /// Handle the "RunServer" method.
         ///
         /// > Source IDL Documentation:
@@ -389,7 +389,7 @@ extension Grpc_Testing_WorkerService {
 // Default implementation of 'registerMethods(with:)'.
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension Grpc_Testing_WorkerService.StreamingServiceProtocol {
-    internal func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
+    package func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
         router.registerHandler(
             forMethod: Grpc_Testing_WorkerService.Method.RunServer.descriptor,
             deserializer: GRPCProtobuf.ProtobufDeserializer<Grpc_Testing_ServerArgs>(),
@@ -440,7 +440,7 @@ extension Grpc_Testing_WorkerService.StreamingServiceProtocol {
 // Default implementation of streaming methods from 'StreamingServiceProtocol'.
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension Grpc_Testing_WorkerService.ServiceProtocol {
-    internal func coreCount(
+    package func coreCount(
         request: GRPCCore.StreamingServerRequest<Grpc_Testing_CoreRequest>,
         context: GRPCCore.ServerContext
     ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_CoreResponse> {
@@ -451,7 +451,7 @@ extension Grpc_Testing_WorkerService.ServiceProtocol {
         return GRPCCore.StreamingServerResponse(single: response)
     }
 
-    internal func quitWorker(
+    package func quitWorker(
         request: GRPCCore.StreamingServerRequest<Grpc_Testing_Void>,
         context: GRPCCore.ServerContext
     ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_Void> {
@@ -466,7 +466,7 @@ extension Grpc_Testing_WorkerService.ServiceProtocol {
 // Default implementation of methods from 'ServiceProtocol'.
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
 extension Grpc_Testing_WorkerService.SimpleServiceProtocol {
-    internal func runServer(
+    package func runServer(
         request: GRPCCore.StreamingServerRequest<Grpc_Testing_ServerArgs>,
         context: GRPCCore.ServerContext
     ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_ServerStatus> {
@@ -483,7 +483,7 @@ extension Grpc_Testing_WorkerService.SimpleServiceProtocol {
         )
     }
 
-    internal func runClient(
+    package func runClient(
         request: GRPCCore.StreamingServerRequest<Grpc_Testing_ClientArgs>,
         context: GRPCCore.ServerContext
     ) async throws -> GRPCCore.StreamingServerResponse<Grpc_Testing_ClientStatus> {
@@ -500,7 +500,7 @@ extension Grpc_Testing_WorkerService.SimpleServiceProtocol {
         )
     }
 
-    internal func coreCount(
+    package func coreCount(
         request: GRPCCore.ServerRequest<Grpc_Testing_CoreRequest>,
         context: GRPCCore.ServerContext
     ) async throws -> GRPCCore.ServerResponse<Grpc_Testing_CoreResponse> {
@@ -513,7 +513,7 @@ extension Grpc_Testing_WorkerService.SimpleServiceProtocol {
         )
     }
 
-    internal func quitWorker(
+    package func quitWorker(
         request: GRPCCore.ServerRequest<Grpc_Testing_Void>,
         context: GRPCCore.ServerContext
     ) async throws -> GRPCCore.ServerResponse<Grpc_Testing_Void> {
@@ -523,6 +523,548 @@ extension Grpc_Testing_WorkerService.SimpleServiceProtocol {
                 context: context
             ),
             metadata: [:]
+        )
+    }
+}
+
+// MARK: grpc.testing.WorkerService (client)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Grpc_Testing_WorkerService {
+    /// Generated client protocol for the "grpc.testing.WorkerService" service.
+    ///
+    /// You don't need to implement this protocol directly, use the generated
+    /// implementation, ``Client``.
+    package protocol ClientProtocol: Sendable {
+        /// Call the "RunServer" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Start server with specified workload.
+        /// > First request sent specifies the ServerConfig followed by ServerStatus
+        /// > response. After that, a "Mark" can be sent anytime to request the latest
+        /// > stats. Closing the stream will initiate shutdown of the test server
+        /// > and once the shutdown has finished, the OK status is sent to terminate
+        /// > this RPC.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request producing `Grpc_Testing_ServerArgs` messages.
+        ///   - serializer: A serializer for `Grpc_Testing_ServerArgs` messages.
+        ///   - deserializer: A deserializer for `Grpc_Testing_ServerStatus` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func runServer<Result>(
+            request: GRPCCore.StreamingClientRequest<Grpc_Testing_ServerArgs>,
+            serializer: some GRPCCore.MessageSerializer<Grpc_Testing_ServerArgs>,
+            deserializer: some GRPCCore.MessageDeserializer<Grpc_Testing_ServerStatus>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.StreamingClientResponse<Grpc_Testing_ServerStatus>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "RunClient" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Start client with specified workload.
+        /// > First request sent specifies the ClientConfig followed by ClientStatus
+        /// > response. After that, a "Mark" can be sent anytime to request the latest
+        /// > stats. Closing the stream will initiate shutdown of the test client
+        /// > and once the shutdown has finished, the OK status is sent to terminate
+        /// > this RPC.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request producing `Grpc_Testing_ClientArgs` messages.
+        ///   - serializer: A serializer for `Grpc_Testing_ClientArgs` messages.
+        ///   - deserializer: A deserializer for `Grpc_Testing_ClientStatus` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func runClient<Result>(
+            request: GRPCCore.StreamingClientRequest<Grpc_Testing_ClientArgs>,
+            serializer: some GRPCCore.MessageSerializer<Grpc_Testing_ClientArgs>,
+            deserializer: some GRPCCore.MessageDeserializer<Grpc_Testing_ClientStatus>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.StreamingClientResponse<Grpc_Testing_ClientStatus>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "CoreCount" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Just return the core count - unary call
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Grpc_Testing_CoreRequest` message.
+        ///   - serializer: A serializer for `Grpc_Testing_CoreRequest` messages.
+        ///   - deserializer: A deserializer for `Grpc_Testing_CoreResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func coreCount<Result>(
+            request: GRPCCore.ClientRequest<Grpc_Testing_CoreRequest>,
+            serializer: some GRPCCore.MessageSerializer<Grpc_Testing_CoreRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Grpc_Testing_CoreResponse>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Grpc_Testing_CoreResponse>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "QuitWorker" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Quit this worker
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Grpc_Testing_Void` message.
+        ///   - serializer: A serializer for `Grpc_Testing_Void` messages.
+        ///   - deserializer: A deserializer for `Grpc_Testing_Void` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        func quitWorker<Result>(
+            request: GRPCCore.ClientRequest<Grpc_Testing_Void>,
+            serializer: some GRPCCore.MessageSerializer<Grpc_Testing_Void>,
+            deserializer: some GRPCCore.MessageDeserializer<Grpc_Testing_Void>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Grpc_Testing_Void>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+    }
+
+    /// Generated client for the "grpc.testing.WorkerService" service.
+    ///
+    /// The ``Client`` provides an implementation of ``ClientProtocol`` which wraps
+    /// a `GRPCCore.GRPCCClient`. The underlying `GRPCClient` provides the long-lived
+    /// means of communication with the remote peer.
+    package struct Client<Transport>: ClientProtocol where Transport: GRPCCore.ClientTransport {
+        private let client: GRPCCore.GRPCClient<Transport>
+
+        /// Creates a new client wrapping the provided `GRPCCore.GRPCClient`.
+        ///
+        /// - Parameters:
+        ///   - client: A `GRPCCore.GRPCClient` providing a communication channel to the service.
+        package init(wrapping client: GRPCCore.GRPCClient<Transport>) {
+            self.client = client
+        }
+
+        /// Call the "RunServer" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Start server with specified workload.
+        /// > First request sent specifies the ServerConfig followed by ServerStatus
+        /// > response. After that, a "Mark" can be sent anytime to request the latest
+        /// > stats. Closing the stream will initiate shutdown of the test server
+        /// > and once the shutdown has finished, the OK status is sent to terminate
+        /// > this RPC.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request producing `Grpc_Testing_ServerArgs` messages.
+        ///   - serializer: A serializer for `Grpc_Testing_ServerArgs` messages.
+        ///   - deserializer: A deserializer for `Grpc_Testing_ServerStatus` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        package func runServer<Result>(
+            request: GRPCCore.StreamingClientRequest<Grpc_Testing_ServerArgs>,
+            serializer: some GRPCCore.MessageSerializer<Grpc_Testing_ServerArgs>,
+            deserializer: some GRPCCore.MessageDeserializer<Grpc_Testing_ServerStatus>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.StreamingClientResponse<Grpc_Testing_ServerStatus>) async throws -> Result
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.bidirectionalStreaming(
+                request: request,
+                descriptor: Grpc_Testing_WorkerService.Method.RunServer.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "RunClient" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Start client with specified workload.
+        /// > First request sent specifies the ClientConfig followed by ClientStatus
+        /// > response. After that, a "Mark" can be sent anytime to request the latest
+        /// > stats. Closing the stream will initiate shutdown of the test client
+        /// > and once the shutdown has finished, the OK status is sent to terminate
+        /// > this RPC.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request producing `Grpc_Testing_ClientArgs` messages.
+        ///   - serializer: A serializer for `Grpc_Testing_ClientArgs` messages.
+        ///   - deserializer: A deserializer for `Grpc_Testing_ClientStatus` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        package func runClient<Result>(
+            request: GRPCCore.StreamingClientRequest<Grpc_Testing_ClientArgs>,
+            serializer: some GRPCCore.MessageSerializer<Grpc_Testing_ClientArgs>,
+            deserializer: some GRPCCore.MessageDeserializer<Grpc_Testing_ClientStatus>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.StreamingClientResponse<Grpc_Testing_ClientStatus>) async throws -> Result
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.bidirectionalStreaming(
+                request: request,
+                descriptor: Grpc_Testing_WorkerService.Method.RunClient.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "CoreCount" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Just return the core count - unary call
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Grpc_Testing_CoreRequest` message.
+        ///   - serializer: A serializer for `Grpc_Testing_CoreRequest` messages.
+        ///   - deserializer: A deserializer for `Grpc_Testing_CoreResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        package func coreCount<Result>(
+            request: GRPCCore.ClientRequest<Grpc_Testing_CoreRequest>,
+            serializer: some GRPCCore.MessageSerializer<Grpc_Testing_CoreRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Grpc_Testing_CoreResponse>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Grpc_Testing_CoreResponse>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Grpc_Testing_WorkerService.Method.CoreCount.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "QuitWorker" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Quit this worker
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Grpc_Testing_Void` message.
+        ///   - serializer: A serializer for `Grpc_Testing_Void` messages.
+        ///   - deserializer: A deserializer for `Grpc_Testing_Void` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response, the result of which is
+        ///       returned to the caller. Returning from the closure will cancel the RPC if it
+        ///       hasn't already finished.
+        /// - Returns: The result of `handleResponse`.
+        package func quitWorker<Result>(
+            request: GRPCCore.ClientRequest<Grpc_Testing_Void>,
+            serializer: some GRPCCore.MessageSerializer<Grpc_Testing_Void>,
+            deserializer: some GRPCCore.MessageDeserializer<Grpc_Testing_Void>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Grpc_Testing_Void>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Grpc_Testing_WorkerService.Method.QuitWorker.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+    }
+}
+
+// Helpers providing default arguments to 'ClientProtocol' methods.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Grpc_Testing_WorkerService.ClientProtocol {
+    /// Call the "RunServer" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Start server with specified workload.
+    /// > First request sent specifies the ServerConfig followed by ServerStatus
+    /// > response. After that, a "Mark" can be sent anytime to request the latest
+    /// > stats. Closing the stream will initiate shutdown of the test server
+    /// > and once the shutdown has finished, the OK status is sent to terminate
+    /// > this RPC.
+    ///
+    /// - Parameters:
+    ///   - request: A streaming request producing `Grpc_Testing_ServerArgs` messages.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    package func runServer<Result>(
+        request: GRPCCore.StreamingClientRequest<Grpc_Testing_ServerArgs>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.StreamingClientResponse<Grpc_Testing_ServerStatus>) async throws -> Result
+    ) async throws -> Result where Result: Sendable {
+        try await self.runServer(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Grpc_Testing_ServerArgs>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Grpc_Testing_ServerStatus>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "RunClient" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Start client with specified workload.
+    /// > First request sent specifies the ClientConfig followed by ClientStatus
+    /// > response. After that, a "Mark" can be sent anytime to request the latest
+    /// > stats. Closing the stream will initiate shutdown of the test client
+    /// > and once the shutdown has finished, the OK status is sent to terminate
+    /// > this RPC.
+    ///
+    /// - Parameters:
+    ///   - request: A streaming request producing `Grpc_Testing_ClientArgs` messages.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    package func runClient<Result>(
+        request: GRPCCore.StreamingClientRequest<Grpc_Testing_ClientArgs>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.StreamingClientResponse<Grpc_Testing_ClientStatus>) async throws -> Result
+    ) async throws -> Result where Result: Sendable {
+        try await self.runClient(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Grpc_Testing_ClientArgs>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Grpc_Testing_ClientStatus>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "CoreCount" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Just return the core count - unary call
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Grpc_Testing_CoreRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    package func coreCount<Result>(
+        request: GRPCCore.ClientRequest<Grpc_Testing_CoreRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Grpc_Testing_CoreResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.coreCount(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Grpc_Testing_CoreRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Grpc_Testing_CoreResponse>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "QuitWorker" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Quit this worker
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Grpc_Testing_Void` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    package func quitWorker<Result>(
+        request: GRPCCore.ClientRequest<Grpc_Testing_Void>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Grpc_Testing_Void>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.quitWorker(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Grpc_Testing_Void>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Grpc_Testing_Void>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+}
+
+// Helpers providing sugared APIs for 'ClientProtocol' methods.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Grpc_Testing_WorkerService.ClientProtocol {
+    /// Call the "RunServer" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Start server with specified workload.
+    /// > First request sent specifies the ServerConfig followed by ServerStatus
+    /// > response. After that, a "Mark" can be sent anytime to request the latest
+    /// > stats. Closing the stream will initiate shutdown of the test server
+    /// > and once the shutdown has finished, the OK status is sent to terminate
+    /// > this RPC.
+    ///
+    /// - Parameters:
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - producer: A closure producing request messages to send to the server. The request
+    ///       stream is closed when the closure returns.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    package func runServer<Result>(
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        requestProducer producer: @Sendable @escaping (GRPCCore.RPCWriter<Grpc_Testing_ServerArgs>) async throws -> Void,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.StreamingClientResponse<Grpc_Testing_ServerStatus>) async throws -> Result
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.StreamingClientRequest<Grpc_Testing_ServerArgs>(
+            metadata: metadata,
+            producer: producer
+        )
+        return try await self.runServer(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "RunClient" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Start client with specified workload.
+    /// > First request sent specifies the ClientConfig followed by ClientStatus
+    /// > response. After that, a "Mark" can be sent anytime to request the latest
+    /// > stats. Closing the stream will initiate shutdown of the test client
+    /// > and once the shutdown has finished, the OK status is sent to terminate
+    /// > this RPC.
+    ///
+    /// - Parameters:
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - producer: A closure producing request messages to send to the server. The request
+    ///       stream is closed when the closure returns.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    package func runClient<Result>(
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        requestProducer producer: @Sendable @escaping (GRPCCore.RPCWriter<Grpc_Testing_ClientArgs>) async throws -> Void,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.StreamingClientResponse<Grpc_Testing_ClientStatus>) async throws -> Result
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.StreamingClientRequest<Grpc_Testing_ClientArgs>(
+            metadata: metadata,
+            producer: producer
+        )
+        return try await self.runClient(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "CoreCount" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Just return the core count - unary call
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    package func coreCount<Result>(
+        _ message: Grpc_Testing_CoreRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Grpc_Testing_CoreResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Grpc_Testing_CoreRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.coreCount(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "QuitWorker" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Quit this worker
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response, the result of which is
+    ///       returned to the caller. Returning from the closure will cancel the RPC if it
+    ///       hasn't already finished.
+    /// - Returns: The result of `handleResponse`.
+    package func quitWorker<Result>(
+        _ message: Grpc_Testing_Void,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Grpc_Testing_Void>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Grpc_Testing_Void>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.quitWorker(
+            request: request,
+            options: options,
+            onResponse: handleResponse
         )
     }
 }
