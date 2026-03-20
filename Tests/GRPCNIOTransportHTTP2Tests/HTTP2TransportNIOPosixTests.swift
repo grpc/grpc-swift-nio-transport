@@ -486,11 +486,17 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
 
   // MARK: - File Descriptor Based Server Tests
 
+  private struct TestSetupError: Error, CustomStringConvertible {
+    var description: String
+  }
+
   /// Creates a pre-bound TCP listening socket on the loopback address with an
   /// ephemeral port. Returns the file descriptor and the port it was bound to.
   private func makeListeningSocket() throws -> (fd: Int, port: Int) {
     let fd = socket(AF_INET, SOCK_STREAM, 0)
-    XCTAssertNotEqual(fd, -1, "Failed to create socket: errno=\(errno)")
+    guard fd != -1 else {
+      throw TestSetupError(description: "Couldn't create a TCP socket.")
+    }
 
     // Allow address reuse.
     var reuseAddr: Int32 = 1
@@ -503,8 +509,7 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
     )
     if setOptResult != 0 {
       close(fd)
-      XCTFail("setsockopt failed: errno=\(errno)")
-      return (fd: -1, port: 0)
+      throw TestSetupError(description: "Couldn't set socket options on the TCP socket.")
     }
 
     // Bind to loopback with port 0 (ephemeral).
@@ -526,16 +531,14 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
     }
     if bindResult != 0 {
       close(fd)
-      XCTFail("bind failed: errno=\(errno)")
-      return (fd: -1, port: 0)
+      throw TestSetupError(description: "Couldn't bind the TCP socket to the loopback address.")
     }
 
     // Start listening.
     let listenResult = listen(fd, 128)
     if listenResult != 0 {
       close(fd)
-      XCTFail("listen failed: errno=\(errno)")
-      return (fd: -1, port: 0)
+      throw TestSetupError(description: "Couldn't start listening on the TCP socket.")
     }
 
     // Retrieve the assigned port.
@@ -548,8 +551,7 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
     }
     if getsocknameResult != 0 {
       close(fd)
-      XCTFail("getsockname failed: errno=\(errno)")
-      return (fd: -1, port: 0)
+      throw TestSetupError(description: "Couldn't get the bound address of the TCP socket.")
     }
 
     let port = Int(UInt16(bigEndian: boundAddr.sin_port))
@@ -560,23 +562,17 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
     let (fd, port) = try makeListeningSocket()
 
     // gRPC takes ownership of the fd, so we must not close it ourselves.
-    let transport = GRPCNIOTransportCore.HTTP2ServerTransport.Posix(
-      listeningSocketDescriptor: fd,
-      transportSecurity: .plaintext
-    )
-
-    try await withThrowingDiscardingTaskGroup { group in
-      group.addTask {
-        try await transport.listen { _, _ in }
-      }
-
-      group.addTask {
-        // The listening address should be available since it's a real TCP socket.
-        let address = try await transport.listeningAddress
-        let ipv4Address = try XCTUnwrap(address.ipv4)
-        XCTAssertEqual(ipv4Address.port, port)
-        transport.beginGracefulShutdown()
-      }
+    try await withGRPCServer(
+      transport: .http2NIOPosix(
+        listeningSocketDescriptor: fd,
+        transportSecurity: .plaintext
+      ),
+      services: []
+    ) { server in
+      // The listening address should be available since it's a real TCP socket.
+      let address = try await server.listeningAddress
+      let ipv4Address = try XCTUnwrap(address?.ipv4)
+      XCTAssertEqual(ipv4Address.port, port)
     }
   }
 
@@ -584,35 +580,25 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
     let (fd, port) = try makeListeningSocket()
 
     // gRPC takes ownership of the fd, so we must not close it ourselves.
-    let transport: HTTP2ServerTransport.Posix = .http2NIOPosix(
-      listeningSocketDescriptor: fd,
-      transportSecurity: .plaintext
-    )
+    try await withGRPCServer(
+      transport: .http2NIOPosix(
+        listeningSocketDescriptor: fd,
+        transportSecurity: .plaintext
+      ),
+      services: [HelloWorldService()]
+    ) { server in
+      let address = try await server.listeningAddress
+      XCTAssertNotNil(address)
 
-    try await withThrowingDiscardingTaskGroup { group in
-      let server = GRPCServer(transport: transport, services: [HelloWorldService()])
-
-      group.addTask {
-        try await server.serve()
-      }
-
-      group.addTask {
-        // Wait for the server to be ready.
-        let address = try await server.listeningAddress
-        XCTAssertNotNil(address)
-
-        try await withGRPCClient(
-          transport: .http2NIOPosix(
-            target: .ipv4(address: "127.0.0.1", port: port),
-            transportSecurity: .plaintext
-          )
-        ) { client in
-          let helloWorld = HelloWorld.Client(wrapping: client)
-          let response = try await helloWorld.sayHello(HelloRequest(name: "fd-test"))
-          XCTAssertEqual(response.message, "Hello, fd-test!")
-        }
-
-        server.beginGracefulShutdown()
+      try await withGRPCClient(
+        transport: .http2NIOPosix(
+          target: .ipv4(address: "127.0.0.1", port: port),
+          transportSecurity: .plaintext
+        )
+      ) { client in
+        let helloWorld = HelloWorld.Client(wrapping: client)
+        let response = try await helloWorld.sayHello(HelloRequest(name: "fd-test"))
+        XCTAssertEqual(response.message, "Hello, fd-test!")
       }
     }
   }
@@ -626,30 +612,23 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
 
     let transport = HTTP2ServerTransport.Custom(listenerFactory: factory)
 
-    try await withThrowingDiscardingTaskGroup { group in
-      let server = GRPCServer(transport: transport, services: [HelloWorldService()])
+    try await withGRPCServer(
+      transport: transport,
+      services: [HelloWorldService()]
+    ) { _ in
+      let address = await transport.listeningAddress
+      let ipv4Address = try XCTUnwrap(address?.ipv4)
+      XCTAssertNotEqual(ipv4Address.port, 0)
 
-      group.addTask {
-        try await server.serve()
-      }
-
-      group.addTask {
-        let address = await transport.listeningAddress
-        let ipv4Address = try XCTUnwrap(address?.ipv4)
-        XCTAssertNotEqual(ipv4Address.port, 0)
-
-        try await withGRPCClient(
-          transport: .http2NIOPosix(
-            target: .ipv4(address: "127.0.0.1", port: ipv4Address.port),
-            transportSecurity: .plaintext
-          )
-        ) { client in
-          let helloWorld = HelloWorld.Client(wrapping: client)
-          let response = try await helloWorld.sayHello(HelloRequest(name: "custom-listener"))
-          XCTAssertEqual(response.message, "Hello, custom-listener!")
-        }
-
-        server.beginGracefulShutdown()
+      try await withGRPCClient(
+        transport: .http2NIOPosix(
+          target: .ipv4(address: "127.0.0.1", port: ipv4Address.port),
+          transportSecurity: .plaintext
+        )
+      ) { client in
+        let helloWorld = HelloWorld.Client(wrapping: client)
+        let response = try await helloWorld.sayHello(HelloRequest(name: "custom-listener"))
+        XCTAssertEqual(response.message, "Hello, custom-listener!")
       }
     }
   }
