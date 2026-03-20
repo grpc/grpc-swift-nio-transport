@@ -34,54 +34,54 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-struct Grpc_Testing_ByteBufferParams: Sendable {
+package struct Grpc_Testing_ByteBufferParams: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var reqSize: Int32 = 0
+  package var reqSize: Int32 = 0
 
-  var respSize: Int32 = 0
+  package var respSize: Int32 = 0
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
-struct Grpc_Testing_SimpleProtoParams: Sendable {
+package struct Grpc_Testing_SimpleProtoParams: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var reqSize: Int32 = 0
+  package var reqSize: Int32 = 0
 
-  var respSize: Int32 = 0
+  package var respSize: Int32 = 0
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
 /// TODO (vpai): Fill this in once the details of complex, representative
 ///              protos are decided
-struct Grpc_Testing_ComplexProtoParams: Sendable {
+package struct Grpc_Testing_ComplexProtoParams: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  init() {}
+  package init() {}
 }
 
-struct Grpc_Testing_PayloadConfig: Sendable {
+package struct Grpc_Testing_PayloadConfig: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  var payload: Grpc_Testing_PayloadConfig.OneOf_Payload? = nil
+  package var payload: Grpc_Testing_PayloadConfig.OneOf_Payload? = nil
 
-  var bytebufParams: Grpc_Testing_ByteBufferParams {
+  package var bytebufParams: Grpc_Testing_ByteBufferParams {
     get {
       if case .bytebufParams(let v)? = payload {return v}
       return Grpc_Testing_ByteBufferParams()
@@ -89,7 +89,7 @@ struct Grpc_Testing_PayloadConfig: Sendable {
     set {payload = .bytebufParams(newValue)}
   }
 
-  var simpleParams: Grpc_Testing_SimpleProtoParams {
+  package var simpleParams: Grpc_Testing_SimpleProtoParams {
     get {
       if case .simpleParams(let v)? = payload {return v}
       return Grpc_Testing_SimpleProtoParams()
@@ -97,7 +97,7 @@ struct Grpc_Testing_PayloadConfig: Sendable {
     set {payload = .simpleParams(newValue)}
   }
 
-  var complexParams: Grpc_Testing_ComplexProtoParams {
+  package var complexParams: Grpc_Testing_ComplexProtoParams {
     get {
       if case .complexParams(let v)? = payload {return v}
       return Grpc_Testing_ComplexProtoParams()
@@ -105,16 +105,16 @@ struct Grpc_Testing_PayloadConfig: Sendable {
     set {payload = .complexParams(newValue)}
   }
 
-  var unknownFields = SwiftProtobuf.UnknownStorage()
+  package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  enum OneOf_Payload: Equatable, Sendable {
+  package enum OneOf_Payload: Equatable, Sendable {
     case bytebufParams(Grpc_Testing_ByteBufferParams)
     case simpleParams(Grpc_Testing_SimpleProtoParams)
     case complexParams(Grpc_Testing_ComplexProtoParams)
 
   }
 
-  init() {}
+  package init() {}
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -122,10 +122,10 @@ struct Grpc_Testing_PayloadConfig: Sendable {
 fileprivate let _protobuf_package = "grpc.testing"
 
 extension Grpc_Testing_ByteBufferParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ByteBufferParams"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}req_size\0\u{3}resp_size\0")
+  package static let protoMessageName: String = _protobuf_package + ".ByteBufferParams"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}req_size\0\u{3}resp_size\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -138,7 +138,7 @@ extension Grpc_Testing_ByteBufferParams: SwiftProtobuf.Message, SwiftProtobuf._M
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.reqSize != 0 {
       try visitor.visitSingularInt32Field(value: self.reqSize, fieldNumber: 1)
     }
@@ -148,7 +148,7 @@ extension Grpc_Testing_ByteBufferParams: SwiftProtobuf.Message, SwiftProtobuf._M
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_ByteBufferParams, rhs: Grpc_Testing_ByteBufferParams) -> Bool {
+  package static func ==(lhs: Grpc_Testing_ByteBufferParams, rhs: Grpc_Testing_ByteBufferParams) -> Bool {
     if lhs.reqSize != rhs.reqSize {return false}
     if lhs.respSize != rhs.respSize {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -157,10 +157,10 @@ extension Grpc_Testing_ByteBufferParams: SwiftProtobuf.Message, SwiftProtobuf._M
 }
 
 extension Grpc_Testing_SimpleProtoParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".SimpleProtoParams"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}req_size\0\u{3}resp_size\0")
+  package static let protoMessageName: String = _protobuf_package + ".SimpleProtoParams"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}req_size\0\u{3}resp_size\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -173,7 +173,7 @@ extension Grpc_Testing_SimpleProtoParams: SwiftProtobuf.Message, SwiftProtobuf._
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     if self.reqSize != 0 {
       try visitor.visitSingularInt32Field(value: self.reqSize, fieldNumber: 1)
     }
@@ -183,7 +183,7 @@ extension Grpc_Testing_SimpleProtoParams: SwiftProtobuf.Message, SwiftProtobuf._
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_SimpleProtoParams, rhs: Grpc_Testing_SimpleProtoParams) -> Bool {
+  package static func ==(lhs: Grpc_Testing_SimpleProtoParams, rhs: Grpc_Testing_SimpleProtoParams) -> Bool {
     if lhs.reqSize != rhs.reqSize {return false}
     if lhs.respSize != rhs.respSize {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
@@ -192,29 +192,29 @@ extension Grpc_Testing_SimpleProtoParams: SwiftProtobuf.Message, SwiftProtobuf._
 }
 
 extension Grpc_Testing_ComplexProtoParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".ComplexProtoParams"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap()
+  package static let protoMessageName: String = _protobuf_package + ".ComplexProtoParams"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     // Load everything into unknown fields
     while try decoder.nextFieldNumber() != nil {}
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_ComplexProtoParams, rhs: Grpc_Testing_ComplexProtoParams) -> Bool {
+  package static func ==(lhs: Grpc_Testing_ComplexProtoParams, rhs: Grpc_Testing_ComplexProtoParams) -> Bool {
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
 extension Grpc_Testing_PayloadConfig: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  static let protoMessageName: String = _protobuf_package + ".PayloadConfig"
-  static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}bytebuf_params\0\u{3}simple_params\0\u{3}complex_params\0")
+  package static let protoMessageName: String = _protobuf_package + ".PayloadConfig"
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}bytebuf_params\0\u{3}simple_params\0\u{3}complex_params\0")
 
-  mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+  package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       // The use of inline closures is to circumvent an issue where the compiler
       // allocates stack space for every case branch when no optimizations are
@@ -264,7 +264,7 @@ extension Grpc_Testing_PayloadConfig: SwiftProtobuf.Message, SwiftProtobuf._Mess
     }
   }
 
-  func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+  package func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     // The use of inline closures is to circumvent an issue where the compiler
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
@@ -287,7 +287,7 @@ extension Grpc_Testing_PayloadConfig: SwiftProtobuf.Message, SwiftProtobuf._Mess
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  static func ==(lhs: Grpc_Testing_PayloadConfig, rhs: Grpc_Testing_PayloadConfig) -> Bool {
+  package static func ==(lhs: Grpc_Testing_PayloadConfig, rhs: Grpc_Testing_PayloadConfig) -> Bool {
     if lhs.payload != rhs.payload {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
