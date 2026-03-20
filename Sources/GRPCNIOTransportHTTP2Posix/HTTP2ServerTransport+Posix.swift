@@ -171,7 +171,8 @@ extension HTTP2ServerTransport {
         // The channel didn't have a local address. This can happen for vsock channels
         // because NIO's SocketAddress can't represent vsock addresses.
         if case .socketAddress(let socketAddress) = self.address,
-          socketAddress.virtualSocket != nil {
+          socketAddress.virtualSocket != nil
+        {
           return socketAddress
         }
 
