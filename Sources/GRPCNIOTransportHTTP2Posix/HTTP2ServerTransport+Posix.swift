@@ -178,9 +178,9 @@ extension HTTP2ServerTransport {
           throw RuntimeError(
             code: .serverIsStopped,
             message: """
-            There is no listening address bound for this server: there may have been \
-            an error which caused the transport to close, or it may have shut down.
-            """
+              There is no listening address bound for this server: there may have been \
+              an error which caused the transport to close, or it may have shut down.
+              """
           )
         }
       }

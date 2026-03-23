@@ -595,7 +595,6 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
       let ipv4Address = try XCTUnwrap(address?.ipv4)
       XCTAssertEqual(ipv4Address.port, port)
 
-
       try await withGRPCClient(
         transport: .http2NIOPosix(
           target: .ipv4(address: "127.0.0.1", port: port),
