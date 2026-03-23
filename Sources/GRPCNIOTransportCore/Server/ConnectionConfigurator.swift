@@ -18,47 +18,6 @@ public import NIOCore
 
 @available(gRPCSwiftNIOTransport 2.5, *)
 extension HTTP2ServerTransport {
-  /// Describes whether TLS is being used on a connection.
-  ///
-  /// This is provided to ``ConnectionConfigurator/configure(channel:tls:)`` so that the
-  /// gRPC pipeline can determine the scheme and whether ALPN is required.
-  public struct TLS: Sendable {
-    enum Wrapped: Sendable {
-      case none
-      case configured(requireALPN: Bool)
-    }
-
-    let wrapped: Wrapped
-
-    /// No TLS is configured.
-    public static var none: Self { Self(wrapped: .none) }
-
-    /// TLS is configured.
-    ///
-    /// - Parameter requireALPN: Whether ALPN negotiation is required.
-    public static func configured(requireALPN: Bool) -> Self {
-      Self(wrapped: .configured(requireALPN: requireALPN))
-    }
-
-    var usesTLS: Bool {
-      switch self.wrapped {
-      case .none:
-        return false
-      case .configured:
-        return true
-      }
-    }
-
-    var requireALPN: Bool {
-      switch self.wrapped {
-      case .none:
-        return false
-      case .configured(let requireALPN):
-        return requireALPN
-      }
-    }
-  }
-
   /// A configurator for accepted connection channels.
   ///
   /// Instances of this type are created by ``HTTP2ServerTransport/Custom`` with the
@@ -66,6 +25,47 @@ extension HTTP2ServerTransport {
   /// ``configure(channel:tls:)`` to apply the gRPC HTTP/2 pipeline configuration
   /// to each accepted connection channel.
   public struct ConnectionConfigurator: Sendable {
+    /// Describes whether TLS is being used on a connection.
+    ///
+    /// This is provided to ``ConnectionConfigurator/configure(channel:tls:)`` so that the
+    /// gRPC pipeline can determine the scheme and whether ALPN is required.
+    public struct TLS: Sendable {
+      enum Wrapped: Sendable {
+        case none
+        case configured(requireALPN: Bool)
+      }
+
+      let wrapped: Wrapped
+
+      /// No TLS is configured.
+      public static var none: Self { Self(wrapped: .none) }
+
+      /// TLS is configured.
+      ///
+      /// - Parameter requireALPN: Whether ALPN negotiation is required.
+      public static func configured(requireALPN: Bool) -> Self {
+        Self(wrapped: .configured(requireALPN: requireALPN))
+      }
+
+      var usesTLS: Bool {
+        switch self.wrapped {
+        case .none:
+          return false
+        case .configured:
+          return true
+        }
+      }
+
+      var requireALPN: Bool {
+        switch self.wrapped {
+        case .none:
+          return false
+        case .configured(let requireALPN):
+          return requireALPN
+        }
+      }
+    }
+
     /// An HTTP/2 connection channel that has been configured for gRPC.
     ///
     /// This type wraps the HTTP/2 connection channel and its stream multiplexer, as returned

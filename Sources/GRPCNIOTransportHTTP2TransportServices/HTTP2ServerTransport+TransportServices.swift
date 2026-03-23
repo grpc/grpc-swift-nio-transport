@@ -57,7 +57,7 @@ extension HTTP2ServerTransport {
       > {
         let bootstrap: NIOTSListenerBootstrap
 
-        let tls: HTTP2ServerTransport.TLS
+        let tls: HTTP2ServerTransport.ConnectionConfigurator.TLS
         switch self.transportSecurity.wrapped {
         case .plaintext:
           tls = .none
@@ -99,7 +99,9 @@ extension HTTP2ServerTransport {
     /// invalid address.
     public var listeningAddress: GRPCNIOTransportCore.SocketAddress {
       get async throws {
-        guard let address = await self.underlyingTransport.listeningAddress else {
+        if let address = await self.underlyingTransport.listeningAddress {
+          return address
+        } else {
           throw RuntimeError(
             code: .serverIsStopped,
             message: """
@@ -108,7 +110,6 @@ extension HTTP2ServerTransport {
               """
           )
         }
-        return address
       }
     }
 

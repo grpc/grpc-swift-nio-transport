@@ -94,7 +94,7 @@ extension HTTP2ServerTransport {
         HTTP2ServerTransport.ConnectionConfigurator.ConnectionChannel,
         Never
       > {
-        let tls: HTTP2ServerTransport.TLS
+        let tls: HTTP2ServerTransport.ConnectionConfigurator.TLS
         let sslContext: NIOSSLContext?
         let customVerificationCallback:
           (
