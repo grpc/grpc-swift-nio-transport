@@ -70,6 +70,8 @@ extension HPACKHeaders {
   ]
   fileprivate static let receivedWithInvalidPath: Self = [
     GRPCHTTP2Keys.path.rawValue: "someinvalidpath",
+    GRPCHTTP2Keys.scheme.rawValue: "http",
+    GRPCHTTP2Keys.method.rawValue: "POST",
     GRPCHTTP2Keys.contentType.rawValue: "application/grpc",
   ]
   fileprivate static let receivedWithoutEndpoint: Self = [
@@ -2070,7 +2072,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
       action,
       .receivedMetadata(
         Metadata(headers: .clientInitialMetadata),
-        MethodDescriptor(path: "/test/test")
+        "/test/test"
       )
     )
   }
@@ -2083,7 +2085,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
       action,
       .receivedMetadata(
         Metadata(headers: .clientInitialMetadata),
-        MethodDescriptor(path: "/test/test")
+        "/test/test"
       )
     )
   }
@@ -2145,18 +2147,9 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
       endStream: false
     )
 
-    self.assertRejectedRPC(action) { trailers in
-      XCTAssertEqual(
-        trailers,
-        [
-          ":status": "200",
-          "content-type": "application/grpc",
-          "grpc-status": String(Status.Code.unimplemented.rawValue),
-          "grpc-message":
-            "The given :path (someinvalidpath) does not correspond to a valid method.",
-        ]
-      )
-    }
+    // Path validation happens in the server stream handler.
+    let (_, path) = try action.assertReceivedMetadata()
+    XCTAssertEqual(path, "someinvalidpath")
   }
 
   func testReceiveMetadataWhenClientIdleAndServerIdle_MissingTE() throws {
@@ -2173,7 +2166,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
       ":method": "POST",
       "content-type": "application/grpc",
     ]
-    XCTAssertEqual(action, .receivedMetadata(metadata, .testTest))
+    XCTAssertEqual(action, .receivedMetadata(metadata, "/test/test"))
   }
 
   func testReceiveMetadataWhenClientIdleAndServerIdle_MissingMethod() throws {
@@ -2898,7 +2891,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
       receiveMetadataAction,
       .receivedMetadata(
         Metadata(headers: .clientInitialMetadata),
-        MethodDescriptor(path: "/test/test")
+        "/test/test"
       )
     )
 
@@ -2997,7 +2990,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
       receiveMetadataAction,
       .receivedMetadata(
         Metadata(headers: .clientInitialMetadata),
-        MethodDescriptor(path: "/test/test")
+        "/test/test"
       )
     )
 
@@ -3078,7 +3071,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
       receiveMetadataAction,
       .receivedMetadata(
         Metadata(headers: .clientInitialMetadata),
-        MethodDescriptor(path: "/test/test")
+        "/test/test"
       )
     )
 
@@ -3487,10 +3480,11 @@ extension GRPCStreamStateMachine.OnMetadataReceived {
     }
   }
 
-  func assertReceivedMetadata() throws {
+  @discardableResult
+  func assertReceivedMetadata() throws -> (Metadata, String?) {
     switch self {
-    case .receivedMetadata:
-      ()
+    case .receivedMetadata(let metadata, let path):
+      return (metadata, path)
     case .doNothing, .receivedStatusAndMetadata_clientOnly, .rejectRPC_serverOnly,
       .protocolViolation_serverOnly:
       XCTFail("Expected receivedMetadata, got \(self)")

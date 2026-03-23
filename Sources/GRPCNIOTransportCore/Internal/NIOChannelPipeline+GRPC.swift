@@ -40,7 +40,8 @@ extension ChannelPipeline.SynchronousOperations {
     rpcConfig: HTTP2ServerTransport.Config.RPC,
     debugConfig: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks,
     requireALPN: Bool,
-    scheme: Scheme
+    scheme: Scheme,
+    descriptorsByPath: [String: MethodDescriptor]
   ) throws -> (HTTP2ConnectionChannel, HTTP2StreamMultiplexer) {
     let serverConnectionHandler = ServerConnectionManagementHandler(
       eventLoop: self.eventLoop,
@@ -95,7 +96,8 @@ extension ChannelPipeline.SynchronousOperations {
           acceptedEncodings: compressionConfig.enabledAlgorithms,
           maxPayloadSize: rpcConfig.maxRequestPayloadSize,
           methodDescriptorPromise: methodDescriptorPromise,
-          eventLoop: streamChannel.eventLoop
+          eventLoop: streamChannel.eventLoop,
+          descriptorsByPath: descriptorsByPath
         )
         try streamChannel.pipeline.syncOperations.addHandler(streamHandler)
 
