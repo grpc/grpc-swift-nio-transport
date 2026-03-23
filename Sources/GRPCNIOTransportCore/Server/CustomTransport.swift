@@ -256,14 +256,14 @@ extension HTTP2ServerTransport {
       )
 
       let serverContext = self.serverContext.withLock { $0 }
-      let desciptorsByPath = serverContext?.descriptorsByPath() ?? [:]
+      let descriptorsByPath = serverContext?.descriptorsByPath() ?? [:]
       let connectionConfigurator = HTTP2ServerTransport.ConnectionConfigurator(
         compression: self.config.compression,
         connection: self.config.connection,
         http2: self.config.http2,
         rpc: self.config.rpc,
         channelDebuggingCallbacks: self.config.channelDebuggingCallbacks,
-        descriptorsByPath: desciptorsByPath
+        descriptorsByPath: descriptorsByPath
       )
 
       let serverChannel = try await self.factory.makeListeningChannel(
