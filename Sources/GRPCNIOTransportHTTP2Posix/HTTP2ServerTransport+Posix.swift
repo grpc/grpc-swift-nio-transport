@@ -168,21 +168,21 @@ extension HTTP2ServerTransport {
           return address
         }
 
-        // The channel didn't have a local address. This can happen for vsock channels
-        // because NIO's SocketAddress can't represent vsock addresses.
-        if case .socketAddress(let socketAddress) = self.address,
-          socketAddress.virtualSocket != nil
-        {
+        switch self.address {
+        case .socketAddress(let socketAddress) where socketAddress.virtualSocket != nil:
+          // The channel didn't have a local address. This can happen for vsock channels
+          // because NIO's SocketAddress can't represent vsock addresses.
           return socketAddress
-        }
 
-        throw RuntimeError(
-          code: .serverIsStopped,
-          message: """
+        case .listeningSocket, .socketAddress:
+          throw RuntimeError(
+            code: .serverIsStopped,
+            message: """
             There is no listening address bound for this server: there may have been \
             an error which caused the transport to close, or it may have shut down.
             """
-        )
+          )
+        }
       }
     }
 
