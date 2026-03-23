@@ -426,7 +426,7 @@ extension HTTP2ServerTransport {
   }
 }
 
-@available(gRPCSwiftNIOTransport 2.5, *)
+@available(gRPCSwiftNIOTransport 2.6, *)
 extension GRPCServerContext {
   package func descriptorsByPath() -> [String: MethodDescriptor] {
     var byPath: [String: MethodDescriptor] = [:]
