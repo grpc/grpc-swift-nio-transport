@@ -17,7 +17,7 @@
 public import NIOCore
 internal import NIOExtras
 
-@available(gRPCSwiftNIOTransport 2.5, *)
+@available(gRPCSwiftNIOTransport 2.6, *)
 extension HTTP2ServerTransport {
   /// A factory for creating listening channels that accept HTTP/2 connections.
   ///

@@ -20,7 +20,7 @@ package import NIOExtras
 private import NIOHTTP2
 private import Synchronization
 
-@available(gRPCSwiftNIOTransport 2.5, *)
+@available(gRPCSwiftNIOTransport 2.6, *)
 extension HTTP2ServerTransport {
   /// A NIO-based server transport that handles HTTP/2 connections using a pluggable
   /// ``HTTP2ServerTransport/ListenerFactory``.
@@ -39,7 +39,6 @@ extension HTTP2ServerTransport {
   /// listening address, you can conform your wrapper type to ``ListeningServerTransport``.
   ///
   /// - SeeAlso: ``HTTP2ServerTransport/ListenerFactory``.
-  @available(gRPCSwiftNIOTransport 2.5, *)
   public final class Custom<
     ListenerFactory: HTTP2ServerTransport.ListenerFactory
   >: ServerTransport {

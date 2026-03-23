@@ -609,7 +609,7 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
 
   // MARK: - Custom Listener Tests
 
-  @available(gRPCSwiftNIOTransport 2.5, *)
+  @available(gRPCSwiftNIOTransport 2.6, *)
   func testCustomListenerBasedServer_UnaryRPC() async throws {
     let eventLoopGroup = MultiThreadedEventLoopGroup.singletonMultiThreadedEventLoopGroup
     let factory = LoopbackListenerFactory(eventLoopGroup: eventLoopGroup)
@@ -640,7 +640,7 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
 
 /// A custom ``HTTP2ServerTransport/ListenerFactory`` that binds to an ephemeral port on
 /// the loopback address using `ServerBootstrap`.
-@available(gRPCSwiftNIOTransport 2.5, *)
+@available(gRPCSwiftNIOTransport 2.6, *)
 private struct LoopbackListenerFactory: HTTP2ServerTransport.ListenerFactory {
   fileprivate let eventLoopGroup: any EventLoopGroup
 

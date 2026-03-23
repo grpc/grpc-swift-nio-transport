@@ -16,14 +16,13 @@
 
 public import NIOCore
 
-@available(gRPCSwiftNIOTransport 2.5, *)
+@available(gRPCSwiftNIOTransport 2.6, *)
 extension HTTP2ServerTransport {
   /// A configurator for accepted connection channels.
   ///
-  /// Instances of this type are created by ``HTTP2ServerTransport/Custom`` with the
-  /// appropriate gRPC configuration already captured. Use
-  /// ``configure(channel:tls:)`` to apply the gRPC HTTP/2 pipeline configuration
-  /// to each accepted connection channel.
+  /// Instances of this type are created by ``HTTP2ServerTransport/Custom`` with the appropriate gRPC configuration already
+  /// captured. Use ``configure(channel:tls:)`` to apply the gRPC HTTP/2 pipeline configuration to each accepted
+  /// connection channel.
   public struct ConnectionConfigurator: Sendable {
     /// Describes whether TLS is being used on a connection.
     ///

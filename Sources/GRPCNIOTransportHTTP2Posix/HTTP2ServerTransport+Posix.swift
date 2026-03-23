@@ -216,7 +216,7 @@ extension HTTP2ServerTransport {
     ///   - eventLoopGroup: The ELG from which to get ELs to run this transport.
     /// - Important: gRPC takes ownership of the `fileDescriptor` passed in, you *must not* close
     ///   the descriptor manually.
-    @available(gRPCSwiftNIOTransport 2.5, *)
+    @available(gRPCSwiftNIOTransport 2.6, *)
     public init(
       listeningSocketDescriptor fileDescriptor: Int,
       transportSecurity: TransportSecurity,
@@ -435,7 +435,7 @@ extension ServerTransport where Self == HTTP2ServerTransport.Posix {
   }
 }
 
-@available(gRPCSwiftNIOTransport 2.5, *)
+@available(gRPCSwiftNIOTransport 2.6, *)
 extension ServerTransport where Self == HTTP2ServerTransport.Posix {
   /// Create a new `Posix` based HTTP/2 server transport.
   ///
