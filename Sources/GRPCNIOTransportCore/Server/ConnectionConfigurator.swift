@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-public import NIOCore
 package import GRPCCore
+public import NIOCore
 
 @available(gRPCSwiftNIOTransport 2.6, *)
 extension HTTP2ServerTransport {
