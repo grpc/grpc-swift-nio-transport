@@ -197,7 +197,7 @@ extension GRPCServerStreamHandler {
               }
             }
           } else {
-            assertionFailure("Method descriptor should have been present if we received metadata.")
+            assertionFailure("':path' wasn't present in metadata.")
           }
 
         case .rejectRPC_serverOnly(let trailers):
