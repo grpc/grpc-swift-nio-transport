@@ -65,6 +65,7 @@ extension ChannelPipeline.SynchronousOperations {
     let clampedMaxFrameSize = self.clampMaxFrameSize(http2Config.maxFrameSize)
 
     var http2HandlerConnectionConfiguration = NIOHTTP2Handler.ConnectionConfiguration()
+    http2HandlerConnectionConfiguration.targetWindowSize = clampedTargetWindowSize
     var http2HandlerHTTP2Settings = HTTP2Settings([
       HTTP2Setting(parameter: .initialWindowSize, value: clampedTargetWindowSize),
       HTTP2Setting(parameter: .maxFrameSize, value: clampedMaxFrameSize),
@@ -137,6 +138,7 @@ extension ChannelPipeline.SynchronousOperations {
     // Use NIOs defaults as a starting point.
     var http2 = NIOHTTP2Handler.Configuration()
     http2.stream.targetWindowSize = clampedTargetWindowSize
+    http2.connection.targetWindowSize = clampedTargetWindowSize
     http2.connection.initialSettings = [
       // Disallow servers from creating push streams.
       HTTP2Setting(parameter: .enablePush, value: 0),
