@@ -249,6 +249,12 @@ final class HTTP2TransportTests: XCTestCase {
 
     case .wrappedChannel:
       let bootstrap = ClientBootstrap(group: .singletonMultiThreadedEventLoopGroup)
+        .channelInitializer { channel in
+          channel.eventLoop.makeCompletedFuture {
+            try channel.pipeline.syncOperations.addHandler(BufferInboundUntilFlush())
+          }
+        }
+
       let channel: any Channel
       var config = HTTP2ClientTransport.WrappedChannel.Config.defaults
       config.compression.algorithm = compression
