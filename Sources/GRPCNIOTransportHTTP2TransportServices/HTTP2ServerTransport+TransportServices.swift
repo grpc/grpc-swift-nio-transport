@@ -144,6 +144,10 @@ extension HTTP2ServerTransport {
       )
     }
 
+    public func configure(context: GRPCServerContext) {
+      self.underlyingTransport.configure(context: context)
+    }
+
     public func listen(
       streamHandler:
         @escaping @Sendable (
