@@ -19,13 +19,16 @@ import Synchronization
 
 import struct Foundation.Data
 
-final class BenchmarkService: Grpc_Testing_BenchmarkService.ServiceProtocol {
+package final class BenchmarkService: Grpc_Testing_BenchmarkService.ServiceProtocol {
   /// Used to check if the server can be streaming responses.
   private let working = Atomic(true)
 
+  package init() {
+  }
+
   /// One request followed by one response.
   /// The server returns a client payload with the size requested by the client.
-  func unaryCall(
+  package func unaryCall(
     request: ServerRequest<Grpc_Testing_SimpleRequest>,
     context: ServerContext
   ) async throws -> ServerResponse<Grpc_Testing_SimpleResponse> {
@@ -46,7 +49,7 @@ final class BenchmarkService: Grpc_Testing_BenchmarkService.ServiceProtocol {
 
   /// Repeated sequence of one request followed by one response.
   /// The server returns a payload with the size requested by the client for each received message.
-  func streamingCall(
+  package func streamingCall(
     request: StreamingServerRequest<Grpc_Testing_SimpleRequest>,
     context: ServerContext
   ) async throws -> StreamingServerResponse<Grpc_Testing_SimpleResponse> {
@@ -71,7 +74,7 @@ final class BenchmarkService: Grpc_Testing_BenchmarkService.ServiceProtocol {
 
   /// Single-sided unbounded streaming from client to server.
   /// The server returns a payload with the size requested by the client once the client does WritesDone.
-  func streamingFromClient(
+  package func streamingFromClient(
     request: StreamingServerRequest<Grpc_Testing_SimpleRequest>,
     context: ServerContext
   ) async throws -> ServerResponse<Grpc_Testing_SimpleResponse> {
@@ -94,7 +97,7 @@ final class BenchmarkService: Grpc_Testing_BenchmarkService.ServiceProtocol {
 
   /// Single-sided unbounded streaming from server to client.
   /// The server repeatedly returns a payload with the size requested by the client.
-  func streamingFromServer(
+  package func streamingFromServer(
     request: ServerRequest<Grpc_Testing_SimpleRequest>,
     context: ServerContext
   ) async throws -> StreamingServerResponse<Grpc_Testing_SimpleResponse> {
@@ -118,7 +121,7 @@ final class BenchmarkService: Grpc_Testing_BenchmarkService.ServiceProtocol {
 
   /// Two-sided unbounded streaming between server to client.
   /// Both sides send the content of their own choice to the other.
-  func streamingBothWays(
+  package func streamingBothWays(
     request: StreamingServerRequest<Grpc_Testing_SimpleRequest>,
     context: ServerContext
   ) async throws -> StreamingServerResponse<Grpc_Testing_SimpleResponse> {
