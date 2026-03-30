@@ -769,15 +769,13 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
 
   // - MARK: Next outbound message
 
-  func testNextOutboundMessageWhenClientIdleAndServerIdle() {
+  func testNextOutboundMessageWhenClientIdleAndServerIdle() throws {
     var stateMachine = self.makeClientStateMachine(targetState: .clientIdleServerIdle)
 
-    XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
-      try stateMachine.nextOutboundFrame()
-    ) { error in
-      XCTAssertEqual(error.message, "Client is not open yet.")
-    }
+    // Nothing has been buffered yet; nextOutboundFrame should return
+    // awaitMoreMessages rather than asserting. This can happen when
+    // channelWritabilityChanged fires before the stream has opened.
+    XCTAssertEqual(try stateMachine.nextOutboundFrame(), .awaitMoreMessages)
   }
 
   func testNextOutboundMessageWhenClientOpenAndServerOpenOrIdle() throws {
@@ -2499,37 +2497,27 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
 
   // - MARK: Next outbound message
 
-  func testNextOutboundMessageWhenClientIdleAndServerIdle() {
+  func testNextOutboundMessageWhenClientIdleAndServerIdle() throws {
     var stateMachine = self.makeServerStateMachine(targetState: .clientIdleServerIdle)
 
-    XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
-      try stateMachine.nextOutboundFrame()
-    ) { error in
-      XCTAssertEqual(error.message, "Server is not open yet.")
-    }
+    // Nothing has been buffered yet; nextOutboundFrame should return
+    // awaitMoreMessages rather than asserting. This can happen when
+    // channelWritabilityChanged fires before the stream has opened.
+    XCTAssertEqual(try stateMachine.nextOutboundFrame(), .awaitMoreMessages)
   }
 
   func testNextOutboundMessageWhenClientOpenAndServerIdle() throws {
     var stateMachine = self.makeServerStateMachine(targetState: .clientOpenServerIdle)
 
-    XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
-      try stateMachine.nextOutboundFrame()
-    ) { error in
-      XCTAssertEqual(error.message, "Server is not open yet.")
-    }
+    // Server hasn't opened yet; nothing to flush.
+    XCTAssertEqual(try stateMachine.nextOutboundFrame(), .awaitMoreMessages)
   }
 
   func testNextOutboundMessageWhenClientOpenAndServerIdle_WithCompression() throws {
     var stateMachine = self.makeServerStateMachine(targetState: .clientOpenServerIdle)
 
-    XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
-      try stateMachine.nextOutboundFrame()
-    ) { error in
-      XCTAssertEqual(error.message, "Server is not open yet.")
-    }
+    // Server hasn't opened yet; nothing to flush.
+    XCTAssertEqual(try stateMachine.nextOutboundFrame(), .awaitMoreMessages)
   }
 
   func testNextOutboundMessageWhenClientOpenAndServerOpen() throws {
@@ -2600,12 +2588,8 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
   func testNextOutboundMessageWhenClientClosedAndServerIdle() throws {
     var stateMachine = self.makeServerStateMachine(targetState: .clientClosedServerIdle)
 
-    XCTAssertThrowsError(
-      ofType: GRPCStreamStateMachine.UnreachableTransition.self,
-      try stateMachine.nextOutboundFrame()
-    ) { error in
-      XCTAssertEqual(error.message, "Server is not open yet.")
-    }
+    // Server hasn't opened yet; nothing to flush.
+    XCTAssertEqual(try stateMachine.nextOutboundFrame(), .awaitMoreMessages)
   }
 
   func testNextOutboundMessageWhenClientClosedAndServerOpen() throws {

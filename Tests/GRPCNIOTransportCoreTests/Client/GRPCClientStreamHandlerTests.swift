@@ -966,6 +966,32 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       )
     }
   }
+
+  func testWritabilityChangedWhileClientIdleDoesNotCrash() throws {
+    // Regression test: channelWritabilityChanged must not call _flush when
+    // there is no pending flush, because the state machine is still in an idle
+    // state and nextOutboundFrame() would hit an assertion failure.
+    let handler = GRPCClientStreamHandler(
+      methodDescriptor: .testTest,
+      scheme: .http,
+      authority: nil,
+      outboundEncoding: .none,
+      acceptedEncodings: [],
+      maxPayloadSize: .max
+    )
+
+    let channel = EmbeddedChannel(handler: handler)
+
+    // Don't send any outbound metadata — the stream is still in ClientIdle.
+    // Simulate the channel becoming unwritable (e.g. TCP send buffer full on
+    // another stream sharing the same HTTP/2 connection).
+    channel.isWritable = false
+    channel.pipeline.fireChannelWritabilityChanged()
+
+    // The handler should have forwarded the event without crashing.
+    // No outbound frames should have been written.
+    XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
+  }
 }
 
 extension EmbeddedChannel {
