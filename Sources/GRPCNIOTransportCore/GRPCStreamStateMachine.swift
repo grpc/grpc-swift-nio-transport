@@ -689,14 +689,10 @@ struct GRPCStreamStateMachine {
 
     switch self.state {
     case .clientIdleServerIdle:
-      // This is unreachable by construction: the handler holding this state machine shouldn't
-      // ask for more outbound messages unless it's successfully buffered one in the state machine.
-      switch self.configuration {
-      case .client:
-        try self.unreachable("Client is not open yet.")
-      case .server:
-        try self.unreachable("Server is not open yet.")
-      }
+      // Nothing has been buffered yet; there's nothing to flush. This can happen when
+      // 'channelWritabilityChanged' fires before the stream has opened (e.g. backpressure from
+      // other streams on the same HTTP/2 connection).
+      action = .awaitMoreMessages
 
     case .clientOpenServerIdle(var state):
       switch self.configuration {
@@ -720,10 +716,10 @@ struct GRPCStreamStateMachine {
         }
 
       case .server:
-        // This is unreachable by construction: the handler holding this state machine shouldn't
-        // ask for more outbound messages unless it's successfully buffered one in the state
-        // machine.
-        try self.unreachable("Server is not open yet.")
+        // Server hasn't opened yet; nothing to flush. This can happen when
+        // 'channelWritabilityChanged' fires before the stream has opened (e.g. backpressure from
+        // other streams on the same HTTP/2 connection).
+        action = .awaitMoreMessages
       }
 
     case .clientOpenServerOpen(var state):
@@ -770,7 +766,8 @@ struct GRPCStreamStateMachine {
         self.state = .clientClosedServerIdle(state)
 
       case .server:
-        try self.unreachable("Server is not open yet.")
+        // Server hasn't opened yet; nothing to flush.
+        action = .awaitMoreMessages
       }
 
     case .clientClosedServerOpen(var state):
