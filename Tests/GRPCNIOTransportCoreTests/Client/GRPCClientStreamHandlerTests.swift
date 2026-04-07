@@ -1038,6 +1038,118 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     try channel.closeFuture.wait()
   }
 
+  func testTrailersOnlyResponseThenHalfCloseSendsEndStream() throws {
+    // When the server sends a valid trailers-only response while the client hasn't half-closed
+    // yet, the subsequent half-close must still send an END_STREAM frame so the HTTP/2 stream
+    // can fully close.
+    let handler = GRPCClientStreamHandler(
+      methodDescriptor: .testTest,
+      scheme: .http,
+      authority: nil,
+      outboundEncoding: .none,
+      acceptedEncodings: [],
+      maxPayloadSize: 100,
+      skipStateMachineAssertions: true
+    )
+
+    let channel = EmbeddedChannel(handler: handler)
+
+    // Send client's initial metadata to open the stream.
+    try channel.writeOutbound(RPCRequestPart<GRPCNIOTransportBytes>.metadata([:]))
+    _ = try channel.assertReadHeadersOutbound()
+
+    // Server sends a valid trailers-only response (headers with grpc-status and endStream).
+    let serverTrailersOnly: HPACKHeaders = [
+      ":status": "200",
+      "content-type": "application/grpc",
+      "grpc-status": String(Status.Code.aborted.rawValue),
+      "grpc-message": "rejected",
+    ]
+    try channel.writeInbound(
+      HTTP2Frame.FramePayload.headers(.init(headers: serverTrailersOnly, endStream: true))
+    )
+
+    // Should receive the status and metadata.
+    XCTAssertEqual(
+      try channel.readInbound(as: RPCResponsePart<GRPCNIOTransportBytes>.self),
+      .status(
+        Status(code: .aborted, message: "rejected"),
+        [":status": "200", "content-type": "application/grpc"]
+      )
+    )
+
+    // Half-close the outbound end (triggered by finishing the client's writer).
+    XCTAssertNoThrow(channel.close(mode: .output, promise: nil))
+
+    // The handler must send an empty DATA frame with END_STREAM so the HTTP/2
+    // stream can fully close.
+    let endStreamFrame = try channel.assertReadDataOutbound()
+    XCTAssertEqual(endStreamFrame.data, .byteBuffer(.init()))
+    XCTAssertTrue(endStreamFrame.endStream)
+
+    // No more outbound frames.
+    channel.flush()
+    XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
+  }
+
+  func testServerTrailersThenHalfCloseSendsEndStream() throws {
+    // When the server closes before the client, the clients subsequent half-close must still
+    // write an END_STREAM frame into the channel to close the HTTP/2 stream.
+    let handler = GRPCClientStreamHandler(
+      methodDescriptor: .testTest,
+      scheme: .http,
+      authority: nil,
+      outboundEncoding: .none,
+      acceptedEncodings: [],
+      maxPayloadSize: 100,
+      skipStateMachineAssertions: true
+    )
+
+    let channel = EmbeddedChannel(handler: handler)
+
+    // Send client's initial metadata.
+    try channel.writeOutbound(RPCRequestPart<GRPCNIOTransportBytes>.metadata([:]))
+    _ = try channel.assertReadHeadersOutbound()
+
+    // Server sends initial metadata (no endStream).
+    let serverInitialMetadata: HPACKHeaders = [
+      ":status": "200",
+      "content-type": "application/grpc",
+    ]
+    try channel.writeInbound(
+      HTTP2Frame.FramePayload.headers(.init(headers: serverInitialMetadata))
+    )
+    XCTAssertEqual(
+      try channel.readInbound(as: RPCResponsePart<GRPCNIOTransportBytes>.self),
+      .metadata(Metadata(headers: serverInitialMetadata))
+    )
+
+    // Server sends trailers with endStream.
+    let serverTrailers: HPACKHeaders = [
+      "grpc-status": String(Status.Code.ok.rawValue)
+    ]
+    try channel.writeInbound(
+      HTTP2Frame.FramePayload.headers(.init(headers: serverTrailers, endStream: true))
+    )
+    XCTAssertEqual(
+      try channel.readInbound(as: RPCResponsePart<GRPCNIOTransportBytes>.self),
+      .status(.init(code: .ok, message: ""), [:])
+    )
+
+    // Half-close the outbound end.
+    XCTAssertNoThrow(channel.close(mode: .output, promise: nil))
+
+    // The handler must send an empty DATA frame with END_STREAM so the HTTP/2
+    // stream can fully close.
+    let endStreamFrame = try channel.assertReadDataOutbound()
+    XCTAssertEqual(endStreamFrame.data, .byteBuffer(.init()))
+    XCTAssertTrue(endStreamFrame.endStream)
+
+    // No more outbound frames.
+    channel.flush()
+    XCTAssertNil(try channel.readOutbound(as: HTTP2Frame.FramePayload.self))
+  }
+
   func testWritabilityChangedWhileClientIdleDoesNotCrash() throws {
     // Regression test: channelWritabilityChanged must not call _flush when
     // there is no pending flush, because the state machine is still in an idle

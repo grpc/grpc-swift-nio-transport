@@ -944,7 +944,11 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
     XCTAssertNoThrow(try stateMachine.closeOutbound())
 
     // Even though we have enqueued a message, don't send it, because the server
-    // is closed.
+    // is closed. But we still need to send END_STREAM.
+    XCTAssertEqual(
+      try stateMachine.nextOutboundFrame(),
+      .sendFrame(frame: ByteBuffer(), endStream: true, promise: nil)
+    )
     XCTAssertEqual(try stateMachine.nextOutboundFrame(), .noMoreMessages)
   }
 
@@ -1235,6 +1239,12 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
       )
     )
 
+    // Client closed but END_STREAM wasn't flushed before the server closed,
+    // so it must be sent now.
+    XCTAssertEqual(
+      try stateMachine.nextOutboundFrame(),
+      .sendFrame(frame: ByteBuffer(), endStream: true, promise: nil)
+    )
     XCTAssertEqual(try stateMachine.nextOutboundFrame(), .noMoreMessages)
     XCTAssertEqual(stateMachine.nextInboundMessage(), .noMoreMessages)
   }
@@ -1424,6 +1434,12 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
       )
     )
 
+    // Client closed but END_STREAM wasn't flushed before the server closed,
+    // so it must be sent now.
+    XCTAssertEqual(
+      try stateMachine.nextOutboundFrame(),
+      .sendFrame(frame: ByteBuffer(), endStream: true, promise: nil)
+    )
     XCTAssertEqual(try stateMachine.nextOutboundFrame(), .noMoreMessages)
     XCTAssertEqual(stateMachine.nextInboundMessage(), .noMoreMessages)
   }
@@ -1525,6 +1541,9 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
     try action.assertDoNothing()
     let next = stateMachine.nextInboundMessage()
     try next.assertNoMoreMessages()
+    // END_STREAM hasn't been flushed yet, so the first call emits it.
+    let endStream = try stateMachine.nextOutboundFrame()
+    XCTAssertEqual(endStream, .sendFrame(frame: ByteBuffer(), endStream: true, promise: nil))
     let next2 = try stateMachine.nextOutboundFrame()
     try next2.assertNoMoreMessages()
   }
