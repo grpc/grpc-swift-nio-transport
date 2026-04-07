@@ -607,7 +607,7 @@ struct GRPCStreamStateMachine {
     case doNothing
 
     // Client-specific actions
-    case receivedStatusAndMetadata_clientOnly(status: Status, metadata: Metadata)
+    case receivedStatusAndMetadata_clientOnly(status: Status, metadata: Metadata, close: Bool)
 
     // Server-specific actions
     case rejectRPC_serverOnly(trailers: HPACKHeaders)
@@ -1095,7 +1095,7 @@ extension GRPCStreamStateMachine {
 
   private enum ServerHeadersValidationResult {
     case valid
-    case invalid(OnMetadataReceived)
+    case invalid(status: Status, metadata: Metadata)
     case skip
   }
 
@@ -1118,10 +1118,8 @@ extension GRPCStreamStateMachine {
 
       guard let httpStatusCode else {
         return .invalid(
-          .receivedStatusAndMetadata_clientOnly(
-            status: .init(code: .unknown, message: "HTTP Status Code is missing."),
-            metadata: Metadata(headers: metadata)
-          )
+          status: .init(code: .unknown, message: "HTTP Status Code is missing."),
+          metadata: Metadata(headers: metadata)
         )
       }
 
@@ -1134,26 +1132,22 @@ extension GRPCStreamStateMachine {
 
       // Forward the mapped status code.
       return .invalid(
-        .receivedStatusAndMetadata_clientOnly(
-          status: .init(
-            code: Status.Code(httpStatusCode: httpStatusCode),
-            message: "Unexpected non-200 HTTP Status Code (\(httpStatusCode))."
-          ),
-          metadata: Metadata(headers: metadata)
-        )
+        status: .init(
+          code: Status.Code(httpStatusCode: httpStatusCode),
+          message: "Unexpected non-200 HTTP Status Code (\(httpStatusCode))."
+        ),
+        metadata: Metadata(headers: metadata)
       )
     }
 
     let contentTypeHeader = metadata.first(name: GRPCHTTP2Keys.contentType.rawValue)
     guard contentTypeHeader.flatMap(ContentType.init) != nil else {
       return .invalid(
-        .receivedStatusAndMetadata_clientOnly(
-          status: .init(
-            code: .internalError,
-            message: "Missing \(GRPCHTTP2Keys.contentType.rawValue) header"
-          ),
-          metadata: Metadata(headers: metadata)
-        )
+        status: .init(
+          code: .internalError,
+          message: "Missing \(GRPCHTTP2Keys.contentType.rawValue) header"
+        ),
+        metadata: Metadata(headers: metadata)
       )
     }
 
@@ -1161,7 +1155,7 @@ extension GRPCStreamStateMachine {
   }
 
   private enum ProcessInboundEncodingResult {
-    case error(OnMetadataReceived)
+    case error(status: Status, metadata: Metadata)
     case success(CompressionAlgorithm)
   }
 
@@ -1175,14 +1169,12 @@ extension GRPCStreamStateMachine {
         configuration.acceptedEncodings.contains(parsedEncoding)
       else {
         return .error(
-          .receivedStatusAndMetadata_clientOnly(
-            status: .init(
-              code: .internalError,
-              message:
-                "The server picked a compression algorithm ('\(serverEncoding)') the client does not know about."
-            ),
-            metadata: Metadata(headers: headers)
-          )
+          status: .init(
+            code: .internalError,
+            message:
+              "The server picked a compression algorithm ('\(serverEncoding)') the client does not know about."
+          ),
+          metadata: Metadata(headers: headers)
         )
       }
       inboundEncoding = parsedEncoding
@@ -1221,7 +1213,11 @@ extension GRPCStreamStateMachine {
     convertedMetadata.removeAllValues(forKey: GRPCHTTP2Keys.grpcStatus.rawValue)
     convertedMetadata.removeAllValues(forKey: GRPCHTTP2Keys.grpcStatusMessage.rawValue)
 
-    return .receivedStatusAndMetadata_clientOnly(status: status, metadata: convertedMetadata)
+    return .receivedStatusAndMetadata_clientOnly(
+      status: status,
+      metadata: convertedMetadata,
+      close: false
+    )
   }
 
   private mutating func clientReceive(
@@ -1236,11 +1232,15 @@ extension GRPCStreamStateMachine {
         // Headers should be ignored, so do nothing for now.
         return .doNothing
 
-      case (.invalid(let action), _):
-        // The received headers are invalid, so we can't do anything other than assume this server
-        // is not behaving correctly. This is a protocol failure.
+      case (.invalid(let status, let metadata), _):
+        // The received headers are not valid gRPC (non-200, missing content-type, etc.).
+        // Poison the state and signal close so the handler terminates the HTTP/2 stream.
         self.state = .poisoned(.init(previousState: state, reason: .protocol))
-        return action
+        return .receivedStatusAndMetadata_clientOnly(
+          status: status,
+          metadata: metadata,
+          close: true
+        )
 
       case (.valid, true):
         // This is a trailers-only response: close server.
@@ -1249,9 +1249,13 @@ extension GRPCStreamStateMachine {
 
       case (.valid, false):
         switch self.processInboundEncoding(headers: headers, configuration: configuration) {
-        case .error(let failure):
+        case .error(let status, let metadata):
           self.state = .poisoned(.init(previousState: state, reason: .protocol))
-          return failure
+          return .receivedStatusAndMetadata_clientOnly(
+            status: status,
+            metadata: metadata,
+            close: true
+          )
 
         case .success(let inboundEncoding):
           let decompressor = Zlib.Method(encoding: inboundEncoding)
@@ -1288,11 +1292,14 @@ extension GRPCStreamStateMachine {
         // Headers should be ignored, so do nothing for now.
         return .doNothing
 
-      case (.invalid(let action), _):
-        // The received headers are invalid, so we can't do anything other than assume this server
-        // is not behaving correctly. This is a protocol failure.
+      case (.invalid(let status, let metadata), _):
+        // Not valid gRPC. Poison and signal close.
         self.state = .poisoned(.init(previousState: state, reason: .protocol))
-        return action
+        return .receivedStatusAndMetadata_clientOnly(
+          status: status,
+          metadata: metadata,
+          close: true
+        )
 
       case (.valid, true):
         // This is a trailers-only response: close server.
@@ -1301,9 +1308,13 @@ extension GRPCStreamStateMachine {
 
       case (.valid, false):
         switch self.processInboundEncoding(headers: headers, configuration: configuration) {
-        case .error(let failure):
+        case .error(let status, let metadata):
           self.state = .poisoned(.init(previousState: state, reason: .protocol))
-          return failure
+          return .receivedStatusAndMetadata_clientOnly(
+            status: status,
+            metadata: metadata,
+            close: true
+          )
         case .success(let inboundEncoding):
           self.state = .clientClosedServerOpen(
             .init(
@@ -1345,7 +1356,8 @@ extension GRPCStreamStateMachine {
           code: .internalError,
           message: "Received headers from server before writing client headers."
         ),
-        metadata: Metadata(headers: headers)
+        metadata: Metadata(headers: headers),
+        close: true
       )
 
     case .poisoned:

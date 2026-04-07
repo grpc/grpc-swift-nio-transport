@@ -356,7 +356,8 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
           code: .internalError,
           message: "Received headers from server before writing client headers."
         ),
-        metadata: [:]
+        metadata: [:],
+        close: true
       )
     )
   }
@@ -380,11 +381,41 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
             code: .unknown,
             message: "Unexpected non-200 HTTP Status Code (300 Multiple Choices)."
           ),
-          metadata: [":status": "300"]
+          metadata: [":status": "300"],
+          close: true
         )
       )
 
       // Further attempts from the server to send messages to the client will simply be dropped.
+      XCTAssertEqual(
+        stateMachine.receive(buffer: .init(), endStream: false),
+        .doNothing
+      )
+    }
+  }
+
+  func testReceiveInvalidInitialMetadataWithEndStreamPoisons() throws {
+    // Invalid headers with END_STREAM should also poison and signal close.
+    for targetState in [
+      TargetStateMachineState.clientOpenServerIdle, .clientClosedServerIdle,
+    ] {
+      var stateMachine = self.makeClientStateMachine(targetState: targetState)
+
+      let action = try stateMachine.receive(headers: [":status": "429"], endStream: true)
+
+      XCTAssertEqual(
+        action,
+        .receivedStatusAndMetadata_clientOnly(
+          status: Status(
+            code: .unavailable,
+            message: "Unexpected non-200 HTTP Status Code (429 Too Many Requests)."
+          ),
+          metadata: [":status": "429"],
+          close: true
+        )
+      )
+
+      // State is poisoned so further inbound data is dropped.
       XCTAssertEqual(
         stateMachine.receive(buffer: .init(), endStream: false),
         .doNothing
@@ -417,7 +448,8 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
           ":status": "200",
           "content-type": "application/grpc",
           "grpc-encoding": "gzip",
-        ]
+        ],
+        close: true
       )
     )
   }
@@ -540,7 +572,11 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
 
       XCTAssertEqual(
         action1,
-        .receivedStatusAndMetadata_clientOnly(status: expectedStatus, metadata: expectedMetadata)
+        .receivedStatusAndMetadata_clientOnly(
+          status: expectedStatus,
+          metadata: expectedMetadata,
+          close: false
+        )
       )
 
       // Now make sure everything works well if we include grpc-status
@@ -560,7 +596,8 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
         action2,
         .receivedStatusAndMetadata_clientOnly(
           status: Status(code: .ok, message: ""),
-          metadata: expectedMetadata
+          metadata: expectedMetadata,
+          close: false
         )
       )
     }
@@ -590,7 +627,8 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
           code: .internalError,
           message: "Received headers from server before writing client headers."
         ),
-        metadata: [:]
+        metadata: [:],
+        close: true
       )
     )
   }
@@ -610,7 +648,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
     ]
     let trailers = try stateMachine.receive(headers: trailersOnlyResponse, endStream: true)
     switch trailers {
-    case .receivedStatusAndMetadata_clientOnly(let status, let metadata):
+    case .receivedStatusAndMetadata_clientOnly(let status, let metadata, _):
       XCTAssertEqual(status, Status(code: .internalError, message: "Some, status, message"))
       XCTAssertEqual(
         metadata,
@@ -651,7 +689,8 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
         action,
         .receivedStatusAndMetadata_clientOnly(
           status: .init(code: .ok, message: ""),
-          metadata: expectedMetadata
+          metadata: expectedMetadata,
+          close: false
         )
       )
     }
@@ -680,7 +719,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
     ]
     let trailers = try stateMachine.receive(headers: trailersOnlyResponse, endStream: true)
     switch trailers {
-    case .receivedStatusAndMetadata_clientOnly(let status, let metadata):
+    case .receivedStatusAndMetadata_clientOnly(let status, let metadata, _):
       XCTAssertEqual(status, Status(code: .internalError, message: "Some status message"))
       XCTAssertEqual(
         metadata,
@@ -1191,7 +1230,8 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
       metadataReceivedAction,
       .receivedStatusAndMetadata_clientOnly(
         status: .init(code: .ok, message: ""),
-        metadata: receivedMetadata
+        metadata: receivedMetadata,
+        close: false
       )
     )
 
@@ -1286,7 +1326,8 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
       metadataReceivedAction,
       .receivedStatusAndMetadata_clientOnly(
         status: .init(code: .ok, message: ""),
-        metadata: receivedMetadata
+        metadata: receivedMetadata,
+        close: false
       )
     )
 
@@ -1378,7 +1419,8 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
       metadataReceivedAction,
       .receivedStatusAndMetadata_clientOnly(
         status: .init(code: .ok, message: ""),
-        metadata: receivedMetadata
+        metadata: receivedMetadata,
+        close: false
       )
     )
 

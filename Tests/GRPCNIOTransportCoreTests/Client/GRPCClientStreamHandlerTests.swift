@@ -967,6 +967,77 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
     }
   }
 
+  func testNon200StatusWithEndStreamAllowsCleanHalfClose() throws {
+    try self.assertInvalidHeadersCloseChannel(
+      serverHeaders: [":status": "429", "content-type": "application/grpc"],
+      endStream: true,
+      expectedStatus: Status(
+        code: .unavailable,
+        message: "Unexpected non-200 HTTP Status Code (429 Too Many Requests)."
+      )
+    )
+  }
+
+  func testMissingStatusWithEndStreamAllowsCleanHalfClose() throws {
+    try self.assertInvalidHeadersCloseChannel(
+      serverHeaders: ["content-type": "application/grpc"],
+      endStream: true,
+      expectedStatus: Status(code: .unknown, message: "HTTP Status Code is missing.")
+    )
+  }
+
+  func testMissingContentTypeWithEndStreamAllowsCleanHalfClose() throws {
+    try self.assertInvalidHeadersCloseChannel(
+      serverHeaders: [":status": "200"],
+      endStream: true,
+      expectedStatus: Status(code: .internalError, message: "Missing content-type header")
+    )
+  }
+
+  func testNon200StatusWithoutEndStreamClosesChannel() throws {
+    try self.assertInvalidHeadersCloseChannel(
+      serverHeaders: [":status": "503"],
+      endStream: false,
+      expectedStatus: Status(
+        code: .unavailable,
+        message: "Unexpected non-200 HTTP Status Code (503 Service Unavailable)."
+      )
+    )
+  }
+
+  private func assertInvalidHeadersCloseChannel(
+    serverHeaders: HPACKHeaders,
+    endStream: Bool,
+    expectedStatus: Status
+  ) throws {
+    let handler = GRPCClientStreamHandler(
+      methodDescriptor: .testTest,
+      scheme: .http,
+      authority: nil,
+      outboundEncoding: .none,
+      acceptedEncodings: [],
+      maxPayloadSize: 1,
+      skipStateMachineAssertions: true
+    )
+
+    let channel = EmbeddedChannel(handler: handler)
+
+    // Send client's initial metadata to open the stream.
+    try channel.writeOutbound(RPCRequestPart<GRPCNIOTransportBytes>.metadata([:]))
+
+    // Reply with server's invalid headers.
+    let headers = HTTP2Frame.FramePayload.Headers(headers: serverHeaders, endStream: endStream)
+    try channel.writeInbound(HTTP2Frame.FramePayload.headers(headers))
+
+    // Should receive status and metadata.
+    let status = try channel.readInbound(as: RPCResponsePart<GRPCNIOTransportBytes>.self)
+    XCTAssertEqual(status, .status(expectedStatus, Metadata(headers: serverHeaders)))
+
+    // The handler should close the channel because the response is not valid gRPC.
+    channel.embeddedEventLoop.run()
+    try channel.closeFuture.wait()
+  }
+
   func testWritabilityChangedWhileClientIdleDoesNotCrash() throws {
     // Regression test: channelWritabilityChanged must not call _flush when
     // there is no pending flush, because the state machine is still in an idle

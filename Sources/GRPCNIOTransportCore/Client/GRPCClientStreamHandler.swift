@@ -113,9 +113,12 @@ extension GRPCClientStreamHandler {
         case .receivedMetadata(let metadata, _):
           context.fireChannelRead(self.wrapInboundOut(.metadata(metadata)))
 
-        case .receivedStatusAndMetadata_clientOnly(let status, let metadata):
+        case .receivedStatusAndMetadata_clientOnly(let status, let metadata, let close):
           context.fireChannelRead(self.wrapInboundOut(.status(status, metadata)))
           context.fireUserInboundEventTriggered(ChannelEvent.inputClosed)
+          if close {
+            context.close(promise: nil)
+          }
 
         case .rejectRPC_serverOnly, .protocolViolation_serverOnly:
           assertionFailure("Unexpected action '\(action)'")
