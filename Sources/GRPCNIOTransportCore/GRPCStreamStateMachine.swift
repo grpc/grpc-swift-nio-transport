@@ -827,8 +827,16 @@ struct GRPCStreamStateMachine {
     case .clientClosedServerClosed(var state):
       switch self.configuration {
       case .client:
-        // No point in sending any more requests if the server is closed.
-        action = .noMoreMessages
+        if state.hasSentEndStream {
+          action = .noMoreMessages
+        } else {
+          // No point in sending any more requests if the server is closed,
+          // but we still need to send END_STREAM to properly half-close.
+          self.state = ._modifying
+          state.hasSentEndStream = true
+          self.state = .clientClosedServerClosed(state)
+          action = .sendFrame(frame: ByteBuffer(), endStream: true, promise: nil)
+        }
 
       case .server:
         self.state = ._modifying
