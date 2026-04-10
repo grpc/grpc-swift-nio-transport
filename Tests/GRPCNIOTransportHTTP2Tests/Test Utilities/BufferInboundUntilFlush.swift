@@ -76,7 +76,7 @@ final class BufferInboundUntilFlush: ChannelDuplexHandler {
       // would decode the server's SETTINGS frame and the multiplexer would forward
       // it inbound as an 'HTTP2Frame'. The 'ClientConnectionHandler' would never see the
       // initial SETTINGS frame (it hasn't been added to the pipeline yet) and would never
-      // emit '.ready', and the connection would hang.
+      // emit '.ready', and the connection would be wedged.
       //
       // Deferring by one tick allows the current tick to finish configuring the
       // pipeline. On the next tick the buffered bytes are delivered through the
