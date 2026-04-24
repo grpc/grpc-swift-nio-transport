@@ -61,6 +61,14 @@ extension ChannelPipeline.SynchronousOperations {
     )
     try self.addHandler(flushNotificationHandler)
 
+    if let flushCoalescing = connectionConfig.flushCoalescing {
+      let coalescing = FlushCoalescingHandler(
+        maxFlushDelay: TimeAmount(flushCoalescing.maxFlushDelay),
+        maxBytes: flushCoalescing.maxBytes
+      )
+      try self.addHandler(coalescing)
+    }
+
     let clampedTargetWindowSize = self.clampTargetWindowSize(http2Config.targetWindowSize)
     let clampedMaxFrameSize = self.clampMaxFrameSize(http2Config.maxFrameSize)
 
@@ -132,6 +140,14 @@ extension ChannelPipeline.SynchronousOperations {
     NIOAsyncChannel<ClientConnectionEvent, Void>,
     NIOHTTP2Handler.AsyncStreamMultiplexer<Void>
   ) {
+    if let flushCoalescing = config.connection.flushCoalescing {
+      let coalescing = FlushCoalescingHandler(
+        maxFlushDelay: TimeAmount(flushCoalescing.maxFlushDelay),
+        maxBytes: flushCoalescing.maxBytes
+      )
+      try self.addHandler(coalescing)
+    }
+
     let clampedTargetWindowSize = self.clampTargetWindowSize(config.http2.targetWindowSize)
     let clampedMaxFrameSize = self.clampMaxFrameSize(config.http2.maxFrameSize)
 

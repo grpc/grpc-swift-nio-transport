@@ -123,23 +123,64 @@ extension HTTP2ServerTransport.Config {
     /// - SeeAlso: gRFC A8 for client side keepalive, and gRFC A9 for server connection management.
     public var keepalive: Keepalive
 
+    /// Configuration for flush coalescing.
+    ///
+    /// Flush coalescing delays flushing outbound writes on the HTTP/2 connection to batch them
+    /// together, reducing the number of syscalls. For high-traffic workloads this typically
+    /// reduces both CPU usage and latency as fewer, larger writes are more efficient. For
+    /// low-traffic workloads the delay may add a small amount of latency (bounded by
+    /// ``FlushCoalescing/maxFlushDelay``) as there are fewer writes to coalesce.
+    ///
+    /// If `nil`, flush coalescing is disabled and each flush is passed through immediately.
+    @available(gRPCSwiftNIOTransport 2.8, *)
+    public var flushCoalescing: FlushCoalescing?
+
+    /// Creates a connection configuration.
+    ///
+    /// New properties and features added to `Connection` are disabled by default when using
+    /// this initializer. Use ``defaults`` to get a configuration with all features enabled
+    /// at their default values.
     public init(
       maxAge: Duration?,
       maxGraceTime: Duration?,
       maxIdleTime: Duration?,
       keepalive: Keepalive
     ) {
+      self.init(
+        maxAge: maxAge,
+        maxGraceTime: maxGraceTime,
+        maxIdleTime: maxIdleTime,
+        keepalive: keepalive,
+        flushCoalescing: nil
+      )
+    }
+
+    @available(gRPCSwiftNIOTransport 2.8, *)
+    private init(
+      maxAge: Duration?,
+      maxGraceTime: Duration?,
+      maxIdleTime: Duration?,
+      keepalive: Keepalive,
+      flushCoalescing: FlushCoalescing?
+    ) {
       self.maxAge = maxAge
       self.maxGraceTime = maxGraceTime
       self.maxIdleTime = maxIdleTime
       self.keepalive = keepalive
+      self.flushCoalescing = flushCoalescing
     }
 
     /// Default values. The max connection age, max grace time, and max idle time default to
     /// `nil` (i.e. infinite). See ``HTTP2ServerTransport/Config/Keepalive/defaults`` for keepalive
-    /// defaults.
+    /// defaults. Flush coalescing is enabled with default values.
     public static var defaults: Self {
-      Self(maxAge: nil, maxGraceTime: nil, maxIdleTime: nil, keepalive: .defaults)
+      Self(
+        maxAge: nil,
+        maxGraceTime: nil,
+        maxIdleTime: nil,
+        keepalive: .defaults,
+        flushCoalescing: .defaults
+      )
     }
   }
 
@@ -220,6 +261,50 @@ extension HTTP2ServerTransport.Config {
     /// Default values; no callbacks are set.
     public static var defaults: Self {
       Self(onBindTCPListener: nil, onAcceptTCPConnection: nil, onAcceptHTTP2Stream: nil)
+    }
+  }
+}
+
+@available(gRPCSwiftNIOTransport 2.0, *)
+extension HTTP2ServerTransport.Config.Connection {
+  /// Flush coalescing batches together writes to reduce the overhead from syscalls.
+  ///
+  /// A channel handler intercepts flush events on the HTTP/2 connection channel and delays them
+  /// until one of the following conditions is met:
+  /// 1. ``maxFlushDelay`` has elapsed since a flush was first requested,
+  /// 2. At least ``maxBytes`` bytes have been written since the previous flush, or
+  /// 3. The channel becomes unwritable (i.e. the outbound buffer has hit the high-water mark).
+  ///
+  /// This means that under high load, writes naturally accumulate and are flushed together in
+  /// fewer, larger batches. This reduces per-write overhead and typically improves both throughput
+  /// and latency.
+  ///
+  /// Under low load there are fewer writes to coalesce so flushes are typically delayed by
+  /// up to ``maxFlushDelay``. If your workload is latency-sensitive and low-throughput then
+  /// disabling coalescing (by setting
+  /// ``HTTP2ServerTransport/Config/Connection/flushCoalescing`` to `nil`) may be preferable.
+  ///
+  /// The default values (see ``defaults``) aim to provide a good balance for most workloads
+  /// without adding significant latency.
+  @available(gRPCSwiftNIOTransport 2.8, *)
+  public struct FlushCoalescing: Sendable, Hashable {
+    /// The maximum delay between a flush being requested and it being performed.
+    public var maxFlushDelay: Duration
+
+    /// The number of bytes to buffer before a flush is emitted, regardless of the delay.
+    public var maxBytes: Int
+
+    /// Creates a new flush coalescing configuration.
+    ///
+    /// - SeeAlso: ``defaults``.
+    public init(maxFlushDelay: Duration, maxBytes: Int) {
+      self.maxFlushDelay = maxFlushDelay
+      self.maxBytes = maxBytes
+    }
+
+    /// Default values. The max flush delay is 100μs and the max bytes is 64KiB.
+    public static var defaults: Self {
+      Self(maxFlushDelay: .microseconds(100), maxBytes: 64 * 1024)
     }
   }
 }
