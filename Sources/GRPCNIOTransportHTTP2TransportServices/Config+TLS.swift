@@ -17,6 +17,7 @@
 #if canImport(Network)
 public import GRPCNIOTransportCore
 public import Network
+private import NIOCore
 
 private import struct Foundation.Data
 private import struct Foundation.URL
@@ -174,9 +175,23 @@ extension HTTP2ClientTransport.TransportServices {
     package enum Wrapped: Sendable {
       case plaintext
       case tls(TLS)
+      /// Custom secure transport.
+      ///
+      /// Use this in conjunction with `Config.channelDebuggingCallbacks.onCreateTCPConnection`
+      /// to inject custom channel handlers for security.
+      @available(gRPCSwiftNIOTransport 2.9, *)
+      case customSecure
     }
 
     package let wrapped: Wrapped
+
+    /// Secure the connection with a custom secure transport mechanism.
+    ///
+    /// When using this case, you should also configure
+    /// `Config.channelDebuggingCallbacks.onCreateTCPConnection` to inject your custom security
+    /// handlers into the pipeline.
+    @available(gRPCSwiftNIOTransport 2.9, *)
+    public static let customSecure = Self(wrapped: .customSecure)
 
     /// This connection is plaintext: no encryption will take place.
     public static let plaintext = Self(wrapped: .plaintext)
