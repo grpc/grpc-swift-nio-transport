@@ -175,6 +175,11 @@ extension HTTP2ClientTransport.TransportServices {
             cause: error
           )
         }
+
+      case .customSecure:
+        isPlainText = false
+        bootstrap = NIOTSConnectionBootstrap(group: self.eventLoopGroup)
+          .channelOption(NIOTSChannelOptions.waitForActivity, value: false)
       }
 
       let (channel, multiplexer) = try await bootstrap.connect(to: address) { channel in

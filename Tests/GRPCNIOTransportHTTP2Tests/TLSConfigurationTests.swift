@@ -118,7 +118,7 @@ extension HTTP2ClientTransport.Posix.TransportSecurity {
     switch self.wrapped {
     case .tls(let tls):
       return tls
-    case .plaintext:
+    case .plaintext, .customSecure:
       return nil
     }
   }
