@@ -170,6 +170,10 @@ extension HTTP2ClientTransport.Posix {
             cause: error
           )
         }
+      case .customSecure:
+        self.sslContext = nil
+        self.isPlainText = false
+        self.customVerificationCallback = nil
       }
     }
 
