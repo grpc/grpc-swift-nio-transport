@@ -19,6 +19,7 @@ import GRPCCore
 import GRPCNIOTransportCore
 import GRPCNIOTransportHTTP2TransportServices
 import XCTest
+import NIOCore
 import NIOSSL
 
 @available(gRPCSwiftNIOTransport 2.0, *)

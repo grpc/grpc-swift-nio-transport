@@ -262,6 +262,12 @@ extension HTTP2ClientTransport.Posix {
     package enum Wrapped: Sendable {
       case plaintext
       case tls(TLS)
+      /// Custom secure transport.
+      ///
+      /// Use this in conjunction with `Config.channelDebuggingCallbacks.onCreateTCPConnection`
+      /// to inject custom channel handlers for security.
+      @available(gRPCSwiftNIOTransport 2.8, *)
+      case customSecure
     }
 
     package let wrapped: Wrapped
@@ -273,6 +279,14 @@ extension HTTP2ClientTransport.Posix {
     public static func tls(_ tls: TLS) -> Self {
       Self(wrapped: .tls(tls))
     }
+
+    /// Secure the connection with a custom secure transport mechanism.
+    ///
+    /// When using this case, you should also configure
+    /// `Config.channelDebuggingCallbacks.onCreateTCPConnection` to inject your custom security
+    /// handlers into the pipeline.
+    @available(gRPCSwiftNIOTransport 2.8, *)
+    public static let customSecure = Self(wrapped: .customSecure)
 
     /// Secure the connection with TLS using the default configuration.
     ///
