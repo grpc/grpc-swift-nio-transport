@@ -179,7 +179,7 @@ extension HTTP2ClientTransport.TransportServices {
       ///
       /// Use this in conjunction with `Config.channelDebuggingCallbacks.onCreateTCPConnection`
       /// to inject custom channel handlers for security.
-      @available(gRPCSwiftNIOTransport 2.9, *)
+      @available(gRPCSwiftNIOTransport 2.8, *)
       case customSecure
     }
 
@@ -190,7 +190,7 @@ extension HTTP2ClientTransport.TransportServices {
     /// When using this case, you should also configure
     /// `Config.channelDebuggingCallbacks.onCreateTCPConnection` to inject your custom security
     /// handlers into the pipeline.
-    @available(gRPCSwiftNIOTransport 2.9, *)
+    @available(gRPCSwiftNIOTransport 2.8, *)
     public static let customSecure = Self(wrapped: .customSecure)
 
     /// This connection is plaintext: no encryption will take place.
