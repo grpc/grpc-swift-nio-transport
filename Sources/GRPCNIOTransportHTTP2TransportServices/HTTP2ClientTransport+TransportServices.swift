@@ -93,11 +93,13 @@ extension HTTP2ClientTransport {
         config: config,
         transportSecurity: transportSecurity
       )
-      try self.init(target: target,
-                    config: config,
-                    resolverRegistry: resolverRegistry,
-                    serviceConfig: serviceConfig,
-                    connector: connector)
+      try self.init(
+        target: target,
+        config: config,
+        resolverRegistry: resolverRegistry,
+        serviceConfig: serviceConfig,
+        connector: connector
+      )
     }
 
     /// Creates a new NIOTransportServices-based HTTP/2 client transport.

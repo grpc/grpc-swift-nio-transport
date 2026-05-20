@@ -73,24 +73,27 @@ extension HTTP2ClientTransport {
     ///   - eventLoopGroup: The underlying NIO `EventLoopGroup` to run connections on. This must
     ///       be a `MultiThreadedEventLoopGroup` or an `EventLoop` from
     ///       a `MultiThreadedEventLoopGroup`.
-    /// - Throws: When no suitable resolver could be found for the `target
-    public init(target: any ResolvableTarget,
-                transportSecurity: TransportSecurity,
-                config: Config = .defaults,
-                resolverRegistry: NameResolverRegistry = .defaults,
-                serviceConfig: ServiceConfig = ServiceConfig(),
-                eventLoopGroup: any EventLoopGroup = .singletonMultiThreadedEventLoopGroup
+    /// - Throws: When no suitable resolver could be found for the `target`.
+    public init(
+      target: any ResolvableTarget,
+      transportSecurity: TransportSecurity,
+      config: Config = .defaults,
+      resolverRegistry: NameResolverRegistry = .defaults,
+      serviceConfig: ServiceConfig = ServiceConfig(),
+      eventLoopGroup: any EventLoopGroup = .singletonMultiThreadedEventLoopGroup
     ) throws {
       let connector = try Connector(
         eventLoopGroup: eventLoopGroup,
         config: config,
         transportSecurity: transportSecurity
       )
-      try self.init(target: target,
-                    config: config,
-                    resolverRegistry: resolverRegistry,
-                    serviceConfig: serviceConfig,
-                    connector: connector)
+      try self.init(
+        target: target,
+        config: config,
+        resolverRegistry: resolverRegistry,
+        serviceConfig: serviceConfig,
+        connector: connector
+      )
     }
 
     /// Creates a new NIOPosix-based HTTP/2 client transport.
