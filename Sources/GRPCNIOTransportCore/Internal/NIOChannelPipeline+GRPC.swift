@@ -15,9 +15,9 @@
  */
 
 package import GRPCCore
-package import NIOCore
+public import NIOCore
 internal import NIOHPACK
-package import NIOHTTP2
+public import NIOHTTP2
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ChannelPipeline.SynchronousOperations {
@@ -133,7 +133,7 @@ extension ChannelPipeline.SynchronousOperations {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ChannelPipeline.SynchronousOperations {
-  package func configureGRPCClientPipeline(
+  public func configureGRPCClientPipeline(
     channel: any Channel,
     config: GRPCChannel.Config
   ) throws -> (

@@ -73,7 +73,7 @@ extension HTTP2ClientTransport {
     ///   - eventLoopGroup: The underlying NIO `EventLoopGroup` to run connections on. This must
     ///       be a `MultiThreadedEventLoopGroup` or an `EventLoop` from
     ///       a `MultiThreadedEventLoopGroup`.
-    /// - Throws: When no suitable resolver could be found for the `target`.
+    /// - Throws: When no suitable resolver could be found for the `target
     public init(
       target: any ResolvableTarget,
       transportSecurity: TransportSecurity,
@@ -317,7 +317,7 @@ extension HTTP2ClientTransport.Posix {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCChannel.Config {
-  init(posix: HTTP2ClientTransport.Posix.Config) {
+  public init(posix: HTTP2ClientTransport.Posix.Config) {
     self.init(
       http2: posix.http2,
       backoff: posix.backoff,

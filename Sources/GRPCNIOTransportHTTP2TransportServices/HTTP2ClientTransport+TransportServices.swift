@@ -298,7 +298,7 @@ extension HTTP2ClientTransport.TransportServices {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCChannel.Config {
-  init(transportServices config: HTTP2ClientTransport.TransportServices.Config) {
+  public init(transportServices config: HTTP2ClientTransport.TransportServices.Config) {
     self.init(
       http2: config.http2,
       backoff: config.backoff,

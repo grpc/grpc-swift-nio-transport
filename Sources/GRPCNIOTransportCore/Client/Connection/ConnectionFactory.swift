@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-package import NIOCore
-package import NIOHTTP2
+public import NIOCore
+public import NIOHTTP2
 internal import NIOPosix
 
 @available(gRPCSwiftNIOTransport 2.0, *)
@@ -45,7 +45,7 @@ package struct HTTP2Connection: Sendable {
   /// Whether the connection is insecure (i.e. plaintext).
   var isPlaintext: Bool
 
-  package init(
+  public init(
     channel: NIOAsyncChannel<ClientConnectionEvent, Void>,
     multiplexer: NIOHTTP2Handler.AsyncStreamMultiplexer<Void>,
     isPlaintext: Bool,

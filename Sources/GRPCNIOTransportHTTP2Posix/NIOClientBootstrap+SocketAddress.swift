@@ -16,12 +16,12 @@
 
 internal import GRPCCore
 internal import GRPCNIOTransportCore
-internal import NIOCore
-internal import NIOPosix
+public import NIOCore
+public import NIOPosix
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ClientBootstrap {
-  func connect<Result: Sendable>(
+  public func connect<Result: Sendable>(
     to address: GRPCNIOTransportCore.SocketAddress,
     _ configure: @Sendable @escaping (any Channel) -> EventLoopFuture<Result>
   ) async throws -> Result {

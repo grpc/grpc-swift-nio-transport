@@ -15,12 +15,12 @@
  */
 
 private import DequeModule
-package import GRPCCore
+public import GRPCCore
 private import Synchronization
 
 @available(gRPCSwiftNIOTransport 2.0, *)
-package final class GRPCChannel: ClientTransport {
-  package typealias Bytes = GRPCNIOTransportBytes
+public final class GRPCChannel: ClientTransport {
+  public typealias Bytes = GRPCNIOTransportBytes
 
   private enum Input: Sendable {
     /// Close the channel, if possible.
@@ -121,7 +121,7 @@ package final class GRPCChannel: ClientTransport {
   }
 
   /// Returns a throttle which gRPC uses to determine whether retries can be executed.
-  package var retryThrottle: RetryThrottle? {
+  public var retryThrottle: RetryThrottle? {
     self._retryThrottle.withLock { $0 }
   }
 
@@ -129,12 +129,12 @@ package final class GRPCChannel: ClientTransport {
   ///
   /// - Parameter descriptor: The method to lookup configuration for.
   /// - Returns: Configuration for the method, if it exists.
-  package func config(forMethod descriptor: MethodDescriptor) -> MethodConfig? {
+  public func config(forMethod descriptor: MethodDescriptor) -> MethodConfig? {
     self._methodConfig.withLock { $0[descriptor] }
   }
 
   /// Establishes and maintains a connection to the remote destination.
-  package func connect() async {
+  public func connect() async {
     self.state.withLock { $0.start() }
     self._connectivityState.continuation.yield(.idle)
 
@@ -229,12 +229,12 @@ package final class GRPCChannel: ClientTransport {
 
   /// Signal to the transport that no new streams may be created and that connections should be
   /// closed when all streams are closed.
-  package func beginGracefulShutdown() {
+  public func beginGracefulShutdown() {
     self.input.continuation.yield(.close)
   }
 
   /// Opens a stream using the transport, and uses it as input into a user-provided closure, alongside the client's context.
-  package func withStream<T: Sendable>(
+  public func withStream<T: Sendable>(
     descriptor: MethodDescriptor,
     options: CallOptions,
     _ closure: (_ stream: RPCStream<Inbound, Outbound>, _ context: ClientContext) async throws -> T
@@ -274,7 +274,7 @@ package final class GRPCChannel: ClientTransport {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCChannel {
-  package struct Config: Sendable {
+  public struct Config: Sendable {
     /// Configuration for HTTP/2 connections.
     package var http2: HTTP2ClientTransport.Config.HTTP2
 
@@ -290,7 +290,7 @@ extension GRPCChannel {
     /// Compression configuration.
     package var compression: HTTP2ClientTransport.Config.Compression
 
-    package init(
+    public init(
       http2: HTTP2ClientTransport.Config.HTTP2,
       backoff: HTTP2ClientTransport.Config.Backoff,
       resolverBackoff: HTTP2ClientTransport.Config.Backoff,

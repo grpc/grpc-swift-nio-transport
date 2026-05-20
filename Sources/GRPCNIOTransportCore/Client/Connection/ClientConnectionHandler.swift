@@ -15,11 +15,11 @@
  */
 
 package import NIOCore
-package import NIOHTTP2
+public import NIOHTTP2
 
 /// An event which happens on a client's HTTP/2 connection.
-package enum ClientConnectionEvent: Sendable {
-  package enum CloseReason: Sendable {
+public enum ClientConnectionEvent: Sendable {
+  public enum CloseReason: Sendable {
     /// The server sent a GOAWAY frame to the client.
     case goAway(HTTP2ErrorCode, String)
     /// The keep alive timer fired and subsequently timed out.
