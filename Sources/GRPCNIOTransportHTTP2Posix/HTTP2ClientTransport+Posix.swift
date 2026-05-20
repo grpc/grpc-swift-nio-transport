@@ -73,14 +73,42 @@ extension HTTP2ClientTransport {
     ///   - eventLoopGroup: The underlying NIO `EventLoopGroup` to run connections on. This must
     ///       be a `MultiThreadedEventLoopGroup` or an `EventLoop` from
     ///       a `MultiThreadedEventLoopGroup`.
+    /// - Throws: When no suitable resolver could be found for the `target
+    public init(target: any ResolvableTarget,
+                transportSecurity: TransportSecurity,
+                config: Config = .defaults,
+                resolverRegistry: NameResolverRegistry = .defaults,
+                serviceConfig: ServiceConfig = ServiceConfig(),
+                eventLoopGroup: any EventLoopGroup = .singletonMultiThreadedEventLoopGroup
+    ) throws {
+      let connector = try Connector(
+        eventLoopGroup: eventLoopGroup,
+        config: config,
+        transportSecurity: transportSecurity
+      )
+      try self.init(target: target,
+                    config: config,
+                    resolverRegistry: resolverRegistry,
+                    serviceConfig: serviceConfig,
+                    connector: connector)
+    }
+
+    /// Creates a new NIOPosix-based HTTP/2 client transport.
+    ///
+    /// - Parameters:
+    ///   - target: A target to resolve.
+    ///   - config: Configuration for the transport.
+    ///   - resolverRegistry: A registry of resolver factories.
+    ///   - serviceConfig: Service config controlling how the transport should establish and
+    ///       load-balance connections.
+    ///   - connector: The connector to use for the transport.
     /// - Throws: When no suitable resolver could be found for the `target`.
     public init(
       target: any ResolvableTarget,
-      transportSecurity: TransportSecurity,
       config: Config = .defaults,
       resolverRegistry: NameResolverRegistry = .defaults,
       serviceConfig: ServiceConfig = ServiceConfig(),
-      eventLoopGroup: any EventLoopGroup = .singletonMultiThreadedEventLoopGroup
+      connector: any HTTP2Connector
     ) throws {
       guard let resolver = resolverRegistry.makeResolver(for: target) else {
         throw RuntimeError(
@@ -94,11 +122,7 @@ extension HTTP2ClientTransport {
 
       self.channel = GRPCChannel(
         resolver: resolver,
-        connector: try Connector(
-          eventLoopGroup: eventLoopGroup,
-          config: config,
-          transportSecurity: transportSecurity
-        ),
+        connector: connector,
         config: GRPCChannel.Config(posix: config),
         defaultServiceConfig: serviceConfig
       )
