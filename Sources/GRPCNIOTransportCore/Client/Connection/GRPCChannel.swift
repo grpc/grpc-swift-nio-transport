@@ -388,25 +388,30 @@ extension GRPCChannel {
     let id = QueueEntryID()
     return try await withTaskCancellationHandler {
       try await withCheckedThrowingContinuation { continuation in
-        // Explicitly adding the types works around: https://github.com/swiftlang/swift/issues/78112
-        let (enqueued, loadBalancer) = self.state.withLock { state -> (Bool, LoadBalancer?) in
+        let onEnqueue = self.state.withLock { state in
           state.enqueue(continuation: continuation, waitForReady: waitForReady, id: id)
         }
 
-        if let loadBalancer = loadBalancer {
+        switch onEnqueue {
+        case .poke(let loadBalancer):
           // Attempting to pick a subchannel will trigger a connect event if the subchannel is idle.
           _ = loadBalancer.pickSubchannel()
-        }
 
-        // Not enqueued because the channel is shutdown or shutting down.
-        if !enqueued {
+        case .use(let loadBalancer):
+          // Became ready after being told to join the queue.
+          continuation.resume(with: .success(loadBalancer))
+
+        case .enqueued:
+          if Task.isCancelled {
+            let dequeued = self.state.withLock { state in
+              state.dequeueContinuation(id: id)
+            }
+            dequeued?.resume(throwing: CancellationError())
+          }
+
+        case .rejected:
           let error = RPCError(code: .unavailable, message: "channel is shutdown")
           continuation.resume(throwing: error)
-        } else if Task.isCancelled {
-          let dequeued = self.state.withLock { state in
-            state.dequeueContinuation(id: id)
-          }
-          dequeued?.resume(throwing: CancellationError())
         }
       }
     } onCancel: {
@@ -1043,25 +1048,43 @@ extension GRPCChannel.StateMachine {
     return onMakeStream
   }
 
+  enum OnEnqueue {
+    // Ask the LB to pick a subchannel to trigger a connect.
+    case poke(LoadBalancer)
+    // Use the LB immediately, it's ready.
+    case use(LoadBalancer)
+    // The continuation was enqueued, wait.
+    case enqueued
+    // The request to enqueue was rejected because the channel is shutting down or
+    // shutdown, fail the continuation.
+    case rejected
+  }
+
   mutating func enqueue(
     continuation: CheckedContinuation<LoadBalancer, any Error>,
     waitForReady: Bool,
     id: QueueEntryID
-  ) -> (enqueued: Bool, loadBalancer: LoadBalancer?) {
+  ) -> OnEnqueue {
     switch self.state {
     case .notRunning(var state):
       self.state = ._modifying
       state.queue.append(continuation: continuation, waitForReady: waitForReady, id: id)
       self.state = .notRunning(state)
-      return (true, nil)
+      return .enqueued
     case .running(var state):
       self.state = ._modifying
-      state.queue.append(continuation: continuation, waitForReady: waitForReady, id: id)
-      self.state = .running(state)
-      // If idle then return the current load balancer so that it can be told to start connecting.
-      return (true, state.connectivityState == .idle ? state.current : nil)
+      if state.connectivityState == .ready {
+        // Became ready between being told to join the queue and creating a continuation.
+        self.state = .running(state)
+        return .use(state.current)
+      } else {
+        state.queue.append(continuation: continuation, waitForReady: waitForReady, id: id)
+        self.state = .running(state)
+        // If idle then return the current load balancer so that it can be told to start connecting.
+        return state.connectivityState == .idle ? .poke(state.current) : .enqueued
+      }
     case .stopping, .stopped:
-      return (false, nil)
+      return .rejected
     case ._modifying:
       fatalError("Invalid state")
     }
