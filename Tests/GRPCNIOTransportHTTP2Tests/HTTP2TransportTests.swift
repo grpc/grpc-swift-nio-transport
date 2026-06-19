@@ -18,6 +18,7 @@ import GRPCCore
 import GRPCNIOTransportCore
 import GRPCNIOTransportHTTP2Posix
 import GRPCNIOTransportHTTP2TransportServices
+import NIOCore
 import NIOPosix
 import XCTest
 
@@ -43,7 +44,7 @@ final class HTTP2TransportTests: XCTestCase {
 
   func forEachTransportPair(
     _ transport: [Transport] = .supported,
-    serverAddress: SocketAddress = .ipv4(host: "127.0.0.1", port: 0),
+    serverAddress: GRPCNIOTransportCore.SocketAddress = .ipv4(host: "127.0.0.1", port: 0),
     enableControlService: Bool = true,
     clientCompression: CompressionAlgorithm = .none,
     clientEnabledCompression: CompressionAlgorithmSet = .none,
@@ -76,7 +77,7 @@ final class HTTP2TransportTests: XCTestCase {
           return
         }
 
-        let client = try self.makeClient(
+        let client = try await self.makeClient(
           kind: pair.client,
           target: target,
           compression: clientCompression,
@@ -112,7 +113,7 @@ final class HTTP2TransportTests: XCTestCase {
         }
 
         let address = try await server.listeningAddress
-        let client = try self.makeClient(
+        let client = try await self.makeClient(
           kind: clientKind,
           target: .ipv4(address: address.host, port: address.port),
           compression: .none,
@@ -136,7 +137,7 @@ final class HTTP2TransportTests: XCTestCase {
 
   private func runServer(
     in group: inout ThrowingTaskGroup<Void, any Error>,
-    address: SocketAddress,
+    address: GRPCNIOTransportCore.SocketAddress,
     kind: TransportKind,
     enableControlService: Bool,
     compression: CompressionAlgorithmSet
@@ -207,7 +208,7 @@ final class HTTP2TransportTests: XCTestCase {
     target: any ResolvableTarget,
     compression: CompressionAlgorithm,
     enabledCompression: CompressionAlgorithmSet
-  ) throws -> GRPCClient<NIOClientTransport> {
+  ) async throws -> GRPCClient<NIOClientTransport> {
     let transport: NIOClientTransport
     var serviceConfig = ServiceConfig()
     serviceConfig.loadBalancingConfig = [.roundRobin]
@@ -248,30 +249,23 @@ final class HTTP2TransportTests: XCTestCase {
     #endif
 
     case .wrappedChannel:
-      let bootstrap = ClientBootstrap(group: .singletonMultiThreadedEventLoopGroup)
-        .channelInitializer { channel in
-          channel.eventLoop.makeCompletedFuture {
-            try channel.pipeline.syncOperations.addHandler(BufferInboundUntilFlush())
-          }
-        }
-
-      let channel: any Channel
       var config = HTTP2ClientTransport.WrappedChannel.Config.defaults
       config.compression.algorithm = compression
       config.compression.enabledAlgorithms = enabledCompression
 
+      let addr: NIOCore.SocketAddress
       if let dns = target as? ResolvableTargets.DNS {
-        channel = try bootstrap.connect(host: dns.host, port: dns.port ?? 443).wait()
         config.http2.authority = dns.host
+        addr = try SocketAddress(ipAddress: dns.host, port: dns.port ?? 443)
       } else if let ipv4 = target as? ResolvableTargets.IPv4, let address = ipv4.addresses.first {
-        channel = try bootstrap.connect(host: address.host, port: address.port).wait()
         config.http2.authority = address.host
+        addr = try SocketAddress(ipAddress: address.host, port: address.port)
       } else if let ipv6 = target as? ResolvableTargets.IPv6, let address = ipv6.addresses.first {
-        channel = try bootstrap.connect(host: address.host, port: address.port).wait()
         config.http2.authority = address.host
+        addr = try SocketAddress(ipAddress: address.host, port: address.port)
       } else if let uds = target as? ResolvableTargets.UnixDomainSocket {
-        channel = try bootstrap.connect(unixDomainSocketPath: uds.address.path).wait()
         config.http2.authority = uds.authority
+        addr = try SocketAddress(unixDomainSocketPath: uds.address.path)
       } else {
         throw RPCError(
           code: .invalidArgument,
@@ -279,11 +273,16 @@ final class HTTP2TransportTests: XCTestCase {
         )
       }
 
-      let wrapped = HTTP2ClientTransport.WrappedChannel(
-        takingOwnershipOf: channel,
+      let wrapped = try await HTTP2ClientTransport.WrappedChannel.wrapping(
         config: config,
         serviceConfig: serviceConfig
-      )
+      ) { configure in
+        try await ClientBootstrap(
+          group: .singletonMultiThreadedEventLoopGroup
+        ).connect(to: addr) { channel in
+          configure(channel)
+        }
+      }
       transport = NIOClientTransport(wrapped)
     }
 
@@ -1597,10 +1596,10 @@ final class HTTP2TransportTests: XCTestCase {
   }
 
   private func testAuthority(
-    serverAddress: SocketAddress,
+    serverAddress: GRPCNIOTransportCore.SocketAddress,
     authorityOverride override: String? = nil,
-    clientTarget: (SocketAddress) -> any ResolvableTarget,
-    expectedAuthority: (SocketAddress) -> String
+    clientTarget: (GRPCNIOTransportCore.SocketAddress) -> any ResolvableTarget,
+    expectedAuthority: (GRPCNIOTransportCore.SocketAddress) -> String
   ) async throws {
     try await withGRPCServer(
       transport: .http2NIOPosix(
