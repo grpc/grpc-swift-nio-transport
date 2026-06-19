@@ -44,7 +44,7 @@ final class HTTP2TransportTests: XCTestCase {
 
   func forEachTransportPair(
     _ transport: [Transport] = .supported,
-    serverAddress: SocketAddress = .ipv4(host: "127.0.0.1", port: 0),
+    serverAddress: GRPCNIOTransportCore.SocketAddress = .ipv4(host: "127.0.0.1", port: 0),
     enableControlService: Bool = true,
     clientCompression: CompressionAlgorithm = .none,
     clientEnabledCompression: CompressionAlgorithmSet = .none,
@@ -137,7 +137,7 @@ final class HTTP2TransportTests: XCTestCase {
 
   private func runServer(
     in group: inout ThrowingTaskGroup<Void, any Error>,
-    address: SocketAddress,
+    address: GRPCNIOTransportCore.SocketAddress,
     kind: TransportKind,
     enableControlService: Bool,
     compression: CompressionAlgorithmSet
@@ -1596,10 +1596,10 @@ final class HTTP2TransportTests: XCTestCase {
   }
 
   private func testAuthority(
-    serverAddress: SocketAddress,
+    serverAddress: GRPCNIOTransportCore.SocketAddress,
     authorityOverride override: String? = nil,
-    clientTarget: (SocketAddress) -> any ResolvableTarget,
-    expectedAuthority: (SocketAddress) -> String
+    clientTarget: (GRPCNIOTransportCore.SocketAddress) -> any ResolvableTarget,
+    expectedAuthority: (GRPCNIOTransportCore.SocketAddress) -> String
   ) async throws {
     try await withGRPCServer(
       transport: .http2NIOPosix(
