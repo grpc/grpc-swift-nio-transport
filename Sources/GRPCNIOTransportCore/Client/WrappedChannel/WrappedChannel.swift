@@ -480,7 +480,7 @@ extension ClientTransport where Self == HTTP2ClientTransport.WrappedChannel {
   ///       transport.
   ///   - makeChannel: A closure to create a `Channel` and configure its pipeline. Must invoke and
   ///       return the result of `configure`.
-  /// - Returns: A ``WrappedChannel``.
+  /// - Returns: A ``HTTP2ClientTransport/WrappedChannel``.
   public static func wrapping(
     config: HTTP2ClientTransport.WrappedChannel.Config = .defaults,
     serviceConfig: ServiceConfig = ServiceConfig(),
