@@ -140,6 +140,61 @@ struct ServerConnectionManagementHandlerTests {
     try connection.waitUntilClosed()
   }
 
+  @Test("Graceful close half-closes output before full close (no streams)")
+  @available(gRPCSwiftNIOTransport 2.0, *)
+  func gracefulCloseHalfClosesBeforeFullCloseWithNoStreams() throws {
+    let connection = try Connection(maxIdleTime: .minutes(1))
+    let recorder = CloseRecorder()
+    try connection.channel.pipeline.syncOperations.addHandler(recorder, position: .first)
+    try connection.activate()
+
+    connection.advanceTime(by: .minutes(1))
+    try self.testGracefulShutdown(connection: connection, lastStreamID: 0)
+
+    // The ping-ack is the trigger for closing output. The recording handler stores the promise
+    // which will be succeeded in a moment.
+    #expect(recorder.modes == [.output])
+
+    // Complete the half-close promise. Doing that triggers the full close.
+    recorder.completeOutput()
+    #expect(recorder.modes == [.output, .all])
+
+    try connection.waitUntilClosed()
+  }
+
+  @Test("Graceful close half-closes output before full close (last stream closes)")
+  @available(gRPCSwiftNIOTransport 2.0, *)
+  func gracefulCloseHalfClosesBeforeFullCloseOnLastStreamClose() throws {
+    // Path 2: _streamClosed → .close (PING ACK first; stream closes after second GOAWAY).
+    let connection = try Connection(maxIdleTime: .minutes(1))
+    let recorder = CloseRecorder()
+    try connection.channel.pipeline.syncOperations.addHandler(recorder, position: .first)
+    try connection.activate()
+
+    connection.advanceTime(by: .minutes(1))
+    try self.testGracefulShutdown(
+      connection: connection,
+      lastStreamID: 1,
+      streamToOpenBeforePingAck: 1
+    )
+
+    // Stream still open after second GOAWAY: no close yet.
+    #expect(recorder.modes.isEmpty)
+
+    // Closing the last stream schedules a graceful close on the event loop.
+    connection.streamClosed(1)
+    connection.loop.run()
+
+    // The recording handler stores the promise which will be succeeded in a moment.
+    #expect(recorder.modes == [.output])
+
+    // Complete the half-close promise. Doing that triggers the full close.
+    recorder.completeOutput()
+    #expect(recorder.modes == [.output, .all])
+
+    try connection.waitUntilClosed()
+  }
+
   @Test("Keepalive works on new connection")
   @available(gRPCSwiftNIOTransport 2.0, *)
   func keepaliveOnNewConnection() throws {
@@ -478,5 +533,27 @@ extension ServerConnectionManagementHandlerTests {
       self.channel.embeddedEventLoop.run()
       try self.channel.closeFuture.wait()
     }
+  }
+}
+
+private final class CloseRecorder: ChannelOutboundHandler {
+  typealias OutboundIn = NIOAny
+
+  private(set) var modes: [CloseMode] = []
+  private var halfClosePromise: EventLoopPromise<Void>?
+
+  func close(context: ChannelHandlerContext, mode: CloseMode, promise: EventLoopPromise<Void>?) {
+    self.modes.append(mode)
+    switch mode {
+    case .output:
+      self.halfClosePromise = promise
+    default:
+      context.close(mode: mode, promise: promise)
+    }
+  }
+
+  func completeOutput() {
+    self.halfClosePromise?.succeed(())
+    self.halfClosePromise = nil
   }
 }
