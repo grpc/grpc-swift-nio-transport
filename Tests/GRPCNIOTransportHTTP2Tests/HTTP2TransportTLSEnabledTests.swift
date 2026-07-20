@@ -501,6 +501,41 @@ struct HTTP2TransportTLSEnabledTests {
   }
 
   @Test(
+    "Client using noHostnameVerification connects despite a non-matching hostname",
+    arguments: TransportKind.clientsWithTLS,
+    TransportKind.serversWithTLS
+  )
+  @available(gRPCSwiftNIOTransport 2.0, *)
+  // Like testClientFailsServerValidation, but with hostname verification
+  // disabled the mismatched hostname must be ignored: the certificate chain
+  // still validates against the custom trust roots, so the RPC succeeds.
+  func testClientNoHostnameVerificationIgnoresHostname(
+    clientTransport: TransportKind,
+    serverTransport: TransportKind
+  ) async throws {
+    let certificateKeyPairs = try SelfSignedCertificateKeyPairs()
+    let clientTransportConfig = self.makeDefaultTLSClientConfig(
+      for: clientTransport,
+      certificateKeyPairs: certificateKeyPairs,
+      authority: "wrong-hostname",
+      serverCertificateVerification: .noHostnameVerification
+    )
+    let serverTransportConfig = self.makeDefaultTLSServerConfig(
+      for: serverTransport,
+      certificateKeyPairs: certificateKeyPairs
+    )
+
+    try await self.withClientAndServer(
+      clientConfig: clientTransportConfig,
+      serverConfig: serverTransportConfig
+    ) { control in
+      await #expect(throws: Never.self) {
+        try await self.executeUnaryRPC(control: control)
+      }
+    }
+  }
+
+  @Test(
     "Error is surfaced when server fails client verification",
     arguments: TransportKind.clientsWithTLS,
     TransportKind.clientsWithTLS
@@ -746,7 +781,8 @@ struct HTTP2TransportTLSEnabledTests {
   private func makeDefaultTLSClientConfig(
     for transportSecurity: TransportKind,
     certificateKeyPairs: SelfSignedCertificateKeyPairs,
-    authority: String? = "localhost"
+    authority: String? = "localhost",
+    serverCertificateVerification: TLSConfig.CertificateVerification = .fullVerification
   ) -> ClientConfig {
     switch transportSecurity {
     case .posix:
@@ -755,6 +791,7 @@ struct HTTP2TransportTLSEnabledTests {
         $0.trustRoots = .certificates([
           .bytes(certificateKeyPairs.server.certificate, format: .der)
         ])
+        $0.serverCertificateVerification = serverCertificateVerification
       }
       config.transport.http2.authority = authority
       return .posix(config)
@@ -766,6 +803,7 @@ struct HTTP2TransportTLSEnabledTests {
         $0.trustRoots = .certificates([
           .bytes(certificateKeyPairs.server.certificate, format: .der)
         ])
+        $0.serverCertificateVerification = serverCertificateVerification
       }
       config.transport.http2.authority = authority
       return .transportServices(config)

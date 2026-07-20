@@ -334,7 +334,11 @@ extension NWProtocolTLS.Options {
       )
     }
 
-    self.setUpVerifyBlock(trustRootsSource: tlsConfig.trustRoots)
+    self.setUpVerifyBlock(
+      trustRootsSource: tlsConfig.trustRoots,
+      verification: tlsConfig.clientCertificateVerification,
+      evaluatingServerCertificates: false
+    )
   }
 }
 #endif
