@@ -115,18 +115,39 @@ package final class Connection: Sendable {
     self.event.stream
   }
 
-  private static func sanitizeAuthorityForSNI(_ authority: String) -> String {
+  private static func sanitizeAuthorityForSNI(_ authority: String) -> String? {
+    // A bare IP literal is never a valid SNI hostname (RFC 6066 § 3 permits
+    // only DNS hostnames, and NIOSSL enforces this by failing the connection
+    // before the handshake starts). Check before stripping a port: the
+    // stripping below would otherwise mangle bare IPv6 literals like "::1".
+    if Self.isIPLiteral(authority) {
+      return nil
+    }
+
     // Strip off a trailing ":{PORT}". Look for the last non-digit byte, if it's
     // a colon then keep everything up to that index.
     let index = authority.utf8.lastIndex { byte in
       return byte < UInt8(ascii: "0") || byte > UInt8(ascii: "9")
     }
 
+    var host: String
     if let index = index, authority.utf8[index] == UInt8(ascii: ":") {
-      return String(authority.utf8[..<index])!
+      host = String(authority.utf8[..<index])!
     } else {
-      return authority
+      host = authority
     }
+
+    // Undo the bracketing applied to IPv6 addresses in authorities
+    // (e.g. "[2001:db8::1]:443").
+    if host.utf8.first == UInt8(ascii: "["), host.utf8.last == UInt8(ascii: "]") {
+      host = String(host.dropFirst().dropLast())
+    }
+
+    return Self.isIPLiteral(host) ? nil : host
+  }
+
+  private static func isIPLiteral(_ host: String) -> Bool {
+    (try? NIOCore.SocketAddress(ipAddress: host, port: 0)) != nil
   }
 
   package init(
@@ -138,7 +159,7 @@ package final class Connection: Sendable {
   ) {
     self.address = address
     self.authority = authority
-    self.sniServerHostname = authority.map { Self.sanitizeAuthorityForSNI($0) }
+    self.sniServerHostname = authority.flatMap { Self.sanitizeAuthorityForSNI($0) }
     self.defaultCompression = defaultCompression
     self.enabledCompression = enabledCompression
     self.http2Connector = http2Connector
