@@ -130,17 +130,17 @@ package final class Connection: Sendable {
       return byte < UInt8(ascii: "0") || byte > UInt8(ascii: "9")
     }
 
-    var host: String
+    let host: String
     if let index = index, authority.utf8[index] == UInt8(ascii: ":") {
       host = String(authority.utf8[..<index])!
     } else {
       host = authority
     }
 
-    // Undo the bracketing applied to IPv6 addresses in authorities
-    // (e.g. "[2001:db8::1]:443").
+    // Square brackets imply an IPv6 literal (e.g. "[2001:db8::1]:443"),
+    // which can't be used for SNI.
     if host.utf8.first == UInt8(ascii: "["), host.utf8.last == UInt8(ascii: "]") {
-      host = String(host.dropFirst().dropLast())
+      return nil
     }
 
     return Self.isIPLiteral(host) ? nil : host
