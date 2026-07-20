@@ -324,8 +324,22 @@ extension HTTP2ClientTransport.TransportServices {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension NWProtocolTLS.Options {
-  func setUpVerifyBlock(trustRootsSource: TLSConfig.TrustRootsSource) {
-    if let (verifyQueue, verifyBlock) = trustRootsSource.makeTrustRootsConfig() {
+  func setUpVerifyBlock(
+    trustRootsSource: TLSConfig.TrustRootsSource,
+    verification: TLSConfig.CertificateVerification,
+    evaluatingServerCertificates: Bool
+  ) {
+    // With verification disabled there is nothing to evaluate; installing
+    // the block would evaluate the peer's chain anyway and could fail the
+    // handshake despite verification being explicitly turned off.
+    if verification == .noVerification {
+      return
+    }
+
+    if let (verifyQueue, verifyBlock) = trustRootsSource.makeTrustRootsConfig(
+      verification: verification,
+      evaluatingServerCertificates: evaluatingServerCertificates
+    ) {
       sec_protocol_options_set_verify_block(
         self.securityProtocolOptions,
         verifyBlock,
@@ -337,7 +351,10 @@ extension NWProtocolTLS.Options {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension TLSConfig.TrustRootsSource {
-  internal func makeTrustRootsConfig() -> (DispatchQueue, sec_protocol_verify_t)? {
+  internal func makeTrustRootsConfig(
+    verification: TLSConfig.CertificateVerification,
+    evaluatingServerCertificates: Bool
+  ) -> (DispatchQueue, sec_protocol_verify_t)? {
     switch self.wrapped {
     case .certificates(let certificates):
       let verifyQueue = DispatchQueue(label: "io.grpc.CertificateVerification")
@@ -371,6 +388,16 @@ extension TLSConfig.TrustRootsSource {
         } catch {
           verifyCompleteCallback(false)
           return
+        }
+
+        // The trust arrives configured with the platform's default SSL
+        // policy, which includes matching the peer's certificate against the
+        // endpoint's hostname. `.noHostnameVerification` promises chain
+        // validation without the hostname check, so re-policy the trust for
+        // SSL use with no hostname before evaluating.
+        if verification == .noHostnameVerification {
+          let policy = SecPolicyCreateSSL(evaluatingServerCertificates, nil)
+          SecTrustSetPolicies(actualTrust, policy)
         }
 
         SecTrustSetAnchorCertificates(actualTrust, customAnchors as CFArray)
