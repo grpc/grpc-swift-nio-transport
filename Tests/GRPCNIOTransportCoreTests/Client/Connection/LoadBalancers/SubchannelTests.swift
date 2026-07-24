@@ -279,6 +279,65 @@ final class SubchannelTests: XCTestCase {
     }
   }
 
+  func testShutdownWhileBackingOffCompletesPromptly() async throws {
+    // Regression test: a subchannel sitting in connection backoff has no established
+    // connection and no in-flight RPCs to drain, so graceful shutdown must complete
+    // promptly rather than waiting for the (potentially very long) backoff to elapse.
+    //
+    // Note: we must NOT cancel the task group to end `run()`. Cancellation would tear down
+    // the backoff `Task.sleep` itself, so shutdown would always appear fast and the test
+    // would prove nothing. Instead we let the subchannel finish its own streams in response
+    // to `shutDown()` and measure how long that takes.
+    let backoff = Duration.seconds(30)
+    let subchannel = self.makeSubchannel(
+      address: .unixDomainSocket(path: "not-listening"),
+      connector: .posix(),
+      backoff: .fixed(at: backoff)
+    )
+
+    let clock = ContinuousClock()
+
+    try await withThrowingTaskGroup(of: Void.self) { group in
+      group.addTask {
+        await subchannel.run()
+      }
+
+      var shutdownRequestedAt: ContinuousClock.Instant?
+      for await event in subchannel.events {
+        switch event {
+        case .connectivityStateChanged(.idle):
+          subchannel.connect()
+
+        case .connectivityStateChanged(.transientFailure):
+          // All addresses have been tried and the subchannel is now sleeping in backoff.
+          // Trigger graceful shutdown exactly once.
+          if shutdownRequestedAt == nil {
+            shutdownRequestedAt = clock.now
+            subchannel.shutDown()
+          }
+
+        default:
+          ()
+        }
+      }
+
+      // Exiting this loop means the subchannel finished its own event stream as part of
+      // shutting down (we never cancel the group), so the elapsed time below reflects how
+      // long graceful shutdown actually took. A backing-off subchannel has nothing to
+      // drain, so it should not wait for the backoff `Task.sleep` to complete.
+      let requestedAt = try XCTUnwrap(
+        shutdownRequestedAt,
+        "subchannel never entered the transient failure (backing off) state"
+      )
+      let elapsed = clock.now - requestedAt
+      XCTAssertLessThan(
+        elapsed,
+        backoff / 2,
+        "graceful shutdown waited out the connection backoff (took \(elapsed))"
+      )
+    }
+  }
+
   func testIdleTimeout() async throws {
     let server = TestServer(eventLoopGroup: .singletonMultiThreadedEventLoopGroup)
     let address = try await server.bind()
