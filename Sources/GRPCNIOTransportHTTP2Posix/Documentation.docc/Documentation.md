@@ -1,6 +1,6 @@
 # ``GRPCNIOTransportHTTP2Posix``
 
-HTTP/2 client and server transports built on top of SwiftNIO's `NIOPosix` module.
+HTTP/2 client and server transports built on top of SwiftNIO's Posix networking layer.
 
 ## Overview
 

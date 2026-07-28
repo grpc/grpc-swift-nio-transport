@@ -77,7 +77,7 @@ extension HTTP2ServerTransport.TransportServices {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ServerTransport.TransportServices {
-  /// TLS configuration for the `TransportServices` server transport.
+  /// TLS configuration for the TransportServices server transport.
   public struct TLS: Sendable {
     /// How to verify the client certificate, if one is presented.
     public var clientCertificateVerification: TLSConfig.CertificateVerification
@@ -90,18 +90,19 @@ extension HTTP2ServerTransport.TransportServices {
     /// If this is set to `true` but the client does not support ALPN, then the connection is rejected.
     public var requireALPN: Bool
 
-    /// A provider for the `SecIdentity` to be used when setting up TLS.
+    /// A provider for the identity to be used when setting up TLS.
     public var identityProvider: @Sendable () throws -> SecIdentity
 
     /// Additional certificates to include in the TLS handshake alongside the
-    /// leaf certificate from the `SecIdentity`.
+    /// leaf certificate from the identity.
     ///
     /// Use this to provide intermediate (and optionally root) certificates
     /// when the peer requires the full chain for verification.
     @available(gRPCSwiftNIOTransport 2.5, *)
     public var additionalCertificates: [SecCertificate]
 
-    /// Creates a new HTTP2 NIO Transport Services transport TLS config.
+    /// Creates an HTTP2 NIO Transport Services transport TLS config.
+    ///
     /// - Parameters:
     ///   - clientCertificateVerification: How to verify the client certificate, if one is presented.
     ///   - trustRoots: The trust roots to be used when verifying client certificates.
@@ -120,8 +121,10 @@ extension HTTP2ServerTransport.TransportServices {
       self.additionalCertificates = []
     }
 
-    /// Creates a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted:
-    /// - `clientCertificateVerificationMode` equals `doNotVerify`
+    /// Creates a server configuration for one-way TLS, with some values defaulted.
+    ///
+    /// The defaults are:
+    /// - `clientCertificateVerification` equals `doNotVerify`
     /// - `trustRoots` equals `systemDefault`
     /// - `requireALPN` equals `false`
     ///
@@ -143,9 +146,10 @@ extension HTTP2ServerTransport.TransportServices {
       return config
     }
 
-    /// Creates a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted to match
-    /// the requirements of mTLS:
-    /// - `clientCertificateVerificationMode` equals `noHostnameVerification`
+    /// Creates a server configuration for mutual TLS, with some values defaulted.
+    ///
+    /// The defaults are:
+    /// - `clientCertificateVerification` equals `noHostnameVerification`
     /// - `trustRoots` equals `systemDefault`
     /// - `requireALPN` equals `false`
     ///
@@ -238,27 +242,29 @@ extension HTTP2ClientTransport.TransportServices {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport.TransportServices {
-  /// TLS configuration for the `TransportServices` client transport.
+  /// TLS configuration for the TransportServices client transport.
   public struct TLS: Sendable {
     /// How to verify the server certificate, if one is presented.
     public var serverCertificateVerification: TLSConfig.CertificateVerification
 
     /// The trust roots to be used when verifying server certificates.
+    ///
     /// - Important: If specifying custom certificates, they must be DER-encoded X509 certificates.
     public var trustRoots: TLSConfig.TrustRootsSource
 
-    /// An optional provider for the `SecIdentity` to be used when setting up TLS.
+    /// An optional provider for the identity to be used when setting up TLS.
     public var identityProvider: (@Sendable () throws -> SecIdentity)?
 
     /// Additional certificates to include in the TLS handshake alongside the
-    /// leaf certificate from the `SecIdentity`.
+    /// leaf certificate from the identity.
     ///
     /// Use this to provide intermediate (and optionally root) certificates
     /// when the peer requires the full chain for verification.
     @available(gRPCSwiftNIOTransport 2.5, *)
     public var additionalCertificates: [SecCertificate]
 
-    /// Creates a new HTTP2 NIO Transport Services transport TLS config.
+    /// Creates an HTTP2 NIO Transport Services transport TLS config.
+    ///
     /// - Parameters:
     ///   - serverCertificateVerification: How to verify the server certificate, if one is presented.
     ///   - trustRoots: The trust roots to be used when verifying server certificates.
@@ -274,7 +280,9 @@ extension HTTP2ClientTransport.TransportServices {
       self.additionalCertificates = []
     }
 
-    /// Creates a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted:
+    /// Creates a client configuration for one-way TLS, with some values defaulted.
+    ///
+    /// The defaults are:
     /// - `serverCertificateVerification` equals `fullVerification`
     /// - `trustRoots` equals `systemDefault`
     /// - `identityProvider` equals `nil`
@@ -294,14 +302,17 @@ extension HTTP2ClientTransport.TransportServices {
       return config
     }
 
-    /// Creates a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted:
+    /// The default client configuration for one-way TLS.
+    ///
+    /// The defaults are:
     /// - `serverCertificateVerification` equals `fullVerification`
     /// - `trustRoots` equals `systemDefault`
     /// - `identityProvider` equals `nil`
     public static var defaults: Self { .defaults() }
 
-    /// Creates a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted to match
-    /// the requirements of mTLS:
+    /// Creates a client configuration for mutual TLS, with some values defaulted.
+    ///
+    /// The defaults are:
     /// - `serverCertificateVerification` equals `fullVerification`
     /// - `trustRoots` equals `systemDefault`
     ///

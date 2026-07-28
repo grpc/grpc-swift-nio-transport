@@ -16,7 +16,7 @@
 
 public import GRPCCore
 
-/// A transport which refines `ServerTransport` to provide the socket address of a listening
+/// A transport which refines a server transport to provide the socket address of a listening
 /// server.
 @available(gRPCSwiftNIOTransport 2.0, *)
 public protocol ListeningServerTransport: ServerTransport {

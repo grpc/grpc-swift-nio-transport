@@ -117,7 +117,9 @@ public struct NameResolver: Sendable {
   /// error handling, empty endpoint lists, and sequence completion semantics.
   public var names: RPCAsyncSequence<NameResolutionResult, any Error>
 
-  /// How ``names`` is updated and should be consumed.
+  /// How the name-resolution sequence is updated and consumed.
+  ///
+  /// Describes the update semantics of ``NameResolver/names``.
   public let updateMode: UpdateMode
 
   /// The authority of the service.
@@ -143,7 +145,7 @@ public struct NameResolver: Sendable {
     public static var pull: Self { Self(.pull) }
   }
 
-  /// Create a new name resolver.
+  /// Creates a name resolver.
   public init(
     names: RPCAsyncSequence<NameResolutionResult, any Error>,
     updateMode: UpdateMode,
@@ -163,10 +165,11 @@ public struct NameResolutionResult: Hashable, Sendable {
   public var endpoints: [Endpoint]
 
   /// The service configuration reported by the resolver, or an error if it couldn't be parsed.
+  ///
   /// This value may be `nil` if the resolver doesn't support fetching service configuration.
   public var serviceConfig: Result<ServiceConfig, RPCError>?
 
-  /// Creates a new name resolution result.
+  /// Creates a name resolution result.
   public init(
     endpoints: [Endpoint],
     serviceConfig: Result<ServiceConfig, RPCError>?
@@ -185,17 +188,22 @@ public struct Endpoint: Hashable, Sendable {
   /// choose to ignore the order.
   public var addresses: [SocketAddress]
 
-  /// Create a new ``Endpoint``.
+  /// Creates an endpoint.
+  ///
   /// - Parameter addresses: A list of equivalent addresses.
   public init(addresses: [SocketAddress]) {
     self.addresses = addresses
   }
 }
 
-/// A resolver capable of resolving targets of type ``Target``.
+/// A factory capable of creating resolvers for a specific target type.
+///
+/// The target type is given by ``NameResolverFactory/Target``.
 @available(gRPCSwiftNIOTransport 2.0, *)
 public protocol NameResolverFactory<Target> {
-  /// The type of ``ResolvableTarget`` this factory makes resolvers for.
+  /// The type of target this factory makes resolvers for.
+  ///
+  /// Must conform to ``ResolvableTarget``.
   associatedtype Target: ResolvableTarget
 
   /// Creates a resolver for the given target.
@@ -225,7 +233,9 @@ extension NameResolverFactory {
   }
 }
 
-/// A target which can be resolved to a ``SocketAddress``.
+/// A target which can be resolved to a socket address.
+///
+/// The resolved address is represented by ``SocketAddress``.
 @available(gRPCSwiftNIOTransport 2.0, *)
 public protocol ResolvableTarget {}
 

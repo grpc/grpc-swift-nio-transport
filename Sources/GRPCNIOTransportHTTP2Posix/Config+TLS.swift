@@ -57,7 +57,7 @@ extension HTTP2ServerTransport.Posix {
       return .tls(tlsConfig)
     }
 
-    /// Creates a new TLS config using a certificate reloader to provide the certificate chain
+    /// Creates a TLS config using a certificate reloader to provide the certificate chain
     /// and private key.
     ///
     /// The reloader must provide an initial certificate chain and private key. If you already
@@ -66,7 +66,7 @@ extension HTTP2ServerTransport.Posix {
     /// the `configure` callback.
     ///
     /// The defaults include setting:
-    /// - `clientCertificateVerificationMode` to `doNotVerify`,
+    /// - `clientCertificateVerification` to `doNotVerify`,
     /// - `trustRoots` to `systemDefault`, and
     /// - `requireALPN` to `false`.
     ///
@@ -109,7 +109,7 @@ extension HTTP2ServerTransport.Posix {
       return .tls(tlsConfig)
     }
 
-    /// Creates a new TLS config suitable for mTLS using a certificate reloader to provide the
+    /// Creates a TLS config suitable for mTLS using a certificate reloader to provide the
     /// certificate chain and private key.
     ///
     /// The reloader must provide an initial certificate chain and private key. If you already
@@ -118,7 +118,7 @@ extension HTTP2ServerTransport.Posix {
     /// the `configure` callback.
     ///
     /// The defaults include setting:
-    /// - `clientCertificateVerificationMode` to `noHostnameVerification`,
+    /// - `clientCertificateVerification` to `noHostnameVerification`,
     /// - `trustRoots` to `systemDefault`, and
     /// - `requireALPN` to `false`.
     ///
@@ -146,7 +146,7 @@ extension HTTP2ServerTransport.Posix {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ServerTransport.Posix.TransportSecurity {
-  /// TLS configuration for the `Posix` server transport.
+  /// TLS configuration for the Posix server transport.
   public struct TLS: Sendable {
     /// The certificates the server will offer during negotiation.
     public var certificateChain: [TLSConfig.CertificateSource]
@@ -181,7 +181,8 @@ extension HTTP2ServerTransport.Posix.TransportSecurity {
         ) -> Void
       )?
 
-    /// Creates a new HTTP2 NIO Posix server transport TLS config.
+    /// Creates an HTTP2 NIO Posix server transport TLS config.
+    ///
     /// - Parameters:
     ///   - certificateChain: The certificates the server will offer during negotiation.
     ///   - privateKey: The private key associated with the leaf certificate.
@@ -202,8 +203,10 @@ extension HTTP2ServerTransport.Posix.TransportSecurity {
       self.requireALPN = requireALPN
     }
 
-    /// Creates a new HTTP2 NIO Posix transport TLS config, with some values defaulted:
-    /// - `clientCertificateVerificationMode` equals `doNotVerify`
+    /// Creates a server configuration for one-way TLS, with some values defaulted.
+    ///
+    /// The defaults are:
+    /// - `clientCertificateVerification` equals `doNotVerify`
     /// - `trustRoots` equals `systemDefault`
     /// - `requireALPN` equals `false`
     ///
@@ -228,9 +231,10 @@ extension HTTP2ServerTransport.Posix.TransportSecurity {
       return config
     }
 
-    /// Creates a new HTTP2 NIO Posix transport TLS config, with some values defaulted to match
-    /// the requirements of mTLS:
-    /// - `clientCertificateVerificationMode` equals `noHostnameVerification`
+    /// Creates a server configuration for mutual TLS, with some values defaulted.
+    ///
+    /// The defaults are:
+    /// - `clientCertificateVerification` equals `noHostnameVerification`
     /// - `trustRoots` equals `systemDefault`
     /// - `requireALPN` equals `false`
     ///
@@ -324,7 +328,7 @@ extension HTTP2ClientTransport.Posix {
       return .tls(tlsConfig)
     }
 
-    /// Creates a new TLS config suitable for mTLS using a certificate reloader to provide the
+    /// Creates a TLS config suitable for mTLS using a certificate reloader to provide the
     /// certificate chain and private key.
     ///
     /// The reloader must provide an initial certificate chain and private key. If you already
@@ -360,7 +364,7 @@ extension HTTP2ClientTransport.Posix {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport.Posix.TransportSecurity {
-  /// TLS configuration for the `Posix` client transport.
+  /// TLS configuration for the Posix client transport.
   public struct TLS: Sendable {
     /// The certificates the client will offer during negotiation.
     public var certificateChain: [TLSConfig.CertificateSource]
@@ -390,7 +394,8 @@ extension HTTP2ClientTransport.Posix.TransportSecurity {
     /// use at that point in time.
     public var certificateReloader: (any CertificateReloader)?
 
-    /// Creates a new HTTP2 NIO Posix client transport TLS config.
+    /// Creates an HTTP2 NIO Posix client transport TLS config.
+    ///
     /// - Parameters:
     ///   - certificateChain: The certificates the client will offer during negotiation.
     ///   - privateKey: The private key associated with the leaf certificate.
@@ -408,7 +413,9 @@ extension HTTP2ClientTransport.Posix.TransportSecurity {
       self.trustRoots = trustRoots
     }
 
-    /// Creates a new HTTP2 NIO Posix transport TLS config, with some values defaulted:
+    /// Creates a client configuration for one-way TLS, with some values defaulted.
+    ///
+    /// The defaults are:
     /// - `certificateChain` equals `[]`
     /// - `privateKey` equals `nil`
     /// - `serverCertificateVerification` equals `fullVerification`
@@ -430,15 +437,18 @@ extension HTTP2ClientTransport.Posix.TransportSecurity {
       return config
     }
 
-    /// Creates a new HTTP2 NIO Posix transport TLS config, with some values defaulted:
+    /// The default client configuration for one-way TLS.
+    ///
+    /// The defaults are:
     /// - `certificateChain` equals `[]`
     /// - `privateKey` equals `nil`
     /// - `serverCertificateVerification` equals `fullVerification`
     /// - `trustRoots` equals `systemDefault`
     public static var defaults: Self { .defaults() }
 
-    /// Creates a new HTTP2 NIO Posix transport TLS config, with some values defaulted to match
-    /// the requirements of mTLS:
+    /// Creates a client configuration for mutual TLS, with some values defaulted.
+    ///
+    /// The defaults are:
     /// - `trustRoots` equals `systemDefault`
     /// - `serverCertificateVerification` equals `fullVerification`
     ///
@@ -466,10 +476,11 @@ extension HTTP2ClientTransport.Posix.TransportSecurity {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension TLSConfig.PrivateKeySource {
-  /// Creates a key source from a `NIOSSLCustomPrivateKey`.
+  /// Creates a key source from a custom private key.
   ///
   /// This private key source is only applicable to the NIOPosix-based transports. Using one
-  /// with a NIOTransportServices-based transport is a programmer error.
+  /// with a NIOTransportServices-based transport is a programmer error. The key must conform to
+  /// `NIOSSLCustomPrivateKey`.
   ///
   /// - Parameter key: The custom private key.
   /// - Returns: A private key source wrapping the custom private key.

@@ -24,7 +24,7 @@ private import Network
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport {
-  /// A `ClientTransport` using HTTP/2 built on top of `NIOTransportServices`.
+  /// A client transport using HTTP/2 built on top of NIOTransportServices.
   ///
   /// This transport builds on top of SwiftNIO's Transport Services networking layer and is the recommended
   /// variant for use on Darwin-based platforms (macOS, iOS, etc.).
@@ -68,7 +68,7 @@ extension HTTP2ClientTransport {
       self.channel.retryThrottle
     }
 
-    /// Creates a new NIOTransportServices-based HTTP/2 client transport.
+    /// Creates a NIOTransportServices-based HTTP/2 client transport.
     ///
     /// - Parameters:
     ///   - target: A target to resolve.
@@ -211,7 +211,7 @@ extension HTTP2ClientTransport.TransportServices {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport.TransportServices {
-  /// Configuration for the `TransportServices` transport.
+  /// Configuration for the TransportServices transport.
   public struct Config: Sendable {
     /// Configuration for HTTP/2 connections.
     public var http2: HTTP2ClientTransport.Config.HTTP2
@@ -232,7 +232,7 @@ extension HTTP2ClientTransport.TransportServices {
     /// Channel callbacks for debugging.
     public var channelDebuggingCallbacks: HTTP2ClientTransport.Config.ChannelDebuggingCallbacks
 
-    /// Creates a new connection configuration.
+    /// Creates a connection configuration.
     ///
     /// - Parameters:
     ///   - http2: HTTP2 configuration.
@@ -280,7 +280,7 @@ extension HTTP2ClientTransport.TransportServices {
       Self.defaults()
     }
 
-    /// Default values.
+    /// Default values, combining the defaults of each nested configuration, optionally customized by a closure.
     ///
     /// - Parameters:
     ///   - configure: A closure which allows you to modify the defaults before returning them.
@@ -339,7 +339,7 @@ extension NIOTSConnectionBootstrap {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ClientTransport where Self == HTTP2ClientTransport.TransportServices {
-  /// Creates a new `TransportServices` based HTTP/2 client transport.
+  /// Creates a TransportServices-based HTTP/2 client transport.
   ///
   /// - Parameters:
   ///   - target: A target to resolve.

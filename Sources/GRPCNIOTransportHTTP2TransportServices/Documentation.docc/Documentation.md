@@ -1,6 +1,6 @@
 # ``GRPCNIOTransportHTTP2TransportServices``
 
-HTTP/2 client and server transports built on top of SwiftNIO's `NIOTransportServices` module.
+HTTP/2 client and server transports built on top of SwiftNIO's Transport Services networking layer.
 
 ## Overview
 

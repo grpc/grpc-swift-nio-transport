@@ -33,13 +33,13 @@ public struct GRPCNIOTransportBytes: GRPCContiguousBytes, Hashable, Sendable {
     self.buffer = ByteBuffer()
   }
 
-  /// Creates a new instance filled with the given byte, repeated `count` times.
+  /// Creates an instance by repeating the given byte a number of times.
   @inlinable
   public init(repeating: UInt8, count: Int) {
     self.buffer = ByteBuffer(repeating: repeating, count: count)
   }
 
-  /// Creates a new instance from a sequence of bytes.
+  /// Creates an instance from a sequence of bytes.
   @inlinable
   public init(_ sequence: some Sequence<UInt8>) {
     self.buffer = ByteBuffer(bytes: sequence)

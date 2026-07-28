@@ -27,7 +27,7 @@ public import X509
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ServerTransport {
-  /// A `ServerTransport` using HTTP/2 built on top of `NIOPosix`.
+  /// A server transport using HTTP/2 built on top of NIOPosix.
   ///
   /// This transport builds on top of SwiftNIO's Posix networking layer and is suitable for use
   /// on Linux and Darwin-based platforms (macOS, iOS, etc.). However, it's *strongly* recommended
@@ -194,7 +194,7 @@ extension HTTP2ServerTransport {
       }
     }
 
-    /// Creates a new `Posix` transport.
+    /// Creates a Posix transport, binding to the given address.
     ///
     /// - Parameters:
     ///   - address: The address to which the server should be bound.
@@ -215,7 +215,7 @@ extension HTTP2ServerTransport {
       )
     }
 
-    /// Creates a new `Posix` transport.
+    /// Creates a Posix transport from an already bound listening socket.
     ///
     /// - Parameters:
     ///   - fileDescriptor: The file descriptor of an already bound listening socket.
@@ -310,21 +310,23 @@ extension HTTP2ServerTransport {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ServerTransport.Posix {
-  /// The transport-specific context for the `Posix` server transport.
+  /// The transport-specific context for the Posix server transport.
   public struct Context: ServerContext.TransportSpecific {
     /// The peer certificate (if any) from the mTLS handshake.
     public var peerCertificate: Certificate?
 
-    /// The validated peer certificate chain from the mTLS handshake. This is only available when using a custom verification callback.
+    /// The validated peer certificate chain from the mTLS handshake.
+    ///
+    /// This is only available when using a custom verification callback.
     @available(gRPCSwiftNIOTransport 2.2, *)
     public var peerCertificateChain: X509.ValidatedCertificateChain?
 
-    /// Creates a new, empty context.
+    /// Creates an empty context.
     public init() {
     }
   }
 
-  /// Config for the `Posix` transport.
+  /// Configuration for the Posix transport.
   public struct Config: Sendable {
     /// Compression configuration.
     public var compression: HTTP2ServerTransport.Config.Compression
@@ -341,7 +343,7 @@ extension HTTP2ServerTransport.Posix {
     /// Channel callbacks for debugging.
     public var channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
 
-    /// Creates a new configuration.
+    /// Creates a configuration.
     ///
     /// - Parameters:
     ///   - http2: HTTP2 configuration.
@@ -427,7 +429,7 @@ extension ServerBootstrap {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ServerTransport where Self == HTTP2ServerTransport.Posix {
-  /// Creates a new `Posix` based HTTP/2 server transport.
+  /// Creates a Posix-based HTTP/2 server transport.
   ///
   /// - Parameters:
   ///   - address: The address to which the server should be bound.
@@ -453,7 +455,7 @@ extension ServerTransport where Self == HTTP2ServerTransport.Posix {
 
 @available(gRPCSwiftNIOTransport 2.6, *)
 extension ServerTransport where Self == HTTP2ServerTransport.Posix {
-  /// Creates a new `Posix` based HTTP/2 server transport.
+  /// Creates a Posix-based HTTP/2 server transport.
   ///
   /// - Parameters:
   ///   - fileDescriptor: The file descriptor of an already bound listening socket.

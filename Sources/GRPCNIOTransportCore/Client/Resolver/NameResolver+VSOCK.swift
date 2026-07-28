@@ -26,7 +26,7 @@ extension ResolvableTargets {
     /// The VSOCK address.
     public var address: SocketAddress.VirtualSocket
 
-    /// Creates a new resolvable VSOCK target.
+    /// Creates a resolvable VSOCK target.
     public init(address: SocketAddress.VirtualSocket) {
       self.address = address
     }
@@ -35,7 +35,8 @@ extension ResolvableTargets {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ResolvableTarget where Self == ResolvableTargets.VirtualSocket {
-  /// Creates a new resolvable Virtual Socket target.
+  /// Creates a resolvable Virtual Socket target.
+  ///
   /// - Parameters:
   ///   - contextID: The context ID (`cid`) of the service.
   ///   - port: The port to connect to.
@@ -50,14 +51,15 @@ extension ResolvableTarget where Self == ResolvableTargets.VirtualSocket {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension NameResolvers {
-  /// A ``NameResolverFactory`` for ``ResolvableTargets/VirtualSocket`` targets.
+  /// A name resolver factory for Virtual Socket targets.
   ///
-  /// The name resolver for a given target always produces the same values, with a single endpoint.
+  /// Creates resolvers for ``ResolvableTargets/VirtualSocket`` targets. The name resolver
+  /// for a given target always produces the same values, with a single endpoint.
   /// This resolver doesn't support fetching service configuration.
   public struct VirtualSocket: NameResolverFactory, Sendable {
     public typealias Target = ResolvableTargets.VirtualSocket
 
-    /// Creates a new VSOCK resolver factory.
+    /// Creates a VSOCK resolver factory.
     public init() {}
 
     /// Creates a resolver for the given VSOCK target.

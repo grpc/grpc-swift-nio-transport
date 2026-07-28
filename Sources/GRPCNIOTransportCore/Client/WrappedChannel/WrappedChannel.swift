@@ -21,7 +21,7 @@ private import Synchronization
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport {
-  /// A client transport which wraps an existing SwiftNIO `Channel`.
+  /// A client transport which wraps an existing SwiftNIO channel.
   ///
   /// You can use this if you already have a connected `Channel` that you'd like to use as a gRPC
   /// client connection. This is helpful if, for example, you wish to tunnel gRPC inside another
@@ -84,7 +84,7 @@ extension HTTP2ClientTransport {
       4 * 1024 * 1024
     }
 
-    /// Create a new wrapping client transport from an already connected NIO `Channel`.
+    /// Creates a wrapping client transport from an already connected NIO channel.
     ///
     /// - Parameters:
     ///   - channel: The channel to wrap. The transport takes ownership of the lifetime of the channel
@@ -361,7 +361,7 @@ extension HTTP2ClientTransport {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ClientTransport where Self == HTTP2ClientTransport.WrappedChannel {
-  /// Create a new wrapping client transport from an already connected NIO `Channel`.
+  /// Creates a wrapping client transport from an already connected NIO channel.
   ///
   /// - Parameters:
   ///   - channel: The channel to wrap. The transport takes ownership of the lifetime of the channel
@@ -395,13 +395,13 @@ extension ClientTransport where Self == HTTP2ClientTransport.WrappedChannel {
 
 @available(gRPCSwiftNIOTransport 2.9, *)
 extension HTTP2ClientTransport.WrappedChannel {
-  /// An opaque handle representing a `Channel` whose pipeline has been configured for gRPC by
-  /// ``WrappedChannel/wrapping(config:serviceConfig:makeChannel:)``.
+  /// An opaque handle representing a channel whose pipeline has been configured for gRPC.
   ///
   /// Returned from the `configure` closure given to `makeChannel` and threaded through to the
-  /// closure's return value; do not construct this yourself.
+  /// closure's return value; do not construct this yourself. This type is produced by
+  /// ``WrappedChannel/wrapping(config:serviceConfig:makeChannel:)``.
   public struct ConfiguredChannel: Sendable {
-    /// The underlying NIO `Channel`.
+    /// The underlying NIO channel.
     public let channel: any Channel
 
     fileprivate let connection: NIOAsyncChannel<ClientConnectionEvent, Void>
@@ -418,7 +418,7 @@ extension HTTP2ClientTransport.WrappedChannel {
     }
   }
 
-  /// Builds a `WrappedChannel` transport, configuring the gRPC pipeline on a channel you supply.
+  /// Builds a wrapped-channel transport, configuring the gRPC pipeline on a channel you supply.
   ///
   /// The `makeChannel` closure is invoked with a `configure` closure. You must call
   /// `configure(_:)` exactly once before any inbound bytes can flow into the pipeline. In a
@@ -473,7 +473,7 @@ extension HTTP2ClientTransport.WrappedChannel {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ClientTransport where Self == HTTP2ClientTransport.WrappedChannel {
-  /// Builds a `WrappedChannel` transport, configuring the gRPC pipeline on a channel you supply.
+  /// Builds a wrapped-channel transport, configuring the gRPC pipeline on a channel you supply.
   ///
   /// See ``HTTP2ClientTransport/WrappedChannel/wrapping(config:serviceConfig:makeChannel:)`` for
   /// details.

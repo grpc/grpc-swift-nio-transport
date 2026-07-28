@@ -41,7 +41,7 @@ extension HTTP2ClientTransport.Config {
     /// - Note: `CompressionAlgorithm.none` is always supported, even if it isn't set here.
     public var enabledAlgorithms: CompressionAlgorithmSet
 
-    /// Creates a new compression configuration.
+    /// Creates a compression configuration.
     ///
     /// - SeeAlso: ``defaults``.
     public init(algorithm: CompressionAlgorithm, enabledAlgorithms: CompressionAlgorithmSet) {
@@ -69,7 +69,7 @@ extension HTTP2ClientTransport.Config {
     /// Whether the client sends keepalive pings when there are no calls in progress.
     public var allowWithoutCalls: Bool
 
-    /// Creates a new keepalive configuration.
+    /// Creates a keepalive configuration.
     public init(time: Duration, timeout: Duration, allowWithoutCalls: Bool) {
       self.time = time
       self.timeout = timeout
@@ -148,7 +148,7 @@ extension HTTP2ClientTransport.Config {
     /// The resulting backoff will therefore be between 8 seconds and 12 seconds.
     public var jitter: Double
 
-    /// Creates a new backoff configuration.
+    /// Creates a backoff configuration.
     public init(initial: Duration, max: Duration, multiplier: Double, jitter: Double) {
       self.initial = initial
       self.max = max
@@ -156,8 +156,10 @@ extension HTTP2ClientTransport.Config {
       self.jitter = jitter
     }
 
-    /// Default values, initial backoff is one second and maximum backoff is two minutes. The
-    /// multiplier is `1.6` and the jitter is set to `0.2`.
+    /// Default values for backoff.
+    ///
+    /// The initial backoff is one second, the maximum backoff is two minutes, the multiplier
+    /// is `1.6`, and the jitter is `0.2`.
     public static var defaults: Self {
       Self(initial: .seconds(1), max: .seconds(120), multiplier: 1.6, jitter: 0.2)
     }
@@ -184,7 +186,7 @@ extension HTTP2ClientTransport.Config {
     /// extension, if applicable.
     public var authority: String?
 
-    /// Creates a new HTTP/2 configuration.
+    /// Creates an HTTP/2 configuration.
     public init(maxFrameSize: Int, targetWindowSize: Int, authority: String?) {
       self.maxFrameSize = maxFrameSize
       self.targetWindowSize = targetWindowSize
@@ -211,7 +213,7 @@ extension HTTP2ClientTransport.Config {
     /// A callback invoked with each new HTTP/2 stream.
     public var onCreateHTTP2Stream: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
 
-    /// Creates a new set of channel debugging callbacks.
+    /// Creates a set of channel debugging callbacks.
     public init(
       onCreateTCPConnection: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?,
       onCreateHTTP2Stream: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
@@ -256,7 +258,7 @@ extension HTTP2ClientTransport.Config.Connection {
     /// The number of bytes to buffer before a flush is emitted, regardless of the delay.
     public var maxBytes: Int
 
-    /// Creates a new flush coalescing configuration.
+    /// Creates a flush coalescing configuration.
     ///
     /// - SeeAlso: ``defaults``.
     public init(maxFlushDelay: Duration, maxBytes: Int) {
@@ -264,7 +266,9 @@ extension HTTP2ClientTransport.Config.Connection {
       self.maxBytes = maxBytes
     }
 
-    /// Default values. The max flush delay is 100μs and the max bytes is 64KiB.
+    /// The default flush delay and byte count for the client transport.
+    ///
+    /// The max flush delay is 100μs and the max bytes is 64KiB.
     public static var defaults: Self {
       Self(maxFlushDelay: .microseconds(100), maxBytes: 64 * 1024)
     }

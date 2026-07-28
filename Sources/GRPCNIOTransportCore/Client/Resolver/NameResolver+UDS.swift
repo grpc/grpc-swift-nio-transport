@@ -31,7 +31,7 @@ extension ResolvableTargets {
     /// If unset then the path of the address will be used.
     public var authority: String?
 
-    /// Creates a new Unix Domain Socket target.
+    /// Creates a Unix Domain Socket target.
     public init(address: SocketAddress.UnixDomainSocket, authority: String?) {
       self.address = address
       self.authority = authority
@@ -41,7 +41,8 @@ extension ResolvableTargets {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ResolvableTarget where Self == ResolvableTargets.UnixDomainSocket {
-  /// Creates a new resolvable Unix Domain Socket target.
+  /// Creates a resolvable Unix Domain Socket target.
+  ///
   /// - Parameters:
   ///   - path: The path of the socket.
   ///   - authority: The service authority.
@@ -58,14 +59,15 @@ extension ResolvableTarget where Self == ResolvableTargets.UnixDomainSocket {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension NameResolvers {
-  /// A ``NameResolverFactory`` for ``ResolvableTargets/UnixDomainSocket`` targets.
+  /// A name resolver factory for Unix Domain Socket targets.
   ///
-  /// The name resolver for a given target always produces the same values, with a single endpoint.
+  /// Creates resolvers for ``ResolvableTargets/UnixDomainSocket`` targets. The name resolver
+  /// for a given target always produces the same values, with a single endpoint.
   /// This resolver doesn't support fetching service configuration.
   public struct UnixDomainSocket: NameResolverFactory, Sendable {
     public typealias Target = ResolvableTargets.UnixDomainSocket
 
-    /// Creates a new Unix Domain Socket resolver factory.
+    /// Creates a Unix Domain Socket resolver factory.
     public init() {}
 
     /// Creates a resolver for the given Unix Domain Socket target.

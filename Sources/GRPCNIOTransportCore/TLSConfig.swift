@@ -32,8 +32,10 @@ public enum TLSConfig: Sendable {
     public static let der = Self(wrapped: .der)
   }
 
-  /// A description of where a certificate is coming from: either a byte array or a file.
-  /// The serialization format is specified by ``TLSConfig/SerializationFormat``.
+  /// A description of where a certificate is coming from.
+  ///
+  /// The source is either a byte array or a file, and the serialization format is specified by
+  /// ``TLSConfig/SerializationFormat``.
   public struct CertificateSource: Sendable, Equatable {
     package enum Wrapped: Equatable {
       case file(path: String, format: SerializationFormat)
@@ -44,6 +46,7 @@ public enum TLSConfig: Sendable {
     package let wrapped: Wrapped
 
     /// The certificate's source is a file.
+    ///
     /// - Parameters:
     ///   - path: The file path containing the certificate.
     ///   - format: The certificate's format, as a ``TLSConfig/SerializationFormat``.
@@ -53,6 +56,7 @@ public enum TLSConfig: Sendable {
     }
 
     /// The certificate's source is an array of bytes.
+    ///
     /// - Parameters:
     ///   - bytes: The array of bytes making up the certificate.
     ///   - format: The certificate's format, as a ``TLSConfig/SerializationFormat``.
@@ -62,8 +66,10 @@ public enum TLSConfig: Sendable {
     }
   }
 
-  /// A description of where the private key is coming from: either a byte array or a file.
-  /// The serialization format is specified by ``TLSConfig/SerializationFormat``.
+  /// A description of where a private key is coming from.
+  ///
+  /// The source is either a byte array or a file, and the serialization format is specified by
+  /// ``TLSConfig/SerializationFormat``.
   public struct PrivateKeySource: Sendable {
     package enum Wrapped {
       case file(path: String, format: SerializationFormat)
@@ -74,6 +80,7 @@ public enum TLSConfig: Sendable {
     package let wrapped: Wrapped
 
     /// The private key's source is a file.
+    ///
     /// - Parameters:
     ///   - path: The file path containing the private key.
     ///   - format: The private key's format, as a ``TLSConfig/SerializationFormat``.
@@ -83,6 +90,7 @@ public enum TLSConfig: Sendable {
     }
 
     /// The private key's source is an array of bytes.
+    ///
     /// - Parameters:
     ///   - bytes: The array of bytes making up the private key.
     ///   - format: The private key's format, as a ``TLSConfig/SerializationFormat``.
@@ -104,8 +112,10 @@ public enum TLSConfig: Sendable {
 
     package let wrapped: Wrapped
 
-    /// A list of ``TLSConfig/CertificateSource``s making up the
-    /// chain of trust.
+    /// A list of certificate sources making up the chain of trust.
+    ///
+    /// Each source is a ``TLSConfig/CertificateSource``.
+    ///
     /// - Parameter certificateSources: The sources for the certificates that make up the chain of trust.
     /// - Returns: A trust root for the given chain of trust.
     public static func certificates(

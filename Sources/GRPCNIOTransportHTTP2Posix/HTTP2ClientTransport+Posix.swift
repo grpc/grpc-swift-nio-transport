@@ -22,7 +22,7 @@ private import NIOSSL
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport {
-  /// A `ClientTransport` using HTTP/2 built on top of `NIOPosix`.
+  /// A client transport using HTTP/2 built on top of NIOPosix.
   ///
   /// This transport builds on top of SwiftNIO's Posix networking layer and is suitable for use
   /// on Linux and Darwin-based platforms (macOS, iOS, etc.). However, it's *strongly* recommended
@@ -61,7 +61,7 @@ extension HTTP2ClientTransport {
 
     private let channel: GRPCChannel
 
-    /// Creates a new NIOPosix-based HTTP/2 client transport.
+    /// Creates a NIOPosix-based HTTP/2 client transport.
     ///
     /// - Parameters:
     ///   - target: A target to resolve.
@@ -231,7 +231,7 @@ extension HTTP2ClientTransport.Posix {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport.Posix {
-  /// Configuration for the `Posix` client transport.
+  /// Configuration for the Posix client transport.
   public struct Config: Sendable {
     /// Configuration for HTTP/2 connections.
     public var http2: HTTP2ClientTransport.Config.HTTP2
@@ -252,7 +252,7 @@ extension HTTP2ClientTransport.Posix {
     /// Channel callbacks for debugging.
     public var channelDebuggingCallbacks: HTTP2ClientTransport.Config.ChannelDebuggingCallbacks
 
-    /// Creates a new connection configuration.
+    /// Creates a connection configuration.
     ///
     /// - Parameters:
     ///   - http2: HTTP2 configuration.
@@ -300,7 +300,7 @@ extension HTTP2ClientTransport.Posix {
       Self.defaults()
     }
 
-    /// Default values.
+    /// Default values, combining the defaults of each nested configuration, optionally customized by a closure.
     ///
     /// - Parameters:
     ///   - configure: A closure which allows you to modify the defaults before returning them.
@@ -336,7 +336,7 @@ extension GRPCChannel.Config {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ClientTransport where Self == HTTP2ClientTransport.Posix {
-  /// Creates a new Posix based HTTP/2 client transport.
+  /// Creates a Posix based HTTP/2 client transport.
   ///
   /// - Parameters:
   ///   - target: A target to resolve.

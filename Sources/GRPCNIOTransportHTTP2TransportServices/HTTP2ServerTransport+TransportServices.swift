@@ -113,7 +113,7 @@ extension HTTP2ServerTransport {
       }
     }
 
-    /// Creates a new `TransportServices` transport.
+    /// Creates a TransportServices transport.
     ///
     /// - Parameters:
     ///   - address: The address to which the server should be bound.
@@ -169,7 +169,7 @@ extension HTTP2ServerTransport {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ServerTransport.TransportServices {
-  /// Configuration for the `TransportServices` transport.
+  /// Configuration for the TransportServices transport.
   public struct Config: Sendable {
     /// Compression configuration.
     public var compression: HTTP2ServerTransport.Config.Compression
@@ -186,7 +186,8 @@ extension HTTP2ServerTransport.TransportServices {
     /// Channel callbacks for debugging.
     public var channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
 
-    /// Creates a new configuration.
+    /// Creates a configuration.
+    ///
     /// - Parameters:
     ///   - compression: Compression configuration.
     ///   - connection: Connection configuration.
@@ -259,7 +260,7 @@ extension NIOTSListenerBootstrap {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ServerTransport where Self == HTTP2ServerTransport.TransportServices {
-  /// Creates a new `TransportServices` based HTTP/2 server transport.
+  /// Creates a TransportServices-based HTTP/2 server transport.
   ///
   /// - Parameters:
   ///   - address: The address to which the server should be bound.

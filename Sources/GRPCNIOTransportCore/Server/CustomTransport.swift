@@ -22,8 +22,8 @@ private import Synchronization
 
 @available(gRPCSwiftNIOTransport 2.6, *)
 extension HTTP2ServerTransport {
-  /// A NIO-based server transport that handles HTTP/2 connections using a pluggable
-  /// ``HTTP2ServerTransport/ListenerFactory``.
+  /// A NIO-based server transport that handles HTTP/2 connections using a pluggable listener
+  /// factory.
   ///
   /// This transport provides the core functionality for accepting HTTP/2 connections and
   /// dispatching RPC streams. It delegates the creation of the listening channel to a
@@ -63,7 +63,7 @@ extension HTTP2ServerTransport {
       /// Channel callbacks for debugging.
       public var channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
 
-      /// Creates a new configuration.
+      /// Creates a configuration.
       ///
       /// - Parameters:
       ///   - compression: Compression configuration.
@@ -85,7 +85,7 @@ extension HTTP2ServerTransport {
         self.channelDebuggingCallbacks = channelDebuggingCallbacks
       }
 
-      /// Default values.
+      /// Default values, combining the defaults of each nested configuration.
       ///
       /// - SeeAlso: ``HTTP2ServerTransport/Config/Compression/defaults``
       /// - SeeAlso: ``HTTP2ServerTransport/Config/Connection/defaults``
@@ -185,7 +185,7 @@ extension HTTP2ServerTransport {
       }
     }
 
-    /// Creates a new NIO-based HTTP/2 server transport.
+    /// Creates a NIO-based HTTP/2 server transport.
     ///
     /// - Parameters:
     ///   - listenerFactory: The factory responsible for creating the listening channel.

@@ -31,7 +31,7 @@ extension HTTP2ServerTransport {
   ///
   /// - SeeAlso: ``HTTP2ServerTransport/Custom``
   public protocol ListenerFactory: Sendable {
-    /// The `EventLoopGroup` the listener uses for the connections it creates.
+    /// The event loop group the listener uses for the connections it creates.
     var eventLoopGroup: any EventLoopGroup { get }
 
     /// Creates a listening channel that produces configured HTTP/2 connection channels.
