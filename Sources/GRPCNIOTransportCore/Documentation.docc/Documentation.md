@@ -32,3 +32,7 @@ transport implementations built on top of SwiftNIO.
 ### TLS
 
 - ``TLSConfig``
+
+### Message data
+
+- ``GRPCNIOTransportBytes``

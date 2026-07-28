@@ -17,7 +17,7 @@
 public import GRPCCore
 public import NIOCore
 
-/// The contiguous bytes type used by the gRPC's NIO transport.
+/// The contiguous bytes type used by gRPC's NIO transport.
 @available(gRPCSwiftNIOTransport 2.0, *)
 public struct GRPCNIOTransportBytes: GRPCContiguousBytes, Hashable, Sendable {
   @usableFromInline
@@ -33,21 +33,25 @@ public struct GRPCNIOTransportBytes: GRPCContiguousBytes, Hashable, Sendable {
     self.buffer = ByteBuffer()
   }
 
+  /// Creates a new instance filled with the given byte, repeated `count` times.
   @inlinable
   public init(repeating: UInt8, count: Int) {
     self.buffer = ByteBuffer(repeating: repeating, count: count)
   }
 
+  /// Creates a new instance from a sequence of bytes.
   @inlinable
   public init(_ sequence: some Sequence<UInt8>) {
     self.buffer = ByteBuffer(bytes: sequence)
   }
 
+  /// The number of bytes stored.
   @inlinable
   public var count: Int {
     self.buffer.readableBytes
   }
 
+  /// Calls the given closure with a pointer to the underlying contiguous storage.
   @inlinable
   public func withUnsafeBytes<R>(
     _ body: (UnsafeRawBufferPointer) throws -> R
@@ -55,6 +59,7 @@ public struct GRPCNIOTransportBytes: GRPCContiguousBytes, Hashable, Sendable {
     try self.buffer.withUnsafeReadableBytes(body)
   }
 
+  /// Calls the given closure with a mutable pointer to the underlying contiguous storage.
   @inlinable
   public mutating func withUnsafeMutableBytes<R>(
     _ body: (UnsafeMutableRawBufferPointer) throws -> R

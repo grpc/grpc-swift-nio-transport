@@ -31,7 +31,7 @@ extension HTTP2ClientTransport {
   /// If you are targeting Linux platforms then you should use the `NIOPosix` variant of
   /// the `HTTP2ClientTransport`.
   ///
-  /// To use this transport you need to provide a 'target' to connect to which will be resolved
+  /// To use this transport you need to provide a `target` to connect to which will be resolved
   /// by an appropriate resolver from the resolver registry. By default the resolver registry can
   /// resolve DNS targets, IPv4 and IPv6 targets, and Unix domain socket targets. Virtual Socket
   /// targets are not supported with this transport. If you use a custom target you must also provide an
@@ -63,6 +63,7 @@ extension HTTP2ClientTransport {
 
     private let channel: GRPCChannel
 
+    /// The retry throttle derived from the service config, if any.
     public var retryThrottle: RetryThrottle? {
       self.channel.retryThrottle
     }
@@ -77,8 +78,8 @@ extension HTTP2ClientTransport {
     ///   - serviceConfig: Service config controlling how the transport should establish and
     ///       load-balance connections.
     ///   - eventLoopGroup: The underlying NIO `EventLoopGroup` to run connections on. This must
-    ///       be a `MultiThreadedEventLoopGroup` or an `EventLoop` from
-    ///       a `MultiThreadedEventLoopGroup`.
+    ///       be a `NIOTSEventLoopGroup` or an `EventLoop` from
+    ///       a `NIOTSEventLoopGroup`.
     /// - Throws: When no suitable resolver could be found for the `target`.
     public init(
       target: any ResolvableTarget,
@@ -110,14 +111,17 @@ extension HTTP2ClientTransport {
       )
     }
 
+    /// Connects to the resolved target and waits for the connection to become ready.
     public func connect() async throws {
       await self.channel.connect()
     }
 
+    /// Begins graceful shutdown of the underlying channel.
     public func beginGracefulShutdown() {
       self.channel.beginGracefulShutdown()
     }
 
+    /// Opens a stream on the channel and uses it as input to the given closure.
     public func withStream<T: Sendable>(
       descriptor: MethodDescriptor,
       options: CallOptions,
@@ -126,6 +130,7 @@ extension HTTP2ClientTransport {
       try await self.channel.withStream(descriptor: descriptor, options: options, closure)
     }
 
+    /// Returns the method-specific configuration for the given method, if any.
     public func config(forMethod descriptor: MethodDescriptor) -> MethodConfig? {
       self.channel.config(forMethod: descriptor)
     }
@@ -334,7 +339,7 @@ extension NIOTSConnectionBootstrap {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ClientTransport where Self == HTTP2ClientTransport.TransportServices {
-  /// Create a new `TransportServices` based HTTP/2 client transport.
+  /// Creates a new `TransportServices` based HTTP/2 client transport.
   ///
   /// - Parameters:
   ///   - target: A target to resolve.

@@ -29,6 +29,7 @@ extension HTTP2ClientTransport {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport.Config {
+  /// Compression configuration for the client transport.
   public struct Compression: Sendable, Hashable {
     /// The default algorithm used for compressing outbound messages.
     ///
@@ -54,6 +55,7 @@ extension HTTP2ClientTransport.Config {
     }
   }
 
+  /// Keepalive configuration for the client transport.
   public struct Keepalive: Sendable, Hashable {
     /// The amount of time to wait after reading data before sending a keepalive ping.
     ///
@@ -75,6 +77,7 @@ extension HTTP2ClientTransport.Config {
     }
   }
 
+  /// Connection management configuration for the client transport.
   public struct Connection: Sendable, Hashable {
     /// The maximum amount of time a connection may be idle before it's closed.
     ///
@@ -127,6 +130,7 @@ extension HTTP2ClientTransport.Config {
     }
   }
 
+  /// Configuration for the backoff used between connection attempts.
   public struct Backoff: Sendable, Hashable {
     /// The initial duration to wait before reattempting to establish a connection.
     public var initial: Duration
@@ -152,13 +156,14 @@ extension HTTP2ClientTransport.Config {
       self.jitter = jitter
     }
 
-    /// Default values, initial backoff is one second and maximum back off is two minutes. The
+    /// Default values, initial backoff is one second and maximum backoff is two minutes. The
     /// multiplier is `1.6` and the jitter is set to `0.2`.
     public static var defaults: Self {
       Self(initial: .seconds(1), max: .seconds(120), multiplier: 1.6, jitter: 0.2)
     }
   }
 
+  /// HTTP/2-level configuration for the client transport.
   public struct HTTP2: Sendable, Hashable {
     /// The max frame size, in bytes.
     ///
@@ -175,7 +180,7 @@ extension HTTP2ClientTransport.Config {
     ///
     /// Any value set here will unconditionally override any value derived from the target address.
     ///
-    /// The server authority is used in the ":authority" pseudoheader and in the TLS SNI
+    /// The server authority is used in the `:authority` pseudo-header and in the TLS SNI
     /// extension, if applicable.
     public var authority: String?
 
@@ -206,6 +211,7 @@ extension HTTP2ClientTransport.Config {
     /// A callback invoked with each new HTTP/2 stream.
     public var onCreateHTTP2Stream: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
 
+    /// Creates a new set of channel debugging callbacks.
     public init(
       onCreateTCPConnection: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?,
       onCreateHTTP2Stream: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
@@ -229,7 +235,7 @@ extension HTTP2ClientTransport.Config.Connection {
   /// until one of the following conditions is met:
   /// 1. ``maxFlushDelay`` has elapsed since a flush was first requested,
   /// 2. At least ``maxBytes`` bytes have been written since the previous flush, or
-  /// 3. The channel becomes unwritable (i.e. the outbound buffer has hit the high-water mark).
+  /// 3. The channel becomes unwritable (that is, the outbound buffer has hit the high-water mark).
   ///
   /// This means that under high load, writes naturally accumulate and are flushed together in
   /// fewer, larger batches. This reduces per-write overhead and typically improves both throughput

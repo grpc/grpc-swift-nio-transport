@@ -18,6 +18,7 @@ public import NIOCore
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport.WrappedChannel {
+  /// Configuration for a ``HTTP2ClientTransport/WrappedChannel``.
   public struct Config: Sendable {
     /// Configuration for HTTP/2 connections.
     public var http2: HTTP2ClientTransport.Config.HTTP2
@@ -87,6 +88,7 @@ extension HTTP2ClientTransport.WrappedChannel.Config {
     /// A callback invoked with each new HTTP/2 stream.
     public var onCreateHTTP2Stream: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
 
+    /// Creates a new set of channel debugging callbacks.
     public init(
       onCreateHTTP2Stream: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
     ) {

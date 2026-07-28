@@ -117,7 +117,7 @@ public struct NameResolverRegistry {
 
   private var factories: [Factory]
 
-  /// Creates a new name resolver registry with no resolve factories.
+  /// Creates a new name resolver registry with no resolver factories.
   public init() {
     self.factories = []
   }
@@ -187,8 +187,8 @@ public struct NameResolverRegistry {
 
   /// Returns whether the registry contains a factory capable of resolving the given target.
   ///
-  /// - Parameter target:
-  /// - Returns: Whether the registry contains a resolve capable of resolving the target.
+  /// - Parameter target: The target to check.
+  /// - Returns: Whether the registry contains a resolver capable of resolving the target.
   public func containsFactory(capableOfResolving target: some ResolvableTarget) -> Bool {
     self.factories.contains { $0.hasTarget(target) }
   }

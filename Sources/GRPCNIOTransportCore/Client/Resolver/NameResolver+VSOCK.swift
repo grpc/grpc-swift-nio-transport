@@ -21,10 +21,12 @@ extension ResolvableTargets {
   /// A resolvable target for Virtual Socket addresses.
   ///
   /// ``VirtualSocket`` addresses can be resolved by the ``NameResolvers/VirtualSocket``
-  /// resolver which creates a single ``Endpoint`` for target address.
+  /// resolver which creates a single ``Endpoint`` for the target address.
   public struct VirtualSocket: ResolvableTarget, Sendable {
+    /// The VSOCK address.
     public var address: SocketAddress.VirtualSocket
 
+    /// Creates a new resolvable VSOCK target.
     public init(address: SocketAddress.VirtualSocket) {
       self.address = address
     }
@@ -35,7 +37,7 @@ extension ResolvableTargets {
 extension ResolvableTarget where Self == ResolvableTargets.VirtualSocket {
   /// Creates a new resolvable Virtual Socket target.
   /// - Parameters:
-  ///   - contextID: The context ID ('cid') of the service.
+  ///   - contextID: The context ID (`cid`) of the service.
   ///   - port: The port to connect to.
   public static func vsock(
     contextID: SocketAddress.VirtualSocket.ContextID,
@@ -55,8 +57,10 @@ extension NameResolvers {
   public struct VirtualSocket: NameResolverFactory, Sendable {
     public typealias Target = ResolvableTargets.VirtualSocket
 
+    /// Creates a new VSOCK resolver factory.
     public init() {}
 
+    /// Creates a resolver for the given VSOCK target.
     public func resolver(for target: Target) -> NameResolver {
       let endpoint = Endpoint(addresses: [.vsock(target.address)])
       let resolutionResult = NameResolutionResult(endpoints: [endpoint], serviceConfig: nil)

@@ -29,7 +29,7 @@ extension ResolvableTargets {
     /// This array must not be empty.
     public var addresses: [SocketAddress.IPv4]
 
-    /// Create a new IPv4 target.
+    /// Creates a new IPv4 target.
     /// - Parameter addresses: The IPv4 addresses. Must not be empty.
     public init(addresses: [SocketAddress.IPv4]) {
       debugOnly {
@@ -98,9 +98,10 @@ extension NameResolvers {
   public struct IPv4: NameResolverFactory, Sendable {
     public typealias Target = ResolvableTargets.IPv4
 
-    /// Create a new IPv4 resolver factory.
+    /// Creates a new IPv4 resolver factory.
     public init() {}
 
+    /// Creates a resolver for the given IPv4 target.
     public func resolver(for target: Target) -> NameResolver {
       let endpoints = target.addresses.map { Endpoint(addresses: [.ipv4($0)]) }
       let resolutionResult = NameResolutionResult(endpoints: endpoints, serviceConfig: nil)

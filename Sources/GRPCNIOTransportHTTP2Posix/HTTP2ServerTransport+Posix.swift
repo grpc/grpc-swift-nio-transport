@@ -30,7 +30,7 @@ extension HTTP2ServerTransport {
   /// A `ServerTransport` using HTTP/2 built on top of `NIOPosix`.
   ///
   /// This transport builds on top of SwiftNIO's Posix networking layer and is suitable for use
-  /// on Linux and Darwin based platform (macOS, iOS, etc.) However, it's *strongly* recommended
+  /// on Linux and Darwin-based platforms (macOS, iOS, etc.). However, it's *strongly* recommended
   /// that if you are targeting Darwin platforms then you should use the `NIOTS` variant of
   /// the `HTTP2ServerTransport`.
   ///
@@ -167,7 +167,7 @@ extension HTTP2ServerTransport {
     ///
     /// It is an `async` property because it will only return once the address has been successfully bound.
     ///
-    /// - Throws: A runtime error will be thrown if the address could not be bound or is not bound any
+    /// - Throws: A runtime error is thrown if the address could not be bound or is not bound any
     /// longer, because the transport isn't listening anymore. It can also throw if the transport returned an
     /// invalid address.
     public var listeningAddress: GRPCNIOTransportCore.SocketAddress {
@@ -194,13 +194,13 @@ extension HTTP2ServerTransport {
       }
     }
 
-    /// Create a new `Posix` transport.
+    /// Creates a new `Posix` transport.
     ///
     /// - Parameters:
     ///   - address: The address to which the server should be bound.
     ///   - transportSecurity: The configuration for securing network traffic.
     ///   - config: The transport configuration.
-    ///   - eventLoopGroup: The ELG from which to get ELs to run this transport.
+    ///   - eventLoopGroup: The underlying NIO `EventLoopGroup` to run this transport on.
     public init(
       address: GRPCNIOTransportCore.SocketAddress,
       transportSecurity: TransportSecurity,
@@ -215,13 +215,13 @@ extension HTTP2ServerTransport {
       )
     }
 
-    /// Create a new `Posix` transport.
+    /// Creates a new `Posix` transport.
     ///
     /// - Parameters:
     ///   - fileDescriptor: The file descriptor of an already bound listening socket.
     ///   - transportSecurity: The configuration for securing network traffic.
     ///   - config: The transport configuration.
-    ///   - eventLoopGroup: The ELG from which to get ELs to run this transport.
+    ///   - eventLoopGroup: The underlying NIO `EventLoopGroup` to run this transport on.
     /// - Important: gRPC takes ownership of the `fileDescriptor` passed in, you *must not* close
     ///   the descriptor manually.
     @available(gRPCSwiftNIOTransport 2.6, *)
@@ -265,7 +265,7 @@ extension HTTP2ServerTransport {
         var context = HTTP2ServerTransport.Posix.Context()
 
         do {
-          // The validadted certificate chain is only available when using a custom verification callback, while the
+          // The validated certificate chain is only available when using a custom verification callback, while the
           // peer certificate is only available when using the BoringSSL backend. But if we can get the certificate
           // chain, we can set the peer certificate (the leaf of the chain) as well.
           if let peerCertificateChain =
@@ -285,10 +285,12 @@ extension HTTP2ServerTransport {
       }
     }
 
+    /// Stores the server context, making it available to accepted connections.
     public func configure(context: GRPCServerContext) {
       self.underlyingTransport.configure(context: context)
     }
 
+    /// Starts serving, binding the listening address and accepting connections.
     public func listen(
       streamHandler:
         @escaping @Sendable (
@@ -299,6 +301,7 @@ extension HTTP2ServerTransport {
       try await self.underlyingTransport.listen(streamHandler: streamHandler)
     }
 
+    /// Begins graceful shutdown of the listening channel.
     public func beginGracefulShutdown() {
       self.underlyingTransport.beginGracefulShutdown()
     }
@@ -307,15 +310,16 @@ extension HTTP2ServerTransport {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ServerTransport.Posix {
-  /// Context for Posix TransportSpecific
+  /// The transport-specific context for the `Posix` server transport.
   public struct Context: ServerContext.TransportSpecific {
-    /// The peer certificate (if any) from the mTLS handshake
+    /// The peer certificate (if any) from the mTLS handshake.
     public var peerCertificate: Certificate?
 
     /// The validated peer certificate chain from the mTLS handshake. This is only available when using a custom verification callback.
     @available(gRPCSwiftNIOTransport 2.2, *)
     public var peerCertificateChain: X509.ValidatedCertificateChain?
 
+    /// Creates a new, empty context.
     public init() {
     }
   }
@@ -337,7 +341,7 @@ extension HTTP2ServerTransport.Posix {
     /// Channel callbacks for debugging.
     public var channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
 
-    /// Construct a new `Config`.
+    /// Creates a new configuration.
     ///
     /// - Parameters:
     ///   - http2: HTTP2 configuration.
@@ -423,7 +427,7 @@ extension ServerBootstrap {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ServerTransport where Self == HTTP2ServerTransport.Posix {
-  /// Create a new `Posix` based HTTP/2 server transport.
+  /// Creates a new `Posix` based HTTP/2 server transport.
   ///
   /// - Parameters:
   ///   - address: The address to which the server should be bound.
@@ -449,7 +453,7 @@ extension ServerTransport where Self == HTTP2ServerTransport.Posix {
 
 @available(gRPCSwiftNIOTransport 2.6, *)
 extension ServerTransport where Self == HTTP2ServerTransport.Posix {
-  /// Create a new `Posix` based HTTP/2 server transport.
+  /// Creates a new `Posix` based HTTP/2 server transport.
   ///
   /// - Parameters:
   ///   - fileDescriptor: The file descriptor of an already bound listening socket.

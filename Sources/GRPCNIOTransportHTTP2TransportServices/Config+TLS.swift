@@ -33,7 +33,7 @@ extension HTTP2ServerTransport.TransportServices {
 
     package let wrapped: Wrapped
 
-    /// This connection is plaintext: no encryption will take place.
+    /// This connection is plaintext; no encryption takes place.
     public static let plaintext = Self(wrapped: .plaintext)
 
     /// Secures connections with the given TLS configuration.
@@ -41,7 +41,7 @@ extension HTTP2ServerTransport.TransportServices {
       Self(wrapped: .tls(tls))
     }
 
-    /// Secures connections with the TLS.
+    /// Secures connections with TLS.
     ///
     /// - Parameters:
     ///   - identityProvider: A provider for the `SecIdentity` to be used when setting up TLS.
@@ -57,7 +57,7 @@ extension HTTP2ServerTransport.TransportServices {
       return .tls(tlsConfig)
     }
 
-    /// Secures connections with the mutual TLS.
+    /// Secures connections with mutual TLS.
     ///
     /// - Parameters:
     ///   - identityProvider: A provider for the `SecIdentity` to be used when setting up TLS.
@@ -77,6 +77,7 @@ extension HTTP2ServerTransport.TransportServices {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ServerTransport.TransportServices {
+  /// TLS configuration for the `TransportServices` server transport.
   public struct TLS: Sendable {
     /// How to verify the client certificate, if one is presented.
     public var clientCertificateVerification: TLSConfig.CertificateVerification
@@ -86,7 +87,7 @@ extension HTTP2ServerTransport.TransportServices {
 
     /// Whether ALPN is required.
     ///
-    /// If this is set to `true` but the client does not support ALPN, then the connection will be rejected.
+    /// If this is set to `true` but the client does not support ALPN, then the connection is rejected.
     public var requireALPN: Bool
 
     /// A provider for the `SecIdentity` to be used when setting up TLS.
@@ -100,7 +101,7 @@ extension HTTP2ServerTransport.TransportServices {
     @available(gRPCSwiftNIOTransport 2.5, *)
     public var additionalCertificates: [SecCertificate]
 
-    /// Create a new HTTP2 NIO Transport Services transport TLS config.
+    /// Creates a new HTTP2 NIO Transport Services transport TLS config.
     /// - Parameters:
     ///   - clientCertificateVerification: How to verify the client certificate, if one is presented.
     ///   - trustRoots: The trust roots to be used when verifying client certificates.
@@ -119,7 +120,7 @@ extension HTTP2ServerTransport.TransportServices {
       self.additionalCertificates = []
     }
 
-    /// Create a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted:
+    /// Creates a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted:
     /// - `clientCertificateVerificationMode` equals `doNotVerify`
     /// - `trustRoots` equals `systemDefault`
     /// - `requireALPN` equals `false`
@@ -142,7 +143,7 @@ extension HTTP2ServerTransport.TransportServices {
       return config
     }
 
-    /// Create a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted to match
+    /// Creates a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted to match
     /// the requirements of mTLS:
     /// - `clientCertificateVerificationMode` equals `noHostnameVerification`
     /// - `trustRoots` equals `systemDefault`
@@ -193,15 +194,15 @@ extension HTTP2ClientTransport.TransportServices {
     @available(gRPCSwiftNIOTransport 2.8, *)
     public static let customSecure = Self(wrapped: .customSecure)
 
-    /// This connection is plaintext: no encryption will take place.
+    /// This connection is plaintext; no encryption takes place.
     public static let plaintext = Self(wrapped: .plaintext)
 
-    /// Secure connections with the given TLS configuration.
+    /// Secures connections with the given TLS configuration.
     public static func tls(_ tls: TLS) -> Self {
       Self(wrapped: .tls(tls))
     }
 
-    /// Secure connections with TLS.
+    /// Secures connections with TLS.
     ///
     /// - Parameters:
     ///   - configure: A closure which allows you to modify the defaults before returning them.
@@ -212,12 +213,12 @@ extension HTTP2ClientTransport.TransportServices {
       return .tls(tlsConfig)
     }
 
-    /// Secure connections with TLS.
+    /// Secures connections with TLS.
     public static var tls: Self {
       return .tls()
     }
 
-    /// Secure connections with mutual TLS.
+    /// Secures connections with mutual TLS.
     ///
     /// - Parameters:
     ///   - identityProvider: A provider for the `SecIdentity` to be used when setting up TLS.
@@ -237,6 +238,7 @@ extension HTTP2ClientTransport.TransportServices {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport.TransportServices {
+  /// TLS configuration for the `TransportServices` client transport.
   public struct TLS: Sendable {
     /// How to verify the server certificate, if one is presented.
     public var serverCertificateVerification: TLSConfig.CertificateVerification
@@ -256,7 +258,7 @@ extension HTTP2ClientTransport.TransportServices {
     @available(gRPCSwiftNIOTransport 2.5, *)
     public var additionalCertificates: [SecCertificate]
 
-    /// Create a new HTTP2 NIO Transport Services transport TLS config.
+    /// Creates a new HTTP2 NIO Transport Services transport TLS config.
     /// - Parameters:
     ///   - serverCertificateVerification: How to verify the server certificate, if one is presented.
     ///   - trustRoots: The trust roots to be used when verifying server certificates.
@@ -272,14 +274,14 @@ extension HTTP2ClientTransport.TransportServices {
       self.additionalCertificates = []
     }
 
-    /// Create a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted:
+    /// Creates a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted:
     /// - `serverCertificateVerification` equals `fullVerification`
     /// - `trustRoots` equals `systemDefault`
     /// - `identityProvider` equals `nil`
     ///
     /// - Parameters:
     ///   - configure: A closure which allows you to modify the defaults before returning them.
-    /// - Returns: A new HTTP2 NIO Posix transport TLS config.
+    /// - Returns: A new HTTP2 NIO Transport Services transport TLS config.
     public static func defaults(
       configure: (_ config: inout Self) -> Void = { _ in }
     ) -> Self {
@@ -292,13 +294,13 @@ extension HTTP2ClientTransport.TransportServices {
       return config
     }
 
-    /// Create a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted:
+    /// Creates a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted:
     /// - `serverCertificateVerification` equals `fullVerification`
     /// - `trustRoots` equals `systemDefault`
     /// - `identityProvider` equals `nil`
     public static var defaults: Self { .defaults() }
 
-    /// Create a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted to match
+    /// Creates a new HTTP2 NIO Transport Services transport TLS config, with some values defaulted to match
     /// the requirements of mTLS:
     /// - `serverCertificateVerification` equals `fullVerification`
     /// - `trustRoots` equals `systemDefault`
@@ -306,7 +308,7 @@ extension HTTP2ClientTransport.TransportServices {
     /// - Parameters:
     ///   - identityProvider: A provider for the `SecIdentity` to be used when setting up TLS.
     ///   - configure: A closure which allows you to modify the defaults before returning them.
-    /// - Returns: A new HTTP2 NIO Posix transport TLS config.
+    /// - Returns: A new HTTP2 NIO Transport Services transport TLS config.
     public static func mTLS(
       identityProvider: @Sendable @escaping () throws -> SecIdentity,
       configure: (_ config: inout Self) -> Void = { _ in }

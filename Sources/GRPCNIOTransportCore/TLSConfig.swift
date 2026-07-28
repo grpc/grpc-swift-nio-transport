@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+/// A namespace for TLS configuration types.
 @available(gRPCSwiftNIOTransport 2.0, *)
 public enum TLSConfig: Sendable {
   /// The serialization format of the provided certificates and private keys.
@@ -25,7 +26,9 @@ public enum TLSConfig: Sendable {
 
     package let wrapped: Wrapped
 
+    /// The PEM serialization format.
     public static let pem = Self(wrapped: .pem)
+    /// The DER serialization format.
     public static let der = Self(wrapped: .der)
   }
 
@@ -44,7 +47,7 @@ public enum TLSConfig: Sendable {
     /// - Parameters:
     ///   - path: The file path containing the certificate.
     ///   - format: The certificate's format, as a ``TLSConfig/SerializationFormat``.
-    /// - Returns: A source describing the certificate source is the given file.
+    /// - Returns: A source describing a certificate stored in the given file.
     public static func file(path: String, format: SerializationFormat) -> Self {
       Self(wrapped: .file(path: path, format: format))
     }
@@ -53,7 +56,7 @@ public enum TLSConfig: Sendable {
     /// - Parameters:
     ///   - bytes: The array of bytes making up the certificate.
     ///   - format: The certificate's format, as a ``TLSConfig/SerializationFormat``.
-    /// - Returns: A source describing the certificate source is the given bytes.
+    /// - Returns: A source describing a certificate stored in the given bytes.
     public static func bytes(_ bytes: [UInt8], format: SerializationFormat) -> Self {
       Self(wrapped: .bytes(bytes: bytes, format: format))
     }
@@ -74,7 +77,7 @@ public enum TLSConfig: Sendable {
     /// - Parameters:
     ///   - path: The file path containing the private key.
     ///   - format: The private key's format, as a ``TLSConfig/SerializationFormat``.
-    /// - Returns: A source describing the private key source is the given file.
+    /// - Returns: A source describing a private key stored in the given file.
     public static func file(path: String, format: SerializationFormat) -> Self {
       Self(wrapped: .file(path: path, format: format))
     }
@@ -83,7 +86,7 @@ public enum TLSConfig: Sendable {
     /// - Parameters:
     ///   - bytes: The array of bytes making up the private key.
     ///   - format: The private key's format, as a ``TLSConfig/SerializationFormat``.
-    /// - Returns: A source describing the private key source is the given bytes.
+    /// - Returns: A source describing a private key stored in the given bytes.
     public static func bytes(
       _ bytes: [UInt8],
       format: SerializationFormat
@@ -92,7 +95,7 @@ public enum TLSConfig: Sendable {
     }
   }
 
-  /// A description of where the trust roots are coming from: either a custom certificate chain, or the system default trust store.
+  /// A description of where the trust roots are coming from: either a custom certificate chain or the system default trust store.
   public struct TrustRootsSource: Sendable, Equatable {
     package enum Wrapped: Equatable {
       case certificates([CertificateSource])
@@ -128,10 +131,10 @@ public enum TLSConfig: Sendable {
     /// All certificate verification disabled.
     public static let noVerification: Self = Self(wrapped: .doNotVerify)
 
-    /// Certificates will be validated against the trust store, but will not be checked to see if they are valid for the given hostname.
+    /// Certificates are validated against the trust store, but aren't checked against the given hostname.
     public static let noHostnameVerification: Self = Self(wrapped: .noHostnameVerification)
 
-    /// Certificates will be validated against the trust store and checked against the hostname of the service we are contacting.
+    /// Certificates are validated against the trust store and checked against the hostname of the service you're contacting.
     public static let fullVerification: Self = Self(wrapped: .fullVerification)
   }
 }

@@ -94,7 +94,7 @@ extension HTTP2ServerTransport {
     ///
     /// It is an `async` property because it will only return once the address has been successfully bound.
     ///
-    /// - Throws: A runtime error will be thrown if the address could not be bound or is not bound any
+    /// - Throws: A runtime error is thrown if the address could not be bound or is not bound any
     /// longer, because the transport isn't listening anymore. It can also throw if the transport returned an
     /// invalid address.
     public var listeningAddress: GRPCNIOTransportCore.SocketAddress {
@@ -113,13 +113,13 @@ extension HTTP2ServerTransport {
       }
     }
 
-    /// Create a new `TransportServices` transport.
+    /// Creates a new `TransportServices` transport.
     ///
     /// - Parameters:
     ///   - address: The address to which the server should be bound.
     ///   - transportSecurity: The security settings applied to the transport.
     ///   - config: The transport configuration.
-    ///   - eventLoopGroup: The ELG from which to get ELs to run this transport.
+    ///   - eventLoopGroup: The underlying NIO `EventLoopGroup` to run this transport on.
     public init(
       address: GRPCNIOTransportCore.SocketAddress,
       transportSecurity: TransportSecurity,
@@ -144,10 +144,12 @@ extension HTTP2ServerTransport {
       )
     }
 
+    /// Stores the server context, making it available to accepted connections.
     public func configure(context: GRPCServerContext) {
       self.underlyingTransport.configure(context: context)
     }
 
+    /// Starts serving, binding the listening address and accepting connections.
     public func listen(
       streamHandler:
         @escaping @Sendable (
@@ -158,6 +160,7 @@ extension HTTP2ServerTransport {
       try await self.underlyingTransport.listen(streamHandler: streamHandler)
     }
 
+    /// Begins graceful shutdown of the listening channel.
     public func beginGracefulShutdown() {
       self.underlyingTransport.beginGracefulShutdown()
     }
@@ -183,7 +186,7 @@ extension HTTP2ServerTransport.TransportServices {
     /// Channel callbacks for debugging.
     public var channelDebuggingCallbacks: HTTP2ServerTransport.Config.ChannelDebuggingCallbacks
 
-    /// Construct a new `Config`.
+    /// Creates a new configuration.
     /// - Parameters:
     ///   - compression: Compression configuration.
     ///   - connection: Connection configuration.
@@ -206,6 +209,7 @@ extension HTTP2ServerTransport.TransportServices {
       self.channelDebuggingCallbacks = channelDebuggingCallbacks
     }
 
+    /// Default configuration.
     public static var defaults: Self {
       Self.defaults()
     }
@@ -255,7 +259,7 @@ extension NIOTSListenerBootstrap {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ServerTransport where Self == HTTP2ServerTransport.TransportServices {
-  /// Create a new `TransportServices` based HTTP/2 server transport.
+  /// Creates a new `TransportServices` based HTTP/2 server transport.
   ///
   /// - Parameters:
   ///   - address: The address to which the server should be bound.

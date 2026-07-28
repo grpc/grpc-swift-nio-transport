@@ -29,7 +29,7 @@ extension ResolvableTargets {
     /// This array must not be empty.
     public var addresses: [SocketAddress.IPv6]
 
-    /// Create a new IPv6 target.
+    /// Creates a new IPv6 target.
     /// - Parameter addresses: The IPv6 addresses. Must not be empty.
     public init(addresses: [SocketAddress.IPv6]) {
       debugOnly {
@@ -97,9 +97,10 @@ extension NameResolvers {
   public struct IPv6: NameResolverFactory, Sendable {
     public typealias Target = ResolvableTargets.IPv6
 
-    /// Create a new IPv6 resolver factory.
+    /// Creates a new IPv6 resolver factory.
     public init() {}
 
+    /// Creates a resolver for the given IPv6 target.
     public func resolver(for target: Target) -> NameResolver {
       let endpoints = target.addresses.map { Endpoint(addresses: [.ipv6($0)]) }
       let resolutionResult = NameResolutionResult(endpoints: endpoints, serviceConfig: nil)

@@ -31,7 +31,7 @@ extension ResolvableTargets {
     /// If no port is specified then 443 is used.
     public var port: Int?
 
-    /// Create a new DNS target.
+    /// Creates a new DNS target.
     /// - Parameters:
     ///   - host: The host to resolve via DNS.
     ///   - port: The port to use with resolved addresses.
@@ -60,9 +60,10 @@ extension NameResolvers {
   public struct DNS: NameResolverFactory, Sendable {
     public typealias Target = ResolvableTargets.DNS
 
-    /// Create a new DNS name resolver factory.
+    /// Creates a new DNS name resolver factory.
     public init() {}
 
+    /// Creates a resolver for the given DNS target.
     public func resolver(for target: Target) -> NameResolver {
       let resolver = Self.Resolver(target: target)
       // Only append the port if explicitly set. If it's nil the default port of 443 is used

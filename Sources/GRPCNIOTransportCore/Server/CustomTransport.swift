@@ -172,7 +172,7 @@ extension HTTP2ServerTransport {
     ///
     /// It is an `async` property because it will only return once the listening channel has been
     /// created. Returns `nil` if the listening channel doesn't have a corresponding socket address
-    /// (e.g. when using a non-socket-based transport) or if the server has been closed.
+    /// (for example, when using a non-socket-based transport) or if the server has been closed.
     public var listeningAddress: SocketAddress? {
       get async {
         switch self.listeningAddressState.withLock({ $0.listeningAddress }) {
@@ -234,6 +234,7 @@ extension HTTP2ServerTransport {
       }
     }
 
+    /// Starts serving, using the listener factory to create the listening channel.
     public func listen(
       streamHandler:
         @escaping @Sendable (
@@ -416,10 +417,12 @@ extension HTTP2ServerTransport {
       }
     }
 
+    /// Begins graceful shutdown of the listening channel.
     public func beginGracefulShutdown() {
       self.serverQuiescingHelper.initiateShutdown(promise: nil)
     }
 
+    /// Stores the server context, making it available to accepted connections.
     public func configure(context: GRPCServerContext) {
       self.serverContext.withLock { $0 = context }
     }

@@ -49,7 +49,7 @@ public struct SocketAddress: Hashable, Sendable {
     }
   }
 
-  /// Returns the address as an Unix domain socket address, if possible.
+  /// Returns the address as a Unix domain socket address, if possible.
   public var unixDomainSocket: UnixDomainSocket? {
     switch self.value {
     case .unix(let address):
@@ -59,7 +59,7 @@ public struct SocketAddress: Hashable, Sendable {
     }
   }
 
-  /// Returns the address as an VSOCK address, if possible.
+  /// Returns the address as a VSOCK address, if possible.
   public var virtualSocket: VirtualSocket? {
     switch self.value {
     case .vsock(let address):
@@ -139,7 +139,7 @@ extension SocketAddress {
     return .unixDomainSocket(UnixDomainSocket(path: path))
   }
 
-  /// Create a Virtual Socket ('vsock') address.
+  /// Creates a virtual socket (`vsock`) address.
   public static func vsock(contextID: VirtualSocket.ContextID, port: VirtualSocket.Port) -> Self {
     return .vsock(VirtualSocket(contextID: contextID, port: port))
   }
@@ -163,6 +163,7 @@ extension SocketAddress: CustomStringConvertible {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension SocketAddress {
+  /// An IPv4 address and port.
   public struct IPv4: Hashable, Sendable {
     /// The resolved host address.
     public var host: String
@@ -180,6 +181,7 @@ extension SocketAddress {
     }
   }
 
+  /// An IPv6 address and port.
   public struct IPv6: Hashable, Sendable {
     /// The resolved host address.
     public var host: String
@@ -197,11 +199,12 @@ extension SocketAddress {
     }
   }
 
+  /// A Unix domain socket address.
   public struct UnixDomainSocket: Hashable, Sendable {
     /// The path name of the Unix domain socket.
     public var path: String
 
-    /// Create a new Unix domain socket address.
+    /// Creates a new Unix domain socket address.
     ///
     /// - Parameter path: The path name of the Unix domain socket.
     public init(path: String) {
@@ -209,6 +212,7 @@ extension SocketAddress {
     }
   }
 
+  /// A VSOCK address, made up of a context ID and a port.
   public struct VirtualSocket: Hashable, Sendable {
     /// A context identifier.
     ///
@@ -218,16 +222,17 @@ extension SocketAddress {
     /// The port number.
     public var port: Port
 
-    /// Create a new VSOCK address.
+    /// Creates a new VSOCK address.
     ///
     /// - Parameters:
-    ///   - contextID: The context ID (or 'cid') of the address.
+    ///   - contextID: The context ID (or `cid`) of the address.
     ///   - port: The port number.
     public init(contextID: ContextID, port: Port) {
       self.contextID = contextID
       self.port = port
     }
 
+    /// A VSOCK port number.
     public struct Port: Hashable, Sendable, RawRepresentable, ExpressibleByIntegerLiteral {
       /// The port number.
       public var rawValue: UInt32
@@ -236,10 +241,12 @@ extension SocketAddress {
         self.rawValue = rawValue
       }
 
+      /// Creates a port from an integer literal.
       public init(integerLiteral value: UInt32) {
         self.rawValue = value
       }
 
+      /// Creates a port from an `Int`, truncating it to fit a `UInt32`.
       public init(_ value: Int) {
         self.init(rawValue: UInt32(bitPattern: Int32(truncatingIfNeeded: value)))
       }
@@ -252,6 +259,7 @@ extension SocketAddress {
       }
     }
 
+    /// A VSOCK context ID (or `cid`), identifying a virtual machine or the host.
     public struct ContextID: Hashable, Sendable, RawRepresentable, ExpressibleByIntegerLiteral {
       /// The context identifier.
       public var rawValue: UInt32
@@ -260,10 +268,12 @@ extension SocketAddress {
         self.rawValue = rawValue
       }
 
+      /// Creates a context ID from an integer literal.
       public init(integerLiteral value: UInt32) {
         self.rawValue = value
       }
 
+      /// Creates a context ID from an `Int`, truncating it to fit a `UInt32`.
       public init(_ value: Int) {
         self.rawValue = UInt32(bitPattern: Int32(truncatingIfNeeded: value))
       }
@@ -296,7 +306,7 @@ extension SocketAddress {
 
       /// The address for local communication (loopback).
       ///
-      /// This directs packets to the same host that generated them.  This is useful for testing
+      /// This directs packets to the same host that generated them. This is useful for testing
       /// applications on a single host and for debugging.
       ///
       /// This is equal to `VMADDR_CID_LOCAL (1)` on platforms that define it.

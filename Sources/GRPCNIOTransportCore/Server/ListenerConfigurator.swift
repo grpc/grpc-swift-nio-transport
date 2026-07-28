@@ -36,8 +36,8 @@ extension HTTP2ServerTransport {
       self.channelDebuggingCallbacks = channelDebuggingCallbacks
     }
 
-    /// Configures the listening channel with the necessary handlers (e.g. handlers for graceful
-    /// shutdown or debugging callbacks).
+    /// Configures the listening channel with the necessary handlers (for example, handlers for
+    /// graceful shutdown or debugging callbacks).
     ///
     /// This should be called from the `serverChannelInitializer` of a bootstrap.
     ///

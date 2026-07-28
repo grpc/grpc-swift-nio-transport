@@ -19,47 +19,47 @@ public import NIOCore
 internal import NIOHTTP2
 private import Synchronization
 
-/// A client transport which wraps an existing SwiftNIO `Channel`.
-///
-/// You can use this if you already have a connected `Channel` that you'd like to use as a gRPC
-/// client connection. This is helpful if, for example, you wish to tunnel gRPC inside another
-/// protocol.
-///
-/// ## Limitations
-///
-/// This transport offers fewer features than its regular NIO based counterparts:
-///
-/// - **No reconnects.** Once the underlying `Channel` closes, the transport is done. Subsequent
-///   RPCs fail with `unavailable`.
-/// - **No load balancing or connection pooling.** It's a single `Channel`.
-///   `ServiceConfig.loadBalancingConfig` is ignored. Retry throttling, if configured, still
-///   applies.
-/// - **No transparent TLS.** Wire TLS into your own pipeline before calling `configure`; the
-///   transport doesn't set it up for you.
-/// - **Streams queue until `SETTINGS`.** RPCs initiated before the server's first `SETTINGS`
-///   frame is received are queued; if the connection fails before that, they fail with
-///   `unavailable`.
-///
-/// ## Constructing a transport
-///
-/// Use ``wrapping(config:serviceConfig:makeChannel:)`` to build a transport. The factory hands you
-/// a `configure` closure to call from inside your bootstrap's `channelInitializer`, alongside any
-/// pre-gRPC handlers you need (TLS, any tunnelling handlers, etc.).
-///
-/// If you already hold an active `Channel` (for example after completing a tunnel handshake) you
-/// can call `configure(channel)` directly inside `makeChannel`. In that case it is your
-/// responsibility to ensure that no inbound bytes have flowed past the end of your pipeline
-/// before `configure` runs — for instance by keeping your tunnel handler installed (and not
-/// firing inbound bytes) until `configure` resolves.
-///
-/// ## Lifecycle
-///
-/// On success the transport takes ownership of the channel and is responsible for closing it. If
-/// `makeChannel` throws, ownership stays with the caller. When the channel closes, in-flight RPCs
-/// see the failure on their inbound stream and any RPCs still queued waiting for `SETTINGS` are
-/// resumed with `unavailable`.
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport {
+  /// A client transport which wraps an existing SwiftNIO `Channel`.
+  ///
+  /// You can use this if you already have a connected `Channel` that you'd like to use as a gRPC
+  /// client connection. This is helpful if, for example, you wish to tunnel gRPC inside another
+  /// protocol.
+  ///
+  /// ## Limitations
+  ///
+  /// This transport offers fewer features than its regular NIO based counterparts:
+  ///
+  /// - **No reconnects.** Once the underlying `Channel` closes, the transport is done. Subsequent
+  ///   RPCs fail with `unavailable`.
+  /// - **No load balancing or connection pooling.** It's a single `Channel`.
+  ///   `ServiceConfig.loadBalancingConfig` is ignored. Retry throttling, if configured, still
+  ///   applies.
+  /// - **No transparent TLS.** Wire TLS into your own pipeline before calling `configure`; the
+  ///   transport doesn't set it up for you.
+  /// - **Streams queue until `SETTINGS`.** RPCs initiated before the server's first `SETTINGS`
+  ///   frame is received are queued; if the connection fails before that, they fail with
+  ///   `unavailable`.
+  ///
+  /// ## Constructing a transport
+  ///
+  /// Use ``wrapping(config:serviceConfig:makeChannel:)`` to build a transport. The factory hands you
+  /// a `configure` closure to call from inside your bootstrap's `channelInitializer`, alongside any
+  /// pre-gRPC handlers you need (TLS, any tunnelling handlers, etc.).
+  ///
+  /// If you already hold an active `Channel` (for example after completing a tunnel handshake) you
+  /// can call `configure(channel)` directly inside `makeChannel`. In that case it is your
+  /// responsibility to ensure that no inbound bytes have flowed past the end of your pipeline
+  /// before `configure` runs — for instance by keeping your tunnel handler installed (and not
+  /// firing inbound bytes) until `configure` resolves.
+  ///
+  /// ## Lifecycle
+  ///
+  /// On success the transport takes ownership of the channel and is responsible for closing it. If
+  /// `makeChannel` throws, ownership stays with the caller. When the channel closes, in-flight RPCs
+  /// see the failure on their inbound stream and any RPCs still queued waiting for `SETTINGS` are
+  /// resumed with `unavailable`.
   @available(gRPCSwiftNIOTransport 2.0, *)
   public final class WrappedChannel: ClientTransport {
     public typealias Bytes = GRPCNIOTransportBytes
@@ -71,6 +71,7 @@ extension HTTP2ClientTransport {
     private let state: Mutex<State>
     private let preConfigured: Configured?
 
+    /// The retry throttle derived from the service config, if any.
     public let retryThrottle: RetryThrottle?
 
     fileprivate struct Configured {
@@ -135,10 +136,12 @@ extension HTTP2ClientTransport {
       }
     }
 
+    /// Returns the method-specific configuration for the given method, if any.
     public func config(forMethod descriptor: MethodDescriptor) -> MethodConfig? {
       return self.methodConfig[descriptor]
     }
 
+    /// Configures the wrapped channel's gRPC pipeline and waits for it to become ready.
     public func connect() async throws {
       switch self.state.withLock({ $0.connect() }) {
       case .configureChannel:
@@ -211,6 +214,7 @@ extension HTTP2ClientTransport {
       }
     }
 
+    /// Begins graceful shutdown of the underlying channel.
     public func beginGracefulShutdown() {
       switch self.state.withLock({ $0.beginGracefulShutdown() }) {
       case .emitGracefulShutdownEvent:
@@ -224,6 +228,7 @@ extension HTTP2ClientTransport {
       }
     }
 
+    /// Opens a stream on the wrapped channel and uses it as input to the given closure.
     public func withStream<T>(
       descriptor: MethodDescriptor,
       options: CallOptions,
@@ -356,7 +361,7 @@ extension HTTP2ClientTransport {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ClientTransport where Self == HTTP2ClientTransport.WrappedChannel {
-  /// Create a new wrapping client transport from an already connection NIO `Channel`.
+  /// Create a new wrapping client transport from an already connected NIO `Channel`.
   ///
   /// - Parameters:
   ///   - channel: The channel to wrap. The transport takes ownership of the lifetime of the channel

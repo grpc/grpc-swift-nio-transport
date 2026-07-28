@@ -30,6 +30,7 @@ extension HTTP2ServerTransport {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ServerTransport.Config {
+  /// Compression configuration for the server transport.
   public struct Compression: Sendable, Hashable {
     /// Compression algorithms enabled for inbound messages.
     ///
@@ -49,6 +50,7 @@ extension HTTP2ServerTransport.Config {
     }
   }
 
+  /// Keepalive configuration for the server transport.
   public struct Keepalive: Sendable, Hashable {
     /// The amount of time to wait after reading data before sending a keepalive ping.
     public var time: Duration
@@ -82,9 +84,10 @@ extension HTTP2ServerTransport.Config {
     }
   }
 
+  /// Configuration for how the server enforces client keepalive.
   public struct ClientKeepaliveBehavior: Sendable, Hashable {
     /// The minimum allowed interval the client is allowed to send keep-alive pings.
-    /// Pings more frequent than this interval count as 'strikes' and the connection is closed if there are
+    /// Pings more frequent than this interval count as “strikes” and the connection is closed if there are
     /// too many strikes.
     public var minPingIntervalWithoutCalls: Duration
 
@@ -100,14 +103,14 @@ extension HTTP2ServerTransport.Config {
       self.allowWithoutCalls = allowWithoutCalls
     }
 
-    /// Default values. The time after reading data a ping should be sent defaults to 2 hours, the timeout for
-    /// keepalive pings defaults to 20 seconds, pings are not permitted when no calls are in progress, and
-    /// the minimum allowed interval for clients to send pings defaults to 5 minutes.
+    /// Default values. The minimum allowed interval for clients to send pings without an active
+    /// call defaults to 5 minutes, and pings without an active call aren't permitted.
     public static var defaults: Self {
       Self(minPingIntervalWithoutCalls: .seconds(5 * 60), allowWithoutCalls: false)
     }
   }
 
+  /// Connection management configuration for the server transport.
   public struct Connection: Sendable, Hashable {
     /// The maximum amount of time a connection may exist before being gracefully closed.
     public var maxAge: Duration?
@@ -171,7 +174,7 @@ extension HTTP2ServerTransport.Config {
     }
 
     /// Default values. The max connection age, max grace time, and max idle time default to
-    /// `nil` (i.e. infinite). See ``HTTP2ServerTransport/Config/Keepalive/defaults`` for keepalive
+    /// `nil` (that is, infinite). See ``HTTP2ServerTransport/Config/Keepalive/defaults`` for keepalive
     /// defaults. Flush coalescing is enabled with default values.
     public static var defaults: Self {
       Self(
@@ -184,6 +187,7 @@ extension HTTP2ServerTransport.Config {
     }
   }
 
+  /// HTTP/2-level configuration for the server transport.
   public struct HTTP2: Sendable, Hashable {
     /// The maximum frame size to be used in an HTTP/2 connection.
     public var maxFrameSize: Int
@@ -196,6 +200,7 @@ extension HTTP2ServerTransport.Config {
     /// The number of concurrent streams on the HTTP/2 connection.
     public var maxConcurrentStreams: Int?
 
+    /// Creates a new HTTP/2 configuration.
     public init(
       maxFrameSize: Int,
       targetWindowSize: Int,
@@ -217,10 +222,12 @@ extension HTTP2ServerTransport.Config {
     }
   }
 
+  /// RPC-level configuration for the server transport.
   public struct RPC: Sendable, Hashable {
     /// The maximum request payload size.
     public var maxRequestPayloadSize: Int
 
+    /// Creates a new RPC configuration.
     public init(maxRequestPayloadSize: Int) {
       self.maxRequestPayloadSize = maxRequestPayloadSize
     }
@@ -242,12 +249,13 @@ extension HTTP2ServerTransport.Config {
     /// A callback invoked when the server starts listening for new TCP connections.
     public var onBindTCPListener: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
 
-    /// A callback invoked with each new accepted TPC connection.
+    /// A callback invoked with each new accepted TCP connection.
     public var onAcceptTCPConnection: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
 
     /// A callback invoked with each accepted HTTP/2 stream.
     public var onAcceptHTTP2Stream: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
 
+    /// Creates a new set of channel debugging callbacks.
     public init(
       onBindTCPListener: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?,
       onAcceptTCPConnection: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?,
@@ -273,7 +281,7 @@ extension HTTP2ServerTransport.Config.Connection {
   /// until one of the following conditions is met:
   /// 1. ``maxFlushDelay`` has elapsed since a flush was first requested,
   /// 2. At least ``maxBytes`` bytes have been written since the previous flush, or
-  /// 3. The channel becomes unwritable (i.e. the outbound buffer has hit the high-water mark).
+  /// 3. The channel becomes unwritable (that is, the outbound buffer has hit the high-water mark).
   ///
   /// This means that under high load, writes naturally accumulate and are flushed together in
   /// fewer, larger batches. This reduces per-write overhead and typically improves both throughput
