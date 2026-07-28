@@ -36,13 +36,13 @@ import SwiftProtobuf
 // incompatible with the version of SwiftProtobuf to which you are linking.
 // Please ensure that you are building against the same version of the API
 // that was used to generate this file.
-fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAPIVersionCheck {
+fileprivate nonisolated struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAPIVersionCheck {
   struct _2: SwiftProtobuf.ProtobufAPIVersion_2 {}
   typealias Version = _2
 }
 
 /// The type of payload that should be returned.
-package enum Grpc_Testing_PayloadType: SwiftProtobuf.Enum, Swift.CaseIterable {
+package nonisolated enum Grpc_Testing_PayloadType: SwiftProtobuf.Enum, Swift.CaseIterable {
   package typealias RawValue = Int
 
   /// Compressable text format.
@@ -80,7 +80,7 @@ package enum Grpc_Testing_PayloadType: SwiftProtobuf.Enum, Swift.CaseIterable {
 /// that the RPC reached the server via "gRPCLB backend" path (i.e. if it got
 /// the address of this server from the gRPCLB server BalanceLoad RPC). Exactly
 /// how this detection is done is context and server dependent.
-package enum Grpc_Testing_GrpclbRouteType: SwiftProtobuf.Enum, Swift.CaseIterable {
+package nonisolated enum Grpc_Testing_GrpclbRouteType: SwiftProtobuf.Enum, Swift.CaseIterable {
   package typealias RawValue = Int
 
   /// Server didn't detect the route that a client took to reach it.
@@ -127,7 +127,7 @@ package enum Grpc_Testing_GrpclbRouteType: SwiftProtobuf.Enum, Swift.CaseIterabl
 /// TODO(dgq): Go back to using well-known types once
 /// https://github.com/grpc/grpc/issues/6980 has been fixed.
 /// import "google/protobuf/wrappers.proto";
-package struct Grpc_Testing_BoolValue: Sendable {
+package nonisolated struct Grpc_Testing_BoolValue: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -141,7 +141,7 @@ package struct Grpc_Testing_BoolValue: Sendable {
 }
 
 /// A block of data, to simply increase gRPC message size.
-package struct Grpc_Testing_Payload: Sendable {
+package nonisolated struct Grpc_Testing_Payload: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -159,7 +159,7 @@ package struct Grpc_Testing_Payload: Sendable {
 
 /// A protobuf representation for grpc status. This is used by test
 /// clients to specify a status that the server should attempt to return.
-package struct Grpc_Testing_EchoStatus: Sendable {
+package nonisolated struct Grpc_Testing_EchoStatus: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -174,7 +174,7 @@ package struct Grpc_Testing_EchoStatus: Sendable {
 }
 
 /// Unary request.
-package struct Grpc_Testing_SimpleRequest: Sendable {
+package nonisolated struct Grpc_Testing_SimpleRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -263,7 +263,7 @@ package struct Grpc_Testing_SimpleRequest: Sendable {
 }
 
 /// Unary response, as configured by the request.
-package struct Grpc_Testing_SimpleResponse: Sendable {
+package nonisolated struct Grpc_Testing_SimpleResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -303,7 +303,7 @@ package struct Grpc_Testing_SimpleResponse: Sendable {
 }
 
 /// Client-streaming request.
-package struct Grpc_Testing_StreamingInputCallRequest: Sendable {
+package nonisolated struct Grpc_Testing_StreamingInputCallRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -340,7 +340,7 @@ package struct Grpc_Testing_StreamingInputCallRequest: Sendable {
 }
 
 /// Client-streaming response.
-package struct Grpc_Testing_StreamingInputCallResponse: Sendable {
+package nonisolated struct Grpc_Testing_StreamingInputCallResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -354,7 +354,7 @@ package struct Grpc_Testing_StreamingInputCallResponse: Sendable {
 }
 
 /// Configuration for a particular response.
-package struct Grpc_Testing_ResponseParameters: Sendable {
+package nonisolated struct Grpc_Testing_ResponseParameters: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -379,15 +379,27 @@ package struct Grpc_Testing_ResponseParameters: Sendable {
   /// Clears the value of `compressed`. Subsequent reads from it will return its default value.
   package mutating func clearCompressed() {self._compressed = nil}
 
+  /// Whether to request the server to send the requesting peer's socket
+  /// address in the response.
+  package var fillPeerSocketAddress: Grpc_Testing_BoolValue {
+    get {_fillPeerSocketAddress ?? Grpc_Testing_BoolValue()}
+    set {_fillPeerSocketAddress = newValue}
+  }
+  /// Returns true if `fillPeerSocketAddress` has been explicitly set.
+  package var hasFillPeerSocketAddress: Bool {self._fillPeerSocketAddress != nil}
+  /// Clears the value of `fillPeerSocketAddress`. Subsequent reads from it will return its default value.
+  package mutating func clearFillPeerSocketAddress() {self._fillPeerSocketAddress = nil}
+
   package var unknownFields = SwiftProtobuf.UnknownStorage()
 
   package init() {}
 
   fileprivate var _compressed: Grpc_Testing_BoolValue? = nil
+  fileprivate var _fillPeerSocketAddress: Grpc_Testing_BoolValue? = nil
 }
 
 /// Server-streaming request.
-package struct Grpc_Testing_StreamingOutputCallRequest: Sendable {
+package nonisolated struct Grpc_Testing_StreamingOutputCallRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -441,7 +453,7 @@ package struct Grpc_Testing_StreamingOutputCallRequest: Sendable {
 }
 
 /// Server-streaming response, as configured by the request and parameters.
-package struct Grpc_Testing_StreamingOutputCallResponse: Sendable {
+package nonisolated struct Grpc_Testing_StreamingOutputCallResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -456,6 +468,9 @@ package struct Grpc_Testing_StreamingOutputCallResponse: Sendable {
   /// Clears the value of `payload`. Subsequent reads from it will return its default value.
   package mutating func clearPayload() {self._payload = nil}
 
+  /// The peer's socket address if requested.
+  package var peerSocketAddress: String = String()
+
   package var unknownFields = SwiftProtobuf.UnknownStorage()
 
   package init() {}
@@ -465,7 +480,7 @@ package struct Grpc_Testing_StreamingOutputCallResponse: Sendable {
 
 /// For reconnect interop test only.
 /// Client tells server what reconnection parameters it used.
-package struct Grpc_Testing_ReconnectParams: Sendable {
+package nonisolated struct Grpc_Testing_ReconnectParams: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -480,7 +495,7 @@ package struct Grpc_Testing_ReconnectParams: Sendable {
 /// For reconnect interop test only.
 /// Server tells client whether its reconnects are following the spec and the
 /// reconnect backoffs it saw.
-package struct Grpc_Testing_ReconnectInfo: Sendable {
+package nonisolated struct Grpc_Testing_ReconnectInfo: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -494,7 +509,7 @@ package struct Grpc_Testing_ReconnectInfo: Sendable {
   package init() {}
 }
 
-package struct Grpc_Testing_LoadBalancerStatsRequest: Sendable {
+package nonisolated struct Grpc_Testing_LoadBalancerStatsRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -515,7 +530,7 @@ package struct Grpc_Testing_LoadBalancerStatsRequest: Sendable {
   package init() {}
 }
 
-package struct Grpc_Testing_LoadBalancerStatsResponse: Sendable {
+package nonisolated struct Grpc_Testing_LoadBalancerStatsResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -533,7 +548,7 @@ package struct Grpc_Testing_LoadBalancerStatsResponse: Sendable {
 
   package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  package enum MetadataType: SwiftProtobuf.Enum, Swift.CaseIterable {
+  package nonisolated enum MetadataType: SwiftProtobuf.Enum, Swift.CaseIterable {
     package typealias RawValue = Int
     case unknown // = 0
     case initial // = 1
@@ -571,7 +586,7 @@ package struct Grpc_Testing_LoadBalancerStatsResponse: Sendable {
 
   }
 
-  package struct MetadataEntry: Sendable {
+  package nonisolated struct MetadataEntry: Sendable {
     // SwiftProtobuf.Message conformance is added in an extension below. See the
     // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
     // methods supported on all messages.
@@ -591,7 +606,7 @@ package struct Grpc_Testing_LoadBalancerStatsResponse: Sendable {
     package init() {}
   }
 
-  package struct RpcMetadata: Sendable {
+  package nonisolated struct RpcMetadata: Sendable {
     // SwiftProtobuf.Message conformance is added in an extension below. See the
     // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
     // methods supported on all messages.
@@ -605,7 +620,7 @@ package struct Grpc_Testing_LoadBalancerStatsResponse: Sendable {
     package init() {}
   }
 
-  package struct MetadataByPeer: Sendable {
+  package nonisolated struct MetadataByPeer: Sendable {
     // SwiftProtobuf.Message conformance is added in an extension below. See the
     // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
     // methods supported on all messages.
@@ -618,7 +633,7 @@ package struct Grpc_Testing_LoadBalancerStatsResponse: Sendable {
     package init() {}
   }
 
-  package struct RpcsByPeer: Sendable {
+  package nonisolated struct RpcsByPeer: Sendable {
     // SwiftProtobuf.Message conformance is added in an extension below. See the
     // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
     // methods supported on all messages.
@@ -635,7 +650,7 @@ package struct Grpc_Testing_LoadBalancerStatsResponse: Sendable {
 }
 
 /// Request for retrieving a test client's accumulated stats.
-package struct Grpc_Testing_LoadBalancerAccumulatedStatsRequest: Sendable {
+package nonisolated struct Grpc_Testing_LoadBalancerAccumulatedStatsRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -646,7 +661,7 @@ package struct Grpc_Testing_LoadBalancerAccumulatedStatsRequest: Sendable {
 }
 
 /// Accumulated stats for RPCs sent by a test client.
-package struct Grpc_Testing_LoadBalancerAccumulatedStatsResponse: Sendable {
+package nonisolated struct Grpc_Testing_LoadBalancerAccumulatedStatsResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -675,7 +690,7 @@ package struct Grpc_Testing_LoadBalancerAccumulatedStatsResponse: Sendable {
 
   package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  package struct MethodStats: Sendable {
+  package nonisolated struct MethodStats: Sendable {
     // SwiftProtobuf.Message conformance is added in an extension below. See the
     // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
     // methods supported on all messages.
@@ -696,7 +711,7 @@ package struct Grpc_Testing_LoadBalancerAccumulatedStatsResponse: Sendable {
 }
 
 /// Configurations for a test client.
-package struct Grpc_Testing_ClientConfigureRequest: Sendable {
+package nonisolated struct Grpc_Testing_ClientConfigureRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -714,7 +729,7 @@ package struct Grpc_Testing_ClientConfigureRequest: Sendable {
   package var unknownFields = SwiftProtobuf.UnknownStorage()
 
   /// Type of RPCs to send.
-  package enum RpcType: SwiftProtobuf.Enum, Swift.CaseIterable {
+  package nonisolated enum RpcType: SwiftProtobuf.Enum, Swift.CaseIterable {
     package typealias RawValue = Int
     case emptyCall // = 0
     case unaryCall // = 1
@@ -749,7 +764,7 @@ package struct Grpc_Testing_ClientConfigureRequest: Sendable {
   }
 
   /// Metadata to be attached for the given type of RPCs.
-  package struct Metadata: Sendable {
+  package nonisolated struct Metadata: Sendable {
     // SwiftProtobuf.Message conformance is added in an extension below. See the
     // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
     // methods supported on all messages.
@@ -769,7 +784,7 @@ package struct Grpc_Testing_ClientConfigureRequest: Sendable {
 }
 
 /// Response for updating a test client's configuration.
-package struct Grpc_Testing_ClientConfigureResponse: Sendable {
+package nonisolated struct Grpc_Testing_ClientConfigureResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -779,7 +794,7 @@ package struct Grpc_Testing_ClientConfigureResponse: Sendable {
   package init() {}
 }
 
-package struct Grpc_Testing_MemorySize: Sendable {
+package nonisolated struct Grpc_Testing_MemorySize: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -794,7 +809,7 @@ package struct Grpc_Testing_MemorySize: Sendable {
 /// Metrics data the server will update and send to the client. It mirrors orca load report
 /// https://github.com/cncf/xds/blob/eded343319d09f30032952beda9840bbd3dcf7ac/xds/data/orca/v3/orca_load_report.proto#L15,
 /// but avoids orca dependency. Used by both per-query and out-of-band reporting tests.
-package struct Grpc_Testing_TestOrcaReport: Sendable {
+package nonisolated struct Grpc_Testing_TestOrcaReport: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -813,7 +828,7 @@ package struct Grpc_Testing_TestOrcaReport: Sendable {
 }
 
 /// Status that will be return to callers of the Hook method
-package struct Grpc_Testing_SetReturnStatusRequest: Sendable {
+package nonisolated struct Grpc_Testing_SetReturnStatusRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -827,7 +842,7 @@ package struct Grpc_Testing_SetReturnStatusRequest: Sendable {
   package init() {}
 }
 
-package struct Grpc_Testing_HookRequest: Sendable {
+package nonisolated struct Grpc_Testing_HookRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -843,7 +858,7 @@ package struct Grpc_Testing_HookRequest: Sendable {
 
   package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  package enum HookRequestCommand: SwiftProtobuf.Enum, Swift.CaseIterable {
+  package nonisolated enum HookRequestCommand: SwiftProtobuf.Enum, Swift.CaseIterable {
     package typealias RawValue = Int
 
     /// Default value
@@ -896,7 +911,7 @@ package struct Grpc_Testing_HookRequest: Sendable {
   package init() {}
 }
 
-package struct Grpc_Testing_HookResponse: Sendable {
+package nonisolated struct Grpc_Testing_HookResponse: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -908,17 +923,17 @@ package struct Grpc_Testing_HookResponse: Sendable {
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
-fileprivate let _protobuf_package = "grpc.testing"
+fileprivate nonisolated let _protobuf_package = "grpc.testing"
 
-extension Grpc_Testing_PayloadType: SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_PayloadType: SwiftProtobuf._ProtoNameProviding {
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0COMPRESSABLE\0")
 }
 
-extension Grpc_Testing_GrpclbRouteType: SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_GrpclbRouteType: SwiftProtobuf._ProtoNameProviding {
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0GRPCLB_ROUTE_TYPE_UNKNOWN\0\u{1}GRPCLB_ROUTE_TYPE_FALLBACK\0\u{1}GRPCLB_ROUTE_TYPE_BACKEND\0")
 }
 
-extension Grpc_Testing_BoolValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_BoolValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".BoolValue"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}value\0")
 
@@ -948,7 +963,7 @@ extension Grpc_Testing_BoolValue: SwiftProtobuf.Message, SwiftProtobuf._MessageI
   }
 }
 
-extension Grpc_Testing_Payload: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_Payload: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".Payload"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}type\0\u{1}body\0")
 
@@ -983,7 +998,7 @@ extension Grpc_Testing_Payload: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
   }
 }
 
-extension Grpc_Testing_EchoStatus: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_EchoStatus: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".EchoStatus"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}code\0\u{1}message\0")
 
@@ -1018,7 +1033,7 @@ extension Grpc_Testing_EchoStatus: SwiftProtobuf.Message, SwiftProtobuf._Message
   }
 }
 
-extension Grpc_Testing_SimpleRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_SimpleRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".SimpleRequest"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}response_type\0\u{3}response_size\0\u{1}payload\0\u{3}fill_username\0\u{3}fill_oauth_scope\0\u{3}response_compressed\0\u{3}response_status\0\u{3}expect_compressed\0\u{3}fill_server_id\0\u{3}fill_grpclb_route_type\0\u{3}orca_per_query_report\0")
 
@@ -1102,7 +1117,7 @@ extension Grpc_Testing_SimpleRequest: SwiftProtobuf.Message, SwiftProtobuf._Mess
   }
 }
 
-extension Grpc_Testing_SimpleResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_SimpleResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".SimpleResponse"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}payload\0\u{1}username\0\u{3}oauth_scope\0\u{3}server_id\0\u{3}grpclb_route_type\0\u{1}hostname\0")
 
@@ -1161,7 +1176,7 @@ extension Grpc_Testing_SimpleResponse: SwiftProtobuf.Message, SwiftProtobuf._Mes
   }
 }
 
-extension Grpc_Testing_StreamingInputCallRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_StreamingInputCallRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".StreamingInputCallRequest"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}payload\0\u{3}expect_compressed\0")
 
@@ -1200,7 +1215,7 @@ extension Grpc_Testing_StreamingInputCallRequest: SwiftProtobuf.Message, SwiftPr
   }
 }
 
-extension Grpc_Testing_StreamingInputCallResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_StreamingInputCallResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".StreamingInputCallResponse"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}aggregated_payload_size\0")
 
@@ -1230,9 +1245,9 @@ extension Grpc_Testing_StreamingInputCallResponse: SwiftProtobuf.Message, SwiftP
   }
 }
 
-extension Grpc_Testing_ResponseParameters: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_ResponseParameters: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".ResponseParameters"
-  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}size\0\u{3}interval_us\0\u{1}compressed\0")
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}size\0\u{3}interval_us\0\u{1}compressed\0\u{3}fill_peer_socket_address\0")
 
   package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1243,6 +1258,7 @@ extension Grpc_Testing_ResponseParameters: SwiftProtobuf.Message, SwiftProtobuf.
       case 1: try { try decoder.decodeSingularInt32Field(value: &self.size) }()
       case 2: try { try decoder.decodeSingularInt32Field(value: &self.intervalUs) }()
       case 3: try { try decoder.decodeSingularMessageField(value: &self._compressed) }()
+      case 4: try { try decoder.decodeSingularMessageField(value: &self._fillPeerSocketAddress) }()
       default: break
       }
     }
@@ -1262,6 +1278,9 @@ extension Grpc_Testing_ResponseParameters: SwiftProtobuf.Message, SwiftProtobuf.
     try { if let v = self._compressed {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
     } }()
+    try { if let v = self._fillPeerSocketAddress {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -1269,12 +1288,13 @@ extension Grpc_Testing_ResponseParameters: SwiftProtobuf.Message, SwiftProtobuf.
     if lhs.size != rhs.size {return false}
     if lhs.intervalUs != rhs.intervalUs {return false}
     if lhs._compressed != rhs._compressed {return false}
+    if lhs._fillPeerSocketAddress != rhs._fillPeerSocketAddress {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension Grpc_Testing_StreamingOutputCallRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_StreamingOutputCallRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".StreamingOutputCallRequest"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}response_type\0\u{3}response_parameters\0\u{1}payload\0\u{4}\u{4}response_status\0\u{3}orca_oob_report\0")
 
@@ -1328,9 +1348,9 @@ extension Grpc_Testing_StreamingOutputCallRequest: SwiftProtobuf.Message, SwiftP
   }
 }
 
-extension Grpc_Testing_StreamingOutputCallResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_StreamingOutputCallResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".StreamingOutputCallResponse"
-  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}payload\0")
+  package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}payload\0\u{3}peer_socket_address\0")
 
   package mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1339,6 +1359,7 @@ extension Grpc_Testing_StreamingOutputCallResponse: SwiftProtobuf.Message, Swift
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularMessageField(value: &self._payload) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.peerSocketAddress) }()
       default: break
       }
     }
@@ -1352,17 +1373,21 @@ extension Grpc_Testing_StreamingOutputCallResponse: SwiftProtobuf.Message, Swift
     try { if let v = self._payload {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
     } }()
+    if !self.peerSocketAddress.isEmpty {
+      try visitor.visitSingularStringField(value: self.peerSocketAddress, fieldNumber: 2)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   package static func ==(lhs: Grpc_Testing_StreamingOutputCallResponse, rhs: Grpc_Testing_StreamingOutputCallResponse) -> Bool {
     if lhs._payload != rhs._payload {return false}
+    if lhs.peerSocketAddress != rhs.peerSocketAddress {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
 }
 
-extension Grpc_Testing_ReconnectParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_ReconnectParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".ReconnectParams"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}max_reconnect_backoff_ms\0")
 
@@ -1392,7 +1417,7 @@ extension Grpc_Testing_ReconnectParams: SwiftProtobuf.Message, SwiftProtobuf._Me
   }
 }
 
-extension Grpc_Testing_ReconnectInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_ReconnectInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".ReconnectInfo"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}passed\0\u{3}backoff_ms\0")
 
@@ -1427,7 +1452,7 @@ extension Grpc_Testing_ReconnectInfo: SwiftProtobuf.Message, SwiftProtobuf._Mess
   }
 }
 
-extension Grpc_Testing_LoadBalancerStatsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_LoadBalancerStatsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".LoadBalancerStatsRequest"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}num_rpcs\0\u{3}timeout_sec\0\u{3}metadata_keys\0")
 
@@ -1467,7 +1492,7 @@ extension Grpc_Testing_LoadBalancerStatsRequest: SwiftProtobuf.Message, SwiftPro
   }
 }
 
-extension Grpc_Testing_LoadBalancerStatsResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_LoadBalancerStatsResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".LoadBalancerStatsResponse"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}rpcs_by_peer\0\u{3}num_failures\0\u{3}rpcs_by_method\0\u{3}metadatas_by_peer\0")
 
@@ -1512,11 +1537,11 @@ extension Grpc_Testing_LoadBalancerStatsResponse: SwiftProtobuf.Message, SwiftPr
   }
 }
 
-extension Grpc_Testing_LoadBalancerStatsResponse.MetadataType: SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_LoadBalancerStatsResponse.MetadataType: SwiftProtobuf._ProtoNameProviding {
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0UNKNOWN\0\u{1}INITIAL\0\u{1}TRAILING\0")
 }
 
-extension Grpc_Testing_LoadBalancerStatsResponse.MetadataEntry: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_LoadBalancerStatsResponse.MetadataEntry: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = Grpc_Testing_LoadBalancerStatsResponse.protoMessageName + ".MetadataEntry"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}key\0\u{1}value\0\u{1}type\0")
 
@@ -1556,7 +1581,7 @@ extension Grpc_Testing_LoadBalancerStatsResponse.MetadataEntry: SwiftProtobuf.Me
   }
 }
 
-extension Grpc_Testing_LoadBalancerStatsResponse.RpcMetadata: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_LoadBalancerStatsResponse.RpcMetadata: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = Grpc_Testing_LoadBalancerStatsResponse.protoMessageName + ".RpcMetadata"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}metadata\0")
 
@@ -1586,7 +1611,7 @@ extension Grpc_Testing_LoadBalancerStatsResponse.RpcMetadata: SwiftProtobuf.Mess
   }
 }
 
-extension Grpc_Testing_LoadBalancerStatsResponse.MetadataByPeer: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_LoadBalancerStatsResponse.MetadataByPeer: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = Grpc_Testing_LoadBalancerStatsResponse.protoMessageName + ".MetadataByPeer"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}rpc_metadata\0")
 
@@ -1616,7 +1641,7 @@ extension Grpc_Testing_LoadBalancerStatsResponse.MetadataByPeer: SwiftProtobuf.M
   }
 }
 
-extension Grpc_Testing_LoadBalancerStatsResponse.RpcsByPeer: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_LoadBalancerStatsResponse.RpcsByPeer: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = Grpc_Testing_LoadBalancerStatsResponse.protoMessageName + ".RpcsByPeer"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}rpcs_by_peer\0")
 
@@ -1646,7 +1671,7 @@ extension Grpc_Testing_LoadBalancerStatsResponse.RpcsByPeer: SwiftProtobuf.Messa
   }
 }
 
-extension Grpc_Testing_LoadBalancerAccumulatedStatsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_LoadBalancerAccumulatedStatsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".LoadBalancerAccumulatedStatsRequest"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 
@@ -1665,7 +1690,7 @@ extension Grpc_Testing_LoadBalancerAccumulatedStatsRequest: SwiftProtobuf.Messag
   }
 }
 
-extension Grpc_Testing_LoadBalancerAccumulatedStatsResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_LoadBalancerAccumulatedStatsResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".LoadBalancerAccumulatedStatsResponse"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}num_rpcs_started_by_method\0\u{3}num_rpcs_succeeded_by_method\0\u{3}num_rpcs_failed_by_method\0\u{3}stats_per_method\0")
 
@@ -1710,7 +1735,7 @@ extension Grpc_Testing_LoadBalancerAccumulatedStatsResponse: SwiftProtobuf.Messa
   }
 }
 
-extension Grpc_Testing_LoadBalancerAccumulatedStatsResponse.MethodStats: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_LoadBalancerAccumulatedStatsResponse.MethodStats: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = Grpc_Testing_LoadBalancerAccumulatedStatsResponse.protoMessageName + ".MethodStats"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}rpcs_started\0\u{1}result\0")
 
@@ -1745,7 +1770,7 @@ extension Grpc_Testing_LoadBalancerAccumulatedStatsResponse.MethodStats: SwiftPr
   }
 }
 
-extension Grpc_Testing_ClientConfigureRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_ClientConfigureRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".ClientConfigureRequest"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}types\0\u{1}metadata\0\u{3}timeout_sec\0")
 
@@ -1785,11 +1810,11 @@ extension Grpc_Testing_ClientConfigureRequest: SwiftProtobuf.Message, SwiftProto
   }
 }
 
-extension Grpc_Testing_ClientConfigureRequest.RpcType: SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_ClientConfigureRequest.RpcType: SwiftProtobuf._ProtoNameProviding {
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0EMPTY_CALL\0\u{1}UNARY_CALL\0")
 }
 
-extension Grpc_Testing_ClientConfigureRequest.Metadata: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_ClientConfigureRequest.Metadata: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = Grpc_Testing_ClientConfigureRequest.protoMessageName + ".Metadata"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}type\0\u{1}key\0\u{1}value\0")
 
@@ -1829,7 +1854,7 @@ extension Grpc_Testing_ClientConfigureRequest.Metadata: SwiftProtobuf.Message, S
   }
 }
 
-extension Grpc_Testing_ClientConfigureResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_ClientConfigureResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".ClientConfigureResponse"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 
@@ -1848,7 +1873,7 @@ extension Grpc_Testing_ClientConfigureResponse: SwiftProtobuf.Message, SwiftProt
   }
 }
 
-extension Grpc_Testing_MemorySize: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_MemorySize: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".MemorySize"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}rss\0")
 
@@ -1878,7 +1903,7 @@ extension Grpc_Testing_MemorySize: SwiftProtobuf.Message, SwiftProtobuf._Message
   }
 }
 
-extension Grpc_Testing_TestOrcaReport: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_TestOrcaReport: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".TestOrcaReport"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}cpu_utilization\0\u{3}memory_utilization\0\u{3}request_cost\0\u{1}utilization\0")
 
@@ -1923,7 +1948,7 @@ extension Grpc_Testing_TestOrcaReport: SwiftProtobuf.Message, SwiftProtobuf._Mes
   }
 }
 
-extension Grpc_Testing_SetReturnStatusRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_SetReturnStatusRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".SetReturnStatusRequest"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}grpc_code_to_return\0\u{3}grpc_status_description\0")
 
@@ -1958,7 +1983,7 @@ extension Grpc_Testing_SetReturnStatusRequest: SwiftProtobuf.Message, SwiftProto
   }
 }
 
-extension Grpc_Testing_HookRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_HookRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".HookRequest"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}command\0\u{3}grpc_code_to_return\0\u{3}grpc_status_description\0\u{3}server_port\0")
 
@@ -2003,11 +2028,11 @@ extension Grpc_Testing_HookRequest: SwiftProtobuf.Message, SwiftProtobuf._Messag
   }
 }
 
-extension Grpc_Testing_HookRequest.HookRequestCommand: SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_HookRequest.HookRequestCommand: SwiftProtobuf._ProtoNameProviding {
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0UNSPECIFIED\0\u{1}START\0\u{1}STOP\0\u{1}RETURN\0")
 }
 
-extension Grpc_Testing_HookResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_HookResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".HookResponse"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 

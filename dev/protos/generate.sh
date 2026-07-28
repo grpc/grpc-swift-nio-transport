@@ -83,7 +83,7 @@ function generate_perf_test_services {
     "$here/upstream/grpc/testing/benchmark_service.proto"
     "$here/upstream/grpc/testing/worker_service.proto"
   )
-  local output="$root/IntegrationTests/grpc-performance-tests/Sources/Generated"
+  local output="$root/IntegrationTests/grpc-performance-tests/Sources/WorkerService/Generated"
 
   generate_message "$here/upstream/grpc/core/stats.proto" "$here/upstream" "$output" "Visibility=Package" "FileNaming=PathToUnderscores"
 
