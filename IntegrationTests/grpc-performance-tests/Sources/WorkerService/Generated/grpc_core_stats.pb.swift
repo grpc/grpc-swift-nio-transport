@@ -29,12 +29,12 @@ import SwiftProtobuf
 // incompatible with the version of SwiftProtobuf to which you are linking.
 // Please ensure that you are building against the same version of the API
 // that was used to generate this file.
-fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAPIVersionCheck {
+fileprivate nonisolated struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAPIVersionCheck {
   struct _2: SwiftProtobuf.ProtobufAPIVersion_2 {}
   typealias Version = _2
 }
 
-package struct Grpc_Core_Bucket: Sendable {
+package nonisolated struct Grpc_Core_Bucket: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -48,7 +48,7 @@ package struct Grpc_Core_Bucket: Sendable {
   package init() {}
 }
 
-package struct Grpc_Core_Histogram: Sendable {
+package nonisolated struct Grpc_Core_Histogram: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -60,7 +60,7 @@ package struct Grpc_Core_Histogram: Sendable {
   package init() {}
 }
 
-package struct Grpc_Core_Metric: Sendable {
+package nonisolated struct Grpc_Core_Metric: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -87,7 +87,7 @@ package struct Grpc_Core_Metric: Sendable {
 
   package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  package enum OneOf_Value: Equatable, Sendable {
+  package nonisolated enum OneOf_Value: Equatable, Sendable {
     case count(UInt64)
     case histogram(Grpc_Core_Histogram)
 
@@ -96,7 +96,7 @@ package struct Grpc_Core_Metric: Sendable {
   package init() {}
 }
 
-package struct Grpc_Core_Stats: Sendable {
+package nonisolated struct Grpc_Core_Stats: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -110,9 +110,9 @@ package struct Grpc_Core_Stats: Sendable {
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
-fileprivate let _protobuf_package = "grpc.core"
+fileprivate nonisolated let _protobuf_package = "grpc.core"
 
-extension Grpc_Core_Bucket: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Core_Bucket: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".Bucket"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}start\0\u{1}count\0")
 
@@ -147,7 +147,7 @@ extension Grpc_Core_Bucket: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
   }
 }
 
-extension Grpc_Core_Histogram: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Core_Histogram: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".Histogram"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}buckets\0")
 
@@ -177,7 +177,7 @@ extension Grpc_Core_Histogram: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
   }
 }
 
-extension Grpc_Core_Metric: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Core_Metric: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".Metric"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}name\0\u{2}\u{9}count\0\u{1}histogram\0")
 
@@ -244,7 +244,7 @@ extension Grpc_Core_Metric: SwiftProtobuf.Message, SwiftProtobuf._MessageImpleme
   }
 }
 
-extension Grpc_Core_Stats: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Core_Stats: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".Stats"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}metrics\0")
 
