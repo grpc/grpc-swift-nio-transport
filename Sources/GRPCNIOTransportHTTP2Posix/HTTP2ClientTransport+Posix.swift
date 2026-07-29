@@ -57,6 +57,7 @@ extension HTTP2ClientTransport {
   /// }
   /// ```
   public struct Posix: ClientTransport {
+    /// The concrete type of bytes this transport produces and consumes.
     public typealias Bytes = GRPCNIOTransportBytes
 
     private let channel: GRPCChannel
@@ -334,6 +335,7 @@ extension GRPCChannel.Config {
   }
 }
 
+/// Provides a static factory method for constructing a Posix-based HTTP/2 client transport.
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ClientTransport where Self == HTTP2ClientTransport.Posix {
   /// Creates a Posix based HTTP/2 client transport.

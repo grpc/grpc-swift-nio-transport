@@ -55,6 +55,7 @@ extension HTTP2ServerTransport {
   /// }
   /// ```
   public struct Posix: ServerTransport, ListeningServerTransport {
+    /// The concrete type of bytes this transport produces and consumes.
     public typealias Bytes = GRPCNIOTransportBytes
 
     fileprivate struct ListenerFactory: HTTP2ServerTransport.ListenerFactory {
@@ -427,6 +428,7 @@ extension ServerBootstrap {
   }
 }
 
+/// Provides a static factory method for constructing a Posix-based HTTP/2 server transport bound to a socket address.
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ServerTransport where Self == HTTP2ServerTransport.Posix {
   /// Creates a Posix-based HTTP/2 server transport.
@@ -453,6 +455,7 @@ extension ServerTransport where Self == HTTP2ServerTransport.Posix {
   }
 }
 
+/// Provides a static factory method for constructing a Posix-based HTTP/2 server transport from an already bound listening socket.
 @available(gRPCSwiftNIOTransport 2.6, *)
 extension ServerTransport where Self == HTTP2ServerTransport.Posix {
   /// Creates a Posix-based HTTP/2 server transport.

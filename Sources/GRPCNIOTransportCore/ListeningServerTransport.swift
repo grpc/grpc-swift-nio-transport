@@ -24,6 +24,7 @@ public protocol ListeningServerTransport: ServerTransport {
   var listeningAddress: SocketAddress { get async throws }
 }
 
+/// Adds a convenience accessor for a server's listening address, for transports that provide one.
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension GRPCServer {
   /// Returns the listening address of the server transport once it has started.

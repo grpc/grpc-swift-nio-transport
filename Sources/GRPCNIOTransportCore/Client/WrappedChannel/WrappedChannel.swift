@@ -62,6 +62,7 @@ extension HTTP2ClientTransport {
   /// resumed with `unavailable`.
   @available(gRPCSwiftNIOTransport 2.0, *)
   public final class WrappedChannel: ClientTransport {
+    /// The concrete type of bytes this transport produces and consumes.
     public typealias Bytes = GRPCNIOTransportBytes
 
     private let channel: any Channel
@@ -359,6 +360,7 @@ extension HTTP2ClientTransport {
   }
 }
 
+/// Adds a factory for creating a client transport that wraps an already connected NIO channel.
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ClientTransport where Self == HTTP2ClientTransport.WrappedChannel {
   /// Creates a wrapping client transport from an already connected NIO channel.
@@ -471,6 +473,7 @@ extension HTTP2ClientTransport.WrappedChannel {
   }
 }
 
+/// Adds a factory for creating a client transport whose channel is configured for gRPC via a closure you supply.
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ClientTransport where Self == HTTP2ClientTransport.WrappedChannel {
   /// Builds a wrapped-channel transport, configuring the gRPC pipeline on a channel you supply.

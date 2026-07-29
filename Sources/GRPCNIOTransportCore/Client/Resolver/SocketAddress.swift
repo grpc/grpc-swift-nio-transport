@@ -155,6 +155,7 @@ extension SocketAddress {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension SocketAddress: CustomStringConvertible {
+  /// A string representation of the address, formatted according to its underlying address kind.
   public var description: String {
     switch self.value {
     case .ipv4(let address):
@@ -245,6 +246,7 @@ extension SocketAddress {
       /// The port number.
       public var rawValue: UInt32
 
+      /// Creates a port from its raw numeric value.
       public init(rawValue: UInt32) {
         self.rawValue = rawValue
       }
@@ -274,6 +276,7 @@ extension SocketAddress {
       /// The context identifier.
       public var rawValue: UInt32
 
+      /// Creates a context ID from its raw numeric value.
       public init(rawValue: UInt32) {
         self.rawValue = rawValue
       }
@@ -333,6 +336,10 @@ extension SocketAddress {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension SocketAddress.IPv4: CustomStringConvertible {
+  /// A string representation of the IPv4 address.
+  ///
+  /// The string consists of the literal prefix `[ipv4]` followed by the host and port,
+  /// separated by a colon.
   public var description: String {
     "[ipv4]\(self.host):\(self.port)"
   }
@@ -340,6 +347,10 @@ extension SocketAddress.IPv4: CustomStringConvertible {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension SocketAddress.IPv6: CustomStringConvertible {
+  /// A string representation of the IPv6 address.
+  ///
+  /// The string consists of the literal prefix `[ipv6]` followed by the host and port,
+  /// separated by a colon.
   public var description: String {
     "[ipv6]\(self.host):\(self.port)"
   }
@@ -347,6 +358,9 @@ extension SocketAddress.IPv6: CustomStringConvertible {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension SocketAddress.UnixDomainSocket: CustomStringConvertible {
+  /// A string representation of the Unix domain socket address.
+  ///
+  /// The string consists of the literal prefix `[unix]` followed by the path.
   public var description: String {
     "[unix]\(self.path)"
   }
@@ -354,6 +368,10 @@ extension SocketAddress.UnixDomainSocket: CustomStringConvertible {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension SocketAddress.VirtualSocket: CustomStringConvertible {
+  /// A string representation of the virtual socket address.
+  ///
+  /// The string consists of the literal prefix `[vsock]` followed by the context ID and port,
+  /// separated by a colon.
   public var description: String {
     "[vsock]\(self.contextID):\(self.port)"
   }
@@ -361,6 +379,9 @@ extension SocketAddress.VirtualSocket: CustomStringConvertible {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension SocketAddress.VirtualSocket.ContextID: CustomStringConvertible {
+  /// A string representation of the context ID.
+  ///
+  /// The value is `-1` when the context ID is ``any``, and its raw numeric value otherwise.
   public var description: String {
     self == .any ? "-1" : String(describing: self.rawValue)
   }
@@ -368,6 +389,9 @@ extension SocketAddress.VirtualSocket.ContextID: CustomStringConvertible {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension SocketAddress.VirtualSocket.Port: CustomStringConvertible {
+  /// A string representation of the port.
+  ///
+  /// The value is `-1` when the port is ``any``, and its raw numeric value otherwise.
   public var description: String {
     self == .any ? "-1" : String(describing: self.rawValue)
   }

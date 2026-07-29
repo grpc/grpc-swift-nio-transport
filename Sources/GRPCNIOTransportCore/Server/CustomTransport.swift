@@ -42,6 +42,7 @@ extension HTTP2ServerTransport {
   public final class Custom<
     ListenerFactory: HTTP2ServerTransport.ListenerFactory
   >: ServerTransport {
+    /// The concrete type of bytes this transport produces and consumes.
     public typealias Bytes = GRPCNIOTransportBytes
 
     /// Configuration for the custom HTTP/2 server transport.

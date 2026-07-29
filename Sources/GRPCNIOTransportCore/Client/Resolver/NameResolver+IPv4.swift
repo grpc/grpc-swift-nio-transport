@@ -100,6 +100,9 @@ extension NameResolvers {
   /// target always produces the same values, with one endpoint per
   /// address in the target. This resolver doesn't support fetching service configuration.
   public struct IPv4: NameResolverFactory, Sendable {
+    /// The type of target that this factory creates resolvers for.
+    ///
+    /// For this factory, the target type is ``ResolvableTargets/IPv4``.
     public typealias Target = ResolvableTargets.IPv4
 
     /// Creates an IPv4 resolver factory.

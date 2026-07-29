@@ -62,6 +62,9 @@ extension NameResolvers {
   ///
   /// Creates resolvers for ``ResolvableTargets/DNS`` targets.
   public struct DNS: NameResolverFactory, Sendable {
+    /// The type of target that this factory creates resolvers for.
+    ///
+    /// For this factory, the target type is ``ResolvableTargets/DNS``.
     public typealias Target = ResolvableTargets.DNS
 
     /// Creates a DNS name resolver factory.

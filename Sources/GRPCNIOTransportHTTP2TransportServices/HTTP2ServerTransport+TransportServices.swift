@@ -30,6 +30,7 @@ private import Synchronization
 extension HTTP2ServerTransport {
   /// A NIO Transport Services-backed implementation of a server transport.
   public struct TransportServices: ServerTransport, ListeningServerTransport {
+    /// The concrete type of bytes this transport produces and consumes.
     public typealias Bytes = GRPCNIOTransportBytes
 
     fileprivate struct ListenerFactory: HTTP2ServerTransport.ListenerFactory {
@@ -258,6 +259,7 @@ extension NIOTSListenerBootstrap {
   }
 }
 
+/// Provides a static factory method for constructing a TransportServices-based HTTP/2 server transport.
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ServerTransport where Self == HTTP2ServerTransport.TransportServices {
   /// Creates a TransportServices-based HTTP/2 server transport.

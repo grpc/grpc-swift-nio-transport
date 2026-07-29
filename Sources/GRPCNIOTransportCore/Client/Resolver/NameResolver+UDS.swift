@@ -65,6 +65,9 @@ extension NameResolvers {
   /// for a given target always produces the same values, with a single endpoint.
   /// This resolver doesn't support fetching service configuration.
   public struct UnixDomainSocket: NameResolverFactory, Sendable {
+    /// The type of target that this factory creates resolvers for.
+    ///
+    /// For this factory, the target type is ``ResolvableTargets/UnixDomainSocket``.
     public typealias Target = ResolvableTargets.UnixDomainSocket
 
     /// Creates a Unix Domain Socket resolver factory.
