@@ -273,6 +273,8 @@ extension HTTP2ServerTransport {
           }
         } catch {}
 
+        context.udsCredentials = await populateUDSCredentials(channel: channel)
+
         return context
       }
     }
@@ -308,7 +310,29 @@ extension HTTP2ServerTransport.Posix {
     @available(gRPCSwiftNIOTransport 2.2, *)
     public var peerCertificateChain: X509.ValidatedCertificateChain?
 
+    /// Kernel-validated peer credentials of the connecting process when the
+    /// transport is bound to a Unix domain socket. `nil` for non-UDS
+    /// channels and on platforms or socket types where peer credentials are
+    /// unavailable.
+    public var udsCredentials: UDSCredentials?
+
     public init() {
+    }
+  }
+
+  /// Kernel-validated peer credentials reported by the operating system at
+  /// connect time for a Unix domain socket. `pid`/`uid`/`gid` reflect the
+  /// peer process as recorded by the kernel when the connection was
+  /// established; they are not re-read per request.
+  public struct UDSCredentials: Sendable, Equatable {
+    public let pid: pid_t
+    public let uid: uid_t
+    public let gid: gid_t
+
+    public init(pid: pid_t, uid: uid_t, gid: gid_t) {
+      self.pid = pid
+      self.uid = uid
+      self.gid = gid
     }
   }
 
