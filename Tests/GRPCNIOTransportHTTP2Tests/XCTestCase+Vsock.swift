@@ -17,6 +17,12 @@
 import NIOPosix
 import XCTest
 
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
+
 extension XCTestCase {
   func vsockAvailable() -> Bool {
     let fd: CInt
@@ -30,5 +36,22 @@ extension XCTestCase {
     if fd == -1 { return false }
     precondition(close(fd) == 0)
     return true
+  }
+
+  /// Whether a vsock connection can actually be established locally.
+  ///
+  /// ``vsockAvailable()`` only reports whether the address family exists, which is enough to bind a
+  /// listener. Connecting to `VMADDR_CID_LOCAL` additionally needs the `vsock_loopback` transport
+  /// (Linux 5.6+), so tests that establish a connection need this stricter check.
+  func vsockLoopbackAvailable() -> Bool {
+    #if os(Linux)
+    guard self.vsockAvailable() else { return false }
+    guard let modules = try? String(contentsOfFile: "/proc/modules", encoding: .utf8) else {
+      return false
+    }
+    return modules.split(separator: "\n").contains { $0.hasPrefix("vsock_loopback") }
+    #else
+    return false
+    #endif
   }
 }
