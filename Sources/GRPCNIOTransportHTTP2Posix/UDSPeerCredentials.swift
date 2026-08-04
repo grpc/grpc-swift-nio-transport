@@ -21,8 +21,12 @@ internal import NIOCore
 internal import Darwin
 #elseif canImport(Glibc)
 internal import Glibc
+// glibc guards `struct ucred` and `SO_PEERCRED` behind `_GNU_SOURCE`, which the Glibc module
+// doesn't reliably set, so they come from this shim instead.
+internal import CGRPCNIOTransportLinux
 #elseif canImport(Musl)
 internal import Musl
+internal import CGRPCNIOTransportLinux
 #endif
 
 /// Reads kernel-validated peer credentials from `channel`'s underlying socket.
@@ -40,35 +44,34 @@ internal func makeUDSCredentials(
 
   #if canImport(Darwin)
   do {
+    // Darwin reports the peer's effective PID and its credentials through two separate options.
     let pid: pid_t = try await provider.unsafeGetSocketOption(
       level: SocketOptionLevel(SOL_LOCAL),
       name: SocketOptionName(LOCAL_PEEREPID)
     ).get()
-    let xucred: DarwinXUCred = try await provider.unsafeGetSocketOption(
+    let credentials: xucred = try await provider.unsafeGetSocketOption(
       level: SocketOptionLevel(SOL_LOCAL),
       name: SocketOptionName(LOCAL_PEERCRED)
     ).get()
-    let gid = withUnsafePointer(to: xucred.crGroups) { tuplePtr in
-      tuplePtr.withMemoryRebound(to: gid_t.self, capacity: 1) { $0.pointee }
-    }
+    // `cr_groups` is imported as a fixed-size tuple; the first element is the primary group.
     return HTTP2ServerTransport.Posix.UDSCredentials(
       pid: .init(rawValue: pid),
-      uid: .init(rawValue: xucred.crUID),
-      gid: .init(rawValue: gid)
+      uid: .init(rawValue: credentials.cr_uid),
+      gid: .init(rawValue: credentials.cr_groups.0)
     )
   } catch {
     return nil
   }
   #elseif canImport(Glibc) || canImport(Musl)
   do {
-    let ucred: LinuxUCred = try await provider.unsafeGetSocketOption(
+    let credentials: ucred = try await provider.unsafeGetSocketOption(
       level: SocketOptionLevel(SOL_SOCKET),
       name: SocketOptionName(SO_PEERCRED)
     ).get()
     return HTTP2ServerTransport.Posix.UDSCredentials(
-      pid: .init(rawValue: ucred.pid),
-      uid: .init(rawValue: ucred.uid),
-      gid: .init(rawValue: ucred.gid)
+      pid: .init(rawValue: credentials.pid),
+      uid: .init(rawValue: credentials.uid),
+      gid: .init(rawValue: credentials.gid)
     )
   } catch {
     return nil
@@ -77,33 +80,3 @@ internal func makeUDSCredentials(
   return nil
   #endif
 }
-
-#if canImport(Darwin)
-/// Mirror of Darwin's `struct xucred` from `<sys/ucred.h>`. Declared locally
-/// so we don't depend on the Swift Darwin overlay re-exporting it (which is
-/// not guaranteed across SDK versions). Layout must match the kernel:
-/// `u_int cr_version; uid_t cr_uid; short cr_ngroups; gid_t cr_groups[NGROUPS]`
-/// with NGROUPS = 16 on Darwin.
-private struct DarwinXUCred: Sendable {
-  var crVersion: UInt32 = 0
-  var crUID: uid_t = 0
-  var crNgroups: Int16 = 0
-  private var _pad: Int16 = 0
-  var crGroups:
-    (
-      gid_t, gid_t, gid_t, gid_t, gid_t, gid_t, gid_t, gid_t,
-      gid_t, gid_t, gid_t, gid_t, gid_t, gid_t, gid_t, gid_t
-    ) = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-}
-#endif
-
-#if canImport(Glibc) || canImport(Musl)
-/// Mirror of Linux's `struct ucred` from `<sys/socket.h>`. Declared locally
-/// because glibc 2.36+ guards the type behind `_GNU_SOURCE`, which the
-/// Swift Glibc module does not reliably set.
-private struct LinuxUCred: Sendable {
-  var pid: pid_t = 0
-  var uid: uid_t = 0
-  var gid: gid_t = 0
-}
-#endif

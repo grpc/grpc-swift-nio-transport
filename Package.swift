@@ -100,6 +100,16 @@ let targets: [Target] = [
     ]
   ),
 
+  // C-module exposing Linux declarations which glibc guards behind `_GNU_SOURCE`, such as
+  // `struct ucred` and `SO_PEERCRED`.
+  .target(
+    name: "CGRPCNIOTransportLinux",
+    dependencies: [],
+    cSettings: [
+      .define("_GNU_SOURCE")
+    ]
+  ),
+
   // Core module containing shared components for the NIOPosix and NIOTS variants.
   .target(
     name: "GRPCNIOTransportCore",
@@ -128,6 +138,7 @@ let targets: [Target] = [
     name: "GRPCNIOTransportHTTP2Posix",
     dependencies: [
       .target(name: "GRPCNIOTransportCore"),
+      .target(name: "CGRPCNIOTransportLinux", condition: .when(platforms: [.linux])),
       .product(name: "GRPCCore", package: "grpc-swift-2"),
       .product(name: "NIOPosix", package: "swift-nio"),
       .product(name: "NIOSSL", package: "swift-nio-ssl"),
