@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-// TODO: Upstream this file (and the matching changes on
-// HTTP2ServerTransport+Posix.swift) to grpc/grpc-swift-nio-transport so the
-// vendored copy under Vendor/ in mezu can be retired.
-
 internal import GRPCNIOTransportCore
 internal import NIOCore
 
@@ -29,45 +25,56 @@ internal import Glibc
 internal import Musl
 #endif
 
-/// Reads kernel-validated peer credentials off `channel`'s underlying socket
-/// for a Unix domain socket connection. Returns `nil` when the channel is
-/// not a `SocketOptionProvider`, when the socket is not a UDS, on platforms
-/// without peer-credential support, or on any read failure.
+/// Reads kernel-validated peer credentials from `channel`'s underlying socket.
+///
+/// Returns `nil` when the channel isn't backed by a Unix domain socket, when it isn't a
+/// `SocketOptionProvider`, on platforms without peer-credential support, or on any read failure.
 @available(gRPCSwiftNIOTransport 2.0, *)
-internal func populateUDSCredentials(
+internal func makeUDSCredentials(
   channel: any Channel
 ) async -> HTTP2ServerTransport.Posix.UDSCredentials? {
+  // Peer credentials only exist for Unix domain sockets, so avoid the socket option reads
+  // altogether for any other transport.
+  guard case .some(.unixDomainSocket) = channel.localAddress else { return nil }
   guard let provider = channel as? any SocketOptionProvider else { return nil }
 
   #if canImport(Darwin)
-    do {
-      let pid: pid_t = try await provider.unsafeGetSocketOption(
-        level: SocketOptionLevel(SOL_LOCAL),
-        name: SocketOptionName(LOCAL_PEEREPID)
-      ).get()
-      let xucred: DarwinXUCred = try await provider.unsafeGetSocketOption(
-        level: SocketOptionLevel(SOL_LOCAL),
-        name: SocketOptionName(LOCAL_PEERCRED)
-      ).get()
-      let gid = withUnsafePointer(to: xucred.crGroups) { tuplePtr in
-        tuplePtr.withMemoryRebound(to: gid_t.self, capacity: 1) { $0.pointee }
-      }
-      return .init(pid: pid, uid: xucred.crUID, gid: gid)
-    } catch {
-      return nil
+  do {
+    let pid: pid_t = try await provider.unsafeGetSocketOption(
+      level: SocketOptionLevel(SOL_LOCAL),
+      name: SocketOptionName(LOCAL_PEEREPID)
+    ).get()
+    let xucred: DarwinXUCred = try await provider.unsafeGetSocketOption(
+      level: SocketOptionLevel(SOL_LOCAL),
+      name: SocketOptionName(LOCAL_PEERCRED)
+    ).get()
+    let gid = withUnsafePointer(to: xucred.crGroups) { tuplePtr in
+      tuplePtr.withMemoryRebound(to: gid_t.self, capacity: 1) { $0.pointee }
     }
-  #elseif canImport(Glibc) || canImport(Musl)
-    do {
-      let ucred: LinuxUCred = try await provider.unsafeGetSocketOption(
-        level: SocketOptionLevel(SOL_SOCKET),
-        name: SocketOptionName(SO_PEERCRED)
-      ).get()
-      return .init(pid: ucred.pid, uid: ucred.uid, gid: ucred.gid)
-    } catch {
-      return nil
-    }
-  #else
+    return HTTP2ServerTransport.Posix.UDSCredentials(
+      pid: .init(rawValue: pid),
+      uid: .init(rawValue: xucred.crUID),
+      gid: .init(rawValue: gid)
+    )
+  } catch {
     return nil
+  }
+  #elseif canImport(Glibc) || canImport(Musl)
+  do {
+    let ucred: LinuxUCred = try await provider.unsafeGetSocketOption(
+      level: SocketOptionLevel(SOL_SOCKET),
+      name: SocketOptionName(SO_PEERCRED)
+    ).get()
+    return HTTP2ServerTransport.Posix.UDSCredentials(
+      pid: .init(rawValue: ucred.pid),
+      uid: .init(rawValue: ucred.uid),
+      gid: .init(rawValue: ucred.gid)
+    )
+  } catch {
+    return nil
+  }
+  #else
+  return nil
   #endif
 }
 
