@@ -29,12 +29,12 @@ import SwiftProtobuf
 // incompatible with the version of SwiftProtobuf to which you are linking.
 // Please ensure that you are building against the same version of the API
 // that was used to generate this file.
-fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAPIVersionCheck {
+fileprivate nonisolated struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAPIVersionCheck {
   struct _2: SwiftProtobuf.ProtobufAPIVersion_2 {}
   typealias Version = _2
 }
 
-package struct Grpc_Testing_ServerStats: Sendable {
+package nonisolated struct Grpc_Testing_ServerStats: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -76,7 +76,7 @@ package struct Grpc_Testing_ServerStats: Sendable {
 }
 
 /// Histogram params based on grpc/support/histogram.c
-package struct Grpc_Testing_HistogramParams: Sendable {
+package nonisolated struct Grpc_Testing_HistogramParams: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -93,7 +93,7 @@ package struct Grpc_Testing_HistogramParams: Sendable {
 }
 
 /// Histogram data based on grpc/support/histogram.c
-package struct Grpc_Testing_HistogramData: Sendable {
+package nonisolated struct Grpc_Testing_HistogramData: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -115,7 +115,7 @@ package struct Grpc_Testing_HistogramData: Sendable {
   package init() {}
 }
 
-package struct Grpc_Testing_RequestResultCount: Sendable {
+package nonisolated struct Grpc_Testing_RequestResultCount: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -129,7 +129,7 @@ package struct Grpc_Testing_RequestResultCount: Sendable {
   package init() {}
 }
 
-package struct Grpc_Testing_ClientStats: Sendable {
+package nonisolated struct Grpc_Testing_ClientStats: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -177,9 +177,9 @@ package struct Grpc_Testing_ClientStats: Sendable {
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
-fileprivate let _protobuf_package = "grpc.testing"
+fileprivate nonisolated let _protobuf_package = "grpc.testing"
 
-extension Grpc_Testing_ServerStats: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_ServerStats: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".ServerStats"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}time_elapsed\0\u{3}time_user\0\u{3}time_system\0\u{3}total_cpu_time\0\u{3}idle_cpu_time\0\u{3}cq_poll_count\0\u{3}core_stats\0")
 
@@ -243,7 +243,7 @@ extension Grpc_Testing_ServerStats: SwiftProtobuf.Message, SwiftProtobuf._Messag
   }
 }
 
-extension Grpc_Testing_HistogramParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_HistogramParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".HistogramParams"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}resolution\0\u{3}max_possible\0")
 
@@ -278,7 +278,7 @@ extension Grpc_Testing_HistogramParams: SwiftProtobuf.Message, SwiftProtobuf._Me
   }
 }
 
-extension Grpc_Testing_HistogramData: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_HistogramData: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".HistogramData"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}bucket\0\u{3}min_seen\0\u{3}max_seen\0\u{1}sum\0\u{3}sum_of_squares\0\u{1}count\0")
 
@@ -333,7 +333,7 @@ extension Grpc_Testing_HistogramData: SwiftProtobuf.Message, SwiftProtobuf._Mess
   }
 }
 
-extension Grpc_Testing_RequestResultCount: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_RequestResultCount: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".RequestResultCount"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}status_code\0\u{1}count\0")
 
@@ -368,7 +368,7 @@ extension Grpc_Testing_RequestResultCount: SwiftProtobuf.Message, SwiftProtobuf.
   }
 }
 
-extension Grpc_Testing_ClientStats: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_ClientStats: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".ClientStats"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}latencies\0\u{3}time_elapsed\0\u{3}time_user\0\u{3}time_system\0\u{3}request_results\0\u{3}cq_poll_count\0\u{3}core_stats\0")
 

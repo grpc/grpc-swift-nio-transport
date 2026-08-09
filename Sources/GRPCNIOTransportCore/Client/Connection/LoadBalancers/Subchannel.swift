@@ -250,7 +250,9 @@ extension Subchannel {
       self.event.continuation.yield(.connectivityStateChanged(.shutdown))
       connection.close()
 
-    case .emitShutdownAndFinish:
+    case .emitShutdownAndFinish(let backoffHandle):
+      // Cancel any in-progress backoff (there are no in-flight RPCs to drain when backing off).
+      backoffHandle?.cancel()
       // Connection closed because the load balancer asked it to, so notify the load balancer.
       self.event.continuation.yield(.connectivityStateChanged(.shutdown))
       // At this point there are no more events: close the event streams.
@@ -309,7 +311,11 @@ extension Subchannel {
           .transientFailure(cause: error)
         )
       )
-      group.addTask {
+      // Run the backoff as an individually cancellable task and remember its handle. If the
+      // subchannel is gracefully shut down while backing off, there are no in-flight RPCs to drain,
+      // so shutdown cancels this task rather than waiting for the (potentially long) backoff to
+      // elapse.
+      let handle = group.addCancellableTask {
         do {
           try await Task.sleep(for: duration, tolerance: .zero)
           self.input.continuation.yield(.backedOff)
@@ -319,6 +325,7 @@ extension Subchannel {
           ()
         }
       }
+      self.state.withLock { $0.setBackoffTaskHandle(handle) }
 
     case .finish:
       self.event.continuation.finish()
@@ -438,6 +445,10 @@ extension Subchannel {
       let addresses: [SocketAddress]
       var addressIterator: Array<SocketAddress>.Iterator
       var backoff: Backoff.Iterator
+      /// A handle to the in-progress backoff task, if the subchannel is currently waiting to retry
+      /// a connection. It's `nil` whenever a connection attempt is actually in-flight. Cancelling it
+      /// on graceful shutdown avoids waiting out the backoff when there are no RPCs to drain.
+      var backoffHandle: CancellableTaskHandle? = nil
     }
 
     struct Connected {
@@ -480,6 +491,7 @@ extension Subchannel {
       init(from state: ShuttingDown) {}
       init(from state: GoingAway) {}
       init(from state: NotConnected) {}
+      init(from state: Connecting) {}
     }
 
     mutating func makeConnection(
@@ -520,7 +532,7 @@ extension Subchannel {
 
     enum OnClose {
       case none
-      case emitShutdownAndFinish
+      case emitShutdownAndFinish(cancelling: CancellableTaskHandle?)
       case emitShutdownAndClose(Connection)
       case emitShutdown
     }
@@ -531,12 +543,20 @@ extension Subchannel {
       switch self {
       case .notConnected(let state):
         self = .shutDown(ShutDown(from: state))
-        onShutDown = .emitShutdownAndFinish
+        onShutDown = .emitShutdownAndFinish(cancelling: nil)
 
       case .connecting(let state):
-        // Only emit the shutdown; there's no connection to close yet.
-        self = .shuttingDown(ShuttingDown(from: state))
-        onShutDown = .emitShutdown
+        if let backoffHandle = state.backoffHandle {
+          // The subchannel is waiting to retry a connection. There's no connection to close and no
+          // in-flight RPCs to drain, so cancel the backoff and shut down now rather than waiting for
+          // it to elapse.
+          self = .shutDown(ShutDown(from: state))
+          onShutDown = .emitShutdownAndFinish(cancelling: backoffHandle)
+        } else {
+          // A connection attempt is in-flight; emit the shutdown and wait for it to complete.
+          self = .shuttingDown(ShuttingDown(from: state))
+          onShutDown = .emitShutdown
+        }
 
       case .connected(let state):
         self = .shuttingDown(ShuttingDown(from: state))
@@ -551,6 +571,21 @@ extension Subchannel {
       }
 
       return onShutDown
+    }
+
+    /// Records the handle of the in-progress backoff task so that graceful shutdown can cancel it
+    /// instead of waiting for the backoff to elapse.
+    ///
+    /// This must only be called immediately after ``connectFailed(connector:authority:)`` returns
+    /// `.backoff`, when the subchannel is guaranteed to be `.connecting`.
+    mutating func setBackoffTaskHandle(_ handle: CancellableTaskHandle) {
+      switch self {
+      case .connecting(var state):
+        state.backoffHandle = handle
+        self = .connecting(state)
+      case .notConnected, .connected, .goingAway, .shuttingDown, .shutDown:
+        fatalError("Invalid state")
+      }
     }
 
     enum OnConnectSucceeded {
@@ -633,7 +668,10 @@ extension Subchannel {
 
     mutating func backedOff() -> OnBackedOff {
       switch self {
-      case .connecting(let state):
+      case .connecting(var state):
+        // The backoff completed; a connection attempt is about to resume, so there's no longer a
+        // backoff task to cancel.
+        state.backoffHandle = nil
         self = .connecting(state)
         return .connect(state.connection)
 

@@ -29,12 +29,12 @@ import SwiftProtobuf
 // incompatible with the version of SwiftProtobuf to which you are linking.
 // Please ensure that you are building against the same version of the API
 // that was used to generate this file.
-fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAPIVersionCheck {
+fileprivate nonisolated struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAPIVersionCheck {
   struct _2: SwiftProtobuf.ProtobufAPIVersion_2 {}
   typealias Version = _2
 }
 
-package struct Grpc_Testing_ByteBufferParams: Sendable {
+package nonisolated struct Grpc_Testing_ByteBufferParams: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -48,7 +48,7 @@ package struct Grpc_Testing_ByteBufferParams: Sendable {
   package init() {}
 }
 
-package struct Grpc_Testing_SimpleProtoParams: Sendable {
+package nonisolated struct Grpc_Testing_SimpleProtoParams: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -64,7 +64,7 @@ package struct Grpc_Testing_SimpleProtoParams: Sendable {
 
 /// TODO (vpai): Fill this in once the details of complex, representative
 ///              protos are decided
-package struct Grpc_Testing_ComplexProtoParams: Sendable {
+package nonisolated struct Grpc_Testing_ComplexProtoParams: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -74,7 +74,7 @@ package struct Grpc_Testing_ComplexProtoParams: Sendable {
   package init() {}
 }
 
-package struct Grpc_Testing_PayloadConfig: Sendable {
+package nonisolated struct Grpc_Testing_PayloadConfig: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -107,7 +107,7 @@ package struct Grpc_Testing_PayloadConfig: Sendable {
 
   package var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  package enum OneOf_Payload: Equatable, Sendable {
+  package nonisolated enum OneOf_Payload: Equatable, Sendable {
     case bytebufParams(Grpc_Testing_ByteBufferParams)
     case simpleParams(Grpc_Testing_SimpleProtoParams)
     case complexParams(Grpc_Testing_ComplexProtoParams)
@@ -119,9 +119,9 @@ package struct Grpc_Testing_PayloadConfig: Sendable {
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
-fileprivate let _protobuf_package = "grpc.testing"
+fileprivate nonisolated let _protobuf_package = "grpc.testing"
 
-extension Grpc_Testing_ByteBufferParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_ByteBufferParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".ByteBufferParams"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}req_size\0\u{3}resp_size\0")
 
@@ -156,7 +156,7 @@ extension Grpc_Testing_ByteBufferParams: SwiftProtobuf.Message, SwiftProtobuf._M
   }
 }
 
-extension Grpc_Testing_SimpleProtoParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_SimpleProtoParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".SimpleProtoParams"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}req_size\0\u{3}resp_size\0")
 
@@ -191,7 +191,7 @@ extension Grpc_Testing_SimpleProtoParams: SwiftProtobuf.Message, SwiftProtobuf._
   }
 }
 
-extension Grpc_Testing_ComplexProtoParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_ComplexProtoParams: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".ComplexProtoParams"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap()
 
@@ -210,7 +210,7 @@ extension Grpc_Testing_ComplexProtoParams: SwiftProtobuf.Message, SwiftProtobuf.
   }
 }
 
-extension Grpc_Testing_PayloadConfig: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+nonisolated extension Grpc_Testing_PayloadConfig: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   package static let protoMessageName: String = _protobuf_package + ".PayloadConfig"
   package static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}bytebuf_params\0\u{3}simple_params\0\u{3}complex_params\0")
 

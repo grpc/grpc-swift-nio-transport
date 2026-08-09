@@ -126,7 +126,15 @@ extension HTTP2ServerTransport {
         let serverChannel = try await ServerBootstrap(group: self.eventLoopGroup)
           .serverChannelOption(.socketOption(.so_reuseaddr), value: 1)
           .serverChannelInitializer { channel in
+            #if canImport(Darwin)
+            channel.eventLoop.makeCompletedFuture {
+              try channel.pipeline.syncOperations.addHandler(SwallowFcntlFailedErrorHandler())
+            }.flatMap {
+              listenerConfigurator.configure(channel: channel)
+            }
+            #else
             listenerConfigurator.configure(channel: channel)
+            #endif
           }
           .bind(to: self.address) { channel in
             channel.eventLoop.makeCompletedFuture {

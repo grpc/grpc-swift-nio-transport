@@ -35,7 +35,7 @@ Snippets/*
 dev/git.commit.template
 dev/version-bump.commit.template
 .unacceptablelanguageignore
-IntegrationTests/grpc-performance-tests/Sources/Generated/*
+IntegrationTests/grpc-performance-tests/Sources/WorkerService/Generated/*
 LICENSE
 **/*.swift
 Sources/CGRPCNIOTransportZlib/*
