@@ -273,13 +273,15 @@ extension HTTP2ServerTransport {
           }
         } catch {}
 
-        // `channel.remoteAddress` can't report a vsock peer because NIO's `SocketAddress` has no
-        // vsock representation, so read the peer address from the channel option instead. It's
-        // rejected for other address families and unsupported on non-POSIX channels, both of which
-        // leave `vsockCredentials` nil.
-        if let vsockAddress = try? await channel.getOption(.remoteVsockAddress).get() {
-          context.vsockCredentials = HTTP2ServerTransport.Posix.VsockCredentials(
-            cid: GRPCNIOTransportCore.SocketAddress.VirtualSocket.ContextID(
+        // NIO's `SocketAddress` has no vsock representation, which has two consequences here: a
+        // vsock channel is exactly the case where `localAddress` is absent, so that's the cheap
+        // test for whether it's worth asking at all; and the peer's address has to come from the
+        // channel option rather than from `remoteAddress`.
+        if channel.localAddress == nil,
+          let vsockAddress = try? await channel.getOption(.remoteVsockAddress).get()
+        {
+          context.virtualSocketCredentials = VirtualSocketCredentials(
+            contextID: GRPCNIOTransportCore.SocketAddress.VirtualSocket.ContextID(
               rawValue: vsockAddress.cid.rawValue
             )
           )
@@ -320,25 +322,14 @@ extension HTTP2ServerTransport.Posix {
     @available(gRPCSwiftNIOTransport 2.2, *)
     public var peerCertificateChain: X509.ValidatedCertificateChain?
 
-    /// The peer's VSOCK context ID (CID) when the transport is bound to a
-    /// vsock address. `nil` for non-vsock channels. Read from the connection's
-    /// peer address, so it reflects the CID the vsock layer reported at accept
-    /// time.
+    /// The credentials of the peer, when the transport is bound to a virtual socket ('vsock')
+    /// address.
+    ///
+    /// This is `nil` for connections which aren't virtual sockets.
     @available(gRPCSwiftNIOTransport 2.10, *)
-    public var vsockCredentials: VsockCredentials?
+    public var virtualSocketCredentials: VirtualSocketCredentials?
 
     public init() {
-    }
-  }
-
-  /// The peer's VSOCK context ID for a virtual-socket connection, taken from the connection's
-  /// peer address.
-  @available(gRPCSwiftNIOTransport 2.10, *)
-  public struct VsockCredentials: Hashable, Sendable {
-    public var cid: GRPCNIOTransportCore.SocketAddress.VirtualSocket.ContextID
-
-    public init(cid: GRPCNIOTransportCore.SocketAddress.VirtualSocket.ContextID) {
-      self.cid = cid
     }
   }
 

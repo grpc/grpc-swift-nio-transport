@@ -1,5 +1,5 @@
 /*
- * Copyright 2024, gRPC Authors All rights reserved.
+ * Copyright 2026, gRPC Authors All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,13 @@
  * limitations under the License.
  */
 
-import NIOPosix
-import XCTest
+/// Identifies the peer at the far end of a virtual socket ('vsock') connection.
+@available(gRPCSwiftNIOTransport 2.10, *)
+public struct VirtualSocketCredentials: Hashable, Sendable {
+  /// The context ID of the peer.
+  public var contextID: SocketAddress.VirtualSocket.ContextID
 
-extension XCTestCase {
-  func vsockAvailable() -> Bool {
-    let fd: CInt
-    #if os(Linux)
-    fd = socket(AF_VSOCK, CInt(SOCK_STREAM.rawValue), 0)
-    #elseif canImport(Darwin)
-    fd = socket(AF_VSOCK, SOCK_STREAM, 0)
-    #else
-    fd = -1
-    #endif
-    if fd == -1 { return false }
-    precondition(close(fd) == 0)
-    return true
+  public init(contextID: SocketAddress.VirtualSocket.ContextID) {
+    self.contextID = contextID
   }
 }
