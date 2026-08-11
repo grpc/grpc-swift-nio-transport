@@ -273,7 +273,7 @@ extension HTTP2ServerTransport {
           }
         } catch {}
 
-        context.udsCredentials = await makeUDSCredentials(channel: channel)
+        context.unixDomainSocketCredentials = await channel.unixDomainSocketPeerCredentials()
 
         return context
       }
@@ -310,78 +310,15 @@ extension HTTP2ServerTransport.Posix {
     @available(gRPCSwiftNIOTransport 2.2, *)
     public var peerCertificateChain: X509.ValidatedCertificateChain?
 
-    /// Kernel-validated peer credentials of the connecting process when the
-    /// transport is bound to a Unix domain socket. `nil` for non-UDS
-    /// channels and on platforms or socket types where peer credentials are
-    /// unavailable.
+    /// Kernel-validated credentials of the peer process, when the transport is bound to a Unix
+    /// domain socket.
+    ///
+    /// This is `nil` for connections which aren't Unix domain sockets, and on platforms and socket
+    /// types where peer credentials are unavailable.
     @available(gRPCSwiftNIOTransport 2.10, *)
-    public var udsCredentials: UDSCredentials?
+    public var unixDomainSocketCredentials: UnixDomainSocketCredentials?
 
     public init() {
-    }
-  }
-
-  /// Kernel-validated peer credentials reported by the operating system at
-  /// connect time for a Unix domain socket. They reflect the peer process as
-  /// recorded by the kernel when the connection was established; they are not
-  /// re-read per request.
-  @available(gRPCSwiftNIOTransport 2.10, *)
-  public struct UDSCredentials: Hashable, Sendable {
-    /// The process ID of the peer process.
-    public var pid: ProcessID
-
-    /// The user ID of the peer process.
-    public var uid: UserID
-
-    /// The group ID of the peer process.
-    public var gid: GroupID
-
-    public init(pid: ProcessID, uid: UserID, gid: GroupID) {
-      self.pid = pid
-      self.uid = uid
-      self.gid = gid
-    }
-  }
-
-  /// The ID of a process.
-  @available(gRPCSwiftNIOTransport 2.10, *)
-  public struct ProcessID: Hashable, Sendable, RawRepresentable, ExpressibleByIntegerLiteral {
-    public var rawValue: Int32
-
-    public init(rawValue: Int32) {
-      self.rawValue = rawValue
-    }
-
-    public init(integerLiteral value: Int32) {
-      self.init(rawValue: value)
-    }
-  }
-
-  /// The ID of a user.
-  @available(gRPCSwiftNIOTransport 2.10, *)
-  public struct UserID: Hashable, Sendable, RawRepresentable, ExpressibleByIntegerLiteral {
-    public var rawValue: UInt32
-
-    public init(rawValue: UInt32) {
-      self.rawValue = rawValue
-    }
-
-    public init(integerLiteral value: UInt32) {
-      self.init(rawValue: value)
-    }
-  }
-
-  /// The ID of a group.
-  @available(gRPCSwiftNIOTransport 2.10, *)
-  public struct GroupID: Hashable, Sendable, RawRepresentable, ExpressibleByIntegerLiteral {
-    public var rawValue: UInt32
-
-    public init(rawValue: UInt32) {
-      self.rawValue = rawValue
-    }
-
-    public init(integerLiteral value: UInt32) {
-      self.init(rawValue: value)
     }
   }
 

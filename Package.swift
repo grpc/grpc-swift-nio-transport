@@ -100,16 +100,6 @@ let targets: [Target] = [
     ]
   ),
 
-  // C-module exposing Linux declarations which glibc guards behind `_GNU_SOURCE`, such as
-  // `struct ucred` and `SO_PEERCRED`.
-  .target(
-    name: "CGRPCNIOTransportLinux",
-    dependencies: [],
-    cSettings: [
-      .define("_GNU_SOURCE")
-    ]
-  ),
-
   // Core module containing shared components for the NIOPosix and NIOTS variants.
   .target(
     name: "GRPCNIOTransportCore",
@@ -138,13 +128,18 @@ let targets: [Target] = [
     name: "GRPCNIOTransportHTTP2Posix",
     dependencies: [
       .target(name: "GRPCNIOTransportCore"),
-      .target(name: "CGRPCNIOTransportLinux", condition: .when(platforms: [.linux])),
       .product(name: "GRPCCore", package: "grpc-swift-2"),
       .product(name: "NIOPosix", package: "swift-nio"),
       .product(name: "NIOSSL", package: "swift-nio-ssl"),
       .product(name: "X509", package: "swift-certificates"),
       .product(name: "SwiftASN1", package: "swift-asn1"),
       .product(name: "NIOCertificateReloading", package: "swift-nio-extras"),
+    ],
+    cSettings: [
+      // glibc only declares `struct ucred` and `SO_PEERCRED` when `_GNU_SOURCE` is defined, and
+      // the Glibc module doesn't set it. Defining it here also applies it to the Clang importer
+      // used when compiling this target's Swift sources.
+      .define("_GNU_SOURCE", .when(platforms: [.linux]))
     ],
     swiftSettings: defaultSwiftSettings
   ),
