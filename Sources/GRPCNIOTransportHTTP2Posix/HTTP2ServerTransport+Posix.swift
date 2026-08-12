@@ -281,6 +281,8 @@ extension HTTP2ServerTransport {
           }
         } catch {}
 
+        context.unixDomainSocketCredentials = await channel.unixDomainSocketPeerCredentials()
+
         return context
       }
     }
@@ -315,6 +317,14 @@ extension HTTP2ServerTransport.Posix {
     /// The validated peer certificate chain from the mTLS handshake. This is only available when using a custom verification callback.
     @available(gRPCSwiftNIOTransport 2.2, *)
     public var peerCertificateChain: X509.ValidatedCertificateChain?
+
+    /// Kernel-validated credentials of the peer process, when the transport is bound to a Unix
+    /// domain socket.
+    ///
+    /// This is `nil` for connections which aren't Unix domain sockets, and on platforms and socket
+    /// types where peer credentials are unavailable.
+    @available(gRPCSwiftNIOTransport 2.10, *)
+    public var unixDomainSocketCredentials: UnixDomainSocketCredentials?
 
     public init() {
     }

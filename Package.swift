@@ -71,7 +71,7 @@ let dependencies: [Package.Dependency] = [
 
 // This adds some build settings which allow us to map "@available(gRPCSwiftNIOTransport 2.x, *)" to
 // the appropriate OS platforms.
-let nextMinorVersion = 9
+let nextMinorVersion = 10
 let availabilitySettings: [SwiftSetting] = (0 ... nextMinorVersion).map { minor in
   let name = "gRPCSwiftNIOTransport"
   let version = "2.\(minor)"
@@ -134,6 +134,12 @@ let targets: [Target] = [
       .product(name: "X509", package: "swift-certificates"),
       .product(name: "SwiftASN1", package: "swift-asn1"),
       .product(name: "NIOCertificateReloading", package: "swift-nio-extras"),
+    ],
+    cSettings: [
+      // glibc only declares `struct ucred` and `SO_PEERCRED` when `_GNU_SOURCE` is defined, and
+      // the Glibc module doesn't set it. Defining it here also applies it to the Clang importer
+      // used when compiling this target's Swift sources.
+      .define("_GNU_SOURCE", .when(platforms: [.linux]))
     ],
     swiftSettings: defaultSwiftSettings
   ),
