@@ -38,8 +38,8 @@ let dependencies: [Package.Dependency] = [
     from: "2.3.0"
   ),
   .package(
-    url: "https://github.com/apple/swift-nio.git",
-    from: "2.96.0"
+    url: "https://github.com/VictorDebray/swift-nio.git",
+    revision: "a2c0680bce986fc6a6bb880915359c35c0c2ec58"
   ),
   .package(
     url: "https://github.com/apple/swift-nio-http2.git",
@@ -71,7 +71,7 @@ let dependencies: [Package.Dependency] = [
 
 // This adds some build settings which allow us to map "@available(gRPCSwiftNIOTransport 2.x, *)" to
 // the appropriate OS platforms.
-let nextMinorVersion = 9
+let nextMinorVersion = 10
 let availabilitySettings: [SwiftSetting] = (0 ... nextMinorVersion).map { minor in
   let name = "gRPCSwiftNIOTransport"
   let version = "2.\(minor)"
