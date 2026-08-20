@@ -336,13 +336,14 @@ extension HTTP2ServerTransport {
           }
         } catch {}
 
-        // NIO's `SocketAddress` has no vsock representation, which has two consequences here: a
-        // vsock channel is exactly the case where `localAddress` is absent, so that's the cheap
-        // test for whether it's worth asking at all; and the peer's address has to come from the
-        // channel option rather than from `remoteAddress`.
-        if channel.localAddress == nil,
-          let vsockAddress = try? await channel.getOption(.remoteVsockAddress).get()
-        {
+        // NIO's `SocketAddress` has no vsock representation, so the peer's address has to come from
+        // the channel option rather than from `remoteAddress`.
+        //
+        // The option validates the socket's address family, so asking is how we find out whether
+        // this is a vsock connection: it's rejected for anything else. This runs once per
+        // connection, so a connection which isn't a vsock connection pays for one rejected read
+        // rather than one per RPC.
+        if let vsockAddress = try? await channel.getOption(.remoteVsockAddress).get() {
           context.virtualSocketCredentials = VirtualSocketCredentials(
             contextID: GRPCNIOTransportCore.SocketAddress.VirtualSocket.ContextID(
               rawValue: vsockAddress.cid.rawValue
@@ -385,10 +386,10 @@ extension HTTP2ServerTransport.Posix {
     @available(gRPCSwiftNIOTransport 2.2, *)
     public var peerCertificateChain: X509.ValidatedCertificateChain?
 
-    /// The credentials of the peer, when the transport is bound to a virtual socket ('vsock')
-    /// address.
+    /// The credentials of the peer, when the connection is a virtual socket ('vsock') connection.
     ///
-    /// This is `nil` for connections which aren't virtual sockets.
+    /// This is `nil` for connections which aren't virtual sockets, and on platforms and socket
+    /// types where the peer's address can't be read.
     @available(gRPCSwiftNIOTransport 2.10, *)
     public var virtualSocketCredentials: VirtualSocketCredentials?
 
