@@ -57,20 +57,42 @@ extension HTTP2ServerTransport {
   public struct Posix: ServerTransport, ListeningServerTransport {
     public typealias Bytes = GRPCNIOTransportBytes
 
+    /// Carries the address a vsock listener bound to from the listener factory back to
+    /// ``listeningAddress``.
+    ///
+    /// NIO's `SocketAddress` can't represent a vsock address, so a vsock listening channel has no
+    /// `localAddress` for the generic transport to report. The bound address has to be read from
+    /// the channel with a vsock-specific option instead, which only the factory is in a position
+    /// to do.
+    fileprivate final class BoundVirtualSocketAddress: Sendable {
+      private let address = Mutex<GRPCNIOTransportCore.SocketAddress?>(nil)
+
+      var value: GRPCNIOTransportCore.SocketAddress? {
+        self.address.withLock { $0 }
+      }
+
+      func set(_ newValue: GRPCNIOTransportCore.SocketAddress) {
+        self.address.withLock { $0 = newValue }
+      }
+    }
+
     fileprivate struct ListenerFactory: HTTP2ServerTransport.ListenerFactory {
       private let address: Address
       private let transportSecurity: TransportSecurity
+      private let boundVirtualSocketAddress: BoundVirtualSocketAddress
 
       fileprivate let eventLoopGroup: any EventLoopGroup
 
       init(
         address: Address,
         transportSecurity: TransportSecurity,
-        eventLoopGroup: any EventLoopGroup
+        eventLoopGroup: any EventLoopGroup,
+        boundVirtualSocketAddress: BoundVirtualSocketAddress
       ) {
         self.address = address
         self.transportSecurity = transportSecurity
         self.eventLoopGroup = eventLoopGroup
+        self.boundVirtualSocketAddress = boundVirtualSocketAddress
       }
 
       enum Address {
@@ -156,12 +178,34 @@ extension HTTP2ServerTransport {
             }
           }
 
+        // A vsock listener bound to `Port/any` only learns its port from the kernel, and NIO's
+        // `SocketAddress` can't carry it back, so read it off the channel and stash it for
+        // `listeningAddress`.
+        //
+        // The option validates the socket's address family, so it reports whether this is a vsock
+        // listener at the same time as reporting the address and there's nothing to work out
+        // beforehand. It's one syscall per listener, and it's the only thing which can report the
+        // address of a vsock listener bound from a descriptor.
+        if let bound = try? await serverChannel.channel.getOption(.localVsockAddress).get() {
+          self.boundVirtualSocketAddress.set(
+            .vsock(
+              contextID: GRPCNIOTransportCore.SocketAddress.VirtualSocket.ContextID(
+                rawValue: bound.cid.rawValue
+              ),
+              port: GRPCNIOTransportCore.SocketAddress.VirtualSocket.Port(
+                rawValue: bound.port.rawValue
+              )
+            )
+          )
+        }
+
         return serverChannel
       }
     }
 
     private let underlyingTransport: Custom<ListenerFactory>
     private let address: ListenerFactory.Address
+    private let boundVirtualSocketAddress: BoundVirtualSocketAddress
 
     /// The listening address for this server transport.
     ///
@@ -176,10 +220,18 @@ extension HTTP2ServerTransport {
           return address
         }
 
+        // The channel had no local address, which is what a vsock listener looks like: NIO's
+        // `SocketAddress` can't represent one, so the factory read the bound address off the
+        // channel instead. That reports the port the kernel assigned when `Port/any` was asked
+        // for; the context ID is whatever was bound, so it's still the wildcard for a wildcard
+        // bind.
+        if let address = self.boundVirtualSocketAddress.value {
+          return address
+        }
+
         switch self.address {
         case .socketAddress(let socketAddress) where socketAddress.virtualSocket != nil:
-          // The channel didn't have a local address. This can happen for vsock channels
-          // because NIO's SocketAddress can't represent vsock addresses.
+          // Reading the bound address failed, so fall back to what was asked for.
           return socketAddress
 
         case .listeningSocket, .socketAddress:
@@ -246,6 +298,8 @@ extension HTTP2ServerTransport {
       eventLoopGroup: MultiThreadedEventLoopGroup = .singletonMultiThreadedEventLoopGroup
     ) {
       self.address = address
+      let boundVirtualSocketAddress = BoundVirtualSocketAddress()
+      self.boundVirtualSocketAddress = boundVirtualSocketAddress
       self.underlyingTransport = Custom(
         eventLoopGroup: eventLoopGroup,
         quiescingHelper: ServerQuiescingHelper(group: eventLoopGroup),
@@ -259,7 +313,8 @@ extension HTTP2ServerTransport {
         listenerFactory: ListenerFactory(
           address: address,
           transportSecurity: transportSecurity,
-          eventLoopGroup: eventLoopGroup
+          eventLoopGroup: eventLoopGroup,
+          boundVirtualSocketAddress: boundVirtualSocketAddress
         )
       ) { channel in
         var context = HTTP2ServerTransport.Posix.Context()
