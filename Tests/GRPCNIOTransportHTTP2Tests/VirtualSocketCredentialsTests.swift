@@ -57,9 +57,6 @@ struct VirtualSocketCredentialsTests {
   )
   @available(gRPCSwiftNIOTransport 2.10, *)
   func credentialsOverVirtualSocket() async throws {
-    // `VMADDR_CID_LOCAL`, which routes to the host that generated the packets. gRPC's `ContextID`
-    // exposes `any`, `hypervisor` and `host`, but not `local`.
-    let localContextID = GRPCNIOTransportCore.SocketAddress.VirtualSocket.ContextID(rawValue: 1)
     // NIO's `SocketAddress` can't represent a vsock address, so the server's listening address is
     // whatever it was configured with and binding `.any` would leave the client with no port to
     // connect to. That forces a fixed port, so use one unlikely to be in use.
@@ -70,7 +67,7 @@ struct VirtualSocketCredentialsTests {
         context.transportSpecific as? HTTP2ServerTransport.Posix.Context
       )
       let credentials = try #require(posixContext.virtualSocketCredentials)
-      #expect(credentials.contextID == localContextID)
+      #expect(credentials.contextID == .local)
 
       return HelloResponse(message: "Hello, \(request.name)!")
     }
@@ -78,7 +75,7 @@ struct VirtualSocketCredentialsTests {
     try await self.runRPC(
       against: service,
       boundTo: .vsock(contextID: .any, port: port),
-      target: { _ in .vsock(contextID: localContextID, port: port) }
+      target: { _ in .vsock(contextID: .local, port: port) }
     )
   }
 
