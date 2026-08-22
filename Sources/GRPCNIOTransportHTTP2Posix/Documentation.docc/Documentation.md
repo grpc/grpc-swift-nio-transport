@@ -50,10 +50,3 @@ try await withGRPCServer(
   // ...
 }
 ```
-
-## Topics
-
-### Transports
-
-- ``HTTP2ClientTransport/Posix``
-- ``HTTP2ServerTransport/Posix``
