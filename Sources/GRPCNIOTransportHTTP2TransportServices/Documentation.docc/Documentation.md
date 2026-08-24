@@ -1,17 +1,16 @@
 # ``GRPCNIOTransportHTTP2TransportServices``
 
-HTTP/2 client and server transports built on top of SwiftNIO's `NIOTransportServices` module.
+HTTP/2 client and server transports built on top of SwiftNIO's Transport Services networking layer.
 
 ## Overview
 
-This module provides HTTP/2 transports for client and server built on top SwiftNIO's
-`NIOTransportServices` module which provide TLS via Apple's Network framework.
+This module provides HTTP/2 transports for client and server built on top of SwiftNIO's
+`NIOTransportServices` module which provides TLS via Apple's Network framework.
 
-The two transport types are:
-- `HTTP2ClientTransport.TransportServices`, and
-- `HTTP2ServerTransport.TransportServices`.
+The two transport types are `HTTP2ClientTransport.TransportServices` and
+`HTTP2ServerTransport.TransportServices`.
 
-### Availability
+### Supported platforms
 
 These transports are available on the following platforms:
 
@@ -19,7 +18,6 @@ These transports are available on the following platforms:
 - iOS 18.0+
 - tvOS 18.0+
 - watchOS 11.0+
-
 
 ### Getting started
 

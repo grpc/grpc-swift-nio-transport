@@ -1,17 +1,15 @@
 # ``GRPCNIOTransportHTTP2Posix``
 
-HTTP/2 client and server transports built on top of SwiftNIO's `NIOPosix` module.
+HTTP/2 client and server transports built on top of SwiftNIO's Posix networking layer.
 
 ## Overview
 
-This module provides HTTP/2 transports for client and server built on top SwiftNIO's `NIOPosix`
+This module provides HTTP/2 transports for client and server built on top of SwiftNIO's `NIOPosix`
 module and uses SwiftNIO's `NIOSSL` module to provide TLS.
 
-The two transport types are:
-- `HTTP2ClientTransport.Posix`, and
-- `HTTP2ServerTransport.Posix`.
+The two transport types are `HTTP2ClientTransport.Posix` and `HTTP2ServerTransport.Posix`.
 
-### Availability
+### Supported platforms
 
 These transports are available on the following platforms:
 
@@ -20,7 +18,6 @@ These transports are available on the following platforms:
 - iOS 18.0+
 - tvOS 18.0+
 - watchOS 11.0+
-
 
 ### Getting started
 

@@ -30,13 +30,14 @@ extension HTTP2ServerTransport {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ServerTransport.Config {
+  /// Compression configuration for the server transport.
   public struct Compression: Sendable, Hashable {
     /// Compression algorithms enabled for inbound messages.
     ///
     /// - Note: `CompressionAlgorithm.none` is always supported, even if it isn't set here.
     public var enabledAlgorithms: CompressionAlgorithmSet
 
-    /// Creates a new compression configuration.
+    /// Creates a compression configuration.
     ///
     /// - SeeAlso: ``defaults``.
     public init(enabledAlgorithms: CompressionAlgorithmSet) {
@@ -49,6 +50,7 @@ extension HTTP2ServerTransport.Config {
     }
   }
 
+  /// Keepalive configuration for the server transport.
   public struct Keepalive: Sendable, Hashable {
     /// The amount of time to wait after reading data before sending a keepalive ping.
     public var time: Duration
@@ -59,7 +61,7 @@ extension HTTP2ServerTransport.Config {
     /// Configuration for how the server enforces client keepalive.
     public var clientBehavior: ClientKeepaliveBehavior
 
-    /// Creates a new keepalive configuration.
+    /// Creates a keepalive configuration.
     public init(
       time: Duration,
       timeout: Duration,
@@ -70,7 +72,9 @@ extension HTTP2ServerTransport.Config {
       self.clientBehavior = clientBehavior
     }
 
-    /// Default values. The time after reading data a ping should be sent defaults to 2 hours, the timeout for
+    /// The default keepalive ping interval and timeout for the server transport.
+    ///
+    /// The time after reading data a ping should be sent defaults to 2 hours, the timeout for
     /// keepalive pings defaults to 20 seconds, pings are not permitted when no calls are in progress, and
     /// the minimum allowed interval for clients to send pings defaults to 5 minutes.
     public static var defaults: Self {
@@ -82,16 +86,18 @@ extension HTTP2ServerTransport.Config {
     }
   }
 
+  /// Configuration for how the server enforces client keepalive.
   public struct ClientKeepaliveBehavior: Sendable, Hashable {
     /// The minimum allowed interval the client is allowed to send keep-alive pings.
-    /// Pings more frequent than this interval count as 'strikes' and the connection is closed if there are
+    ///
+    /// Pings more frequent than this interval count as “strikes” and the connection is closed if there are
     /// too many strikes.
     public var minPingIntervalWithoutCalls: Duration
 
     /// Whether the server allows the client to send keepalive pings when there are no calls in progress.
     public var allowWithoutCalls: Bool
 
-    /// Creates a new configuration for permitted client keepalive behavior.
+    /// Creates a configuration for permitted client keepalive behavior.
     public init(
       minPingIntervalWithoutCalls: Duration,
       allowWithoutCalls: Bool
@@ -100,14 +106,16 @@ extension HTTP2ServerTransport.Config {
       self.allowWithoutCalls = allowWithoutCalls
     }
 
-    /// Default values. The time after reading data a ping should be sent defaults to 2 hours, the timeout for
-    /// keepalive pings defaults to 20 seconds, pings are not permitted when no calls are in progress, and
-    /// the minimum allowed interval for clients to send pings defaults to 5 minutes.
+    /// The default policy for client keepalive pings sent without an active call.
+    ///
+    /// The minimum allowed interval for clients to send pings without an active
+    /// call defaults to 5 minutes, and pings without an active call aren't permitted.
     public static var defaults: Self {
       Self(minPingIntervalWithoutCalls: .seconds(5 * 60), allowWithoutCalls: false)
     }
   }
 
+  /// Connection management configuration for the server transport.
   public struct Connection: Sendable, Hashable {
     /// The maximum amount of time a connection may exist before being gracefully closed.
     public var maxAge: Duration?
@@ -170,8 +178,10 @@ extension HTTP2ServerTransport.Config {
       self.flushCoalescing = flushCoalescing
     }
 
-    /// Default values. The max connection age, max grace time, and max idle time default to
-    /// `nil` (i.e. infinite). See ``HTTP2ServerTransport/Config/Keepalive/defaults`` for keepalive
+    /// The default connection lifetime and idle time limits for the server transport.
+    ///
+    /// The max connection age, max grace time, and max idle time default to
+    /// `nil` (that is, infinite). See ``HTTP2ServerTransport/Config/Keepalive/defaults`` for keepalive
     /// defaults. Flush coalescing is enabled with default values.
     public static var defaults: Self {
       Self(
@@ -184,6 +194,7 @@ extension HTTP2ServerTransport.Config {
     }
   }
 
+  /// HTTP/2-level configuration for the server transport.
   public struct HTTP2: Sendable, Hashable {
     /// The maximum frame size to be used in an HTTP/2 connection.
     public var maxFrameSize: Int
@@ -196,6 +207,7 @@ extension HTTP2ServerTransport.Config {
     /// The number of concurrent streams on the HTTP/2 connection.
     public var maxConcurrentStreams: Int?
 
+    /// Creates an HTTP/2 configuration.
     public init(
       maxFrameSize: Int,
       targetWindowSize: Int,
@@ -206,7 +218,9 @@ extension HTTP2ServerTransport.Config {
       self.maxConcurrentStreams = maxConcurrentStreams
     }
 
-    /// Default values. The max frame size defaults to 2^14, the target window size defaults to 2^16-1, and
+    /// The default HTTP/2 frame and window sizes, with unlimited concurrent streams.
+    ///
+    /// The max frame size defaults to 2^14, the target window size defaults to 2^16-1, and
     /// the max concurrent streams default to infinite.
     public static var defaults: Self {
       Self(
@@ -217,15 +231,19 @@ extension HTTP2ServerTransport.Config {
     }
   }
 
+  /// RPC-level configuration for the server transport.
   public struct RPC: Sendable, Hashable {
     /// The maximum request payload size.
     public var maxRequestPayloadSize: Int
 
+    /// Creates an RPC configuration.
     public init(maxRequestPayloadSize: Int) {
       self.maxRequestPayloadSize = maxRequestPayloadSize
     }
 
-    /// Default values. Maximum request payload size defaults to 4MiB.
+    /// The default maximum request payload size.
+    ///
+    /// Maximum request payload size defaults to 4MiB.
     public static var defaults: Self {
       Self(maxRequestPayloadSize: 4 * 1024 * 1024)
     }
@@ -242,12 +260,13 @@ extension HTTP2ServerTransport.Config {
     /// A callback invoked when the server starts listening for new TCP connections.
     public var onBindTCPListener: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
 
-    /// A callback invoked with each new accepted TPC connection.
+    /// A callback invoked with each new accepted TCP connection.
     public var onAcceptTCPConnection: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
 
     /// A callback invoked with each accepted HTTP/2 stream.
     public var onAcceptHTTP2Stream: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?
 
+    /// Creates a set of channel debugging callbacks.
     public init(
       onBindTCPListener: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?,
       onAcceptTCPConnection: (@Sendable (_ channel: any Channel) -> EventLoopFuture<Void>)?,
@@ -273,7 +292,7 @@ extension HTTP2ServerTransport.Config.Connection {
   /// until one of the following conditions is met:
   /// 1. ``maxFlushDelay`` has elapsed since a flush was first requested,
   /// 2. At least ``maxBytes`` bytes have been written since the previous flush, or
-  /// 3. The channel becomes unwritable (i.e. the outbound buffer has hit the high-water mark).
+  /// 3. The channel becomes unwritable (that is, the outbound buffer has hit the high-water mark).
   ///
   /// This means that under high load, writes naturally accumulate and are flushed together in
   /// fewer, larger batches. This reduces per-write overhead and typically improves both throughput
@@ -294,7 +313,7 @@ extension HTTP2ServerTransport.Config.Connection {
     /// The number of bytes to buffer before a flush is emitted, regardless of the delay.
     public var maxBytes: Int
 
-    /// Creates a new flush coalescing configuration.
+    /// Creates a flush coalescing configuration.
     ///
     /// - SeeAlso: ``defaults``.
     public init(maxFlushDelay: Duration, maxBytes: Int) {
@@ -302,7 +321,9 @@ extension HTTP2ServerTransport.Config.Connection {
       self.maxBytes = maxBytes
     }
 
-    /// Default values. The max flush delay is 100μs and the max bytes is 64KiB.
+    /// The default flush delay and byte count for the server transport.
+    ///
+    /// The max flush delay is 100μs and the max bytes is 64KiB.
     public static var defaults: Self {
       Self(maxFlushDelay: .microseconds(100), maxBytes: 64 * 1024)
     }

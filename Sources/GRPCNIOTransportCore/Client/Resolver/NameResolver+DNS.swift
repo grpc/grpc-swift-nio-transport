@@ -31,7 +31,8 @@ extension ResolvableTargets {
     /// If no port is specified then 443 is used.
     public var port: Int?
 
-    /// Create a new DNS target.
+    /// Creates a DNS target.
+    ///
     /// - Parameters:
     ///   - host: The host to resolve via DNS.
     ///   - port: The port to use with resolved addresses.
@@ -44,7 +45,8 @@ extension ResolvableTargets {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ResolvableTarget where Self == ResolvableTargets.DNS {
-  /// Creates a new resolvable DNS target.
+  /// Creates a resolvable DNS target.
+  ///
   /// - Parameters:
   ///   - host: The host address to resolve.
   ///   - port: The port to use for each resolved address. 443 will be used if unspecified.
@@ -56,13 +58,19 @@ extension ResolvableTarget where Self == ResolvableTargets.DNS {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension NameResolvers {
-  /// A ``NameResolverFactory`` for ``ResolvableTargets/DNS`` targets.
+  /// A name resolver factory for DNS targets.
+  ///
+  /// Creates resolvers for ``ResolvableTargets/DNS`` targets.
   public struct DNS: NameResolverFactory, Sendable {
+    /// The type of target that this factory creates resolvers for.
+    ///
+    /// For this factory, the target type is ``ResolvableTargets/DNS``.
     public typealias Target = ResolvableTargets.DNS
 
-    /// Create a new DNS name resolver factory.
+    /// Creates a DNS name resolver factory.
     public init() {}
 
+    /// Creates a resolver for the given DNS target.
     public func resolver(for target: Target) -> NameResolver {
       let resolver = Self.Resolver(target: target)
       // Only append the port if explicitly set. If it's nil the default port of 443 is used

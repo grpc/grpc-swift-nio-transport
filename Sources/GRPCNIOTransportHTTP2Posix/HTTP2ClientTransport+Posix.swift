@@ -22,14 +22,14 @@ private import NIOSSL
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport {
-  /// A `ClientTransport` using HTTP/2 built on top of `NIOPosix`.
+  /// A client transport using HTTP/2 built on top of NIOPosix.
   ///
   /// This transport builds on top of SwiftNIO's Posix networking layer and is suitable for use
-  /// on Linux and Darwin based platforms (macOS, iOS, etc.). However, it's *strongly* recommended
+  /// on Linux and Darwin-based platforms (macOS, iOS, etc.). However, it's *strongly* recommended
   /// that if you are targeting Darwin platforms then you should use the `NIOTS` variant of
   /// the `HTTP2ClientTransport`.
   ///
-  /// To use this transport you need to provide a 'target' to connect to which will be resolved
+  /// To use this transport you need to provide a `target` to connect to which will be resolved
   /// by an appropriate resolver from the resolver registry. By default the resolver registry can
   /// resolve DNS targets, IPv4 and IPv6 targets, Unix domain socket targets, and Virtual Socket
   /// targets. If you use a custom target you must also provide an appropriately configured
@@ -57,11 +57,12 @@ extension HTTP2ClientTransport {
   /// }
   /// ```
   public struct Posix: ClientTransport {
+    /// The concrete type of bytes this transport produces and consumes.
     public typealias Bytes = GRPCNIOTransportBytes
 
     private let channel: GRPCChannel
 
-    /// Creates a new NIOPosix-based HTTP/2 client transport.
+    /// Creates a NIOPosix-based HTTP/2 client transport.
     ///
     /// - Parameters:
     ///   - target: A target to resolve.
@@ -104,22 +105,27 @@ extension HTTP2ClientTransport {
       )
     }
 
+    /// The retry throttle derived from the service config, if any.
     public var retryThrottle: RetryThrottle? {
       self.channel.retryThrottle
     }
 
+    /// Connects to the resolved target and waits for the connection to become ready.
     public func connect() async throws {
       await self.channel.connect()
     }
 
+    /// Returns the method-specific configuration for the given method, if any.
     public func config(forMethod descriptor: MethodDescriptor) -> MethodConfig? {
       self.channel.config(forMethod: descriptor)
     }
 
+    /// Begins graceful shutdown of the underlying channel.
     public func beginGracefulShutdown() {
       self.channel.beginGracefulShutdown()
     }
 
+    /// Opens a stream on the channel and uses it as input to the given closure.
     public func withStream<T: Sendable>(
       descriptor: MethodDescriptor,
       options: CallOptions,
@@ -226,6 +232,7 @@ extension HTTP2ClientTransport.Posix {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension HTTP2ClientTransport.Posix {
+  /// Configuration for the Posix client transport.
   public struct Config: Sendable {
     /// Configuration for HTTP/2 connections.
     public var http2: HTTP2ClientTransport.Config.HTTP2
@@ -246,7 +253,7 @@ extension HTTP2ClientTransport.Posix {
     /// Channel callbacks for debugging.
     public var channelDebuggingCallbacks: HTTP2ClientTransport.Config.ChannelDebuggingCallbacks
 
-    /// Creates a new connection configuration.
+    /// Creates a connection configuration.
     ///
     /// - Parameters:
     ///   - http2: HTTP2 configuration.
@@ -294,7 +301,7 @@ extension HTTP2ClientTransport.Posix {
       Self.defaults()
     }
 
-    /// Default values.
+    /// Default values, combining the defaults of each nested configuration, optionally customized by a closure.
     ///
     /// - Parameters:
     ///   - configure: A closure which allows you to modify the defaults before returning them.
@@ -328,9 +335,10 @@ extension GRPCChannel.Config {
   }
 }
 
+/// Provides a static factory method for constructing a Posix-based HTTP/2 client transport.
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ClientTransport where Self == HTTP2ClientTransport.Posix {
-  /// Creates a new Posix based HTTP/2 client transport.
+  /// Creates a Posix based HTTP/2 client transport.
   ///
   /// - Parameters:
   ///   - target: A target to resolve.

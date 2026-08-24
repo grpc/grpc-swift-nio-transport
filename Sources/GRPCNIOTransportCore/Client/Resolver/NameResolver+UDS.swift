@@ -18,10 +18,10 @@ internal import GRPCCore
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ResolvableTargets {
-  /// A resolvable target for Unix Domain Socket address.
+  /// A resolvable target for a Unix Domain Socket address.
   ///
   /// ``UnixDomainSocket`` addresses can be resolved by the ``NameResolvers/UnixDomainSocket``
-  /// resolver which creates a single ``Endpoint`` for target address.
+  /// resolver which creates a single ``Endpoint`` for the target address.
   public struct UnixDomainSocket: ResolvableTarget, Sendable {
     /// The Unix Domain Socket address.
     public var address: SocketAddress.UnixDomainSocket
@@ -31,7 +31,7 @@ extension ResolvableTargets {
     /// If unset then the path of the address will be used.
     public var authority: String?
 
-    /// Create a new Unix Domain Socket address.
+    /// Creates a Unix Domain Socket target.
     public init(address: SocketAddress.UnixDomainSocket, authority: String?) {
       self.address = address
       self.authority = authority
@@ -41,8 +41,9 @@ extension ResolvableTargets {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ResolvableTarget where Self == ResolvableTargets.UnixDomainSocket {
-  /// Creates a new resolvable Unix Domain Socket target.
-  /// - Parameters
+  /// Creates a resolvable Unix Domain Socket target.
+  ///
+  /// - Parameters:
   ///   - path: The path of the socket.
   ///   - authority: The service authority.
   public static func unixDomainSocket(
@@ -58,15 +59,21 @@ extension ResolvableTarget where Self == ResolvableTargets.UnixDomainSocket {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension NameResolvers {
-  /// A ``NameResolverFactory`` for ``ResolvableTargets/UnixDomainSocket`` targets.
+  /// A name resolver factory for Unix Domain Socket targets.
   ///
-  /// The name resolver for a given target always produces the same values, with a single endpoint.
+  /// Creates resolvers for ``ResolvableTargets/UnixDomainSocket`` targets. The name resolver
+  /// for a given target always produces the same values, with a single endpoint.
   /// This resolver doesn't support fetching service configuration.
   public struct UnixDomainSocket: NameResolverFactory, Sendable {
+    /// The type of target that this factory creates resolvers for.
+    ///
+    /// For this factory, the target type is ``ResolvableTargets/UnixDomainSocket``.
     public typealias Target = ResolvableTargets.UnixDomainSocket
 
+    /// Creates a Unix Domain Socket resolver factory.
     public init() {}
 
+    /// Creates a resolver for the given Unix Domain Socket target.
     public func resolver(for target: Target) -> NameResolver {
       let endpoint = Endpoint(addresses: [.unixDomainSocket(target.address)])
       let resolutionResult = NameResolutionResult(endpoints: [endpoint], serviceConfig: nil)

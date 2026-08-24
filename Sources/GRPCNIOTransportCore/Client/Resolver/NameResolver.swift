@@ -23,12 +23,12 @@ public import GRPCCore
 /// Resolvers may be **push-based** or **pull-based**:
 ///
 /// - **Push-based resolvers** (``UpdateMode-swift.struct/push``): Addresses are pushed to the
-///   resolver by an external source (e.g., file watcher, service discovery subscription). The
-///   channel subscribes to changes by awaiting new values in a loop.
+///   resolver by an external source (for example, a file watcher or service discovery
+///   subscription). The channel subscribes to changes by awaiting new values in a loop.
 ///
 /// - **Pull-based resolvers** (``UpdateMode-swift.struct/pull``): Addresses are resolved on-demand.
-///   The channel requests new results as and when needed (e.g., after receiving a `GOAWAY` from
-///   the server) by calling `next()`. Each `next()` call should attempt resolution.
+///   The channel requests new results as and when needed (for example, after receiving a `GOAWAY`
+///   from the server) by calling `next()`. Each `next()` call should attempt resolution.
 ///
 /// ## Resolver semantics
 ///
@@ -45,8 +45,8 @@ public import GRPCCore
 ///
 /// ### Error handling
 ///
-/// When resolution fails (e.g., DNS timeout, network unreachable, service discovery unavailable),
-/// resolvers may throw an error. If the resolver throws errors then it **must** be
+/// When resolution fails (for example, a DNS timeout, unreachable network, or unavailable service
+/// discovery), resolvers may throw an error. If the resolver throws errors then it **must** be
 /// **re-iterable**: calling `makeAsyncIterator()` multiple times must return independent iterators
 /// that can each attempt resolution.
 ///
@@ -74,8 +74,8 @@ public import GRPCCore
 /// `makeAsyncIterator()` again.
 ///
 /// - **Push-based resolvers**: If the external source closes the subscription cleanly
-///   (e.g., service discovery server restart, watch stream closes), the iterator may return nil.
-///   The channel will re-establish a fresh subscription by creating a new iterator.
+///   (for example, a service discovery server restart or a closed watch stream), the iterator may
+///   return nil. The channel will re-establish a fresh subscription by creating a new iterator.
 ///
 /// - **Pull-based resolvers**: Should not return nil. Each `next()` call should either return
 ///   a result or throw an error.
@@ -85,26 +85,28 @@ public import GRPCCore
 /// `CancellationError`, the channel will **not** create a new iterator (as shutdown is in
 /// progress).
 ///
-/// ## Resolver Patterns
+/// ## Resolver patterns
 ///
-/// ### Push based
+/// ### Push-based
 ///
-/// **When to use**: Consuming subscription based external sources like service discovery.
+/// **When to use**: Consuming subscription-based external sources like service discovery.
 ///
 /// - `makeAsyncIterator()`: Each call establishes a new subscription to the external source.
 /// - `next()`: Yields updates from the subscription. Throws when the subscription fails.
-///   May return `nil` when the source closes cleanly (e.g., server restart, connection closed).
+///   May return `nil` when the source closes cleanly (for example, a server restart or closed
+///   connection).
 /// - Error handling: Throw errors on subscription failure. Return nil on clean closure.
 ///   The channel will create a new iterator after exponential backoff in either case. Must
 ///   throw `CancellationError` when cancelled.
 ///
-/// ### Pull based
+/// ### Pull-based
 ///
-/// **When to use**: Static addresses that never change or on-demand resolution (e.g., DNS lookup).
+/// **When to use**: Static addresses that never change, or on-demand resolution (for example, a
+/// DNS lookup).
 ///
 /// - `makeAsyncIterator()`: Each call returns a fresh, independent iterator.
 /// - `next()`: Attempts resolution each time it's called. Throws on resolution failure
-///   (e.g., DNS timeout, network unreachable).
+///   (for example, a DNS timeout or unreachable network).
 /// - Error handling: Throw errors on resolution failure. The channel will create a new iterator
 ///   after exponential backoff.
 @available(gRPCSwiftNIOTransport 2.0, *)
@@ -115,12 +117,15 @@ public struct NameResolver: Sendable {
   /// error handling, empty endpoint lists, and sequence completion semantics.
   public var names: RPCAsyncSequence<NameResolutionResult, any Error>
 
-  /// How ``names`` is updated and should be consumed.
+  /// How the name-resolution sequence is updated and consumed.
+  ///
+  /// Describes the update semantics of ``NameResolver/names``.
   public let updateMode: UpdateMode
 
   /// The authority of the service.
   public let authority: String?
 
+  /// Whether a resolver pushes new results, or produces them only on request.
   public struct UpdateMode: Hashable, Sendable {
     enum Value: Hashable, Sendable {
       case push
@@ -133,14 +138,14 @@ public struct NameResolver: Sendable {
       self.value = value
     }
 
-    /// Addresses are pushed to the resolve by an external source.
+    /// Addresses are pushed to the resolver by an external source.
     public static var push: Self { Self(.push) }
 
     /// Addresses are resolved lazily, when the caller asks them to be resolved.
     public static var pull: Self { Self(.pull) }
   }
 
-  /// Create a new name resolver.
+  /// Creates a name resolver.
   public init(
     names: RPCAsyncSequence<NameResolutionResult, any Error>,
     updateMode: UpdateMode,
@@ -160,9 +165,11 @@ public struct NameResolutionResult: Hashable, Sendable {
   public var endpoints: [Endpoint]
 
   /// The service configuration reported by the resolver, or an error if it couldn't be parsed.
+  ///
   /// This value may be `nil` if the resolver doesn't support fetching service configuration.
   public var serviceConfig: Result<ServiceConfig, RPCError>?
 
+  /// Creates a name resolution result.
   public init(
     endpoints: [Endpoint],
     serviceConfig: Result<ServiceConfig, RPCError>?
@@ -181,17 +188,22 @@ public struct Endpoint: Hashable, Sendable {
   /// choose to ignore the order.
   public var addresses: [SocketAddress]
 
-  /// Create a new ``Endpoint``.
+  /// Creates an endpoint.
+  ///
   /// - Parameter addresses: A list of equivalent addresses.
   public init(addresses: [SocketAddress]) {
     self.addresses = addresses
   }
 }
 
-/// A resolver capable of resolving targets of type ``Target``.
+/// A factory capable of creating resolvers for a specific target type.
+///
+/// The target type is given by ``NameResolverFactory/Target``.
 @available(gRPCSwiftNIOTransport 2.0, *)
 public protocol NameResolverFactory<Target> {
-  /// The type of ``ResolvableTarget`` this factory makes resolvers for.
+  /// The type of target this factory makes resolvers for.
+  ///
+  /// Must conform to ``ResolvableTarget``.
   associatedtype Target: ResolvableTarget
 
   /// Creates a resolver for the given target.
@@ -221,7 +233,9 @@ extension NameResolverFactory {
   }
 }
 
-/// A target which can be resolved to a ``SocketAddress``.
+/// A target which can be resolved to a socket address.
+///
+/// The resolved address is represented by ``SocketAddress``.
 @available(gRPCSwiftNIOTransport 2.0, *)
 public protocol ResolvableTarget {}
 

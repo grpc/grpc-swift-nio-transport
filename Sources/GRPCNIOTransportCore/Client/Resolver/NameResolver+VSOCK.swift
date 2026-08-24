@@ -21,10 +21,12 @@ extension ResolvableTargets {
   /// A resolvable target for Virtual Socket addresses.
   ///
   /// ``VirtualSocket`` addresses can be resolved by the ``NameResolvers/VirtualSocket``
-  /// resolver which creates a single ``Endpoint`` for target address.
+  /// resolver which creates a single ``Endpoint`` for the target address.
   public struct VirtualSocket: ResolvableTarget, Sendable {
+    /// The VSOCK address.
     public var address: SocketAddress.VirtualSocket
 
+    /// Creates a resolvable VSOCK target.
     public init(address: SocketAddress.VirtualSocket) {
       self.address = address
     }
@@ -33,9 +35,10 @@ extension ResolvableTargets {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ResolvableTarget where Self == ResolvableTargets.VirtualSocket {
-  /// Creates a new resolvable Virtual Socket target.
+  /// Creates a resolvable Virtual Socket target.
+  ///
   /// - Parameters:
-  ///   - contextID: The context ID ('cid') of the service.
+  ///   - contextID: The context ID (`cid`) of the service.
   ///   - port: The port to connect to.
   public static func vsock(
     contextID: SocketAddress.VirtualSocket.ContextID,
@@ -48,15 +51,21 @@ extension ResolvableTarget where Self == ResolvableTargets.VirtualSocket {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension NameResolvers {
-  /// A ``NameResolverFactory`` for ``ResolvableTargets/VirtualSocket`` targets.
+  /// A name resolver factory for Virtual Socket targets.
   ///
-  /// The name resolver for a given target always produces the same values, with a single endpoint.
+  /// Creates resolvers for ``ResolvableTargets/VirtualSocket`` targets. The name resolver
+  /// for a given target always produces the same values, with a single endpoint.
   /// This resolver doesn't support fetching service configuration.
   public struct VirtualSocket: NameResolverFactory, Sendable {
+    /// The type of target that this factory creates resolvers for.
+    ///
+    /// For this factory, the target type is ``ResolvableTargets/VirtualSocket``.
     public typealias Target = ResolvableTargets.VirtualSocket
 
+    /// Creates a VSOCK resolver factory.
     public init() {}
 
+    /// Creates a resolver for the given VSOCK target.
     public func resolver(for target: Target) -> NameResolver {
       let endpoint = Endpoint(addresses: [.vsock(target.address)])
       let resolutionResult = NameResolutionResult(endpoints: [endpoint], serviceConfig: nil)

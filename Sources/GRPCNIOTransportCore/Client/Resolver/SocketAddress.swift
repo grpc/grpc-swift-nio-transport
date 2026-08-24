@@ -49,7 +49,7 @@ public struct SocketAddress: Hashable, Sendable {
     }
   }
 
-  /// Returns the address as an Unix domain socket address, if possible.
+  /// Returns the address as a Unix domain socket address, if possible.
   public var unixDomainSocket: UnixDomainSocket? {
     switch self.value {
     case .unix(let address):
@@ -59,7 +59,7 @@ public struct SocketAddress: Hashable, Sendable {
     }
   }
 
-  /// Returns the address as an VSOCK address, if possible.
+  /// Returns the address as a VSOCK address, if possible.
   public var virtualSocket: VirtualSocket? {
     switch self.value {
     case .vsock(let address):
@@ -102,22 +102,30 @@ extension SocketAddress {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension SocketAddress {
-  /// Creates a socket address by wrapping a ``SocketAddress/IPv4-swift.struct``.
+  /// Creates a socket address from an IPv4 address.
+  ///
+  /// Wraps the given ``SocketAddress/IPv4-swift.struct``.
   public static func ipv4(_ address: IPv4) -> Self {
     return Self(.ipv4(address))
   }
 
-  /// Creates a socket address by wrapping a ``SocketAddress/IPv6-swift.struct``.
+  /// Creates a socket address from an IPv6 address.
+  ///
+  /// Wraps the given ``SocketAddress/IPv6-swift.struct``.
   public static func ipv6(_ address: IPv6) -> Self {
     return Self(.ipv6(address))
   }
 
-  /// Creates a socket address by wrapping a ``SocketAddress/UnixDomainSocket-swift.struct``.
+  /// Creates a socket address from a Unix domain socket address.
+  ///
+  /// Wraps the given ``SocketAddress/UnixDomainSocket-swift.struct``.
   public static func unixDomainSocket(_ address: UnixDomainSocket) -> Self {
     return Self(.unix(address))
   }
 
-  /// Creates a socket address by wrapping a ``SocketAddress/VirtualSocket-swift.struct``.
+  /// Creates a socket address from a VSOCK address.
+  ///
+  /// Wraps the given ``SocketAddress/VirtualSocket-swift.struct``.
   public static func vsock(_ address: VirtualSocket) -> Self {
     return Self(.vsock(address))
   }
@@ -139,7 +147,7 @@ extension SocketAddress {
     return .unixDomainSocket(UnixDomainSocket(path: path))
   }
 
-  /// Create a Virtual Socket ('vsock') address.
+  /// Creates a VSOCK address.
   public static func vsock(contextID: VirtualSocket.ContextID, port: VirtualSocket.Port) -> Self {
     return .vsock(VirtualSocket(contextID: contextID, port: port))
   }
@@ -147,6 +155,7 @@ extension SocketAddress {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension SocketAddress: CustomStringConvertible {
+  /// A string representation of the address, formatted according to its underlying address kind.
   public var description: String {
     switch self.value {
     case .ipv4(let address):
@@ -163,13 +172,14 @@ extension SocketAddress: CustomStringConvertible {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension SocketAddress {
+  /// An IPv4 address and port.
   public struct IPv4: Hashable, Sendable {
     /// The resolved host address.
     public var host: String
     /// The port to connect to.
     public var port: Int
 
-    /// Creates a new IPv4 address.
+    /// Creates an IPv4 address.
     ///
     /// - Parameters:
     ///   - host: Resolved host address.
@@ -180,13 +190,14 @@ extension SocketAddress {
     }
   }
 
+  /// An IPv6 address and port.
   public struct IPv6: Hashable, Sendable {
     /// The resolved host address.
     public var host: String
     /// The port to connect to.
     public var port: Int
 
-    /// Creates a new IPv6 address.
+    /// Creates an IPv6 address.
     ///
     /// - Parameters:
     ///   - host: Resolved host address.
@@ -197,11 +208,12 @@ extension SocketAddress {
     }
   }
 
+  /// A Unix domain socket address.
   public struct UnixDomainSocket: Hashable, Sendable {
     /// The path name of the Unix domain socket.
     public var path: String
 
-    /// Create a new Unix domain socket address.
+    /// Creates a Unix domain socket address.
     ///
     /// - Parameter path: The path name of the Unix domain socket.
     public init(path: String) {
@@ -209,6 +221,7 @@ extension SocketAddress {
     }
   }
 
+  /// A VSOCK address, made up of a context ID and a port.
   public struct VirtualSocket: Hashable, Sendable {
     /// A context identifier.
     ///
@@ -218,28 +231,32 @@ extension SocketAddress {
     /// The port number.
     public var port: Port
 
-    /// Create a new VSOCK address.
+    /// Creates a VSOCK address.
     ///
     /// - Parameters:
-    ///   - contextID: The context ID (or 'cid') of the address.
+    ///   - contextID: The context ID (or `cid`) of the address.
     ///   - port: The port number.
     public init(contextID: ContextID, port: Port) {
       self.contextID = contextID
       self.port = port
     }
 
+    /// A VSOCK port number.
     public struct Port: Hashable, Sendable, RawRepresentable, ExpressibleByIntegerLiteral {
       /// The port number.
       public var rawValue: UInt32
 
+      /// Creates a port from its raw numeric value.
       public init(rawValue: UInt32) {
         self.rawValue = rawValue
       }
 
+      /// Creates a port from an integer literal.
       public init(integerLiteral value: UInt32) {
         self.rawValue = value
       }
 
+      /// Creates a port from an integer value, truncating it if necessary.
       public init(_ value: Int) {
         self.init(rawValue: UInt32(bitPattern: Int32(truncatingIfNeeded: value)))
       }
@@ -252,18 +269,24 @@ extension SocketAddress {
       }
     }
 
+    /// A VSOCK context ID, identifying a virtual machine or the host.
+    ///
+    /// This is also known as a `cid`.
     public struct ContextID: Hashable, Sendable, RawRepresentable, ExpressibleByIntegerLiteral {
       /// The context identifier.
       public var rawValue: UInt32
 
+      /// Creates a context ID from its raw numeric value.
       public init(rawValue: UInt32) {
         self.rawValue = rawValue
       }
 
+      /// Creates a context ID from an integer literal.
       public init(integerLiteral value: UInt32) {
         self.rawValue = value
       }
 
+      /// Creates a context ID from an integer value, truncating it if necessary.
       public init(_ value: Int) {
         self.rawValue = UInt32(bitPattern: Int32(truncatingIfNeeded: value))
       }
@@ -296,7 +319,7 @@ extension SocketAddress {
 
       /// The address for local communication (loopback).
       ///
-      /// This directs packets to the same host that generated them.  This is useful for testing
+      /// This directs packets to the same host that generated them. This is useful for testing
       /// applications on a single host and for debugging.
       ///
       /// This is equal to `VMADDR_CID_LOCAL (1)` on platforms that define it.
@@ -313,6 +336,10 @@ extension SocketAddress {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension SocketAddress.IPv4: CustomStringConvertible {
+  /// A string representation of the IPv4 address.
+  ///
+  /// The string consists of the literal prefix `[ipv4]` followed by the host and port,
+  /// separated by a colon.
   public var description: String {
     "[ipv4]\(self.host):\(self.port)"
   }
@@ -320,6 +347,10 @@ extension SocketAddress.IPv4: CustomStringConvertible {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension SocketAddress.IPv6: CustomStringConvertible {
+  /// A string representation of the IPv6 address.
+  ///
+  /// The string consists of the literal prefix `[ipv6]` followed by the host and port,
+  /// separated by a colon.
   public var description: String {
     "[ipv6]\(self.host):\(self.port)"
   }
@@ -327,6 +358,9 @@ extension SocketAddress.IPv6: CustomStringConvertible {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension SocketAddress.UnixDomainSocket: CustomStringConvertible {
+  /// A string representation of the Unix domain socket address.
+  ///
+  /// The string consists of the literal prefix `[unix]` followed by the path.
   public var description: String {
     "[unix]\(self.path)"
   }
@@ -334,6 +368,10 @@ extension SocketAddress.UnixDomainSocket: CustomStringConvertible {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension SocketAddress.VirtualSocket: CustomStringConvertible {
+  /// A string representation of the virtual socket address.
+  ///
+  /// The string consists of the literal prefix `[vsock]` followed by the context ID and port,
+  /// separated by a colon.
   public var description: String {
     "[vsock]\(self.contextID):\(self.port)"
   }
@@ -341,6 +379,9 @@ extension SocketAddress.VirtualSocket: CustomStringConvertible {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension SocketAddress.VirtualSocket.ContextID: CustomStringConvertible {
+  /// A string representation of the context ID.
+  ///
+  /// The value is `-1` when the context ID is ``any``, and its raw numeric value otherwise.
   public var description: String {
     self == .any ? "-1" : String(describing: self.rawValue)
   }
@@ -348,6 +389,9 @@ extension SocketAddress.VirtualSocket.ContextID: CustomStringConvertible {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension SocketAddress.VirtualSocket.Port: CustomStringConvertible {
+  /// A string representation of the port.
+  ///
+  /// The value is `-1` when the port is ``any``, and its raw numeric value otherwise.
   public var description: String {
     self == .any ? "-1" : String(describing: self.rawValue)
   }

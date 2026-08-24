@@ -101,7 +101,7 @@ extension HTTP2ServerTransport {
     /// Configures an accepted connection channel with the gRPC HTTP/2 server pipeline.
     ///
     /// This should be called from the `childChannelInitializer` of a bootstrap,
-    /// *after* any transport-specific handlers (e.g. TLS) have been added.
+    /// *after* any transport-specific handlers (for example, TLS) have been added.
     ///
     /// - Parameters:
     ///   - channel: The accepted connection channel to configure.

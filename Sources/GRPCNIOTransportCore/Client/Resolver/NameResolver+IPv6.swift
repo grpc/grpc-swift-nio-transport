@@ -29,7 +29,8 @@ extension ResolvableTargets {
     /// This array must not be empty.
     public var addresses: [SocketAddress.IPv6]
 
-    /// Create a new IPv6 target.
+    /// Creates an IPv6 target.
+    ///
     /// - Parameter addresses: The IPv6 addresses. Must not be empty.
     public init(addresses: [SocketAddress.IPv6]) {
       debugOnly {
@@ -56,7 +57,8 @@ extension ResolvableTargets {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension ResolvableTarget where Self == ResolvableTargets.IPv6 {
-  /// Creates a new resolvable IPv6 target for a single address.
+  /// Creates a resolvable IPv6 target for a single address.
+  ///
   /// - Parameters:
   ///   - host: The resolved host address.
   ///   - port: The port on the host.
@@ -67,7 +69,8 @@ extension ResolvableTarget where Self == ResolvableTargets.IPv6 {
     return Self(addresses: [address])
   }
 
-  /// Creates a new resolvable IPv6 target for a single address.
+  /// Creates a resolvable IPv6 target for a single address.
+  ///
   /// - Parameters:
   ///   - address: The resolved host address.
   ///   - port: The port on the host.
@@ -78,7 +81,7 @@ extension ResolvableTarget where Self == ResolvableTargets.IPv6 {
     return Self(addresses: [address])
   }
 
-  /// Creates a new resolvable IPv6 target from the provided host-port pairs.
+  /// Creates a resolvable IPv6 target from the provided host-port pairs.
   ///
   /// - Parameter pairs: An array of host-port pairs.
   /// - Returns: A ``ResolvableTarget``.
@@ -90,16 +93,21 @@ extension ResolvableTarget where Self == ResolvableTargets.IPv6 {
 
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension NameResolvers {
-  /// A ``NameResolverFactory`` for ``ResolvableTargets/IPv6`` targets.
+  /// A name resolver factory for IPv6 targets.
   ///
-  /// The name resolver for a given target always produces the same values, with one endpoint per
+  /// Creates resolvers for ``ResolvableTargets/IPv6`` targets. The name resolver for a given
+  /// target always produces the same values, with one endpoint per
   /// address in the target. This resolver doesn't support fetching service configuration.
   public struct IPv6: NameResolverFactory, Sendable {
+    /// The type of target that this factory creates resolvers for.
+    ///
+    /// For this factory, the target type is ``ResolvableTargets/IPv6``.
     public typealias Target = ResolvableTargets.IPv6
 
-    /// Create a new IPv6 resolver factory.
+    /// Creates an IPv6 resolver factory.
     public init() {}
 
+    /// Creates a resolver for the given IPv6 target.
     public func resolver(for target: Target) -> NameResolver {
       let endpoints = target.addresses.map { Endpoint(addresses: [.ipv6($0)]) }
       let resolutionResult = NameResolutionResult(endpoints: endpoints, serviceConfig: nil)
