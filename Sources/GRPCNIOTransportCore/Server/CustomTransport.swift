@@ -324,22 +324,14 @@ extension HTTP2ServerTransport {
           }
 
           do {
-            // The transport-specific context describes the connection, not the RPC, so compute it
-            // at most once and share it with every stream.
-            //
-            // It's computed when the first stream arrives rather than alongside the peer addresses
-            // above because it can need more than an active channel: the Posix transport reads the
-            // peer's TLS certificates, which aren't available until the handshake has completed. A
-            // stream arriving implies an established connection, which is what made computing this
-            // per stream correct.
-            //
-            // The work happens in its own task so that waiting for it doesn't stop this loop from
-            // accepting streams: each stream waits for the same result instead.
-            var transportSpecific: Task<any ServerContext.TransportSpecific, Never>?
+            // Computed when the first stream arrives, not alongside the peer addresses above: the
+            // Posix transport reads the peer's TLS certificates, which aren't available until the
+            // handshake has completed.
+            var transportSpecific: (any ServerContext.TransportSpecific)?
 
             for try await (stream, descriptor) in multiplexer.inbound {
               if transportSpecific == nil, let makeContext = self.transportSpecificContext {
-                transportSpecific = Task { await makeContext(connection.channel) }
+                transportSpecific = await makeContext(connection.channel)
               }
 
               let connectionContext = transportSpecific
@@ -371,7 +363,7 @@ extension HTTP2ServerTransport {
       descriptor: EventLoopFuture<MethodDescriptor>,
       remotePeer: String,
       localPeer: String,
-      transportSpecific: Task<any ServerContext.TransportSpecific, Never>?
+      transportSpecific: (any ServerContext.TransportSpecific)?
     ) async {
       // It's okay to ignore these errors:
       // - If we get an error because the http2Stream failed to close, then there's nothing we can do
@@ -415,7 +407,7 @@ extension HTTP2ServerTransport {
             localPeer: localPeer,
             cancellation: handle
           )
-          context.transportSpecific = await transportSpecific?.value
+          context.transportSpecific = transportSpecific
           await streamHandler(rpcStream, context)
         }
 
