@@ -18,8 +18,10 @@ import GRPCCore
 import GRPCNIOTransportCore
 import GRPCNIOTransportHTTP2Posix
 import NIOCore
+import NIOExtras
 import NIOPosix
 import NIOSSL
+import Synchronization
 import XCTest
 
 #if canImport(Darwin)
@@ -637,6 +639,84 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
       }
     }
   }
+
+  /// The transport-specific context describes the connection, so it should be built once per
+  /// connection however many RPCs are made over it, each RPC on a connection should see the
+  /// context built for it, and a second connection should get its own.
+  @available(gRPCSwiftNIOTransport 2.6, *)
+  func testTransportSpecificContextIsComputedOncePerConnection() async throws {
+    let eventLoopGroup = MultiThreadedEventLoopGroup.singletonMultiThreadedEventLoopGroup
+    let factory = LoopbackListenerFactory(eventLoopGroup: eventLoopGroup)
+
+    let contextsMade = Mutex(0)
+    // The ID of the context each RPC saw, keyed by the name it was made with.
+    let contextsSeen = Mutex([String: Int]())
+
+    let service = HelloWorldService { request, context in
+      if let transportSpecific = context.transportSpecific as? CountingTransportSpecific {
+        contextsSeen.withLock { $0[request.name] = transportSpecific.id }
+      }
+      return HelloResponse(message: "Hello, \(request.name)!")
+    }
+
+    let transport = HTTP2ServerTransport.Custom(
+      eventLoopGroup: eventLoopGroup,
+      quiescingHelper: ServerQuiescingHelper(group: eventLoopGroup),
+      config: .defaults,
+      listenerFactory: factory,
+      transportSpecificContext: { _ in
+        let id = contextsMade.withLock {
+          $0 += 1
+          return $0
+        }
+        return CountingTransportSpecific(id: id)
+      }
+    )
+
+    try await withGRPCServer(transport: transport, services: [service]) { _ in
+      let address = await transport.listeningAddress
+      let ipv4Address = try XCTUnwrap(address?.ipv4)
+
+      // Each client is one connection: it has a single endpoint to pick from, so the RPCs it
+      // makes all go over the same one.
+      func makeRPCs(_ names: [String]) async throws {
+        try await withGRPCClient(
+          transport: .http2NIOPosix(
+            target: .ipv4(address: "127.0.0.1", port: ipv4Address.port),
+            transportSecurity: .plaintext
+          )
+        ) { client in
+          let helloWorld = HelloWorld.Client(wrapping: client)
+          for name in names {
+            let response = try await helloWorld.sayHello(HelloRequest(name: name))
+            XCTAssertEqual(response.message, "Hello, \(name)!")
+          }
+        }
+      }
+
+      try await makeRPCs(["first", "second"])
+      try await makeRPCs(["third"])
+
+      XCTAssertEqual(contextsMade.withLock { $0 }, 2)
+
+      let seen = contextsSeen.withLock { $0 }
+      let first = try XCTUnwrap(seen["first"])
+      let second = try XCTUnwrap(seen["second"])
+      let third = try XCTUnwrap(seen["third"])
+
+      // Built once, but handed to both RPCs on the connection.
+      XCTAssertEqual(first, second)
+      // The second connection got its own: the context isn't cached beyond the connection.
+      XCTAssertNotEqual(first, third)
+    }
+  }
+}
+
+/// A transport-specific context which exists only to be identified.
+@available(gRPCSwiftNIOTransport 2.6, *)
+private struct CountingTransportSpecific: ServerContext.TransportSpecific {
+  /// Distinguishes this context from those built for other connections.
+  var id: Int
 }
 
 /// A custom ``HTTP2ServerTransport/ListenerFactory`` that binds to an ephemeral port on
