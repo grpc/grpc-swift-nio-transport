@@ -42,6 +42,7 @@ final class HTTP2ServerTransportConfigTests: XCTestCase {
 
   func testHTTP2Defaults() {
     let config = HTTP2ServerTransport.Config.HTTP2.defaults
+    XCTAssertEqual(config.maxHeaderListSize, 16 * 1024)
     XCTAssertEqual(config.maxFrameSize, 16_384)
     XCTAssertEqual(config.targetWindowSize, 65_535)
     XCTAssertNil(config.maxConcurrentStreams)

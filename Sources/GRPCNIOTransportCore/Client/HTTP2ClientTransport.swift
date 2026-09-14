@@ -173,6 +173,18 @@ extension HTTP2ClientTransport.Config {
     /// allowed by RFC 9113 § 6.5.2).
     public var maxFrameSize: Int
 
+    /// The maximum size of a received HTTP/2 header list, in bytes.
+    ///
+    /// This limit applies separately to each set of headers or trailers. The size is calculated
+    /// using the uncompressed names and values, plus 32 bytes of overhead per header, including
+    /// HTTP/2 pseudoheaders and gRPC protocol headers. Binary metadata is measured after Base64
+    /// encoding.
+    ///
+    /// The default is 16 KiB. The value is clamped to `0 ... (1 << 32) - 1` and advertised to the
+    /// peer using `SETTINGS_MAX_HEADER_LIST_SIZE`. It does not change the peer's receive limit.
+    @available(gRPCSwiftNIOTransport 2.10, *)
+    public var maxHeaderListSize: Int
+
     /// The target flow control window size, in bytes.
     ///
     /// The value is clamped to `... (1 << 31) - 1`.
@@ -188,12 +200,30 @@ extension HTTP2ClientTransport.Config {
 
     /// Creates an HTTP/2 configuration.
     public init(maxFrameSize: Int, targetWindowSize: Int, authority: String?) {
+      self.init(
+        maxFrameSize: maxFrameSize,
+        targetWindowSize: targetWindowSize,
+        authority: authority,
+        maxHeaderListSize: 16 * 1024
+      )
+    }
+
+    /// Creates an HTTP/2 configuration with a receive header list size limit.
+    @available(gRPCSwiftNIOTransport 2.10, *)
+    public init(
+      maxFrameSize: Int,
+      targetWindowSize: Int,
+      authority: String?,
+      maxHeaderListSize: Int
+    ) {
       self.maxFrameSize = maxFrameSize
+      self.maxHeaderListSize = maxHeaderListSize
       self.targetWindowSize = targetWindowSize
       self.authority = authority
     }
 
-    /// Default values, max frame size is 16KiB, and the target window size is 8MiB.
+    /// Default values, max frame size and max header list size are 16KiB, and the target window
+    /// size is 8MiB.
     public static var defaults: Self {
       Self(maxFrameSize: 1 << 14, targetWindowSize: 8 * 1024 * 1024, authority: nil)
     }

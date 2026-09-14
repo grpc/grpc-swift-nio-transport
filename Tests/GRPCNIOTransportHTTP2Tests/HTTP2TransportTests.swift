@@ -49,6 +49,8 @@ final class HTTP2TransportTests: XCTestCase {
     clientCompression: CompressionAlgorithm = .none,
     clientEnabledCompression: CompressionAlgorithmSet = .none,
     serverCompression: CompressionAlgorithmSet = .none,
+    clientMaxHeaderListSize: Int = 16 * 1024,
+    serverMaxHeaderListSize: Int = 16 * 1024,
     _ execute: (
       ControlClient<NIOClientTransport>,
       GRPCServer<NIOServerTransport>,
@@ -62,7 +64,8 @@ final class HTTP2TransportTests: XCTestCase {
           address: serverAddress,
           kind: pair.server,
           enableControlService: enableControlService,
-          compression: serverCompression
+          compression: serverCompression,
+          maxHeaderListSize: serverMaxHeaderListSize
         )
 
         let target: any ResolvableTarget
@@ -81,7 +84,8 @@ final class HTTP2TransportTests: XCTestCase {
           kind: pair.client,
           target: target,
           compression: clientCompression,
-          enabledCompression: clientEnabledCompression
+          enabledCompression: clientEnabledCompression,
+          maxHeaderListSize: clientMaxHeaderListSize
         )
 
         group.addTask {
@@ -140,7 +144,8 @@ final class HTTP2TransportTests: XCTestCase {
     address: GRPCNIOTransportCore.SocketAddress,
     kind: TransportKind,
     enableControlService: Bool,
-    compression: CompressionAlgorithmSet
+    compression: CompressionAlgorithmSet,
+    maxHeaderListSize: Int
   ) async throws -> (GRPCServer<NIOServerTransport>, GRPCNIOTransportCore.SocketAddress) {
     let services = enableControlService ? [ControlService()] : []
 
@@ -154,6 +159,7 @@ final class HTTP2TransportTests: XCTestCase {
             config: .defaults {
               $0.compression.enabledAlgorithms = compression
               $0.rpc.maxRequestPayloadSize = .max
+              $0.http2.maxHeaderListSize = maxHeaderListSize
             }
           )
         ),
@@ -184,6 +190,7 @@ final class HTTP2TransportTests: XCTestCase {
             config: .defaults {
               $0.compression.enabledAlgorithms = compression
               $0.rpc.maxRequestPayloadSize = .max
+              $0.http2.maxHeaderListSize = maxHeaderListSize
             }
           )
         ),
@@ -207,7 +214,8 @@ final class HTTP2TransportTests: XCTestCase {
     kind: TransportKind,
     target: any ResolvableTarget,
     compression: CompressionAlgorithm,
-    enabledCompression: CompressionAlgorithmSet
+    enabledCompression: CompressionAlgorithmSet,
+    maxHeaderListSize: Int = 16 * 1024
   ) async throws -> GRPCClient<NIOClientTransport> {
     let transport: NIOClientTransport
     var serviceConfig = ServiceConfig()
@@ -229,6 +237,7 @@ final class HTTP2TransportTests: XCTestCase {
         config: .defaults {
           $0.compression.algorithm = compression
           $0.compression.enabledAlgorithms = enabledCompression
+          $0.http2.maxHeaderListSize = maxHeaderListSize
         },
         serviceConfig: serviceConfig
       )
@@ -242,6 +251,7 @@ final class HTTP2TransportTests: XCTestCase {
         config: .defaults {
           $0.compression.algorithm = compression
           $0.compression.enabledAlgorithms = enabledCompression
+          $0.http2.maxHeaderListSize = maxHeaderListSize
         },
         serviceConfig: serviceConfig
       )
@@ -252,6 +262,7 @@ final class HTTP2TransportTests: XCTestCase {
       var config = HTTP2ClientTransport.WrappedChannel.Config.defaults
       config.compression.algorithm = compression
       config.compression.enabledAlgorithms = enabledCompression
+      config.http2.maxHeaderListSize = maxHeaderListSize
 
       let addr: NIOCore.SocketAddress
       if let dns = target as? ResolvableTargets.DNS {
@@ -287,6 +298,69 @@ final class HTTP2TransportTests: XCTestCase {
     }
 
     return GRPCClient(transport: transport, interceptors: [PeerInfoClientInterceptor()])
+  }
+
+  func testLargeMetadataWithIncreasedHeaderListSize() async throws {
+    try await self.forEachTransportPair(
+      clientMaxHeaderListSize: 64 * 1024,
+      serverMaxHeaderListSize: 64 * 1024
+    ) { control, _, pair in
+      let input = ControlInput.with {
+        $0.echoMetadataInHeaders = true
+        $0.echoMetadataInTrailers = true
+        $0.numberOfMessages = 1
+      }
+      // HPACK compresses this below the 16 KiB frame limit, while the decoded header list
+      // exceeds the default 16 KiB header list limit.
+      let value = String(repeating: "0", count: 20 * 1024)
+      let request = ClientRequest(message: input, metadata: ["test-large": .string(value)])
+
+      var options = CallOptions.defaults
+      options.timeout = .seconds(10)
+      try await control.unary(request: request, options: options) {
+        response in
+        _ = try response.message
+        XCTAssertEqual(
+          Array(response.metadata[stringValues: "echo-test-large"]),
+          [value],
+          "\(pair)"
+        )
+        XCTAssertEqual(
+          Array(response.trailingMetadata[stringValues: "echo-test-large"]),
+          [value],
+          "\(pair)"
+        )
+      }
+    }
+  }
+
+  func testLargeMetadataExceedsReceiveLimit() async throws {
+    // Exercise each receive limit independently: request headers on the server, and response
+    // headers on the client. Increasing the other peer's limit must not bypass the receive limit.
+    for (clientLimit, serverLimit) in [(64 * 1024, 16 * 1024), (16 * 1024, 64 * 1024)] {
+      try await self.forEachTransportPair(
+        clientMaxHeaderListSize: clientLimit,
+        serverMaxHeaderListSize: serverLimit
+      ) { control, _, pair in
+        let input = ControlInput.with {
+          $0.echoMetadataInHeaders = true
+          $0.numberOfMessages = 1
+        }
+        let value = String(repeating: "0", count: 20 * 1024)
+        let request = ClientRequest(message: input, metadata: ["test-large": .string(value)])
+
+        var options = CallOptions.defaults
+        options.timeout = .seconds(10)
+        try await control.unary(request: request, options: options) {
+          response in
+          guard case .failure(let error) = response.accepted else {
+            XCTFail("Expected oversized metadata to be rejected (\(pair))")
+            return
+          }
+          XCTAssertEqual(error.code, .unavailable, "\(pair)")
+        }
+      }
+    }
   }
 
   func testUnaryOK() async throws {

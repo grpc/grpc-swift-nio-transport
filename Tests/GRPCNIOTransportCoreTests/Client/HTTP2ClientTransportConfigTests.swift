@@ -42,6 +42,7 @@ final class HTTP2ClientTransportConfigTests: XCTestCase {
 
   func testHTTP2Defaults() {
     let config = HTTP2ClientTransport.Config.HTTP2.defaults
+    XCTAssertEqual(config.maxHeaderListSize, 16 * 1024)
     XCTAssertEqual(config.maxFrameSize, 16384)
     XCTAssertEqual(config.targetWindowSize, 8 * 1024 * 1024)
   }
