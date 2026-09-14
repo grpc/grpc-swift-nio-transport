@@ -182,7 +182,7 @@ extension HTTP2ClientTransport.Config {
     ///
     /// The default is 16 KiB. The value is clamped to `0 ... (1 << 32) - 1` and advertised to the
     /// peer using `SETTINGS_MAX_HEADER_LIST_SIZE`. It does not change the peer's receive limit.
-    @available(gRPCSwiftNIOTransport 2.9, *)
+    @available(gRPCSwiftNIOTransport 2.10, *)
     public var maxHeaderListSize: Int
 
     /// The target flow control window size, in bytes.
@@ -209,7 +209,7 @@ extension HTTP2ClientTransport.Config {
     }
 
     /// Creates an HTTP/2 configuration with a receive header list size limit.
-    @available(gRPCSwiftNIOTransport 2.9, *)
+    @available(gRPCSwiftNIOTransport 2.10, *)
     public init(
       maxFrameSize: Int,
       targetWindowSize: Int,
