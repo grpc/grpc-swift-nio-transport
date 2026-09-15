@@ -640,9 +640,6 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
     }
   }
 
-  /// The transport-specific context describes the connection, so it should be built once per
-  /// connection however many RPCs are made over it, each RPC on a connection should see the
-  /// context built for it, and a second connection should get its own.
   @available(gRPCSwiftNIOTransport 2.6, *)
   func testTransportSpecificContextIsComputedOncePerConnection() async throws {
     let eventLoopGroup = MultiThreadedEventLoopGroup.singletonMultiThreadedEventLoopGroup
@@ -677,8 +674,6 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
       let address = await transport.listeningAddress
       let ipv4Address = try XCTUnwrap(address?.ipv4)
 
-      // Each client is one connection: it has a single endpoint to pick from, so the RPCs it
-      // makes all go over the same one.
       func makeRPCs(_ names: [String]) async throws {
         try await withGRPCClient(
           transport: .http2NIOPosix(
@@ -704,18 +699,14 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
       let second = try XCTUnwrap(seen["second"])
       let third = try XCTUnwrap(seen["third"])
 
-      // Built once, but handed to both RPCs on the connection.
       XCTAssertEqual(first, second)
-      // The second connection got its own: the context isn't cached beyond the connection.
       XCTAssertNotEqual(first, third)
     }
   }
 }
 
-/// A transport-specific context which exists only to be identified.
 @available(gRPCSwiftNIOTransport 2.6, *)
 private struct CountingTransportSpecific: ServerContext.TransportSpecific {
-  /// Distinguishes this context from those built for other connections.
   var id: Int
 }
 
