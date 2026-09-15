@@ -326,9 +326,7 @@ extension HTTP2ServerTransport {
           }
 
           do {
-            // Computed when the first stream arrives, not alongside the peer addresses above: the
-            // Posix transport reads the peer's TLS certificates, which aren't available until the
-            // handshake has completed.
+            // Computed on the first stream so that any TLS handshake has completed.
             let makeContext = self.transportSpecificContext
             var transportSpecific: (any ServerContext.TransportSpecific)?
 
