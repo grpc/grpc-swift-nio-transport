@@ -326,15 +326,24 @@ extension HTTP2ServerTransport {
           }
 
           do {
+            // Computed on the first stream so that any TLS handshake has completed.
+            let makeContext = self.transportSpecificContext
+            var transportSpecific: (any ServerContext.TransportSpecific)?
+
             for try await (stream, descriptor) in multiplexer.inbound {
+              if transportSpecific == nil {
+                transportSpecific = await makeContext?(connection.channel)
+              }
+
+              let connectionContext = transportSpecific
               group.addTask {
                 await self.handleStream(
                   stream,
-                  connection,
                   handler: streamHandler,
                   descriptor: descriptor,
                   remotePeer: remotePeer,
-                  localPeer: localPeer
+                  localPeer: localPeer,
+                  transportSpecific: connectionContext
                 )
               }
             }
@@ -347,7 +356,6 @@ extension HTTP2ServerTransport {
 
     private func handleStream(
       _ stream: NIOAsyncChannel<RPCRequestPart<Bytes>, RPCResponsePart<Bytes>>,
-      _ connection: NIOAsyncChannel<HTTP2Frame, HTTP2Frame>,
       handler streamHandler:
         @escaping @Sendable (
           _ stream: RPCStream<Inbound, Outbound>,
@@ -355,7 +363,8 @@ extension HTTP2ServerTransport {
         ) async -> Void,
       descriptor: EventLoopFuture<MethodDescriptor>,
       remotePeer: String,
-      localPeer: String
+      localPeer: String,
+      transportSpecific: (any ServerContext.TransportSpecific)?
     ) async {
       // It's okay to ignore these errors:
       // - If we get an error because the http2Stream failed to close, then there's nothing we can do
@@ -399,9 +408,7 @@ extension HTTP2ServerTransport {
             localPeer: localPeer,
             cancellation: handle
           )
-          if let transportSpecificContext = self.transportSpecificContext {
-            context.transportSpecific = await transportSpecificContext(connection.channel)
-          }
+          context.transportSpecific = transportSpecific
           await streamHandler(rpcStream, context)
         }
 
