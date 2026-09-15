@@ -16,7 +16,6 @@
 
 package import GRPCCore
 package import NIOCore
-internal import NIOHPACK
 package import NIOHTTP2
 
 @available(gRPCSwiftNIOTransport 2.0, *)
@@ -77,7 +76,10 @@ extension ChannelPipeline.SynchronousOperations {
     var http2HandlerHTTP2Settings = HTTP2Settings([
       HTTP2Setting(parameter: .initialWindowSize, value: clampedTargetWindowSize),
       HTTP2Setting(parameter: .maxFrameSize, value: clampedMaxFrameSize),
-      HTTP2Setting(parameter: .maxHeaderListSize, value: HPACKDecoder.defaultMaxHeaderListSize),
+      HTTP2Setting(
+        parameter: .maxHeaderListSize,
+        value: Int(UInt32(clamping: http2Config.maxHeaderListSize))
+      ),
     ])
     if let maxConcurrentStreams = http2Config.maxConcurrentStreams {
       http2HandlerHTTP2Settings.append(
@@ -161,8 +163,11 @@ extension ChannelPipeline.SynchronousOperations {
       // Set the initial window size and max frame size to the clamped configured values.
       HTTP2Setting(parameter: .initialWindowSize, value: clampedTargetWindowSize),
       HTTP2Setting(parameter: .maxFrameSize, value: clampedMaxFrameSize),
-      // Use NIOs default max header list size (16kB)
-      HTTP2Setting(parameter: .maxHeaderListSize, value: HPACKDecoder.defaultMaxHeaderListSize),
+      // Advertise the configured receive limit for headers and trailers.
+      HTTP2Setting(
+        parameter: .maxHeaderListSize,
+        value: Int(UInt32(clamping: config.http2.maxHeaderListSize))
+      ),
     ]
 
     // These rates inform NIO's DoS detection heuristics which typically apply to a server. The

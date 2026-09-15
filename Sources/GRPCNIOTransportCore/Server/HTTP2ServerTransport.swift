@@ -199,6 +199,18 @@ extension HTTP2ServerTransport.Config {
     /// The maximum frame size to be used in an HTTP/2 connection.
     public var maxFrameSize: Int
 
+    /// The maximum size of a received HTTP/2 header list, in bytes.
+    ///
+    /// This limit applies separately to each set of headers or trailers. The size is calculated
+    /// using the uncompressed names and values, plus 32 bytes of overhead per header, including
+    /// HTTP/2 pseudoheaders and gRPC protocol headers. Binary metadata is measured after Base64
+    /// encoding.
+    ///
+    /// The default is 16 KiB. The value is clamped to `0 ... (1 << 32) - 1` and advertised to the
+    /// peer using `SETTINGS_MAX_HEADER_LIST_SIZE`. It does not change the peer's receive limit.
+    @available(gRPCSwiftNIOTransport 2.10, *)
+    public var maxHeaderListSize: Int
+
     /// The target window size for this connection.
     ///
     /// - Note: This will also be set as the initial window size for the connection.
@@ -208,12 +220,25 @@ extension HTTP2ServerTransport.Config {
     public var maxConcurrentStreams: Int?
 
     /// Creates an HTTP/2 configuration.
+    public init(maxFrameSize: Int, targetWindowSize: Int, maxConcurrentStreams: Int?) {
+      self.init(
+        maxFrameSize: maxFrameSize,
+        targetWindowSize: targetWindowSize,
+        maxConcurrentStreams: maxConcurrentStreams,
+        maxHeaderListSize: 16 * 1024
+      )
+    }
+
+    /// Creates an HTTP/2 configuration with a receive header list size limit.
+    @available(gRPCSwiftNIOTransport 2.10, *)
     public init(
       maxFrameSize: Int,
       targetWindowSize: Int,
-      maxConcurrentStreams: Int?
+      maxConcurrentStreams: Int?,
+      maxHeaderListSize: Int
     ) {
       self.maxFrameSize = maxFrameSize
+      self.maxHeaderListSize = maxHeaderListSize
       self.targetWindowSize = targetWindowSize
       self.maxConcurrentStreams = maxConcurrentStreams
     }
@@ -221,7 +246,7 @@ extension HTTP2ServerTransport.Config {
     /// The default HTTP/2 frame and window sizes, with unlimited concurrent streams.
     ///
     /// The max frame size defaults to 2^14, the target window size defaults to 2^16-1, and
-    /// the max concurrent streams default to infinite.
+    /// the max concurrent streams default to infinite. The max header list size defaults to 16KiB.
     public static var defaults: Self {
       Self(
         maxFrameSize: 1 << 14,

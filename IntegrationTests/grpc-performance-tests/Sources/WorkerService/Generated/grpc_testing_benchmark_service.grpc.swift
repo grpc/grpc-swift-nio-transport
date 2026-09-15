@@ -128,8 +128,9 @@ extension Grpc_Testing_BenchmarkService {
     /// This protocol is the lowest-level of the service protocols generated for this service
     /// giving you the most flexibility over the implementation of your service. This comes at
     /// the cost of more verbose and less strict APIs. Each RPC requires you to implement it in
-    /// terms of a request stream and response stream. Where only a single request or response
-    /// message is expected, you are responsible for enforcing this invariant is maintained.
+    /// terms of a request stream and response stream. Where the RPC expects only a single
+    /// request or response message, you are responsible for ensuring your implementation
+    /// maintains this invariant.
     ///
     /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
     /// or ``SimpleServiceProtocol`` instead.
@@ -644,9 +645,9 @@ extension Grpc_Testing_BenchmarkService {
         ///   - serializer: A serializer for `Grpc_Testing_SimpleRequest` messages.
         ///   - deserializer: A deserializer for `Grpc_Testing_SimpleResponse` messages.
         ///   - options: Options to apply to this RPC.
-        ///   - handleResponse: A closure which handles the response, the result of which is
-        ///       returned to the caller. Returning from the closure will cancel the RPC if it
-        ///       hasn't already finished.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
         /// - Returns: The result of `handleResponse`.
         func unaryCall<Result>(
             request: GRPCCore.ClientRequest<Grpc_Testing_SimpleRequest>,
@@ -669,9 +670,9 @@ extension Grpc_Testing_BenchmarkService {
         ///   - serializer: A serializer for `Grpc_Testing_SimpleRequest` messages.
         ///   - deserializer: A deserializer for `Grpc_Testing_SimpleResponse` messages.
         ///   - options: Options to apply to this RPC.
-        ///   - handleResponse: A closure which handles the response, the result of which is
-        ///       returned to the caller. Returning from the closure will cancel the RPC if it
-        ///       hasn't already finished.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
         /// - Returns: The result of `handleResponse`.
         func streamingCall<Result>(
             request: GRPCCore.StreamingClientRequest<Grpc_Testing_SimpleRequest>,
@@ -693,9 +694,9 @@ extension Grpc_Testing_BenchmarkService {
         ///   - serializer: A serializer for `Grpc_Testing_SimpleRequest` messages.
         ///   - deserializer: A deserializer for `Grpc_Testing_SimpleResponse` messages.
         ///   - options: Options to apply to this RPC.
-        ///   - handleResponse: A closure which handles the response, the result of which is
-        ///       returned to the caller. Returning from the closure will cancel the RPC if it
-        ///       hasn't already finished.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
         /// - Returns: The result of `handleResponse`.
         func streamingFromClient<Result>(
             request: GRPCCore.StreamingClientRequest<Grpc_Testing_SimpleRequest>,
@@ -717,9 +718,9 @@ extension Grpc_Testing_BenchmarkService {
         ///   - serializer: A serializer for `Grpc_Testing_SimpleRequest` messages.
         ///   - deserializer: A deserializer for `Grpc_Testing_SimpleResponse` messages.
         ///   - options: Options to apply to this RPC.
-        ///   - handleResponse: A closure which handles the response, the result of which is
-        ///       returned to the caller. Returning from the closure will cancel the RPC if it
-        ///       hasn't already finished.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
         /// - Returns: The result of `handleResponse`.
         func streamingFromServer<Result>(
             request: GRPCCore.ClientRequest<Grpc_Testing_SimpleRequest>,
@@ -741,9 +742,9 @@ extension Grpc_Testing_BenchmarkService {
         ///   - serializer: A serializer for `Grpc_Testing_SimpleRequest` messages.
         ///   - deserializer: A deserializer for `Grpc_Testing_SimpleResponse` messages.
         ///   - options: Options to apply to this RPC.
-        ///   - handleResponse: A closure which handles the response, the result of which is
-        ///       returned to the caller. Returning from the closure will cancel the RPC if it
-        ///       hasn't already finished.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
         /// - Returns: The result of `handleResponse`.
         func streamingBothWays<Result>(
             request: GRPCCore.StreamingClientRequest<Grpc_Testing_SimpleRequest>,
@@ -782,9 +783,9 @@ extension Grpc_Testing_BenchmarkService {
         ///   - serializer: A serializer for `Grpc_Testing_SimpleRequest` messages.
         ///   - deserializer: A deserializer for `Grpc_Testing_SimpleResponse` messages.
         ///   - options: Options to apply to this RPC.
-        ///   - handleResponse: A closure which handles the response, the result of which is
-        ///       returned to the caller. Returning from the closure will cancel the RPC if it
-        ///       hasn't already finished.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
         /// - Returns: The result of `handleResponse`.
         package func unaryCall<Result>(
             request: GRPCCore.ClientRequest<Grpc_Testing_SimpleRequest>,
@@ -818,9 +819,9 @@ extension Grpc_Testing_BenchmarkService {
         ///   - serializer: A serializer for `Grpc_Testing_SimpleRequest` messages.
         ///   - deserializer: A deserializer for `Grpc_Testing_SimpleResponse` messages.
         ///   - options: Options to apply to this RPC.
-        ///   - handleResponse: A closure which handles the response, the result of which is
-        ///       returned to the caller. Returning from the closure will cancel the RPC if it
-        ///       hasn't already finished.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
         /// - Returns: The result of `handleResponse`.
         package func streamingCall<Result>(
             request: GRPCCore.StreamingClientRequest<Grpc_Testing_SimpleRequest>,
@@ -851,9 +852,9 @@ extension Grpc_Testing_BenchmarkService {
         ///   - serializer: A serializer for `Grpc_Testing_SimpleRequest` messages.
         ///   - deserializer: A deserializer for `Grpc_Testing_SimpleResponse` messages.
         ///   - options: Options to apply to this RPC.
-        ///   - handleResponse: A closure which handles the response, the result of which is
-        ///       returned to the caller. Returning from the closure will cancel the RPC if it
-        ///       hasn't already finished.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
         /// - Returns: The result of `handleResponse`.
         package func streamingFromClient<Result>(
             request: GRPCCore.StreamingClientRequest<Grpc_Testing_SimpleRequest>,
@@ -886,9 +887,9 @@ extension Grpc_Testing_BenchmarkService {
         ///   - serializer: A serializer for `Grpc_Testing_SimpleRequest` messages.
         ///   - deserializer: A deserializer for `Grpc_Testing_SimpleResponse` messages.
         ///   - options: Options to apply to this RPC.
-        ///   - handleResponse: A closure which handles the response, the result of which is
-        ///       returned to the caller. Returning from the closure will cancel the RPC if it
-        ///       hasn't already finished.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
         /// - Returns: The result of `handleResponse`.
         package func streamingFromServer<Result>(
             request: GRPCCore.ClientRequest<Grpc_Testing_SimpleRequest>,
@@ -919,9 +920,9 @@ extension Grpc_Testing_BenchmarkService {
         ///   - serializer: A serializer for `Grpc_Testing_SimpleRequest` messages.
         ///   - deserializer: A deserializer for `Grpc_Testing_SimpleResponse` messages.
         ///   - options: Options to apply to this RPC.
-        ///   - handleResponse: A closure which handles the response, the result of which is
-        ///       returned to the caller. Returning from the closure will cancel the RPC if it
-        ///       hasn't already finished.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
         /// - Returns: The result of `handleResponse`.
         package func streamingBothWays<Result>(
             request: GRPCCore.StreamingClientRequest<Grpc_Testing_SimpleRequest>,
@@ -955,9 +956,9 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     /// - Parameters:
     ///   - request: A request containing a single `Grpc_Testing_SimpleRequest` message.
     ///   - options: Options to apply to this RPC.
-    ///   - handleResponse: A closure which handles the response, the result of which is
-    ///       returned to the caller. Returning from the closure will cancel the RPC if it
-    ///       hasn't already finished.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
     /// - Returns: The result of `handleResponse`.
     package func unaryCall<Result>(
         request: GRPCCore.ClientRequest<Grpc_Testing_SimpleRequest>,
@@ -986,9 +987,9 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     /// - Parameters:
     ///   - request: A streaming request producing `Grpc_Testing_SimpleRequest` messages.
     ///   - options: Options to apply to this RPC.
-    ///   - handleResponse: A closure which handles the response, the result of which is
-    ///       returned to the caller. Returning from the closure will cancel the RPC if it
-    ///       hasn't already finished.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
     /// - Returns: The result of `handleResponse`.
     package func streamingCall<Result>(
         request: GRPCCore.StreamingClientRequest<Grpc_Testing_SimpleRequest>,
@@ -1014,9 +1015,9 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     /// - Parameters:
     ///   - request: A streaming request producing `Grpc_Testing_SimpleRequest` messages.
     ///   - options: Options to apply to this RPC.
-    ///   - handleResponse: A closure which handles the response, the result of which is
-    ///       returned to the caller. Returning from the closure will cancel the RPC if it
-    ///       hasn't already finished.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
     /// - Returns: The result of `handleResponse`.
     package func streamingFromClient<Result>(
         request: GRPCCore.StreamingClientRequest<Grpc_Testing_SimpleRequest>,
@@ -1044,9 +1045,9 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     /// - Parameters:
     ///   - request: A request containing a single `Grpc_Testing_SimpleRequest` message.
     ///   - options: Options to apply to this RPC.
-    ///   - handleResponse: A closure which handles the response, the result of which is
-    ///       returned to the caller. Returning from the closure will cancel the RPC if it
-    ///       hasn't already finished.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
     /// - Returns: The result of `handleResponse`.
     package func streamingFromServer<Result>(
         request: GRPCCore.ClientRequest<Grpc_Testing_SimpleRequest>,
@@ -1072,9 +1073,9 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     /// - Parameters:
     ///   - request: A streaming request producing `Grpc_Testing_SimpleRequest` messages.
     ///   - options: Options to apply to this RPC.
-    ///   - handleResponse: A closure which handles the response, the result of which is
-    ///       returned to the caller. Returning from the closure will cancel the RPC if it
-    ///       hasn't already finished.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
     /// - Returns: The result of `handleResponse`.
     package func streamingBothWays<Result>(
         request: GRPCCore.StreamingClientRequest<Grpc_Testing_SimpleRequest>,
@@ -1105,9 +1106,9 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     ///   - message: request message to send.
     ///   - metadata: Additional metadata to send, defaults to empty.
     ///   - options: Options to apply to this RPC, defaults to `.defaults`.
-    ///   - handleResponse: A closure which handles the response, the result of which is
-    ///       returned to the caller. Returning from the closure will cancel the RPC if it
-    ///       hasn't already finished.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
     /// - Returns: The result of `handleResponse`.
     package func unaryCall<Result>(
         _ message: Grpc_Testing_SimpleRequest,
@@ -1139,11 +1140,11 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     /// - Parameters:
     ///   - metadata: Additional metadata to send, defaults to empty.
     ///   - options: Options to apply to this RPC, defaults to `.defaults`.
-    ///   - producer: A closure producing request messages to send to the server. The request
-    ///       stream is closed when the closure returns.
-    ///   - handleResponse: A closure which handles the response, the result of which is
-    ///       returned to the caller. Returning from the closure will cancel the RPC if it
-    ///       hasn't already finished.
+    ///   - producer: A closure producing request messages to send to the server. Returning
+    ///       from the closure closes the request stream.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
     /// - Returns: The result of `handleResponse`.
     package func streamingCall<Result>(
         metadata: GRPCCore.Metadata = [:],
@@ -1172,11 +1173,11 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     /// - Parameters:
     ///   - metadata: Additional metadata to send, defaults to empty.
     ///   - options: Options to apply to this RPC, defaults to `.defaults`.
-    ///   - producer: A closure producing request messages to send to the server. The request
-    ///       stream is closed when the closure returns.
-    ///   - handleResponse: A closure which handles the response, the result of which is
-    ///       returned to the caller. Returning from the closure will cancel the RPC if it
-    ///       hasn't already finished.
+    ///   - producer: A closure producing request messages to send to the server. Returning
+    ///       from the closure closes the request stream.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
     /// - Returns: The result of `handleResponse`.
     package func streamingFromClient<Result>(
         metadata: GRPCCore.Metadata = [:],
@@ -1208,9 +1209,9 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     ///   - message: request message to send.
     ///   - metadata: Additional metadata to send, defaults to empty.
     ///   - options: Options to apply to this RPC, defaults to `.defaults`.
-    ///   - handleResponse: A closure which handles the response, the result of which is
-    ///       returned to the caller. Returning from the closure will cancel the RPC if it
-    ///       hasn't already finished.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
     /// - Returns: The result of `handleResponse`.
     package func streamingFromServer<Result>(
         _ message: Grpc_Testing_SimpleRequest,
@@ -1239,11 +1240,11 @@ extension Grpc_Testing_BenchmarkService.ClientProtocol {
     /// - Parameters:
     ///   - metadata: Additional metadata to send, defaults to empty.
     ///   - options: Options to apply to this RPC, defaults to `.defaults`.
-    ///   - producer: A closure producing request messages to send to the server. The request
-    ///       stream is closed when the closure returns.
-    ///   - handleResponse: A closure which handles the response, the result of which is
-    ///       returned to the caller. Returning from the closure will cancel the RPC if it
-    ///       hasn't already finished.
+    ///   - producer: A closure producing request messages to send to the server. Returning
+    ///       from the closure closes the request stream.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
     /// - Returns: The result of `handleResponse`.
     package func streamingBothWays<Result>(
         metadata: GRPCCore.Metadata = [:],
