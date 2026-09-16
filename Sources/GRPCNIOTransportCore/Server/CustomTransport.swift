@@ -134,12 +134,11 @@ extension HTTP2ServerTransport {
         case succeedPromise(_ promise: EventLoopPromise<SocketAddress?>, address: SocketAddress?)
       }
 
-      mutating func addressBound(_ address: NIOCore.SocketAddress?) -> OnBound {
+      mutating func addressBound(_ address: SocketAddress?) -> OnBound {
         switch self {
         case .idle(let listeningAddressPromise):
-          let mapped = address.map { SocketAddress($0) }
           self = .listening(listeningAddressPromise.futureResult)
-          return .succeedPromise(listeningAddressPromise, address: mapped)
+          return .succeedPromise(listeningAddressPromise, address: address)
 
         case .listening, .closed:
           fatalError(
@@ -273,8 +272,10 @@ extension HTTP2ServerTransport {
         connectionConfigurator: connectionConfigurator
       )
 
+      let listeningAddress = try await self.factory.listeningAddress(of: serverChannel.channel)
+
       let action = self.listeningAddressState.withLock {
-        $0.addressBound(serverChannel.channel.localAddress)
+        $0.addressBound(listeningAddress)
       }
       switch action {
       case .succeedPromise(let promise, let address):

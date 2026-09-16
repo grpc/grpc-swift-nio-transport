@@ -640,6 +640,31 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
     }
   }
 
+  /// A factory which binds to an address NIO's `SocketAddress` can't represent has no
+  /// `localAddress` for the transport to report, so the transport reports whatever the factory
+  /// says it bound to.
+  @available(gRPCSwiftNIOTransport 2.6, *)
+  func testCustomListenerReportsAddressFromFactory() async throws {
+    let eventLoopGroup = MultiThreadedEventLoopGroup.singletonMultiThreadedEventLoopGroup
+    let reportedAddress = GRPCNIOTransportCore.SocketAddress.vsock(contextID: .local, port: 1234)
+    let factory = LoopbackListenerFactory(
+      eventLoopGroup: eventLoopGroup,
+      reportedAddress: reportedAddress
+    )
+
+    let transport = HTTP2ServerTransport.Custom(listenerFactory: factory)
+
+    try await withGRPCServer(
+      transport: transport,
+      services: [HelloWorldService()]
+    ) { _ in
+      // The listener really is bound to loopback, but the factory said otherwise.
+      let address = await transport.listeningAddress
+      XCTAssertEqual(address, reportedAddress)
+      XCTAssertNil(address?.ipv4)
+    }
+  }
+
   @available(gRPCSwiftNIOTransport 2.6, *)
   func testTransportSpecificContextIsComputedOncePerConnection() async throws {
     let eventLoopGroup = MultiThreadedEventLoopGroup.singletonMultiThreadedEventLoopGroup
@@ -716,8 +741,16 @@ private struct CountingTransportSpecific: ServerContext.TransportSpecific {
 private struct LoopbackListenerFactory: HTTP2ServerTransport.ListenerFactory {
   fileprivate let eventLoopGroup: any EventLoopGroup
 
-  init(eventLoopGroup: any EventLoopGroup) {
+  /// The address to report as the listening address, standing in for one the channel can't report.
+  /// The listener binds to loopback either way: this only affects what's reported.
+  private let reportedAddress: GRPCNIOTransportCore.SocketAddress?
+
+  init(
+    eventLoopGroup: any EventLoopGroup,
+    reportedAddress: GRPCNIOTransportCore.SocketAddress? = nil
+  ) {
     self.eventLoopGroup = eventLoopGroup
+    self.reportedAddress = reportedAddress
   }
 
   func makeListeningChannel(
@@ -735,5 +768,11 @@ private struct LoopbackListenerFactory: HTTP2ServerTransport.ListenerFactory {
       .bind(host: "127.0.0.1", port: 0) { channel in
         connectionConfigurator.configure(channel: channel, tls: .none)
       }
+  }
+
+  func listeningAddress(
+    of channel: any Channel
+  ) async throws -> GRPCNIOTransportCore.SocketAddress? {
+    self.reportedAddress ?? channel.localAddress.map { GRPCNIOTransportCore.SocketAddress($0) }
   }
 }
