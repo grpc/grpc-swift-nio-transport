@@ -46,5 +46,24 @@ extension HTTP2ServerTransport {
       listenerConfigurator: ListenerConfigurator,
       connectionConfigurator: ConnectionConfigurator
     ) async throws -> NIOAsyncChannel<ConnectionConfigurator.ConnectionChannel, Never>
+
+    /// Returns the address the listening channel is bound to.
+    ///
+    /// The default implementation returns the channel's `localAddress`, which is enough for any
+    /// address NIO's `SocketAddress` can represent. Implement it when the channel has no
+    /// `localAddress` to report, as is the case for virtual sockets, where only the factory knows
+    /// how to ask for the address.
+    ///
+    /// - Parameter channel: The listening channel created by
+    ///     ``makeListeningChannel(listenerConfigurator:connectionConfigurator:)``.
+    /// - Returns: The address the channel is bound to, or `nil` if it doesn't have one.
+    func listeningAddress(of channel: any Channel) async throws -> SocketAddress?
+  }
+}
+
+@available(gRPCSwiftNIOTransport 2.6, *)
+extension HTTP2ServerTransport.ListenerFactory {
+  public func listeningAddress(of channel: any Channel) async throws -> SocketAddress? {
+    channel.localAddress.map { SocketAddress($0) }
   }
 }
