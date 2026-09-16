@@ -37,9 +37,12 @@ let dependencies: [Package.Dependency] = [
     url: "https://github.com/grpc/grpc-swift-2.git",
     from: "2.3.0"
   ),
+  // TEMP: pinned to the commit which added the 'localVsockAddress' and 'remoteVsockAddress'
+  // channel options (apple/swift-nio#3689). Replace with a version requirement once a release
+  // ships them: the latest is 2.102.0, which predates the merge.
   .package(
     url: "https://github.com/apple/swift-nio.git",
-    from: "2.96.0"
+    revision: "c1ccdbcc95c05b2b53a2c7e9fc51879ab4bf2723"
   ),
   .package(
     url: "https://github.com/apple/swift-nio-http2.git",
