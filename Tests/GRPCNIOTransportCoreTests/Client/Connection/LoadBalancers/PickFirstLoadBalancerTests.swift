@@ -49,10 +49,10 @@ final class PickFirstLoadBalancerTests: XCTestCase {
     try await LoadBalancerTest.pickFirst(servers: 1, connector: .posix()) { context, event in
       switch event {
       case .connectivityStateChanged(.idle):
-        XCTAssertNil(context.loadBalancer.pickSubchannel())
+        XCTAssertNil(context.loadBalancer.pickSubchannel().subchannel)
         context.loadBalancer.close()
       case .connectivityStateChanged(.shutdown):
-        XCTAssertNil(context.loadBalancer.pickSubchannel())
+        XCTAssertNil(context.loadBalancer.pickSubchannel().subchannel)
       default:
         ()
       }
@@ -75,7 +75,7 @@ final class PickFirstLoadBalancerTests: XCTestCase {
       case .connectivityStateChanged(.ready):
         var ids = Set<SubchannelID>()
         for _ in 0 ..< 100 {
-          let subchannel = try XCTUnwrap(context.loadBalancer.pickSubchannel())
+          let subchannel = try XCTUnwrap(context.loadBalancer.pickSubchannel().subchannel)
           ids.insert(subchannel.id)
         }
         XCTAssertEqual(ids.count, 1)
@@ -202,6 +202,43 @@ final class PickFirstLoadBalancerTests: XCTestCase {
     }
   }
 
+  func testPickWhenTransientFailureReportsTransientFailure() async throws {
+    // A failed pick reports the state of the load-balancer: callers rely on the transient failure
+    // (and its cause) to fail RPCs which haven't enabled 'wait for ready'.
+    let error = RPCError(code: .unavailable, message: "Connections aren't allowed here.")
+
+    try await LoadBalancerTest.pickFirst(servers: 0, connector: .throwing(error)) {
+      context,
+      event in
+      switch event {
+      case .connectivityStateChanged(.idle):
+        let endpoint = Endpoint(addresses: [.ipv4(host: "127.0.0.1", port: 1234)])
+        context.pickFirst!.updateEndpoint(endpoint)
+
+      case .connectivityStateChanged(.transientFailure):
+        switch context.loadBalancer.pickSubchannel() {
+        case .notAvailable(.transientFailure(let cause)):
+          XCTAssertEqual(cause, error)
+        case .picked, .notAvailable:
+          XCTFail("Expected '.notAvailable(.transientFailure)'")
+        }
+
+        context.loadBalancer.close()
+
+      default:
+        ()
+      }
+    } verifyEvents: { events in
+      let expected: [LoadBalancerEvent] = [
+        .connectivityStateChanged(.idle),
+        .connectivityStateChanged(.connecting),
+        .connectivityStateChanged(.transientFailure(cause: error)),
+        .connectivityStateChanged(.shutdown),
+      ]
+      XCTAssertEqual(events, expected)
+    }
+  }
+
   func testPickOnIdleTriggersConnect() async throws {
     // Tests that picking a subchannel when the load balancer is idle triggers a reconnect and
     // becomes ready again. Uses a very short idle time to re-enter the idle state.
@@ -223,7 +260,7 @@ final class PickFirstLoadBalancerTests: XCTestCase {
           context.pickFirst!.updateEndpoint(endpoint)
         case 2:
           // Load-balancer has the endpoints but all are idle. Picking will trigger a connect.
-          XCTAssertNil(context.loadBalancer.pickSubchannel())
+          XCTAssertNil(context.loadBalancer.pickSubchannel().subchannel)
         case 3:
           // Connection idled again. Shut it down.
           context.loadBalancer.close()
@@ -308,7 +345,7 @@ final class PickFirstLoadBalancerTests: XCTestCase {
       case .connectivityStateChanged(.ready):
         switch idleCount.value {
         case 1:
-          XCTAssertNotNil(context.loadBalancer.pickSubchannel())
+          XCTAssertNotNil(context.loadBalancer.pickSubchannel().subchannel)
           // Must be connected to server 1, send a GOAWAY frame.
           let channel = context.servers[0].server.clients.first!
           let goAway = HTTP2Frame(
@@ -321,7 +358,7 @@ final class PickFirstLoadBalancerTests: XCTestCase {
           // Must only be connected to server 2 now.
           XCTAssertEqual(context.servers[0].server.clients.count, 0)
           XCTAssertEqual(context.servers[1].server.clients.count, 1)
-          XCTAssertNotNil(context.loadBalancer.pickSubchannel())
+          XCTAssertNotNil(context.loadBalancer.pickSubchannel().subchannel)
           context.loadBalancer.close()
 
         default:
