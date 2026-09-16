@@ -159,6 +159,23 @@ extension HTTP2ServerTransport {
 
         return serverChannel
       }
+
+      func listeningAddress(
+        of channel: any Channel
+      ) async throws -> GRPCNIOTransportCore.SocketAddress? {
+        // NIO's `SocketAddress` can't represent a vsock address, so a vsock listening channel has
+        // no `localAddress` to report: ask the channel for the address it's bound to instead. A
+        // listener bound to `Port/any` only learns its port from the kernel, so this is also the
+        // only way to report where it actually is.
+        //
+        // The option is rejected for sockets which aren't vsock sockets, so asking is also how the
+        // address family of a listener gRPC was handed as a descriptor is resolved.
+        if let vsock = try? await channel.getOption(.localVsockAddress).get() {
+          return .vsock(GRPCNIOTransportCore.SocketAddress.VirtualSocket(vsock))
+        }
+
+        return channel.localAddress.map { GRPCNIOTransportCore.SocketAddress($0) }
+      }
     }
 
     private let underlyingTransport: Custom<ListenerFactory>
@@ -179,8 +196,7 @@ extension HTTP2ServerTransport {
 
         switch self.address {
         case .socketAddress(let socketAddress) where socketAddress.virtualSocket != nil:
-          // The channel didn't have a local address. This can happen for vsock channels
-          // because NIO's SocketAddress can't represent vsock addresses.
+          // Reading the bound address off the channel failed, so fall back to what was asked for.
           return socketAddress
 
         case .listeningSocket, .socketAddress:
