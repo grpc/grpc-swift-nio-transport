@@ -247,6 +247,9 @@ extension HTTP2ServerTransport {
       eventLoopGroup: MultiThreadedEventLoopGroup = .singletonMultiThreadedEventLoopGroup
     ) {
       self.address = address
+      // Whether the peer of a connection to this server can be described by a vsock address. The
+      // address of a listener gRPC is handed as a descriptor isn't known, so those don't count.
+      let isVirtualSocket = address.socketAddress?.virtualSocket != nil
       self.underlyingTransport = Custom(
         eventLoopGroup: eventLoopGroup,
         quiescingHelper: ServerQuiescingHelper(group: eventLoopGroup),
@@ -281,6 +284,17 @@ extension HTTP2ServerTransport {
             context.peerCertificate = swiftCert
           }
         } catch {}
+
+        // NIO's `SocketAddress` has no vsock representation, so the peer's address has to come
+        // from the channel option rather than from `remoteAddress`. The transport-specific context
+        // is built once per connection, so this is one read per connection, not one per RPC.
+        if isVirtualSocket,
+          let vsockAddress = try? await channel.getOption(.remoteVsockAddress).get()
+        {
+          context.virtualSocketCredentials = VirtualSocketCredentials(
+            contextID: .init(vsockAddress.cid)
+          )
+        }
 
         return context
       }
@@ -321,6 +335,14 @@ extension HTTP2ServerTransport.Posix {
     /// This is only available when using a custom verification callback.
     @available(gRPCSwiftNIOTransport 2.2, *)
     public var peerCertificateChain: X509.ValidatedCertificateChain?
+
+    /// The credentials of the peer, when the server is bound to a virtual socket ('vsock')
+    /// address.
+    ///
+    /// This is `nil` unless the server was bound to a vsock address, and on platforms and socket
+    /// types where the peer's address can't be read.
+    @available(gRPCSwiftNIOTransport 2.10, *)
+    public var virtualSocketCredentials: VirtualSocketCredentials?
 
     /// Creates an empty context.
     public init() {
