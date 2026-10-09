@@ -113,7 +113,8 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
 
       group.addTask {
         let address = try await transport.listeningAddress
-        XCTAssertNotNil(address.virtualSocket)
+        let vsockAddress = try XCTUnwrap(address.virtualSocket)
+        XCTAssertNotEqual(vsockAddress.port, .any)
         transport.beginGracefulShutdown()
       }
     }
