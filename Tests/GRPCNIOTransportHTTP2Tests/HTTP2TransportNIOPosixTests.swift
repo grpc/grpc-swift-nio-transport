@@ -644,7 +644,7 @@ final class HTTP2TransportNIOPosixTests: XCTestCase {
   /// A factory which binds to an address NIO's `SocketAddress` can't represent has no
   /// `localAddress` for the transport to report, so the transport reports whatever the factory
   /// says it bound to.
-  @available(gRPCSwiftNIOTransport 2.6, *)
+  @available(gRPCSwiftNIOTransport 2.13, *)
   func testCustomListenerReportsAddressFromFactory() async throws {
     let eventLoopGroup = MultiThreadedEventLoopGroup.singletonMultiThreadedEventLoopGroup
     let reportedAddress = GRPCNIOTransportCore.SocketAddress.vsock(contextID: .local, port: 1234)

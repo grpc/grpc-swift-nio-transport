@@ -272,7 +272,14 @@ extension HTTP2ServerTransport {
         connectionConfigurator: connectionConfigurator
       )
 
-      let listeningAddress = try await self.factory.listeningAddress(of: serverChannel.channel)
+      let listeningAddress: SocketAddress?
+      do {
+        listeningAddress = try await self.factory.listeningAddress(of: serverChannel.channel)
+      } catch {
+        // The channel is only closed by `executeThenClose` below, which isn't reached.
+        try? await serverChannel.channel.close()
+        throw error
+      }
 
       let action = self.listeningAddressState.withLock {
         $0.addressBound(listeningAddress)
