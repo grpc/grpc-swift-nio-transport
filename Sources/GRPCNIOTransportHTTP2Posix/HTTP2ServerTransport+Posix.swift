@@ -167,11 +167,9 @@ extension HTTP2ServerTransport {
         // no `localAddress` to report: ask the channel for the address it's bound to instead. A
         // listener bound to `Port/any` only learns its port from the kernel, so this is also the
         // only way to report where it actually is.
-        //
-        // The option is rejected for sockets which aren't vsock sockets, so asking is also how the
-        // address family of a listener gRPC was handed as a descriptor is resolved.
-        if let vsock = try? await channel.getOption(.localVsockAddress).get() {
-          return .vsock(GRPCNIOTransportCore.SocketAddress.VirtualSocket(vsock))
+        if case .socketAddress(let address) = self.address, address.virtualSocket != nil {
+          let bound = try await channel.getOption(.localVsockAddress).get()
+          return .vsock(GRPCNIOTransportCore.SocketAddress.VirtualSocket(bound))
         }
 
         return channel.localAddress.map { GRPCNIOTransportCore.SocketAddress($0) }
@@ -179,7 +177,6 @@ extension HTTP2ServerTransport {
     }
 
     private let underlyingTransport: Custom<ListenerFactory>
-    private let address: ListenerFactory.Address
 
     /// The listening address for this server transport.
     ///
@@ -194,20 +191,13 @@ extension HTTP2ServerTransport {
           return address
         }
 
-        switch self.address {
-        case .socketAddress(let socketAddress) where socketAddress.virtualSocket != nil:
-          // Reading the bound address off the channel failed, so fall back to what was asked for.
-          return socketAddress
-
-        case .listeningSocket, .socketAddress:
-          throw RuntimeError(
-            code: .serverIsStopped,
-            message: """
-              There is no listening address bound for this server: there may have been \
-              an error which caused the transport to close, or it may have shut down.
-              """
-          )
-        }
+        throw RuntimeError(
+          code: .serverIsStopped,
+          message: """
+            There is no listening address bound for this server: there may have been \
+            an error which caused the transport to close, or it may have shut down.
+            """
+        )
       }
     }
 
@@ -262,7 +252,6 @@ extension HTTP2ServerTransport {
       config: Config = .defaults,
       eventLoopGroup: MultiThreadedEventLoopGroup = .singletonMultiThreadedEventLoopGroup
     ) {
-      self.address = address
       self.underlyingTransport = Custom(
         eventLoopGroup: eventLoopGroup,
         quiescingHelper: ServerQuiescingHelper(group: eventLoopGroup),

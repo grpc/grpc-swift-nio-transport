@@ -57,11 +57,12 @@ extension HTTP2ServerTransport {
     /// - Parameter channel: The listening channel created by
     ///     ``makeListeningChannel(listenerConfigurator:connectionConfigurator:)``.
     /// - Returns: The address the channel is bound to, or `nil` if it doesn't have one.
+    @available(gRPCSwiftNIOTransport 2.11, *)
     func listeningAddress(of channel: any Channel) async throws -> SocketAddress?
   }
 }
 
-@available(gRPCSwiftNIOTransport 2.6, *)
+@available(gRPCSwiftNIOTransport 2.11, *)
 extension HTTP2ServerTransport.ListenerFactory {
   public func listeningAddress(of channel: any Channel) async throws -> SocketAddress? {
     channel.localAddress.map { SocketAddress($0) }
