@@ -202,7 +202,7 @@ final class ConnectionTests: XCTestCase {
     }
   }
 
-  private func testAuthorityIsSanitized(authority: String, expected: String) async throws {
+  private func testAuthorityIsSanitized(authority: String, expected: String?) async throws {
     let recorder = SNIRecordingConnector()
     let connection = Connection(
       address: .ipv4(host: "ignored", port: 0),
@@ -237,6 +237,30 @@ final class ConnectionTests: XCTestCase {
     try await self.testAuthorityIsSanitized(
       authority: "foo.example.com:abc123",
       expected: "foo.example.com:abc123"
+    )
+  }
+
+  func testAuthorityWithIPLiteralHasNoSNI() async throws {
+    // IP literals aren't valid SNI hostnames (RFC 6066 § 3) and NIOSSL
+    // refuses them, failing the connection before the handshake starts.
+    try await self.testAuthorityIsSanitized(
+      authority: "127.0.0.1",
+      expected: nil
+    )
+
+    try await self.testAuthorityIsSanitized(
+      authority: "127.0.0.1:9443",
+      expected: nil
+    )
+
+    try await self.testAuthorityIsSanitized(
+      authority: "::1",
+      expected: nil
+    )
+
+    try await self.testAuthorityIsSanitized(
+      authority: "[2001:db8::1]:443",
+      expected: nil
     )
   }
 }
