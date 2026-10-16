@@ -32,6 +32,7 @@ final class TestServer: Sendable {
   private typealias Multiplexer = NIOHTTP2AsyncSequence<Stream>
 
   private let connected: Mutex<[any Channel]>
+  private let accepted: AtomicCounter
 
   typealias Inbound = NIOAsyncChannelInboundStream<RPCRequestPart<GRPCNIOTransportBytes>>
   typealias Outbound = NIOAsyncChannelOutboundWriter<RPCResponsePart<GRPCNIOTransportBytes>>
@@ -42,6 +43,7 @@ final class TestServer: Sendable {
     self.eventLoopGroup = eventLoopGroup
     self.server = Mutex(nil)
     self.connected = Mutex([])
+    self.accepted = AtomicCounter()
   }
 
   enum Target {
@@ -53,11 +55,17 @@ final class TestServer: Sendable {
     return self.connected.withLock { $0 }
   }
 
+  /// The total number of connections the server has accepted, including those which have closed.
+  var acceptedConnections: Int {
+    return self.accepted.value
+  }
+
   func bind(to target: Target = .localhost) async throws -> GRPCNIOTransportCore.SocketAddress {
     precondition(self.server.withLock { $0 } == nil)
 
     @Sendable
     func configure(_ channel: any Channel) -> EventLoopFuture<Multiplexer> {
+      self.accepted.increment()
       self.connected.withLock {
         $0.append(channel)
       }
@@ -118,6 +126,15 @@ final class TestServer: Sendable {
 
     self.server.withLock { $0 = server }
     return address
+  }
+
+  /// Stops accepting new connections. Existing connections are left open.
+  func stopListening() async throws {
+    guard let server = self.server.withLock({ $0 }) else {
+      fatalError("bind() must be called first")
+    }
+
+    try await server.channel.close().get()
   }
 
   func run(_ handle: @Sendable @escaping (Inbound, Outbound) async throws -> Void) async throws {
