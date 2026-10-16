@@ -346,7 +346,7 @@ extension HTTP2ServerTransport.Posix {
     ///
     /// This is `nil` unless the server was bound to a vsock address, and on platforms and socket
     /// types where the peer's address can't be read.
-    @available(gRPCSwiftNIOTransport 2.10, *)
+    @available(gRPCSwiftNIOTransport 2.13, *)
     public var virtualSocketCredentials: VirtualSocketCredentials?
 
     /// Creates an empty context.

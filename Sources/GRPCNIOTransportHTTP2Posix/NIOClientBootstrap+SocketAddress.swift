@@ -65,7 +65,7 @@ extension GRPCNIOTransportCore.SocketAddress.VirtualSocket {
   }
 }
 
-@available(gRPCSwiftNIOTransport 2.0, *)
+@available(gRPCSwiftNIOTransport 2.13, *)
 extension GRPCNIOTransportCore.SocketAddress.VirtualSocket.ContextID {
   init(_ contextID: NIOPosix.VsockAddress.ContextID) {
     self.init(rawValue: contextID.rawValue)
