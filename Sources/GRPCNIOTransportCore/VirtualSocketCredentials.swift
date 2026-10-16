@@ -17,10 +17,10 @@
 /// Identifies the peer at the far end of a virtual socket ('vsock') connection.
 ///
 /// The peer's port isn't included: it's assigned per connection, so it doesn't identify the peer.
-@available(gRPCSwiftNIOTransport 2.10, *)
+@available(gRPCSwiftNIOTransport 2.13, *)
 public struct VirtualSocketCredentials: Hashable, Sendable {
   /// The context ID of the peer.
-  public var contextID: SocketAddress.VirtualSocket.ContextID
+  public let contextID: SocketAddress.VirtualSocket.ContextID
 
   /// Creates credentials describing the peer of a virtual socket connection.
   ///

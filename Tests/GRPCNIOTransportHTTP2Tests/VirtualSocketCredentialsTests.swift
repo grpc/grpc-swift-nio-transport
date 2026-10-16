@@ -31,7 +31,7 @@ struct VirtualSocketCredentialsTests {
     "Peer credentials describe the connecting context over a virtual socket",
     .enabled(if: vsockLoopbackAvailable(), "Vsock loopback is unavailable")
   )
-  @available(gRPCSwiftNIOTransport 2.10, *)
+  @available(gRPCSwiftNIOTransport 2.13, *)
   func credentialsOverVirtualSocket() async throws {
     // NIO's `SocketAddress` can't represent a vsock address, so a vsock listener has no address to
     // report and the port can't be left to the kernel to pick. It's random rather than fixed so

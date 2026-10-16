@@ -247,8 +247,6 @@ extension HTTP2ServerTransport {
       eventLoopGroup: MultiThreadedEventLoopGroup = .singletonMultiThreadedEventLoopGroup
     ) {
       self.address = address
-      // Whether the peer of a connection to this server can be described by a vsock address. The
-      // address of a listener gRPC is handed as a descriptor isn't known, so those don't count.
       let isVirtualSocket = address.socketAddress?.virtualSocket != nil
       self.underlyingTransport = Custom(
         eventLoopGroup: eventLoopGroup,
@@ -341,7 +339,7 @@ extension HTTP2ServerTransport.Posix {
     ///
     /// This is `nil` unless the server was bound to a vsock address, and on platforms and socket
     /// types where the peer's address can't be read.
-    @available(gRPCSwiftNIOTransport 2.10, *)
+    @available(gRPCSwiftNIOTransport 2.13, *)
     public var virtualSocketCredentials: VirtualSocketCredentials?
 
     /// Creates an empty context.
