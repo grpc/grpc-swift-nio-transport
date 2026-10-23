@@ -33,6 +33,10 @@ transport implementations built on top of SwiftNIO.
 
 - ``TLSConfig``
 
+### Rate limits
+
+- ``RateLimit``
+
 ### Message data
 
 - ``GRPCNIOTransportBytes``

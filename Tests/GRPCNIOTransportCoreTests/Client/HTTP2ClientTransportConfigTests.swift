@@ -45,5 +45,6 @@ final class HTTP2ClientTransportConfigTests: XCTestCase {
     XCTAssertEqual(config.maxHeaderListSize, 16 * 1024)
     XCTAssertEqual(config.maxFrameSize, 16384)
     XCTAssertEqual(config.targetWindowSize, 8 * 1024 * 1024)
+    XCTAssertEqual(config.rateLimits, .defaults)
   }
 }
