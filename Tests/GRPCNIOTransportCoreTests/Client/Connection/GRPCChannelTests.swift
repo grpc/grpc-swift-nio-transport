@@ -437,9 +437,9 @@ final class GRPCChannelTests: XCTestCase {
   }
 
   private enum ServerShutdown {
-    /// The server sends a GOAWAY before closing its connections (e.g. it received a SIGTERM).
+    /// The server sends a GOAWAY before closing its connections.
     case graceful
-    /// The server's connections are dropped without a GOAWAY (e.g. its process was killed).
+    /// The server's connections are dropped without a GOAWAY.
     case abrupt
   }
 
