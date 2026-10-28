@@ -311,6 +311,9 @@ extension Subchannel {
           .transientFailure(cause: error)
         )
       )
+      // None of the addresses could be connected to, they may be stale (e.g. the server moved).
+      // Ask the load balancer to re-resolve so that it isn't stuck retrying them indefinitely.
+      self.event.continuation.yield(.requiresNameResolution)
       // Run the backoff as an individually cancellable task and remember its handle. If the
       // subchannel is gracefully shut down while backing off, there are no in-flight RPCs to drain,
       // so shutdown cancels this task rather than waiting for the (potentially long) backoff to

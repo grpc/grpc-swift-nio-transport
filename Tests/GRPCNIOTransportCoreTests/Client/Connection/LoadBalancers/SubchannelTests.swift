@@ -156,9 +156,9 @@ final class SubchannelTests: XCTestCase {
         }
       }
 
-      // First four events are known:
+      // First five events are known:
       XCTAssertEqual(
-        Array(events.prefix(4)),
+        Array(events.prefix(5)),
         [
           .connectivityStateChanged(.idle),
           .connectivityStateChanged(.connecting),
@@ -171,6 +171,7 @@ final class SubchannelTests: XCTestCase {
               )
             )
           ),
+          .requiresNameResolution,
           .connectivityStateChanged(.connecting),
         ]
       )
@@ -335,6 +336,54 @@ final class SubchannelTests: XCTestCase {
         backoff / 2,
         "graceful shutdown waited out the connection backoff (took \(elapsed))"
       )
+    }
+  }
+
+  func testConnectFailureRequestsNameResolution() async throws {
+    // When no address can be connected to the addresses may be stale (e.g. the server moved), so
+    // the subchannel must ask for names to be re-resolved rather than only retrying them.
+    let subchannel = self.makeSubchannel(
+      address: .unixDomainSocket(path: "not-listening"),
+      connector: .posix(),
+      backoff: .fixed(at: .seconds(30))
+    )
+
+    await withDiscardingTaskGroup { group in
+      group.addTask {
+        await subchannel.run()
+      }
+
+      var events = [Subchannel.Event]()
+      for await event in subchannel.events {
+        events.append(event)
+        switch event {
+        case .connectivityStateChanged(.idle):
+          subchannel.connect()
+
+        case .connectivityStateChanged(.transientFailure):
+          // All addresses have been tried; the subchannel is now backing off.
+          subchannel.shutDown()
+
+        default:
+          ()
+        }
+      }
+
+      let expected: [Subchannel.Event] = [
+        .connectivityStateChanged(.idle),
+        .connectivityStateChanged(.connecting),
+        .connectivityStateChanged(
+          .transientFailure(
+            cause: RPCError(
+              code: .unavailable,
+              message: "Could not establish a connection to [unix]not-listening."
+            )
+          )
+        ),
+        .requiresNameResolution,
+        .connectivityStateChanged(.shutdown),
+      ]
+      XCTAssertEqual(events, expected)
     }
   }
 
