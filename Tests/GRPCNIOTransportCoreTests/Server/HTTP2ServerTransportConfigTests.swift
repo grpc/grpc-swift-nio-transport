@@ -46,6 +46,7 @@ final class HTTP2ServerTransportConfigTests: XCTestCase {
     XCTAssertEqual(config.maxFrameSize, 16_384)
     XCTAssertEqual(config.targetWindowSize, 65_535)
     XCTAssertNil(config.maxConcurrentStreams)
+    XCTAssertEqual(config.rateLimits, .defaults)
   }
 
   func testRPCDefaults() {

@@ -44,14 +44,16 @@ extension HTTP2Connector where Self == NIOPosixConnector {
     keepaliveTime: TimeAmount? = nil,
     keepaliveTimeout: TimeAmount? = nil,
     keepaliveWithoutCalls: Bool = false,
-    dropPingAcks: Bool = false
+    dropPingAcks: Bool = false,
+    rateLimits: HTTP2ClientTransport.Config.HTTP2.RateLimits = .defaults
   ) -> Self {
     return NIOPosixConnector(
       maxIdleTime: maxIdleTime,
       keepaliveTime: keepaliveTime,
       keepaliveTimeout: keepaliveTimeout,
       keepaliveWithoutCalls: keepaliveWithoutCalls,
-      dropPingAcks: dropPingAcks
+      dropPingAcks: dropPingAcks,
+      rateLimits: rateLimits
     )
   }
 }
@@ -85,25 +87,44 @@ struct NeverConnector: HTTP2Connector {
 @available(gRPCSwiftNIOTransport 2.0, *)
 struct NIOPosixConnector: HTTP2Connector {
   private let eventLoopGroup: any EventLoopGroup
-  private let maxIdleTime: TimeAmount?
-  private let keepaliveTime: TimeAmount?
-  private let keepaliveTimeout: TimeAmount?
-  private let keepaliveWithoutCalls: Bool
+  private let config: GRPCChannel.Config
   private let dropPingAcks: Bool
 
+  /// Creates a connector which configures connections with the gRPC client pipeline.
   init(
     eventLoopGroup: (any EventLoopGroup)? = nil,
     maxIdleTime: TimeAmount? = nil,
     keepaliveTime: TimeAmount? = nil,
     keepaliveTimeout: TimeAmount? = nil,
     keepaliveWithoutCalls: Bool = false,
-    dropPingAcks: Bool = false
+    dropPingAcks: Bool = false,
+    rateLimits: HTTP2ClientTransport.Config.HTTP2.RateLimits = .defaults
   ) {
+    var connection = HTTP2ClientTransport.Config.Connection.defaults
+    connection.maxIdleTime = maxIdleTime.map { Duration($0) }
+
+    if let keepaliveTime {
+      connection.keepalive = HTTP2ClientTransport.Config.Keepalive(
+        time: Duration(keepaliveTime),
+        timeout: Duration(keepaliveTimeout ?? .seconds(20)),
+        allowWithoutCalls: keepaliveWithoutCalls
+      )
+    }
+
+    // Flush immediately so that tests don't depend on the flush coalescing delay.
+    connection.flushCoalescing = nil
+
+    var http2 = HTTP2ClientTransport.Config.HTTP2.defaults
+    http2.rateLimits = rateLimits
+
     self.eventLoopGroup = eventLoopGroup ?? .singletonMultiThreadedEventLoopGroup
-    self.maxIdleTime = maxIdleTime
-    self.keepaliveTime = keepaliveTime
-    self.keepaliveTimeout = keepaliveTimeout
-    self.keepaliveWithoutCalls = keepaliveWithoutCalls
+    self.config = GRPCChannel.Config(
+      http2: http2,
+      backoff: .defaults,
+      resolverBackoff: .defaults,
+      connection: connection,
+      compression: .defaults
+    )
     self.dropPingAcks = dropPingAcks
   }
 
@@ -114,32 +135,15 @@ struct NIOPosixConnector: HTTP2Connector {
     return try await ClientBootstrap(group: self.eventLoopGroup).connect(to: address) { channel in
       channel.eventLoop.makeCompletedFuture {
         let sync = channel.pipeline.syncOperations
-
-        let connectionHandler = ClientConnectionHandler(
-          eventLoop: channel.eventLoop,
-          maxIdleTime: self.maxIdleTime,
-          keepaliveTime: self.keepaliveTime,
-          keepaliveTimeout: self.keepaliveTimeout,
-          keepaliveWithoutCalls: self.keepaliveWithoutCalls
+        let (asyncChannel, multiplexer) = try sync.configureGRPCClientPipeline(
+          channel: channel,
+          config: self.config
         )
-
-        let multiplexer = try sync.configureAsyncHTTP2Pipeline(
-          mode: .client,
-          streamDelegate: connectionHandler.http2StreamDelegate
-        ) { stream in
-          // Server shouldn't be opening streams.
-          stream.close()
-        }
 
         if self.dropPingAcks {
-          try sync.addHandler(PingAckDropper())
+          let http2Handler = try sync.handler(type: NIOHTTP2Handler.self)
+          try sync.addHandler(PingAckDropper(), position: .after(http2Handler))
         }
-
-        try sync.addHandler(connectionHandler)
-
-        let asyncChannel = try NIOAsyncChannel<ClientConnectionEvent, Void>(
-          wrappingChannelSynchronously: channel
-        )
 
         return HTTP2Connection(
           channel: asyncChannel,

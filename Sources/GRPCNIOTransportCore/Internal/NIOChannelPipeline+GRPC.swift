@@ -87,6 +87,7 @@ extension ChannelPipeline.SynchronousOperations {
       )
     }
     http2HandlerConnectionConfiguration.initialSettings = http2HandlerHTTP2Settings
+    http2HandlerConnectionConfiguration.apply(http2Config.rateLimits)
 
     var http2HandlerStreamConfiguration = NIOHTTP2Handler.StreamConfiguration()
     http2HandlerStreamConfiguration.targetWindowSize = clampedTargetWindowSize
@@ -169,6 +170,8 @@ extension ChannelPipeline.SynchronousOperations {
         value: Int(UInt32(clamping: config.http2.maxHeaderListSize))
       ),
     ]
+
+    http2.connection.apply(config.http2.rateLimits)
 
     // These rates inform NIO's DoS detection heuristics which typically apply to a server. The
     // rate at which RST_STREAM frames are permitted is increased for the client as clients are
