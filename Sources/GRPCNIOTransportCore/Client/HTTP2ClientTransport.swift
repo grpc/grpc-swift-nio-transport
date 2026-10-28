@@ -198,13 +198,22 @@ extension HTTP2ClientTransport.Config {
     /// extension, if applicable.
     public var authority: String?
 
+    /// Rate limits for frames received from the server.
+    ///
+    /// If the server exceeds any of these limits then the client closes the connection.
+    ///
+    /// - SeeAlso: ``RateLimits/defaults``.
+    @available(gRPCSwiftNIOTransport 2.12, *)
+    public var rateLimits: RateLimits
+
     /// Creates an HTTP/2 configuration.
     public init(maxFrameSize: Int, targetWindowSize: Int, authority: String?) {
       self.init(
         maxFrameSize: maxFrameSize,
         targetWindowSize: targetWindowSize,
         authority: authority,
-        maxHeaderListSize: 16 * 1024
+        maxHeaderListSize: 16 * 1024,
+        rateLimits: .defaults
       )
     }
 
@@ -216,16 +225,41 @@ extension HTTP2ClientTransport.Config {
       authority: String?,
       maxHeaderListSize: Int
     ) {
+      self.init(
+        maxFrameSize: maxFrameSize,
+        targetWindowSize: targetWindowSize,
+        authority: authority,
+        maxHeaderListSize: maxHeaderListSize,
+        rateLimits: .defaults
+      )
+    }
+
+    /// Creates an HTTP/2 configuration.
+    @available(gRPCSwiftNIOTransport 2.12, *)
+    public init(
+      maxFrameSize: Int,
+      targetWindowSize: Int,
+      authority: String?,
+      maxHeaderListSize: Int,
+      rateLimits: RateLimits
+    ) {
       self.maxFrameSize = maxFrameSize
       self.maxHeaderListSize = maxHeaderListSize
       self.targetWindowSize = targetWindowSize
       self.authority = authority
+      self.rateLimits = rateLimits
     }
 
     /// Default values, max frame size and max header list size are 16KiB, and the target window
-    /// size is 8MiB.
+    /// size is 8MiB. The rate limits default to ``RateLimits/defaults``.
     public static var defaults: Self {
-      Self(maxFrameSize: 1 << 14, targetWindowSize: 8 * 1024 * 1024, authority: nil)
+      Self(
+        maxFrameSize: 1 << 14,
+        targetWindowSize: 8 * 1024 * 1024,
+        authority: nil,
+        maxHeaderListSize: 16 * 1024,
+        rateLimits: .defaults
+      )
     }
   }
 
@@ -301,6 +335,29 @@ extension HTTP2ClientTransport.Config.Connection {
     /// The max flush delay is 100μs and the max bytes is 64KiB.
     public static var defaults: Self {
       Self(maxFlushDelay: .microseconds(100), maxBytes: 64 * 1024)
+    }
+  }
+}
+
+@available(gRPCSwiftNIOTransport 2.0, *)
+extension HTTP2ClientTransport.Config.HTTP2 {
+  /// Rate limits for frames received from the server.
+  ///
+  /// Each limit protects the client against a server which would otherwise make it do an unbounded
+  /// amount of work. If the server exceeds any of these limits then the client sends a GOAWAY frame
+  /// with the `ENHANCE_YOUR_CALM` error code and closes the connection.
+  @available(gRPCSwiftNIOTransport 2.12, *)
+  public struct RateLimits: Sendable, Hashable {
+    /// The maximum rate of `PING`, `SETTINGS`, `PRIORITY`, `ALTSVC`, and `ORIGIN` frames received
+    /// from the server, including acknowledgements.
+    public var controlFrames: RateLimit
+
+    /// The default rate limits for the client transport.
+    ///
+    /// Uses the following default values:
+    /// - ``controlFrames``: 200 frames in any 10 second window.
+    public static var defaults: Self {
+      Self(controlFrames: RateLimit(maxCount: 200, window: .seconds(10)))
     }
   }
 }

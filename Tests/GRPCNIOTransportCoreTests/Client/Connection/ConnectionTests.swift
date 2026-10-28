@@ -82,6 +82,43 @@ final class ConnectionTests: XCTestCase {
     }
   }
 
+  @available(gRPCSwiftNIOTransport 2.12, *)
+  func testControlFrameRateLimitExceeded() async throws {
+    var rateLimits = HTTP2ClientTransport.Config.HTTP2.RateLimits.defaults
+    rateLimits.controlFrames = RateLimit(maxCount: 10, window: .seconds(60))
+
+    try await ConnectionTest.run(connector: .posix(rateLimits: rateLimits)) { context, event in
+      switch event {
+      case .connectSucceeded:
+        let accepted = try context.server.acceptedChannel
+        // Send more PING frames than the rate limit allows.
+        for i in 0 ..< 20 {
+          let ping = HTTP2Frame(
+            streamID: .rootStream,
+            payload: .ping(HTTP2PingData(withInteger: UInt64(i)), ack: false)
+          )
+          accepted.write(ping, promise: nil)
+        }
+
+        // Close the connection gracefully if the client doesn't enforce the limit.
+        let goAway = HTTP2Frame(
+          streamID: .rootStream,
+          payload: .goAway(lastStreamID: 0, errorCode: .noError, opaqueData: nil)
+        )
+        accepted.writeAndFlush(goAway, promise: nil)
+
+      default:
+        ()
+      }
+    } validateEvents: { _, events in
+      guard events.count == 2, case .closed(.error(let error, _)) = events[1] else {
+        return XCTFail("Unexpected events: \(events)")
+      }
+      XCTAssertEqual(events[0], .connectSucceeded)
+      XCTAssert(error.cause is NIOHTTP2Errors.ExcessiveControlFrames, "\(error)")
+    }
+  }
+
   func testConnectionDropWhenConnected() async throws {
     try await ConnectionTest.run(connector: .posix()) { context, event in
       switch event {
