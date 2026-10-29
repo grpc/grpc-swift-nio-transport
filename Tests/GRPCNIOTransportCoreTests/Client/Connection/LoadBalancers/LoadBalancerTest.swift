@@ -187,3 +187,15 @@ extension LoadBalancerTest.Context {
     }
   }
 }
+
+@available(gRPCSwiftNIOTransport 2.0, *)
+extension LoadBalancer.Pick {
+  var subchannel: Subchannel? {
+    switch self {
+    case .picked(let subchannel):
+      return subchannel
+    case .notAvailable:
+      return nil
+    }
+  }
+}

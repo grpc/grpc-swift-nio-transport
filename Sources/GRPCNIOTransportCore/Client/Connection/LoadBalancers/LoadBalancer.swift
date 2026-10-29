@@ -62,7 +62,14 @@ extension LoadBalancer {
     }
   }
 
-  package func pickSubchannel() -> Subchannel? {
+  package enum Pick {
+    /// A subchannel was picked, use it to create a stream.
+    case picked(Subchannel)
+    /// No subchannel is available; the load-balancer is in this connectivity state.
+    case notAvailable(ConnectivityState)
+  }
+
+  package func pickSubchannel() -> Pick {
     switch self {
     case .roundRobin(let loadBalancer):
       return loadBalancer.pickSubchannel()

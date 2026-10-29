@@ -70,7 +70,7 @@ final class RoundRobinLoadBalancerTests: XCTestCase {
         try await XCTPoll(every: .milliseconds(10)) {
           var subchannelIDs = Set<SubchannelID>()
           for _ in 0 ..< 3 {
-            let subchannel = try XCTUnwrap(context.loadBalancer.pickSubchannel())
+            let subchannel = try XCTUnwrap(context.loadBalancer.pickSubchannel().subchannel)
             subchannelIDs.insert(subchannel.id)
           }
           return subchannelIDs.count == 3
@@ -81,7 +81,7 @@ final class RoundRobinLoadBalancerTests: XCTestCase {
 
         for round in 1 ... 10 {
           for _ in 1 ... 3 {
-            if let subchannel = context.loadBalancer.pickSubchannel() {
+            if let subchannel = context.loadBalancer.pickSubchannel().subchannel {
               counts[subchannel.id, default: 0] += 1
             } else {
               XCTFail("Didn't pick subchannel from ready load balancer")
@@ -252,7 +252,7 @@ final class RoundRobinLoadBalancerTests: XCTestCase {
         var ids = Set<SubchannelID>()
         try await XCTPoll(every: .milliseconds(10)) {
           for _ in 1 ... 3 {
-            if let subchannel = context.loadBalancer.pickSubchannel() {
+            if let subchannel = context.loadBalancer.pickSubchannel().subchannel {
               ids.insert(subchannel.id)
             }
           }
@@ -272,9 +272,9 @@ final class RoundRobinLoadBalancerTests: XCTestCase {
 
       case .requiresNameResolution:
         // One subchannel should've been taken out, meaning we can only pick from the remaining two:
-        let id1 = try XCTUnwrap(context.loadBalancer.pickSubchannel()?.id)
-        let id2 = try XCTUnwrap(context.loadBalancer.pickSubchannel()?.id)
-        let id3 = try XCTUnwrap(context.loadBalancer.pickSubchannel()?.id)
+        let id1 = try XCTUnwrap(context.loadBalancer.pickSubchannel().subchannel?.id)
+        let id2 = try XCTUnwrap(context.loadBalancer.pickSubchannel().subchannel?.id)
+        let id3 = try XCTUnwrap(context.loadBalancer.pickSubchannel().subchannel?.id)
         XCTAssertNotEqual(id1, id2)
         XCTAssertEqual(id1, id3)
 
@@ -305,7 +305,7 @@ final class RoundRobinLoadBalancerTests: XCTestCase {
       enabledCompression: .none
     )
 
-    XCTAssertNil(loadBalancer.pickSubchannel())
+    XCTAssertNil(loadBalancer.pickSubchannel().subchannel)
   }
 
   func testPickSubchannelWhenClosed() async {
@@ -320,7 +320,43 @@ final class RoundRobinLoadBalancerTests: XCTestCase {
     loadBalancer.close()
     await loadBalancer.run()
 
-    XCTAssertNil(loadBalancer.pickSubchannel())
+    XCTAssertNil(loadBalancer.pickSubchannel().subchannel)
+
+    switch loadBalancer.pickSubchannel() {
+    case .notAvailable(.shutdown):
+      ()
+    case .picked, .notAvailable:
+      XCTFail("Expected '.notAvailable(.shutdown)'")
+    }
+  }
+
+  func testPickWhenTransientFailureReportsTransientFailure() async throws {
+    // A failed pick reports the state of the load-balancer: callers rely on the transient failure
+    // (and its cause) to fail RPCs which haven't enabled 'wait for ready'.
+    let error = RPCError(code: .unavailable, message: "Connections aren't allowed here.")
+
+    try await LoadBalancerTest.roundRobin(servers: 0, connector: .throwing(error)) {
+      context,
+      event in
+      switch event {
+      case .connectivityStateChanged(.idle):
+        let endpoint = Endpoint(addresses: [.ipv4(host: "127.0.0.1", port: 1234)])
+        context.roundRobin!.updateAddresses([endpoint])
+
+      case .connectivityStateChanged(.transientFailure):
+        switch context.loadBalancer.pickSubchannel() {
+        case .notAvailable(.transientFailure(let cause)):
+          XCTAssertEqual(cause, error)
+        case .picked, .notAvailable:
+          XCTFail("Expected '.notAvailable(.transientFailure)'")
+        }
+
+        context.loadBalancer.close()
+
+      default:
+        ()
+      }
+    }
   }
 
   func testPickOnIdleLoadBalancerTriggersConnect() async throws {
@@ -345,7 +381,7 @@ final class RoundRobinLoadBalancerTests: XCTestCase {
 
         case 2:
           // Load-balancer has the endpoints but all are idle. Picking will trigger a connect.
-          XCTAssertNil(context.loadBalancer.pickSubchannel())
+          XCTAssertNil(context.loadBalancer.pickSubchannel().subchannel)
 
         case 3:
           // Connection idled again. Shut it down.
@@ -359,7 +395,7 @@ final class RoundRobinLoadBalancerTests: XCTestCase {
         let (_, newReadyCount) = ready.increment()
 
         if newReadyCount == 2 {
-          XCTAssertNotNil(context.loadBalancer.pickSubchannel())
+          XCTAssertNotNil(context.loadBalancer.pickSubchannel().subchannel)
         }
 
       default:

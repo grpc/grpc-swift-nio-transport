@@ -39,6 +39,10 @@ struct RequestQueue<Element> {
     self.entriesByID = [:]
   }
 
+  var isEmpty: Bool {
+    self.entriesByID.isEmpty
+  }
+
   /// Remove the first continuation from the queue.
   mutating func popFirst() -> Continuation? {
     while let id = self.ids.popFirst() {
