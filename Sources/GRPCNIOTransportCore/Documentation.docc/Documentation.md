@@ -29,10 +29,6 @@ transport implementations built on top of SwiftNIO.
 - ``SocketAddress``
 - ``Endpoint``
 
-### Peer credentials
-
-- ``VirtualSocketCredentials``
-
 ### TLS
 
 - ``TLSConfig``
