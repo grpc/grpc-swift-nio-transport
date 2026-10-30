@@ -289,9 +289,7 @@ extension HTTP2ServerTransport {
         if isVirtualSocket,
           let vsockAddress = try? await channel.getOption(.remoteVsockAddress).get()
         {
-          context.virtualSocketCredentials = VirtualSocketCredentials(
-            contextID: .init(vsockAddress.cid)
-          )
+          context.virtualSocketPeerContextID = .init(vsockAddress.cid)
         }
 
         return context
@@ -334,13 +332,17 @@ extension HTTP2ServerTransport.Posix {
     @available(gRPCSwiftNIOTransport 2.2, *)
     public var peerCertificateChain: X509.ValidatedCertificateChain?
 
-    /// The credentials of the peer, when the server is bound to a virtual socket ('vsock')
+    /// The context ID of the peer, when the server is bound to a virtual socket ('vsock')
     /// address.
+    ///
+    /// The peer's port isn't reported: it's assigned per connection, so it doesn't identify the
+    /// peer.
     ///
     /// This is `nil` unless the server was bound to a vsock address, and on platforms and socket
     /// types where the peer's address can't be read.
     @available(gRPCSwiftNIOTransport 2.13, *)
-    public var virtualSocketCredentials: VirtualSocketCredentials?
+    public var virtualSocketPeerContextID:
+      GRPCNIOTransportCore.SocketAddress.VirtualSocket.ContextID?
 
     /// Creates an empty context.
     public init() {

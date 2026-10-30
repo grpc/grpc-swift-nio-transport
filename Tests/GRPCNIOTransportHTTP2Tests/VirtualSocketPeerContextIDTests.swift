@@ -19,20 +19,20 @@ import GRPCNIOTransportCore
 import GRPCNIOTransportHTTP2Posix
 import Testing
 
-struct VirtualSocketCredentialsTests {
+struct VirtualSocketPeerContextIDTests {
   /// A vsock connection reports the peer's context ID.
   ///
   /// The connection is made over the vsock loopback transport, so the peer is in the local context
   /// and the reported context ID is `VMADDR_CID_LOCAL`.
   ///
-  /// The credentials are only reachable from the server side of an RPC, so the assertions live in
+  /// The context ID is only reachable from the server side of an RPC, so the assertions live in
   /// the service implementation and a client drives them.
   @Test(
-    "Peer credentials describe the connecting context over a virtual socket",
+    "The peer context ID describes the connecting context over a virtual socket",
     .enabled(if: vsockLoopbackAvailable(), "Vsock loopback is unavailable")
   )
   @available(gRPCSwiftNIOTransport 2.13, *)
-  func credentialsOverVirtualSocket() async throws {
+  func peerContextIDOverVirtualSocket() async throws {
     // NIO's `SocketAddress` can't represent a vsock address, so a vsock listener has no address to
     // report and the port can't be left to the kernel to pick. It's random rather than fixed so
     // that concurrent runs don't collide on it.
@@ -44,8 +44,7 @@ struct VirtualSocketCredentialsTests {
       let posixContext = try #require(
         context.transportSpecific as? HTTP2ServerTransport.Posix.Context
       )
-      let credentials = try #require(posixContext.virtualSocketCredentials)
-      #expect(credentials.contextID == .local)
+      #expect(posixContext.virtualSocketPeerContextID == .local)
 
       return HelloResponse(message: "Hello, \(request.name)!")
     }
