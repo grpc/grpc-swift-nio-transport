@@ -322,56 +322,61 @@ extension GRPCChannel {
     options: CallOptions
   ) async -> MakeStreamResult {
     let waitForReady = options.waitForReady ?? false
-    switch self.state.withLock({ $0.makeStream(waitForReady: waitForReady) }) {
-    case .useLoadBalancer(let loadBalancer):
-      return await self.makeStream(
-        descriptor: descriptor,
-        options: options,
-        loadBalancer: loadBalancer
-      )
 
-    case .joinQueue:
-      do {
-        let loadBalancer = try await self.enqueue(waitForReady: waitForReady)
+    while true {
+      let loadBalancer: LoadBalancer
+
+      switch self.state.withLock({ $0.makeStream(waitForReady: waitForReady) }) {
+      case .useLoadBalancer(let picked):
+        loadBalancer = picked
+
+      case .joinQueue:
+        do {
+          loadBalancer = try await self.enqueue(waitForReady: waitForReady)
+        } catch {
+          // All errors from enqueue are non-recoverable: either the channel is shutting down or
+          // the request has been cancelled.
+          return .stopTrying(error)
+        }
+
+      case .failRPC(let reason):
+        switch reason {
+        case .transientFailure(let error):
+          return .stopTrying(RPCError.transientFailure(cause: error))
+        case .shutdown:
+          return .stopTrying(RPCError(code: .unavailable, message: "Channel is shutting down."))
+        }
+      }
+
+      switch loadBalancer.pickSubchannel() {
+      case .picked(let subchannel):
         return await self.makeStream(
           descriptor: descriptor,
           options: options,
-          loadBalancer: loadBalancer
+          subchannel: subchannel
         )
-      } catch {
-        // All errors from enqueue are non-recoverable: either the channel is shutting down or
-        // the request has been cancelled.
-        return .stopTrying(error)
+
+      case .notAvailable(.transientFailure(let cause)) where !waitForReady:
+        return .stopTrying(RPCError.transientFailure(cause: cause))
+
+      case .notAvailable(.idle), .notAvailable(.connecting), .notAvailable(.ready),
+        .notAvailable(.transientFailure), .notAvailable(.shutdown):
+        // Channel was ready when picking an LB which subsequently became unavailable: enqueue the
+        // request again. This does *not* use a stream creation attempt.
+        do {
+          _ = try await self.enqueue(waitForReady: waitForReady, excluding: loadBalancer.id)
+        } catch {
+          return .stopTrying(error)
+        }
       }
-
-    case .failRPC(let reason):
-      let message: String
-      let cause: RPCError?
-
-      switch reason {
-      case .transientFailure(let error):
-        message = "Channel is in a transient failure state and 'wait for ready' isn't enabled."
-        cause = error
-      case .shutdown:
-        message = "Channel is shutting down."
-        cause = nil
-      }
-
-      return .stopTrying(RPCError(code: .unavailable, message: message, cause: cause))
     }
   }
 
   private func makeStream(
     descriptor: MethodDescriptor,
     options: CallOptions,
-    loadBalancer: LoadBalancer
+    subchannel: Subchannel
   ) async -> MakeStreamResult {
-    guard let subchannel = loadBalancer.pickSubchannel() else {
-      return .tryAgain(
-        RPCError(code: .unavailable, message: "Channel isn't ready, no subchannel available.")
-      )
-    }
-
     let methodConfig = self.config(forMethod: descriptor)
     var options = options
     options.formUnion(with: methodConfig)
@@ -384,12 +389,20 @@ extension GRPCChannel {
     }
   }
 
-  private func enqueue(waitForReady: Bool) async throws -> LoadBalancer {
+  private func enqueue(
+    waitForReady: Bool,
+    excluding loadBalancerID: LoadBalancerID? = nil
+  ) async throws -> LoadBalancer {
     let id = QueueEntryID()
     return try await withTaskCancellationHandler {
       try await withCheckedThrowingContinuation { continuation in
         let onEnqueue = self.state.withLock { state in
-          state.enqueue(continuation: continuation, waitForReady: waitForReady, id: id)
+          state.enqueue(
+            continuation: continuation,
+            waitForReady: waitForReady,
+            excluding: loadBalancerID,
+            id: id
+          )
         }
 
         switch onEnqueue {
@@ -408,6 +421,9 @@ extension GRPCChannel {
             }
             dequeued?.resume(throwing: CancellationError())
           }
+
+        case .fail(let error):
+          continuation.resume(throwing: error)
 
         case .rejected:
           let error = RPCError(code: .unavailable, message: "channel is shutdown")
@@ -616,6 +632,10 @@ extension GRPCChannel {
 
       if let subchannel = actions.close {
         subchannel.close()
+      }
+
+      if let loadBalancer = actions.poke {
+        _ = loadBalancer.pickSubchannel()
       }
 
       if let resumable = actions.resumeContinuations {
@@ -872,6 +892,7 @@ extension GRPCChannel.StateMachine {
 
   struct ConnectivityStateChangeActions {
     var close: LoadBalancer? = nil
+    var poke: LoadBalancer? = nil
     var publishState: ConnectivityState? = nil
     var resumeContinuations: ResumableContinuations? = nil
     var finish: Bool = false
@@ -936,7 +957,13 @@ extension GRPCChannel.StateMachine {
             )
           )
 
-        case .idle, .connecting:
+        case .idle:
+          // LB became idle but the queue isn't empty, so poke the LB to connect again.
+          if !state.queue.isEmpty {
+            actions.poke = state.current
+          }
+
+        case .connecting:
           ()  // Ignore.
         }
       } else if let next = state.next, next.id == id {
@@ -954,6 +981,7 @@ extension GRPCChannel.StateMachine {
           if state.connectivityState != connectivityState {
             actions.publishState = connectivityState
           }
+          state.connectivityState = connectivityState
 
           actions.resumeContinuations = ConnectivityStateChangeActions.ResumableContinuations(
             continuations: state.queue.removeAll(),
@@ -1055,6 +1083,9 @@ extension GRPCChannel.StateMachine {
     case use(LoadBalancer)
     // The continuation was enqueued, wait.
     case enqueued
+    // Fail the continuation immediately: the channel is already in a state which can't
+    // resolve this request (a 'wait for ready' request in transient failure, or a shutdown).
+    case fail(RPCError)
     // The request to enqueue was rejected because the channel is shutting down or
     // shutdown, fail the continuation.
     case rejected
@@ -1063,6 +1094,7 @@ extension GRPCChannel.StateMachine {
   mutating func enqueue(
     continuation: CheckedContinuation<LoadBalancer, any Error>,
     waitForReady: Bool,
+    excluding excludedLoadBalancer: LoadBalancerID?,
     id: QueueEntryID
   ) -> OnEnqueue {
     switch self.state {
@@ -1071,20 +1103,39 @@ extension GRPCChannel.StateMachine {
       state.queue.append(continuation: continuation, waitForReady: waitForReady, id: id)
       self.state = .notRunning(state)
       return .enqueued
+
     case .running(var state):
       self.state = ._modifying
-      if state.connectivityState == .ready {
-        // Became ready between being told to join the queue and creating a continuation.
+
+      switch state.connectivityState {
+      case .ready where state.current.id != excludedLoadBalancer:
+        // Ready, and not the load-balancer the caller already failed to pick from.
         self.state = .running(state)
         return .use(state.current)
-      } else {
+
+      case .transientFailure(let cause) where !waitForReady:
+        self.state = .running(state)
+        return .fail(RPCError.transientFailure(cause: cause))
+
+      case .shutdown:
+        self.state = .running(state)
+        return .fail(RPCError(code: .unavailable, message: "Channel is shutting down."))
+
+      case .idle:
         state.queue.append(continuation: continuation, waitForReady: waitForReady, id: id)
         self.state = .running(state)
-        // If idle then return the current load balancer so that it can be told to start connecting.
-        return state.connectivityState == .idle ? .poke(state.current) : .enqueued
+        // Idle: return the current load balancer so that it can be told to start connecting.
+        return .poke(state.current)
+
+      case .ready, .connecting, .transientFailure:
+        state.queue.append(continuation: continuation, waitForReady: waitForReady, id: id)
+        self.state = .running(state)
+        return .enqueued
       }
+
     case .stopping, .stopped:
       return .rejected
+
     case ._modifying:
       fatalError("Invalid state")
     }
@@ -1234,5 +1285,16 @@ extension GRPCChannel {
         return (.backingOff(backoff), .backoff(delay, error))
       }
     }
+  }
+}
+
+@available(gRPCSwiftNIOTransport 2.9, *)
+extension RPCError {
+  fileprivate static func transientFailure(cause: RPCError) -> Self {
+    Self(
+      code: .unavailable,
+      message: "Channel is in a transient failure state and 'wait for ready' isn't enabled.",
+      cause: cause
+    )
   }
 }

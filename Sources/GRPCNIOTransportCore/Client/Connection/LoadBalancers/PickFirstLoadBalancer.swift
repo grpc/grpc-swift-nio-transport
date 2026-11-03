@@ -158,15 +158,16 @@ package final class PickFirstLoadBalancer: Sendable {
 
   /// Pick a ready subchannel from the load balancer.
   ///
-  /// - Returns: A subchannel, or `nil` if there aren't any ready subchannels.
-  package func pickSubchannel() -> Subchannel? {
+  /// - Returns: The picked subchannel, or the state of the load-balancer if there aren't any ready
+  ///     subchannels.
+  package func pickSubchannel() -> LoadBalancer.Pick {
     let onPickSubchannel = self.state.withLock { $0.pickSubchannel() }
     switch onPickSubchannel {
     case .picked(let subchannel):
-      return subchannel
-    case .notAvailable(let subchannel):
+      return .picked(subchannel)
+    case .notAvailable(let subchannel, let connectivityState):
       subchannel?.connect()
-      return nil
+      return .notAvailable(connectivityState)
     }
   }
 }
@@ -469,14 +470,16 @@ extension PickFirstLoadBalancer.State.Active {
     if let current = self.current, !self.isCurrentGoingAway {
       switch self.connectivityState {
       case .idle:
-        onPick = .notAvailable(current)
+        onPick = .notAvailable(current, self.connectivityState)
       case .ready:
         onPick = .picked(current)
       case .connecting, .transientFailure, .shutdown:
-        onPick = .notAvailable(nil)
+        onPick = .notAvailable(nil, self.connectivityState)
       }
     } else {
-      onPick = .notAvailable(nil)
+      // No subchannel to pick or the current subchannel is going away; the load-balancer's state
+      // still describes why a stream can't be created on it.
+      onPick = .notAvailable(nil, self.connectivityState)
     }
 
     return onPick
@@ -608,7 +611,8 @@ extension PickFirstLoadBalancer.State {
 
   enum OnPickSubchannel {
     case picked(Subchannel)
-    case notAvailable(Subchannel?)
+    /// No subchannel was picked. The subchannel, if present, should be told to start connecting.
+    case notAvailable(Subchannel?, ConnectivityState)
   }
 
   func pickSubchannel() -> OnPickSubchannel {
@@ -616,7 +620,7 @@ extension PickFirstLoadBalancer.State {
     case .active(let state):
       return state.pickSubchannel()
     case .closing, .closed:
-      return .notAvailable(nil)
+      return .notAvailable(nil, .shutdown)
     }
   }
 }

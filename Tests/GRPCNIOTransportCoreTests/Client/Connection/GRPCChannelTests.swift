@@ -853,6 +853,99 @@ final class GRPCChannelTests: XCTestCase {
     }
   }
 
+  func testMakeStreamWhileConnectionIsGoingAway() async throws {
+    // A GOAWAY received while a stream is open leaves the connection, and therefore the channel,
+    // in the ready state: the open stream continues but no new streams can be created on it. A
+    // stream created in that window must wait for the channel to reconnect rather than fail; the
+    // channel's copy of the connectivity state says ready but the load-balancer has nothing to
+    // give.
+    let server = TestServer(eventLoopGroup: .singletonMultiThreadedEventLoopGroup)
+    let address = try await server.bind()
+
+    // A push based resolver which is only pushed to once: the re-resolution triggered by the
+    // GOAWAY mustn't give the load-balancer a way out of the going-away state.
+    let (resolver, continuation) = NameResolver.dynamic(updateMode: .push)
+    let channel = GRPCChannel(
+      resolver: resolver,
+      connector: .posix(),
+      config: .defaults,
+      defaultServiceConfig: ServiceConfig()
+    )
+
+    continuation.yield(NameResolutionResult(endpoints: [Endpoint(address)], serviceConfig: nil))
+
+    let streamIsOpen = AsyncStream.makeStream(of: Void.self)
+    let streamCanClose = AsyncStream.makeStream(of: Void.self)
+
+    try await withThrowingDiscardingTaskGroup { group in
+      group.addTask {
+        try await server.run(.echo)
+      }
+
+      group.addTask {
+        await channel.connect()
+      }
+
+      // The first RPC is held open so that the connection can't close when it receives the GOAWAY.
+      async let firstRPC = channel.withStream(descriptor: .echoGet, options: .defaults) {
+        stream,
+        _ in
+        try await stream.outbound.write(.metadata([:]))
+        var inbound = stream.inbound.makeAsyncIterator()
+        // Receiving the response metadata means the server has opened the stream.
+        _ = try await inbound.next()
+        streamIsOpen.continuation.finish()
+
+        for await _ in streamCanClose.stream {}
+        await stream.outbound.finish()
+        while try await inbound.next() != nil {}
+      }
+
+      for await _ in streamIsOpen.stream {}
+
+      // Tell the client to stop creating streams on the connection.
+      let connection = try XCTUnwrap(server.clients.first)
+      let goAway = HTTP2Frame(
+        streamID: .rootStream,
+        payload: .goAway(lastStreamID: 1, errorCode: .noError, opaqueData: nil)
+      )
+      try await connection.writeAndFlush(goAway).get()
+
+      // Wait for the client to process the GOAWAY, it doesn't change its connectivity state so
+      // there's nothing to poll on.
+      try await Task.sleep(for: .milliseconds(100), tolerance: .zero)
+
+      // This RPC can't use the connection the first RPC is using and must wait for a new one.
+      var options = CallOptions.defaults
+      options.waitForReady = false
+      async let secondRPC = channel.withStream(descriptor: .echoGet, options: options) {
+        stream,
+        _ in
+        try await stream.outbound.write(.metadata([:]))
+        await stream.outbound.finish()
+
+        for try await part in stream.inbound {
+          switch part {
+          case .metadata, .message:
+            ()
+          case .status(let status, _):
+            XCTAssertEqual(status.code, .ok)
+          }
+        }
+      }
+
+      // Give the second RPC time to be queued before letting the connection close.
+      try await Task.sleep(for: .milliseconds(100), tolerance: .zero)
+      streamCanClose.continuation.finish()
+
+      try await firstRPC
+      try await secondRPC
+
+      channel.beginGracefulShutdown()
+      group.cancelAll()
+    }
+  }
+
   private func testMakeStreamWhenFirstResolveFails(isNil: Bool) async throws {
     // The resolution throws/returns nil the first time it's called, so the channel never has a
     // load balancer, and RPCs shouldn't be queued indefinitely (unless wait for ready is enabled).

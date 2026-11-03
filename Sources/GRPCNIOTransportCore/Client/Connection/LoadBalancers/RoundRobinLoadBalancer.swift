@@ -188,18 +188,19 @@ package final class RoundRobinLoadBalancer: Sendable {
 
   /// Pick a ready subchannel from the load balancer.
   ///
-  /// - Returns: A subchannel, or `nil` if there aren't any ready subchannels.
-  package func pickSubchannel() -> Subchannel? {
+  /// - Returns: The picked subchannel, or the state of the load-balancer if there aren't any ready
+  ///     subchannels.
+  package func pickSubchannel() -> LoadBalancer.Pick {
     switch self.state.withLockedValue({ $0.pickSubchannel() }) {
     case .picked(let subchannel):
-      return subchannel
+      return .picked(subchannel)
 
-    case .notAvailable(let subchannels):
+    case .notAvailable(let subchannels, let connectivityState):
       // Tell the subchannels to start connecting.
       for subchannel in subchannels {
         subchannel.connect()
       }
-      return nil
+      return .notAvailable(connectivityState)
     }
   }
 }
@@ -712,7 +713,8 @@ extension RoundRobinLoadBalancer {
 
     enum OnPickSubchannel {
       case picked(Subchannel)
-      case notAvailable([Subchannel])
+      /// No subchannel was picked. The subchannels, if any, should be told to start connecting.
+      case notAvailable([Subchannel], ConnectivityState)
     }
 
     mutating func pickSubchannel() -> OnPickSubchannel {
@@ -725,15 +727,18 @@ extension RoundRobinLoadBalancer {
         } else {
           switch active.aggregateConnectivityState {
           case .idle:
-            onMakeStream = .notAvailable(active.subchannels.values.map { $0.subchannel })
+            onMakeStream = .notAvailable(
+              active.subchannels.values.map { $0.subchannel },
+              active.aggregateConnectivityState
+            )
           case .connecting, .ready, .transientFailure, .shutdown:
-            onMakeStream = .notAvailable([])
+            onMakeStream = .notAvailable([], active.aggregateConnectivityState)
           }
         }
         self = .active(active)
 
       case .closing, .closed:
-        onMakeStream = .notAvailable([])
+        onMakeStream = .notAvailable([], .shutdown)
       }
 
       return onMakeStream
