@@ -255,6 +255,8 @@ extension HTTP2ServerTransport {
       // Whether the peer of a connection to this server can be described by a vsock address. The
       // address of a listener gRPC is handed as a descriptor isn't known, so those don't count.
       let isVirtualSocket = address.socketAddress?.virtualSocket != nil
+      // Likewise, only a Unix domain socket has peer credentials.
+      let isUnixDomainSocket = address.socketAddress?.unixDomainSocket != nil
       self.underlyingTransport = Custom(
         eventLoopGroup: eventLoopGroup,
         quiescingHelper: ServerQuiescingHelper(group: eventLoopGroup),
@@ -297,6 +299,10 @@ extension HTTP2ServerTransport {
           let vsockAddress = try? await channel.getOption(.remoteVsockAddress).get()
         {
           context.virtualSocketPeerContextID = .init(vsockAddress.cid)
+        }
+
+        if isUnixDomainSocket {
+          context.unixDomainSocketCredentials = await channel.unixDomainSocketPeerCredentials()
         }
 
         return context
@@ -350,6 +356,14 @@ extension HTTP2ServerTransport.Posix {
     @available(gRPCSwiftNIOTransport 2.13, *)
     public var virtualSocketPeerContextID:
       GRPCNIOTransportCore.SocketAddress.VirtualSocket.ContextID?
+
+    /// Kernel-validated credentials of the peer process, when the transport is bound to a Unix
+    /// domain socket.
+    ///
+    /// This is `nil` for connections which aren't Unix domain sockets, and on platforms where peer
+    /// credentials are unavailable.
+    @available(gRPCSwiftNIOTransport 2.13, *)
+    public var unixDomainSocketCredentials: UnixDomainSocketCredentials?
 
     /// Creates an empty context.
     public init() {

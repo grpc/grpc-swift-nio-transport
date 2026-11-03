@@ -137,6 +137,10 @@ let targets: [Target] = [
       .product(name: "SwiftASN1", package: "swift-asn1"),
       .product(name: "NIOCertificateReloading", package: "swift-nio-extras"),
     ],
+    cSettings: [
+      // Required for `struct ucred` and `SO_PEERCRED`.
+      .define("_GNU_SOURCE", .when(platforms: [.linux]))
+    ],
     swiftSettings: defaultSwiftSettings
   ),
 
