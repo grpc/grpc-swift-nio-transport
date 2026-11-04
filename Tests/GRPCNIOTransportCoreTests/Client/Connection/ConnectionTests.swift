@@ -204,6 +204,72 @@ final class ConnectionTests: XCTestCase {
     }
   }
 
+  func testRequestMessageSizeLimit() async throws {
+    try await ConnectionTest.run(connector: .posix()) { context, event in
+      guard case .connectSucceeded = event else { return }
+
+      for limit in [0, 2] {
+        for batch in [false, true] {
+          var options = CallOptions.defaults
+          options.maxRequestMessageBytes = limit
+          let stream = try await context.connection.makeStream(
+            descriptor: .echoGet,
+            options: options
+          )
+
+          try await stream.execute { inbound, outbound in
+            let message = GRPCNIOTransportBytes(repeating: 42, count: limit)
+            let accepted: [RPCRequestPart<GRPCNIOTransportBytes>] = [
+              .metadata(["foo": "bar"]), .message(message), .message(message),
+            ]
+            if batch {
+              try await outbound.write(contentsOf: accepted)
+            } else {
+              for part in accepted {
+                try await outbound.write(part)
+              }
+            }
+
+            let oversized = GRPCNIOTransportBytes(repeating: 43, count: limit + 1)
+            await XCTAssertThrowsErrorAsync(ofType: RPCError.self) {
+              if batch {
+                try await outbound.write(contentsOf: [.message(message), .message(oversized)])
+              } else {
+                try await outbound.write(.message(oversized))
+              }
+            } errorHandler: { error in
+              XCTAssertEqual(error.code, .resourceExhausted)
+              XCTAssertEqual(
+                error.message,
+                """
+                Message has exceeded the configured maximum request payload size \
+                (max: \(limit), actual: \(limit + 1))
+                """
+              )
+            }
+            outbound.finish()
+
+            var messages: [GRPCNIOTransportBytes] = []
+            for try await part in inbound {
+              switch part {
+              case .message(let message):
+                messages.append(message)
+              case .status(let status, _):
+                XCTAssertEqual(status.code, .ok)
+              case .metadata:
+                ()
+              }
+            }
+            XCTAssertEqual(messages, [message, message])
+          }
+        }
+      }
+      context.connection.close()
+    } validateEvents: { _, events in
+      XCTAssertEqual(events, [.connectSucceeded, .closed(.initiatedLocally)])
+    }
+  }
+
   func testMakeStreamOnClosedConnection() async throws {
     try await ConnectionTest.run(connector: .posix()) { context, event in
       switch event {

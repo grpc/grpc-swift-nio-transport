@@ -315,7 +315,9 @@ extension HTTP2ClientTransport {
         compression = self.config.compression.algorithm
       }
 
-      let maxResponseSize = options.maxResponseMessageBytes ?? Self.defaultMaxResponseMessageSizeBytes
+      let maxRequestSize = options.maxRequestMessageBytes ?? .max
+      let maxResponseSize =
+        options.maxResponseMessageBytes ?? Self.defaultMaxResponseMessageSizeBytes
 
       do {
         let stream = try await multiplexer.openStream { channel in
@@ -352,7 +354,11 @@ extension HTTP2ClientTransport {
           localPeer: self.channel.localAddressInfo
         )
 
-        return Connection.Stream(wrapping: stream, context: context)
+        return Connection.Stream(
+          wrapping: stream,
+          context: context,
+          maxRequestMessageBytes: maxRequestSize
+        )
       } catch {
         throw RPCError(code: .unavailable, message: "subchannel is unavailable", cause: error)
       }
