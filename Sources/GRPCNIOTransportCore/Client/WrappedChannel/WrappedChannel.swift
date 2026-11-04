@@ -328,7 +328,7 @@ extension HTTP2ClientTransport {
               authority: self.config.http2.authority,
               outboundEncoding: compression,
               acceptedEncodings: self.config.compression.enabledAlgorithms,
-              maxPayloadSize: maxResponseSize
+              maxResponseMessageBytes: maxResponseSize
             )
             try channel.pipeline.syncOperations.addHandler(streamHandler)
 

@@ -131,11 +131,11 @@ private enum GRPCStreamStateMachineState {
   }
 
   struct ClientIdleServerIdleState {
-    let maxPayloadSize: Int
+    let maxInboundPayloadSize: Int
   }
 
   struct ClientOpenServerIdleState {
-    let maxPayloadSize: Int
+    let maxInboundPayloadSize: Int
     var framer: GRPCMessageFramer
     var compressor: Zlib.Compressor?
     var outboundCompression: CompressionAlgorithm
@@ -162,7 +162,7 @@ private enum GRPCStreamStateMachineState {
       deframer: GRPCMessageDeframer?,
       headers: HPACKHeaders
     ) {
-      self.maxPayloadSize = previousState.maxPayloadSize
+      self.maxInboundPayloadSize = previousState.maxInboundPayloadSize
       self.compressor = compressor
       self.outboundCompression = outboundCompression
       self.framer = framer
@@ -256,7 +256,7 @@ private enum GRPCStreamStateMachineState {
   }
 
   struct ClientClosedServerIdleState {
-    let maxPayloadSize: Int
+    let maxInboundPayloadSize: Int
     var framer: GRPCMessageFramer
     var compressor: Zlib.Compressor?
     var outboundCompression: CompressionAlgorithm
@@ -275,7 +275,7 @@ private enum GRPCStreamStateMachineState {
     /// It can happen if the request times out before the client outbound can be opened, or if the stream is
     /// unexpectedly closed for some other reason on the client before it can transition to open.
     init(previousState: ClientIdleServerIdleState) {
-      self.maxPayloadSize = previousState.maxPayloadSize
+      self.maxInboundPayloadSize = previousState.maxInboundPayloadSize
       // We don't need a compressor since we won't be sending any messages.
       self.framer = GRPCMessageFramer()
       self.compressor = nil
@@ -299,7 +299,7 @@ private enum GRPCStreamStateMachineState {
       compressionAlgorithm: CompressionAlgorithm,
       headers: HPACKHeaders
     ) {
-      self.maxPayloadSize = previousState.maxPayloadSize
+      self.maxInboundPayloadSize = previousState.maxInboundPayloadSize
 
       if let zlibMethod = Zlib.Method(encoding: compressionAlgorithm) {
         self.compressor = Zlib.Compressor(method: zlibMethod)
@@ -318,7 +318,7 @@ private enum GRPCStreamStateMachineState {
     }
 
     init(previousState: ClientOpenServerIdleState) {
-      self.maxPayloadSize = previousState.maxPayloadSize
+      self.maxInboundPayloadSize = previousState.maxInboundPayloadSize
       self.framer = previousState.framer
       self.compressor = previousState.compressor
       self.outboundCompression = previousState.outboundCompression
@@ -388,7 +388,7 @@ private enum GRPCStreamStateMachineState {
       }
 
       self.deframer = GRPCMessageDeframer(
-        maxPayloadSize: previousState.maxPayloadSize,
+        maxPayloadSize: previousState.maxInboundPayloadSize,
         decompressor: self.decompressor
       )
 
@@ -538,10 +538,10 @@ struct GRPCStreamStateMachine {
 
   init(
     configuration: GRPCStreamStateMachineConfiguration,
-    maxPayloadSize: Int,
+    maxInboundPayloadSize: Int,
     skipAssertions: Bool = false
   ) {
-    self.state = .clientIdleServerIdle(.init(maxPayloadSize: maxPayloadSize))
+    self.state = .clientIdleServerIdle(.init(maxInboundPayloadSize: maxInboundPayloadSize))
     self.configuration = configuration
     self.skipAssertions = skipAssertions
   }
@@ -1273,7 +1273,7 @@ extension GRPCStreamStateMachine {
             .init(
               previousState: state,
               deframer: GRPCMessageDeframer(
-                maxPayloadSize: state.maxPayloadSize,
+                maxPayloadSize: state.maxInboundPayloadSize,
                 decompressor: decompressor
               ),
               decompressor: decompressor
@@ -1943,7 +1943,7 @@ extension GRPCStreamStateMachine {
             framer: GRPCMessageFramer(),
             decompressor: decompressor,
             deframer: GRPCMessageDeframer(
-              maxPayloadSize: state.maxPayloadSize,
+              maxPayloadSize: state.maxInboundPayloadSize,
               decompressor: decompressor
             ),
             headers: headers

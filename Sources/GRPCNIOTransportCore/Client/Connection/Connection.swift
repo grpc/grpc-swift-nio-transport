@@ -258,7 +258,7 @@ package final class Connection: Sendable {
             authority: self.authority ?? self.address.authority,
             outboundEncoding: compression,
             acceptedEncodings: self.enabledCompression,
-            maxPayloadSize: maxResponseSize
+            maxResponseMessageBytes: maxResponseSize
           )
           try channel.pipeline.syncOperations.addHandler(streamHandler)
 
