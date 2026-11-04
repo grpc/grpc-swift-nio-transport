@@ -105,8 +105,8 @@ package final class Connection: Sendable {
   /// The state of the connection.
   private let state: Mutex<State>
 
-  /// The default max request message size in bytes, 4 MiB.
-  private static var defaultMaxRequestMessageSizeBytes: Int {
+  /// The default max response message size in bytes, 4 MiB.
+  private static var defaultMaxResponseMessageSizeBytes: Int {
     4 * 1024 * 1024
   }
 
@@ -245,7 +245,7 @@ package final class Connection: Sendable {
       compression = self.defaultCompression
     }
 
-    let maxRequestSize = options.maxRequestMessageBytes ?? Self.defaultMaxRequestMessageSizeBytes
+    let maxResponseSize = options.maxResponseMessageBytes ?? Self.defaultMaxResponseMessageSizeBytes
 
     do {
       let stream = try await connected.multiplexer.openStream { channel in
@@ -258,7 +258,7 @@ package final class Connection: Sendable {
             authority: self.authority ?? self.address.authority,
             outboundEncoding: compression,
             acceptedEncodings: self.enabledCompression,
-            maxPayloadSize: maxRequestSize
+            maxPayloadSize: maxResponseSize
           )
           try channel.pipeline.syncOperations.addHandler(streamHandler)
 

@@ -80,8 +80,8 @@ extension HTTP2ClientTransport {
       var multiplexer: NIOHTTP2Handler.AsyncStreamMultiplexer<Void>
     }
 
-    /// The default max request message size in bytes, 4 MiB.
-    private static var defaultMaxRequestMessageSizeBytes: Int {
+    /// The default max response message size in bytes, 4 MiB.
+    private static var defaultMaxResponseMessageSizeBytes: Int {
       4 * 1024 * 1024
     }
 
@@ -315,7 +315,7 @@ extension HTTP2ClientTransport {
         compression = self.config.compression.algorithm
       }
 
-      let maxRequestSize = options.maxRequestMessageBytes ?? Self.defaultMaxRequestMessageSizeBytes
+      let maxResponseSize = options.maxResponseMessageBytes ?? Self.defaultMaxResponseMessageSizeBytes
 
       do {
         let stream = try await multiplexer.openStream { channel in
@@ -328,7 +328,7 @@ extension HTTP2ClientTransport {
               authority: self.config.http2.authority,
               outboundEncoding: compression,
               acceptedEncodings: self.config.compression.enabledAlgorithms,
-              maxPayloadSize: maxRequestSize
+              maxPayloadSize: maxResponseSize
             )
             try channel.pipeline.syncOperations.addHandler(streamHandler)
 
