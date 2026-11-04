@@ -33,7 +33,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
-      maxPayloadSize: 1
+      maxResponseMessageBytes: 1
     )
 
     let channel = EmbeddedChannel(handler: handler)
@@ -64,7 +64,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
-      maxPayloadSize: 1,
+      maxResponseMessageBytes: 1,
       skipStateMachineAssertions: true
     )
 
@@ -101,7 +101,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
-      maxPayloadSize: 1,
+      maxResponseMessageBytes: 1,
       skipStateMachineAssertions: true
     )
 
@@ -151,7 +151,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
-      maxPayloadSize: 1,
+      maxResponseMessageBytes: 1,
       skipStateMachineAssertions: true
     )
 
@@ -202,7 +202,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
-      maxPayloadSize: 1,
+      maxResponseMessageBytes: 1,
       skipStateMachineAssertions: true
     )
 
@@ -239,7 +239,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       authority: nil,
       outboundEncoding: .deflate,
       acceptedEncodings: [.deflate],
-      maxPayloadSize: 1
+      maxResponseMessageBytes: 1
     )
 
     let channel = EmbeddedChannel(handler: handler)
@@ -298,7 +298,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
-      maxPayloadSize: 1,
+      maxResponseMessageBytes: 1,
       skipStateMachineAssertions: true
     )
 
@@ -366,7 +366,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
-      maxPayloadSize: 100,
+      maxResponseMessageBytes: 100,
       skipStateMachineAssertions: true
     )
 
@@ -435,7 +435,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
-      maxPayloadSize: 1,
+      maxResponseMessageBytes: 1,
       skipStateMachineAssertions: true
     )
 
@@ -505,7 +505,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
-      maxPayloadSize: 100,
+      maxResponseMessageBytes: 100,
       skipStateMachineAssertions: true
     )
 
@@ -615,7 +615,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
-      maxPayloadSize: 100,
+      maxResponseMessageBytes: 100,
       skipStateMachineAssertions: true
     )
 
@@ -724,7 +724,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
-      maxPayloadSize: 100,
+      maxResponseMessageBytes: 100,
       skipStateMachineAssertions: true
     )
 
@@ -813,7 +813,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
-      maxPayloadSize: 1,
+      maxResponseMessageBytes: 1,
       skipStateMachineAssertions: true
     )
 
@@ -867,7 +867,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
-      maxPayloadSize: 1,
+      maxResponseMessageBytes: 1,
       skipStateMachineAssertions: true
     )
 
@@ -917,7 +917,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
-      maxPayloadSize: 1,
+      maxResponseMessageBytes: 1,
       skipStateMachineAssertions: true
     )
 
@@ -1016,7 +1016,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
-      maxPayloadSize: 1,
+      maxResponseMessageBytes: 1,
       skipStateMachineAssertions: true
     )
 
@@ -1048,7 +1048,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
-      maxPayloadSize: 100,
+      maxResponseMessageBytes: 100,
       skipStateMachineAssertions: true
     )
 
@@ -1101,7 +1101,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
-      maxPayloadSize: 100,
+      maxResponseMessageBytes: 100,
       skipStateMachineAssertions: true
     )
 
@@ -1160,7 +1160,7 @@ final class GRPCClientStreamHandlerTests: XCTestCase {
       authority: nil,
       outboundEncoding: .none,
       acceptedEncodings: [],
-      maxPayloadSize: .max
+      maxResponseMessageBytes: .max
     )
 
     let channel = EmbeddedChannel(handler: handler)
