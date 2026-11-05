@@ -30,11 +30,10 @@ extension Channel {
   /// Reads kernel-validated peer credentials from this channel's underlying socket.
   ///
   /// Returns `nil` when UDS peer credentials aren't available.
-  ///
-  /// - Important: Only call this for channels backed by a Unix domain socket. Neither option checks
-  ///   that: Linux services `SO_PEERCRED` from the generic `sock_getsockopt` and reports a zero
-  ///   process ID with `(uid_t)-1`, and Darwin's `LOCAL_PEERCRED` succeeds writing nothing.
   internal func unixDomainSocketPeerCredentials() async -> UnixDomainSocketCredentials? {
+    // `SO_PEERCRED` and `LOCAL_PEERCRED` don't fail for other socket types: Linux reports a zero
+    // process ID with `(uid_t)-1`, and Darwin succeeds without writing anything.
+    guard case .unixDomainSocket? = self.localAddress else { return nil }
     guard let provider = self as? any SocketOptionProvider else { return nil }
 
     #if canImport(Darwin)
