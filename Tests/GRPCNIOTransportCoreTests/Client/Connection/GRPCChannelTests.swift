@@ -967,7 +967,7 @@ final class GRPCChannelTests: XCTestCase {
 
       group.addTask {
         // If the RPC doesn't finish then shutting down the channel will fail it, so that the test
-        // can't hang.
+        // doesn't run forever.
         do {
           try await Task.sleep(for: .seconds(5))
         } catch {
