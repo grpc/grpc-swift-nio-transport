@@ -396,18 +396,14 @@ extension GRPCChannel {
         case .poke(let loadBalancer):
           // Attempting to pick a subchannel will trigger a connect event if the subchannel is idle.
           _ = loadBalancer.pickSubchannel()
+          self.dequeueIfCancelled(id: id)
 
         case .use(let loadBalancer):
           // Became ready after being told to join the queue.
           continuation.resume(with: .success(loadBalancer))
 
         case .enqueued:
-          if Task.isCancelled {
-            let dequeued = self.state.withLock { state in
-              state.dequeueContinuation(id: id)
-            }
-            dequeued?.resume(throwing: CancellationError())
-          }
+          self.dequeueIfCancelled(id: id)
 
         case .rejected:
           let error = RPCError(code: .unavailable, message: "channel is shutdown")
@@ -421,6 +417,16 @@ extension GRPCChannel {
 
       continuation?.resume(throwing: CancellationError())
     }
+  }
+
+  /// Removes the continuation from the queue and fails it if the current task has been cancelled.
+  private func dequeueIfCancelled(id: QueueEntryID) {
+    guard Task.isCancelled else { return }
+
+    let dequeued = self.state.withLock { state in
+      state.dequeueContinuation(id: id)
+    }
+    dequeued?.resume(throwing: CancellationError())
   }
 }
 
@@ -1049,7 +1055,7 @@ extension GRPCChannel.StateMachine {
   }
 
   enum OnEnqueue {
-    // Ask the LB to pick a subchannel to trigger a connect.
+    // The continuation was enqueued. Ask the LB to pick a subchannel to trigger a connect.
     case poke(LoadBalancer)
     // Use the LB immediately, it's ready.
     case use(LoadBalancer)
