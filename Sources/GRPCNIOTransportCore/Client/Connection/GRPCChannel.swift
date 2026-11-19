@@ -394,9 +394,11 @@ extension GRPCChannel {
 
         switch onEnqueue {
         case .poke(let loadBalancer):
-          // Attempting to pick a subchannel will trigger a connect event if the subchannel is idle.
-          _ = loadBalancer.pickSubchannel()
-          self.dequeueIfCancelled(id: id)
+          // Don't start connecting on behalf of an RPC which has already been cancelled.
+          if !self.dequeueIfCancelled(id: id) {
+            // Attempting to pick a subchannel will trigger a connect event if the subchannel is idle.
+            _ = loadBalancer.pickSubchannel()
+          }
 
         case .use(let loadBalancer):
           // Became ready after being told to join the queue.
@@ -420,13 +422,17 @@ extension GRPCChannel {
   }
 
   /// Removes the continuation from the queue and fails it if the current task has been cancelled.
-  private func dequeueIfCancelled(id: QueueEntryID) {
-    guard Task.isCancelled else { return }
+  ///
+  /// - Returns: Whether the current task has been cancelled.
+  @discardableResult
+  private func dequeueIfCancelled(id: QueueEntryID) -> Bool {
+    guard Task.isCancelled else { return false }
 
     let dequeued = self.state.withLock { state in
       state.dequeueContinuation(id: id)
     }
     dequeued?.resume(throwing: CancellationError())
+    return true
   }
 }
 
