@@ -394,20 +394,18 @@ extension GRPCChannel {
 
         switch onEnqueue {
         case .poke(let loadBalancer):
-          // Attempting to pick a subchannel will trigger a connect event if the subchannel is idle.
-          _ = loadBalancer.pickSubchannel()
+          // Don't start connecting on behalf of an RPC which has already been cancelled.
+          if !self.dequeueIfCancelled(id: id) {
+            // Attempting to pick a subchannel will trigger a connect event if the subchannel is idle.
+            _ = loadBalancer.pickSubchannel()
+          }
 
         case .use(let loadBalancer):
           // Became ready after being told to join the queue.
           continuation.resume(with: .success(loadBalancer))
 
         case .enqueued:
-          if Task.isCancelled {
-            let dequeued = self.state.withLock { state in
-              state.dequeueContinuation(id: id)
-            }
-            dequeued?.resume(throwing: CancellationError())
-          }
+          self.dequeueIfCancelled(id: id)
 
         case .rejected:
           let error = RPCError(code: .unavailable, message: "channel is shutdown")
@@ -421,6 +419,20 @@ extension GRPCChannel {
 
       continuation?.resume(throwing: CancellationError())
     }
+  }
+
+  /// Removes the continuation from the queue and fails it if the current task has been cancelled.
+  ///
+  /// - Returns: Whether the current task has been cancelled.
+  @discardableResult
+  private func dequeueIfCancelled(id: QueueEntryID) -> Bool {
+    guard Task.isCancelled else { return false }
+
+    let dequeued = self.state.withLock { state in
+      state.dequeueContinuation(id: id)
+    }
+    dequeued?.resume(throwing: CancellationError())
+    return true
   }
 }
 
@@ -1049,7 +1061,7 @@ extension GRPCChannel.StateMachine {
   }
 
   enum OnEnqueue {
-    // Ask the LB to pick a subchannel to trigger a connect.
+    // The continuation was enqueued. Ask the LB to pick a subchannel to trigger a connect.
     case poke(LoadBalancer)
     // Use the LB immediately, it's ready.
     case use(LoadBalancer)
