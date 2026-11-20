@@ -104,6 +104,57 @@ extension NameResolver {
   }
 }
 
+/// A pull based resolver which resolves to the endpoints most recently set on it, much like a DNS
+/// server returning its current records.
+@available(gRPCSwiftNIOTransport 2.0, *)
+final class MutableNameResolver: AsyncSequence, Sendable {
+  typealias Element = NameResolutionResult
+
+  private struct State {
+    var endpoints: [Endpoint]
+    var resolutions: Int
+  }
+
+  private let state: Mutex<State>
+
+  init(endpoints: [Endpoint]) {
+    self.state = Mutex(State(endpoints: endpoints, resolutions: 0))
+  }
+
+  /// A name resolver backed by this resolver.
+  var nameResolver: NameResolver {
+    NameResolver(names: RPCAsyncSequence(wrapping: self), updateMode: .pull)
+  }
+
+  /// The number of times names have been resolved.
+  var resolutions: Int {
+    self.state.withLock { $0.resolutions }
+  }
+
+  /// Sets the endpoints returned by subsequent resolutions.
+  func setEndpoints(_ endpoints: [Endpoint]) {
+    self.state.withLock { $0.endpoints = endpoints }
+  }
+
+  func makeAsyncIterator() -> AsyncIterator {
+    AsyncIterator(resolver: self)
+  }
+
+  struct AsyncIterator: AsyncIteratorProtocol {
+    typealias Element = NameResolutionResult
+
+    let resolver: MutableNameResolver
+
+    func next() async throws -> NameResolutionResult? {
+      let endpoints = self.resolver.state.withLock { state in
+        state.resolutions += 1
+        return state.endpoints
+      }
+      return NameResolutionResult(endpoints: endpoints, serviceConfig: nil)
+    }
+  }
+}
+
 @available(gRPCSwiftNIOTransport 2.0, *)
 struct ConstantAsyncSequence<Element: Sendable>: AsyncSequence, Sendable {
   private let result: Result<Element, any Error>?

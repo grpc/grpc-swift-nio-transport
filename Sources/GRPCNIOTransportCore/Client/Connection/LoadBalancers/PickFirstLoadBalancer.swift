@@ -289,7 +289,6 @@ extension PickFirstLoadBalancer {
 @available(gRPCSwiftNIOTransport 2.0, *)
 extension PickFirstLoadBalancer.State {
   struct Active: Sendable {
-    var endpoint: Endpoint?
     var connectivityState: ConnectivityState
     var current: Subchannel?
     var next: Subchannel?
@@ -297,7 +296,6 @@ extension PickFirstLoadBalancer.State {
     var isCurrentGoingAway: Bool
 
     init() {
-      self.endpoint = nil
       self.connectivityState = .idle
       self.current = nil
       self.next = nil
@@ -321,7 +319,15 @@ extension PickFirstLoadBalancer.State.Active {
     _ endpoint: Endpoint,
     makeSubchannel: (_ endpoint: Endpoint, _ id: SubchannelID) -> Subchannel
   ) -> PickFirstLoadBalancer.State.OnUpdateEndpoint {
-    if self.endpoint == endpoint { return .none }
+    // Ignore the update if the newest subchannel already uses the same addresses: replacing it
+    // would needlessly reconnect and reset its connection backoff. Subchannels re-resolve each
+    // time they fail to connect, so this also stops them from looping between resolving and
+    // connecting. A current subchannel which is going away must still be replaced as it can't be
+    // used for new streams.
+    let newest = self.next ?? (self.isCurrentGoingAway ? nil : self.current)
+    if let newest, newest.endpoint.hasSameAddresses(as: endpoint) {
+      return .none
+    }
 
     let onUpdateEndpoint: PickFirstLoadBalancer.State.OnUpdateEndpoint
 
@@ -618,5 +624,13 @@ extension PickFirstLoadBalancer.State {
     case .closing, .closed:
       return .notAvailable(nil)
     }
+  }
+}
+
+@available(gRPCSwiftNIOTransport 2.0, *)
+extension Endpoint {
+  /// Returns whether this endpoint has the same addresses as `other`, regardless of their order.
+  fileprivate func hasSameAddresses(as other: Endpoint) -> Bool {
+    Set(self.addresses) == Set(other.addresses)
   }
 }
