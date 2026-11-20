@@ -298,7 +298,7 @@ package final class ServerConnectionManagementHandler: ChannelDuplexHandler {
 
   package func channelInactive(context: ChannelHandlerContext) {
     self.maxIdleTimerHandler?.cancel()
-    self.maxAgeTimerHandler = nil
+    self.maxIdleTimerHandler = nil
 
     self.maxAgeTimerHandler?.cancel()
     self.maxAgeTimerHandler = nil
