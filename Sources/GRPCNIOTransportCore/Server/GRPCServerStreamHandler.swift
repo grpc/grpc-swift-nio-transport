@@ -67,7 +67,7 @@ package final class GRPCServerStreamHandler: ChannelDuplexHandler, RemovableChan
   ) {
     self.stateMachine = .init(
       configuration: .server(.init(scheme: scheme, acceptedEncodings: acceptedEncodings)),
-      maxPayloadSize: maxPayloadSize,
+      maxInboundPayloadSize: maxPayloadSize,
       skipAssertions: skipStateMachineAssertions
     )
     self.methodDescriptorPromise = methodDescriptorPromise

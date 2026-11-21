@@ -393,6 +393,72 @@ final class HTTP2TransportTests: XCTestCase {
     }
   }
 
+  func testUnaryRequestExceedsMaxRequestMessageBytes() async throws {
+    for compression in [CompressionAlgorithm.none, .gzip] {
+      try await self.forEachTransportPair(
+        clientCompression: compression,
+        clientEnabledCompression: [.gzip],
+        serverCompression: [.gzip]
+      ) { control, _, pair in
+        let input = ControlInput.with {
+          $0.numberOfMessages = 1
+          $0.payloadParameters = .with {
+            $0.content = 0
+            $0.size = 1
+          }
+        }
+        let bytes: GRPCNIOTransportBytes = try JSONSerializer().serialize(input)
+        var options = CallOptions.defaults
+        options.maxRequestMessageBytes = bytes.count
+        options.maxResponseMessageBytes = .max
+
+        try await control.unary(
+          request: ClientRequest(message: input),
+          options: options
+        ) { response in
+          XCTAssertEqual(try response.message.payload, Data([0]), "\(pair)")
+        }
+
+        options.maxRequestMessageBytes = bytes.count - 1
+        try await control.unary(
+          request: ClientRequest(message: input),
+          options: options
+        ) { response in
+          XCTAssertThrowsError(ofType: RPCError.self, try response.message) { error in
+            XCTAssertEqual(error.code, .unavailable, "\(pair)")
+          }
+        }
+      }
+    }
+  }
+
+  func testUnaryResponseExceedsMaxResponseMessageBytes() async throws {
+    try await self.forEachTransportPair { control, _, pair in
+      let input = ControlInput.with {
+        $0.numberOfMessages = 1
+        $0.payloadParameters = .with {
+          $0.content = 0
+          $0.size = 1024
+        }
+      }
+
+      var options = CallOptions.defaults
+      options.maxRequestMessageBytes = .max
+      options.maxResponseMessageBytes = 128
+      options.timeout = .seconds(10)
+
+      try await control.unary(
+        request: ClientRequest(message: input),
+        options: options
+      ) { response in
+        XCTAssertThrowsError(ofType: RPCError.self, try response.message) { error in
+          XCTAssertEqual(error.code, .internalError, "\(pair)")
+          XCTAssertTrue(error.message.contains("Failed to decode message"), "\(pair)")
+        }
+      }
+    }
+  }
+
   func testUnaryNotOK() async throws {
     // Client sends one message, server sends back metadata, a single message, and a non-ok status
     // with trailing metadata.

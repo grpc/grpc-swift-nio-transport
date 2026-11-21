@@ -183,7 +183,7 @@ final class GRPCStreamClientStateMachineTests: XCTestCase {
           acceptedEncodings: [.deflate]
         )
       ),
-      maxPayloadSize: 100,
+      maxInboundPayloadSize: 100,
       skipAssertions: true
     )
 
@@ -1734,7 +1734,7 @@ final class GRPCStreamServerStateMachineTests: XCTestCase {
           acceptedEncodings: deflateCompressionEnabled ? [.deflate] : []
         )
       ),
-      maxPayloadSize: 100,
+      maxInboundPayloadSize: 100,
       skipAssertions: true
     )
 
