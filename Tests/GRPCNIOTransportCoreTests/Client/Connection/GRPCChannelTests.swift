@@ -436,6 +436,155 @@ final class GRPCChannelTests: XCTestCase {
     )
   }
 
+  private func testGracefulShutdownWhileNameResolutionMisbehaves(
+    firstResolution: [Endpoint]?,
+    then behavior: MisbehavingNameResolver.Behavior,
+    resolutionsBeforeShutdown: Int
+  ) async throws {
+    // Closing the channel mustn't wait for name resolution: it might keep failing, or never finish,
+    // and the channel needs to keep handling its inputs while that happens.
+    let resolver = MisbehavingNameResolver(firstResolution: firstResolution, then: behavior)
+    let channel = GRPCChannel(
+      resolver: resolver.nameResolver,
+      connector: .posix(),
+      config: .shortBackoffs,
+      defaultServiceConfig: ServiceConfig()
+    )
+
+    let connectReturned = AtomicCounter()
+    let shutdown = AtomicCounter()
+    try await withThrowingDiscardingTaskGroup { group in
+      group.addTask {
+        await channel.connect()
+        connectReturned.increment()
+      }
+
+      group.addTask {
+        for await state in channel.connectivityState where state == .shutdown {
+          shutdown.increment()
+        }
+      }
+
+      try await XCTPoll(every: .milliseconds(10)) {
+        resolver.resolutions >= resolutionsBeforeShutdown
+      }
+
+      channel.beginGracefulShutdown()
+      try await XCTPoll(every: .milliseconds(10), timeLimit: .seconds(3)) {
+        shutdown.value == 1
+      }
+
+      // If there's a load balancer then the channel is finished once it has shut down. Otherwise
+      // there's nothing to wait for so don't check, `connect()` doesn't return in that case.
+      if firstResolution != nil {
+        try await XCTPoll(every: .milliseconds(10), timeLimit: .seconds(3)) {
+          connectReturned.value == 1
+        }
+      }
+
+      group.cancelAll()
+    }
+  }
+
+  func testGracefulShutdownWhileNameResolutionIsFailingAfterFirstResolution() async throws {
+    // The address which is resolved first can't be connected to, so the subchannel keeps asking for
+    // names to be resolved again and each attempt fails.
+    try await self.testGracefulShutdownWhileNameResolutionMisbehaves(
+      firstResolution: [Endpoint(.unixDomainSocket(path: "not-listening"))],
+      then: .fail,
+      resolutionsBeforeShutdown: 4
+    )
+  }
+
+  func testGracefulShutdownWhileNameResolutionIsHangingAfterFirstResolution() async throws {
+    try await self.testGracefulShutdownWhileNameResolutionMisbehaves(
+      firstResolution: [Endpoint(.unixDomainSocket(path: "not-listening"))],
+      then: .hang,
+      resolutionsBeforeShutdown: 2
+    )
+  }
+
+  func testGracefulShutdownWhileFirstNameResolutionIsFailing() async throws {
+    try await self.testGracefulShutdownWhileNameResolutionMisbehaves(
+      firstResolution: nil,
+      then: .fail,
+      resolutionsBeforeShutdown: 3
+    )
+  }
+
+  func testGracefulShutdownWhileFirstNameResolutionIsHanging() async throws {
+    try await self.testGracefulShutdownWhileNameResolutionMisbehaves(
+      firstResolution: nil,
+      then: .hang,
+      resolutionsBeforeShutdown: 1
+    )
+  }
+
+  private func testChannelBecomesReadyWhileNameResolutionMisbehaves(
+    then behavior: MisbehavingNameResolver.Behavior,
+    path: String
+  ) async throws {
+    // The server isn't up when the channel starts and then name resolution stops working. When the
+    // server comes up at the address which was resolved the channel must connect to it: the
+    // address is still good so a resolver which is failing, or never finishes, shouldn't matter.
+    let resolver = MisbehavingNameResolver(
+      firstResolution: [Endpoint(.unixDomainSocket(path: path))],
+      then: behavior
+    )
+
+    let channel = GRPCChannel(
+      resolver: resolver.nameResolver,
+      connector: .posix(),
+      config: .shortBackoffs,
+      defaultServiceConfig: ServiceConfig()
+    )
+
+    let server = TestServer(eventLoopGroup: .singletonMultiThreadedEventLoopGroup)
+    let ready = AtomicCounter()
+
+    try await withThrowingDiscardingTaskGroup { group in
+      group.addTask {
+        await channel.connect()
+      }
+
+      group.addTask {
+        for await state in channel.connectivityState where state == .ready {
+          ready.increment()
+        }
+      }
+
+      // Connecting fails so the subchannel asks for names to be resolved again. That doesn't work.
+      try await XCTPoll(every: .milliseconds(10)) {
+        resolver.resolutions >= 2
+      }
+
+      _ = try await server.bind(to: .uds(path))
+      group.addTask {
+        try await server.run(.echo)
+      }
+
+      try await XCTPoll(every: .milliseconds(10), timeLimit: .seconds(3)) {
+        ready.value >= 1
+      }
+
+      group.cancelAll()
+    }
+  }
+
+  func testChannelBecomesReadyWhileNameResolutionIsFailing() async throws {
+    try await self.testChannelBecomesReadyWhileNameResolutionMisbehaves(
+      then: .fail,
+      path: "test-ready-while-name-resolution-fails"
+    )
+  }
+
+  func testChannelBecomesReadyWhileNameResolutionIsHanging() async throws {
+    try await self.testChannelBecomesReadyWhileNameResolutionMisbehaves(
+      then: .hang,
+      path: "test-ready-while-name-resolution-hangs"
+    )
+  }
+
   private enum ServerShutdown {
     /// The server sends a GOAWAY before closing its connections.
     case graceful
@@ -1304,6 +1453,20 @@ extension GRPCChannel.Config {
       connection: .defaults,
       compression: .defaults
     )
+  }
+
+  /// A configuration which retries connecting and resolving names after a short, constant, delay.
+  static var shortBackoffs: Self {
+    var config = Self.defaults
+    let backoff = HTTP2ClientTransport.Config.Backoff(
+      initial: .milliseconds(50),
+      max: .milliseconds(50),
+      multiplier: 1,
+      jitter: 0
+    )
+    config.backoff = backoff
+    config.resolverBackoff = backoff
+    return config
   }
 }
 

@@ -44,6 +44,18 @@ package final class GRPCChannel: ClientTransport {
   /// A resolver providing resolved names to the channel.
   private let resolver: NameResolver
 
+  /// Requests for a pull based resolver to resolve names.
+  ///
+  /// Names are resolved in a separate task so that a resolver which is slow, failing, or never
+  /// returns doesn't stop the channel from handling its inputs (e.g. being closed or a load
+  /// balancer becoming ready). Only one request is buffered: requests made while a resolution is
+  /// pending are served by the same resolution.
+  private let resolutionRequests:
+    (
+      stream: AsyncStream<Void>,
+      continuation: AsyncStream<Void>.Continuation
+    )
+
   /// Backoff used if the resolver throws.
   private let resolverBackoff: Backoff
 
@@ -92,6 +104,7 @@ package final class GRPCChannel: ClientTransport {
     self.state = Mutex(StateMachine())
     self._connectivityState = AsyncStream.makeStream()
     self.input = AsyncStream.makeStream()
+    self.resolutionRequests = AsyncStream.makeStream(bufferingPolicy: .bufferingNewest(1))
     self.connector = connector
 
     // Determine the authority to use for the ":authority" pseudo-header and in the TLS SNI
@@ -139,67 +152,41 @@ package final class GRPCChannel: ClientTransport {
     self._connectivityState.continuation.yield(.idle)
 
     await withDiscardingTaskGroup { group in
-      var resolverWithBackoff: Optional<ResolverWithBackoff>
-
-      // The resolver can either push or pull values. If it pushes values the channel should
-      // listen for new results. Otherwise the channel will pull values as and when necessary.
-      switch self.resolver.updateMode.value {
-      case .push:
-        resolverWithBackoff = nil
-
-        let handle = group.addCancellableTask {
-          var resolver = ResolverWithBackoff(
-            resolver: self.resolver.names,
-            backoff: self.resolverBackoff
-          )
-
-          var continueResolving = true
-          while continueResolving {
-            switch await resolver.resolve() {
-            case .resolved(let result):
-              self.input.continuation.yield(.handleResolutionResult(result))
-
-            case .backoff(let delay, let error):
-              // An error may result in RPCs being failed (if there's no load balancer yet).
-              switch self.state.withLock({ $0.resolverFailed(with: error) }) {
-              case .fail(let continuations, let error):
-                for continuation in continuations {
-                  continuation.resume(throwing: error)
-                }
-              case .none:
-                ()
-              }
-
-              do {
-                try await Task.sleep(for: delay)
-              } catch {
-                // Only throws on cancellation, stop resolving.
-                continueResolving = false
-              }
-
-            case .cancelled:
-              continueResolving = false
-            }
-          }
-
-          // Cancelled, so begin graceful shutdown.
-          self.beginGracefulShutdown()
-        }
-
-        // When the channel is closed gracefully, the task group running the load balancer mustn't
-        // be cancelled (otherwise in-flight RPCs would fail), but the push based resolver will
-        // continue indefinitely. Store its handle and cancel it on close when closing the channel.
-        self.state.withLock { state in
-          state.setNameResolverTaskHandle(handle)
-        }
-
-      case .pull:
-        var resolver: ResolverWithBackoff? = ResolverWithBackoff(
+      // Names are resolved in a task of their own so that the channel keeps handling its inputs
+      // (e.g. being closed) when the resolver is slow, failing, or doesn't return.
+      //
+      // The resolver can either push or pull values. If it pushes values the task keeps resolving
+      // so that the channel hears about new results. Otherwise the task pulls values as and when
+      // the channel asks for them.
+      let handle = group.addCancellableTask {
+        var resolver = ResolverWithBackoff(
           resolver: self.resolver.names,
           backoff: self.resolverBackoff
         )
-        await self.resolve(using: &resolver, handlingResultIn: &group)
-        resolverWithBackoff = resolver
+
+        switch self.resolver.updateMode.value {
+        case .push:
+          while await self.resolve(using: &resolver) {}
+
+          // Cancelled, so begin graceful shutdown.
+          self.beginGracefulShutdown()
+
+        case .pull:
+          // Resolve names now and then whenever a load balancer asks for them to be resolved
+          // again.
+          self.resolutionRequests.continuation.yield()
+          for await _ in self.resolutionRequests.stream {
+            _ = await self.resolve(using: &resolver)
+          }
+        }
+      }
+
+      // When the channel is closed gracefully, the task group running the load balancer mustn't
+      // be cancelled (otherwise in-flight RPCs would fail), but the resolver will continue
+      // indefinitely (waiting for new names, or for requests to resolve them). Store its handle
+      // and cancel it on close when closing the channel.
+      self.state.withLock { state in
+        state.setNameResolverTaskHandle(handle)
       }
 
       // Resolver is setup, start handling events.
@@ -212,12 +199,7 @@ package final class GRPCChannel: ClientTransport {
           self.handleNameResolutionResult(result, in: &group)
 
         case .handleLoadBalancerEvent(let event, let id):
-          await self.handleLoadBalancerEvent(
-            event,
-            loadBalancerID: id,
-            in: &group,
-            resolver: &resolverWithBackoff
-          )
+          self.handleLoadBalancerEvent(event, loadBalancerID: id, in: &group)
         }
       }
     }
@@ -601,9 +583,8 @@ extension GRPCChannel {
   private func handleLoadBalancerEvent(
     _ event: LoadBalancerEvent,
     loadBalancerID: LoadBalancerID,
-    in group: inout DiscardingTaskGroup,
-    resolver: inout ResolverWithBackoff?
-  ) async {
+    in group: inout DiscardingTaskGroup
+  ) {
     switch event {
     case .connectivityStateChanged(let connectivityState):
       let actions = self.state.withLock { state in
@@ -631,7 +612,9 @@ extension GRPCChannel {
       }
 
     case .requiresNameResolution:
-      await self.resolve(using: &resolver, handlingResultIn: &group)
+      // This doesn't wait for names to be resolved: the resolver may be slow or failing and the
+      // channel must keep handling its inputs.
+      self.resolutionRequests.continuation.yield()
     }
   }
 
@@ -652,15 +635,17 @@ extension GRPCChannel {
     }
   }
 
-  private func resolve(
-    using resolver: inout ResolverWithBackoff?,
-    handlingResultIn group: inout DiscardingTaskGroup
-  ) async {
-    loop: while !Task.isCancelled {
-      switch await resolver?.resolve() {
+  /// Resolves names, retrying (with backoff) until names are resolved or the task is cancelled.
+  ///
+  /// Resolved names are sent to the channel as an input.
+  ///
+  /// - Returns: `true` if names were resolved, `false` if resolution was cancelled.
+  private func resolve(using resolver: inout ResolverWithBackoff) async -> Bool {
+    while !Task.isCancelled {
+      switch await resolver.resolve() {
       case .resolved(let result):
-        self.handleNameResolutionResult(result, in: &group)
-        break loop
+        self.input.continuation.yield(.handleResolutionResult(result))
+        return true
 
       case .backoff(let duration, let error):
         // An error may result in RPCs being failed (if there's no load balancer yet).
@@ -673,12 +658,15 @@ extension GRPCChannel {
           ()
         }
 
+        // Only throws on cancellation, which is checked for before trying to resolve again.
         try? await Task.sleep(for: duration)
 
-      case .cancelled, .none:
-        break loop
+      case .cancelled:
+        return false
       }
     }
+
+    return false
   }
 }
 

@@ -104,6 +104,61 @@ extension NameResolver {
   }
 }
 
+/// A pull based resolver which resolves to the given endpoints the first time it's asked (if it's
+/// given any) and then misbehaves every time after that, e.g. like DNS when a network is down.
+@available(gRPCSwiftNIOTransport 2.0, *)
+final class MisbehavingNameResolver: AsyncSequence, Sendable {
+  typealias Element = NameResolutionResult
+
+  enum Behavior: Sendable {
+    /// Resolution throws an error.
+    case fail
+    /// Resolution never finishes. It does respond to cancellation.
+    case hang
+  }
+
+  private let firstResolution: NameResolutionResult?
+  private let behavior: Behavior
+  private let calls = AtomicCounter()
+
+  init(firstResolution endpoints: [Endpoint]?, then behavior: Behavior) {
+    self.firstResolution = endpoints.map { NameResolutionResult(endpoints: $0, serviceConfig: nil) }
+    self.behavior = behavior
+  }
+
+  /// The number of times names have been resolved (including attempts which failed or hung).
+  var resolutions: Int {
+    self.calls.value
+  }
+
+  var nameResolver: NameResolver {
+    NameResolver(names: RPCAsyncSequence(wrapping: self), updateMode: .pull)
+  }
+
+  func makeAsyncIterator() -> AsyncIterator {
+    AsyncIterator(resolver: self)
+  }
+
+  struct AsyncIterator: AsyncIteratorProtocol {
+    let resolver: MisbehavingNameResolver
+
+    func next() async throws -> NameResolutionResult? {
+      let isFirstCall = self.resolver.calls.increment().oldValue == 0
+      if isFirstCall, let result = self.resolver.firstResolution {
+        return result
+      }
+
+      switch self.resolver.behavior {
+      case .fail:
+        throw RPCError(code: .unavailable, message: "Name resolution is down")
+      case .hang:
+        try await Task.sleep(for: .seconds(24 * 60 * 60))
+        return nil
+      }
+    }
+  }
+}
+
 /// A pull based resolver which resolves to the endpoints most recently set on it, much like a DNS
 /// server returning its current records.
 @available(gRPCSwiftNIOTransport 2.0, *)
