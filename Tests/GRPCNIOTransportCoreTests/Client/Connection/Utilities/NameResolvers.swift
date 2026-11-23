@@ -114,7 +114,7 @@ final class MisbehavingNameResolver: AsyncSequence, Sendable {
     /// Resolution throws an error.
     case fail
     /// Resolution never finishes. It does respond to cancellation.
-    case hang
+    case stall
   }
 
   private let firstResolution: NameResolutionResult?
@@ -126,7 +126,7 @@ final class MisbehavingNameResolver: AsyncSequence, Sendable {
     self.behavior = behavior
   }
 
-  /// The number of times names have been resolved (including attempts which failed or hung).
+  /// The number of times names have been resolved (including attempts which failed or stalled).
   var resolutions: Int {
     self.calls.value
   }
@@ -151,7 +151,7 @@ final class MisbehavingNameResolver: AsyncSequence, Sendable {
       switch self.resolver.behavior {
       case .fail:
         throw RPCError(code: .unavailable, message: "Name resolution is down")
-      case .hang:
+      case .stall:
         try await Task.sleep(for: .seconds(24 * 60 * 60))
         return nil
       }

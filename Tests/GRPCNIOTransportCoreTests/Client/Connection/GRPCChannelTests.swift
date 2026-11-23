@@ -496,10 +496,10 @@ final class GRPCChannelTests: XCTestCase {
     )
   }
 
-  func testGracefulShutdownWhileNameResolutionIsHangingAfterFirstResolution() async throws {
+  func testGracefulShutdownWhileNameResolutionIsStalledAfterFirstResolution() async throws {
     try await self.testGracefulShutdownWhileNameResolutionMisbehaves(
       firstResolution: [Endpoint(.unixDomainSocket(path: "not-listening"))],
-      then: .hang,
+      then: .stall,
       resolutionsBeforeShutdown: 2
     )
   }
@@ -512,10 +512,10 @@ final class GRPCChannelTests: XCTestCase {
     )
   }
 
-  func testGracefulShutdownWhileFirstNameResolutionIsHanging() async throws {
+  func testGracefulShutdownWhileFirstNameResolutionIsStalled() async throws {
     try await self.testGracefulShutdownWhileNameResolutionMisbehaves(
       firstResolution: nil,
-      then: .hang,
+      then: .stall,
       resolutionsBeforeShutdown: 1
     )
   }
@@ -578,10 +578,10 @@ final class GRPCChannelTests: XCTestCase {
     )
   }
 
-  func testChannelBecomesReadyWhileNameResolutionIsHanging() async throws {
+  func testChannelBecomesReadyWhileNameResolutionIsStalled() async throws {
     try await self.testChannelBecomesReadyWhileNameResolutionMisbehaves(
-      then: .hang,
-      path: "test-ready-while-name-resolution-hangs"
+      then: .stall,
+      path: "test-ready-while-name-resolution-stalls"
     )
   }
 
