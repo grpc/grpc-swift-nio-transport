@@ -166,7 +166,7 @@ final class PickFirstLoadBalancerTests: XCTestCase {
 
         XCTAssertEqual(context.servers[0].server.acceptedConnections, 1)
         XCTAssertEqual(context.servers[0].server.clients.count, 1)
-        XCTAssertTrue(context.loadBalancer.pickSubchannel() === subchannel)
+        XCTAssertIdentical(context.loadBalancer.pickSubchannel(), subchannel)
 
         context.loadBalancer.close()
 
@@ -208,7 +208,7 @@ final class PickFirstLoadBalancerTests: XCTestCase {
         XCTAssertEqual(context.servers[0].server.acceptedConnections, 1)
         XCTAssertEqual(context.servers[0].server.clients.count, 1)
         XCTAssertEqual(context.servers[1].server.acceptedConnections, 0)
-        XCTAssertTrue(context.loadBalancer.pickSubchannel() === subchannel)
+        XCTAssertIdentical(context.loadBalancer.pickSubchannel(), subchannel)
 
         context.loadBalancer.close()
 
@@ -284,7 +284,7 @@ final class PickFirstLoadBalancerTests: XCTestCase {
     let streamsOpened = AtomicCounter()
     let nameResolutionRequests = AtomicCounter()
 
-    await withThrowingTaskGroup(of: Void.self) { group in
+    try await withThrowingDiscardingTaskGroup { group in
       group.addTask {
         try await server.run(.echo)
       }
@@ -301,18 +301,18 @@ final class PickFirstLoadBalancerTests: XCTestCase {
         }
       }
 
-      do {
-        pickFirst.updateEndpoint(endpoint)
+      pickFirst.updateEndpoint(endpoint)
 
-        var picked: Subchannel?
-        try await XCTPoll(every: .milliseconds(10)) {
-          picked = pickFirst.pickSubchannel()
-          return picked != nil
-        }
-        let original = try XCTUnwrap(picked)
+      var picked: Subchannel?
+      try await XCTPoll(every: .milliseconds(10)) {
+        picked = pickFirst.pickSubchannel()
+        return picked != nil
+      }
+      let original = try XCTUnwrap(picked)
 
-        // Open a stream and keep it open so the connection can't close after the GOAWAY.
-        group.addTask {
+      // Open a stream and keep it open so the connection can't close after the GOAWAY.
+      group.addTask {
+        do {
           let stream = try await original.makeStream(descriptor: .echoGet, options: .defaults)
           try await stream.execute { inbound, outbound in
             try await outbound.write(.metadata([:]))
@@ -322,38 +322,39 @@ final class PickFirstLoadBalancerTests: XCTestCase {
               }
             }
           }
+        } catch is CancellationError {
+          // The stream is held open until the test finishes and cancels it.
+          ()
         }
-
-        try await XCTPoll(every: .milliseconds(10)) {
-          streamsOpened.value == 1
-        }
-
-        let goAway = HTTP2Frame(
-          streamID: .rootStream,
-          payload: .goAway(lastStreamID: 1, errorCode: .noError, opaqueData: nil)
-        )
-        try await XCTUnwrap(server.clients.first).writeAndFlush(goAway)
-
-        // The load balancer asks for names to be re-resolved, the resolver returns the same
-        // endpoint.
-        try await XCTPoll(every: .milliseconds(10)) {
-          nameResolutionRequests.value == 1
-        }
-        pickFirst.updateEndpoint(endpoint)
-
-        // The load balancer connects again without waiting for the old connection to close.
-        picked = nil
-        try await XCTPoll(every: .milliseconds(10)) {
-          picked = pickFirst.pickSubchannel()
-          return picked != nil
-        }
-        let replacement = try XCTUnwrap(picked)
-        XCTAssertTrue(replacement !== original)
-        XCTAssertEqual(server.acceptedConnections, 2)
-        XCTAssertEqual(server.clients.count, 2)
-      } catch {
-        XCTFail("Unexpected error: \(error)")
       }
+
+      try await XCTPoll(every: .milliseconds(10)) {
+        streamsOpened.value == 1
+      }
+
+      let goAway = HTTP2Frame(
+        streamID: .rootStream,
+        payload: .goAway(lastStreamID: 1, errorCode: .noError, opaqueData: nil)
+      )
+      try await XCTUnwrap(server.clients.first).writeAndFlush(goAway)
+
+      // The load balancer asks for names to be re-resolved, the resolver returns the same
+      // endpoint.
+      try await XCTPoll(every: .milliseconds(10)) {
+        nameResolutionRequests.value == 1
+      }
+      pickFirst.updateEndpoint(endpoint)
+
+      // The load balancer connects again without waiting for the old connection to close.
+      picked = nil
+      try await XCTPoll(every: .milliseconds(10)) {
+        picked = pickFirst.pickSubchannel()
+        return picked != nil
+      }
+      let replacement = try XCTUnwrap(picked)
+      XCTAssertNotIdentical(replacement, original)
+      XCTAssertEqual(server.acceptedConnections, 2)
+      XCTAssertEqual(server.clients.count, 2)
 
       group.cancelAll()
     }
