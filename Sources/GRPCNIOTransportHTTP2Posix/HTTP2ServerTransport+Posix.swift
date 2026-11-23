@@ -159,10 +159,24 @@ extension HTTP2ServerTransport {
 
         return serverChannel
       }
+
+      func listeningAddress(
+        of channel: any Channel
+      ) async throws -> GRPCNIOTransportCore.SocketAddress? {
+        // NIO's `SocketAddress` can't represent a vsock address, so a vsock listening channel has
+        // no `localAddress` to report: ask the channel for the address it's bound to instead. A
+        // listener bound to `Port/any` only learns its port from the kernel, so this is also the
+        // only way to report where it actually is.
+        if case .socketAddress(let address) = self.address, address.virtualSocket != nil {
+          let bound = try await channel.getOption(.localVsockAddress).get()
+          return .vsock(GRPCNIOTransportCore.SocketAddress.VirtualSocket(bound))
+        }
+
+        return channel.localAddress.map { GRPCNIOTransportCore.SocketAddress($0) }
+      }
     }
 
     private let underlyingTransport: Custom<ListenerFactory>
-    private let address: ListenerFactory.Address
 
     /// The listening address for this server transport.
     ///
@@ -177,21 +191,13 @@ extension HTTP2ServerTransport {
           return address
         }
 
-        switch self.address {
-        case .socketAddress(let socketAddress) where socketAddress.virtualSocket != nil:
-          // The channel didn't have a local address. This can happen for vsock channels
-          // because NIO's SocketAddress can't represent vsock addresses.
-          return socketAddress
-
-        case .listeningSocket, .socketAddress:
-          throw RuntimeError(
-            code: .serverIsStopped,
-            message: """
-              There is no listening address bound for this server: there may have been \
-              an error which caused the transport to close, or it may have shut down.
-              """
-          )
-        }
+        throw RuntimeError(
+          code: .serverIsStopped,
+          message: """
+            There is no listening address bound for this server: there may have been \
+            an error which caused the transport to close, or it may have shut down.
+            """
+        )
       }
     }
 
@@ -246,7 +252,11 @@ extension HTTP2ServerTransport {
       config: Config = .defaults,
       eventLoopGroup: MultiThreadedEventLoopGroup = .singletonMultiThreadedEventLoopGroup
     ) {
-      self.address = address
+      // Whether the peer of a connection to this server can be described by a vsock address. The
+      // address of a listener gRPC is handed as a descriptor isn't known, so those don't count.
+      let isVirtualSocket = address.socketAddress?.virtualSocket != nil
+      // Likewise, only a Unix domain socket has peer credentials.
+      let isUnixDomainSocket = address.socketAddress?.unixDomainSocket != nil
       self.underlyingTransport = Custom(
         eventLoopGroup: eventLoopGroup,
         quiescingHelper: ServerQuiescingHelper(group: eventLoopGroup),
@@ -281,6 +291,19 @@ extension HTTP2ServerTransport {
             context.peerCertificate = swiftCert
           }
         } catch {}
+
+        // NIO's `SocketAddress` has no vsock representation, so the peer's address has to come
+        // from the channel option rather than from `remoteAddress`. The transport-specific context
+        // is built once per connection, so this is one read per connection, not one per RPC.
+        if isVirtualSocket,
+          let vsockAddress = try? await channel.getOption(.remoteVsockAddress).get()
+        {
+          context.virtualSocketPeerContextID = .init(vsockAddress.cid)
+        }
+
+        if isUnixDomainSocket {
+          context.unixDomainSocketCredentials = await channel.unixDomainSocketPeerCredentials()
+        }
 
         return context
       }
@@ -321,6 +344,26 @@ extension HTTP2ServerTransport.Posix {
     /// This is only available when using a custom verification callback.
     @available(gRPCSwiftNIOTransport 2.2, *)
     public var peerCertificateChain: X509.ValidatedCertificateChain?
+
+    /// The context ID of the peer, when the server is bound to a virtual socket ('vsock')
+    /// address.
+    ///
+    /// The peer's port isn't reported: it's assigned per connection, so it doesn't identify the
+    /// peer.
+    ///
+    /// This is `nil` unless the server was bound to a vsock address, and on platforms and socket
+    /// types where the peer's address can't be read.
+    @available(gRPCSwiftNIOTransport 2.13, *)
+    public var virtualSocketPeerContextID:
+      GRPCNIOTransportCore.SocketAddress.VirtualSocket.ContextID?
+
+    /// Kernel-validated credentials of the peer process, when the transport is bound to a Unix
+    /// domain socket.
+    ///
+    /// This is `nil` for connections which aren't Unix domain sockets, and on platforms where peer
+    /// credentials are unavailable.
+    @available(gRPCSwiftNIOTransport 2.13, *)
+    public var unixDomainSocketCredentials: UnixDomainSocketCredentials?
 
     /// Creates an empty context.
     public init() {

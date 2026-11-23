@@ -1250,6 +1250,138 @@ final class GRPCChannelTests: XCTestCase {
     }
   }
 
+  func testRPCOnCancelledTaskWhenChannelIsIdle() async throws {
+    try await self.testRPCOnCancelledTaskWhenChannelIsIdle(waitForReady: false)
+  }
+
+  func testRPCOnCancelledTaskWhenChannelIsIdleAndWaitForReady() async throws {
+    try await self.testRPCOnCancelledTaskWhenChannelIsIdle(waitForReady: true)
+  }
+
+  private func testRPCOnCancelledTaskWhenChannelIsIdle(waitForReady: Bool) async throws {
+    // Verifies that an RPC started on a task which has already been cancelled fails with a
+    // 'CancellationError' when the channel is idle, rather than being queued until the channel
+    // connects. The channel is made idle by letting the connection hit the idle timeout, then the
+    // server is stopped so that the channel can't connect again.
+    let server = TestServer(eventLoopGroup: .singletonMultiThreadedEventLoopGroup)
+    let address = try await server.bind()
+
+    // Configure a low idle time.
+    let channel = GRPCChannel(
+      resolver: .static(endpoints: [Endpoint(address)]),
+      connector: .posix(maxIdleTime: .milliseconds(50)),
+      config: .defaults,
+      defaultServiceConfig: ServiceConfig()
+    )
+
+    try await withThrowingDiscardingTaskGroup { group in
+      group.addTask {
+        await channel.connect()
+      }
+
+      try await withThrowingTaskGroup(of: Void.self) { serverGroup in
+        serverGroup.addTask {
+          try await server.run(.never)
+        }
+
+        // Pick-first connects as soon as it has an address. Wait for it to become ready and then
+        // for the idle timeout to close the connection.
+        var isReady = false
+        loop: for await state in channel.connectivityState {
+          switch state {
+          case .ready:
+            isReady = true
+          case .idle where isReady:
+            break loop
+          default:
+            ()
+          }
+        }
+
+        // Stop the server so that the channel can't reconnect.
+        serverGroup.cancelAll()
+        try await serverGroup.waitForAll()
+      }
+
+      await self.assertRPCOnCancelledTaskFails(on: channel, waitForReady: waitForReady)
+      group.cancelAll()
+    }
+  }
+
+  func testRPCOnCancelledTaskWhenChannelIsInTransientFailure() async throws {
+    // Verifies that an RPC started on a task which has already been cancelled fails with a
+    // 'CancellationError' when the channel is in transient failure and the RPC is willing to wait
+    // for the channel to become ready. The transient failure is triggered by attempting to connect
+    // to a non-existent server.
+    let channel = GRPCChannel(
+      resolver: .static(
+        endpoints: [
+          Endpoint(.unixDomainSocket(path: "/testRPCOnCancelledTaskInTransientFailure"))
+        ]
+      ),
+      connector: .posix(),
+      config: .defaults,
+      defaultServiceConfig: ServiceConfig()
+    )
+
+    try await withThrowingDiscardingTaskGroup { group in
+      group.addTask {
+        await channel.connect()
+      }
+
+      loop: for await state in channel.connectivityState {
+        switch state {
+        case .transientFailure:
+          break loop
+        default:
+          ()
+        }
+      }
+
+      await self.assertRPCOnCancelledTaskFails(on: channel, waitForReady: true)
+      group.cancelAll()
+    }
+  }
+
+  /// Starts an RPC on a task which has already been cancelled and checks that it fails with a
+  /// 'CancellationError' rather than waiting for the channel.
+  private func assertRPCOnCancelledTaskFails(on channel: GRPCChannel, waitForReady: Bool) async {
+    await withTaskGroup(of: Void.self) { group in
+      group.addTask {
+        // Cancel the task before starting the RPC.
+        withUnsafeCurrentTask { $0?.cancel() }
+
+        var options = CallOptions.defaults
+        options.waitForReady = waitForReady
+        await XCTAssertThrowsErrorAsync(ofType: CancellationError.self) {
+          try await channel.withStream(descriptor: .echoGet, options: options) { _, _ in
+            XCTFail("Unexpected stream")
+          }
+        } errorHandler: { _ in
+          ()
+        }
+      }
+
+      group.addTask {
+        // If the RPC doesn't finish then shutting down the channel will fail it, so that the test
+        // doesn't run forever.
+        do {
+          try await Task.sleep(for: .seconds(5))
+        } catch {
+          // The RPC finished and the group was cancelled.
+          return
+        }
+
+        XCTFail("The RPC didn't finish")
+        channel.beginGracefulShutdown()
+      }
+
+      // Wait for the first child to finish, then stop the other one.
+      await group.next()
+      group.cancelAll()
+    }
+  }
+
   private func testMakeStreamWhenFirstResolveFails(isNil: Bool) async throws {
     // The resolution throws/returns nil the first time it's called, so the channel never has a
     // load balancer, and RPCs shouldn't be queued indefinitely (unless wait for ready is enabled).

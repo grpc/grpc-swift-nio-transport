@@ -54,3 +54,20 @@ extension NIOPosix.VsockAddress {
     )
   }
 }
+
+@available(gRPCSwiftNIOTransport 2.13, *)
+extension GRPCNIOTransportCore.SocketAddress.VirtualSocket {
+  init(_ address: NIOPosix.VsockAddress) {
+    self.init(
+      contextID: ContextID(rawValue: address.cid.rawValue),
+      port: Port(rawValue: address.port.rawValue)
+    )
+  }
+}
+
+@available(gRPCSwiftNIOTransport 2.13, *)
+extension GRPCNIOTransportCore.SocketAddress.VirtualSocket.ContextID {
+  init(_ contextID: NIOPosix.VsockAddress.ContextID) {
+    self.init(rawValue: contextID.rawValue)
+  }
+}
