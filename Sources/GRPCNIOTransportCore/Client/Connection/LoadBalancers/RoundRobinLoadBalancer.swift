@@ -67,32 +67,6 @@ package final class RoundRobinLoadBalancer: Sendable {
     case close
   }
 
-  /// A key for an endpoint which identifies it uniquely, regardless of the ordering of addresses.
-  private struct EndpointKey: Hashable, Sendable, CustomStringConvertible {
-    /// Opaque data.
-    private let opaque: [String]
-
-    /// The endpoint this key is for.
-    let endpoint: Endpoint
-
-    init(_ endpoint: Endpoint) {
-      self.endpoint = endpoint
-      self.opaque = endpoint.addresses.map { String(describing: $0) }.sorted()
-    }
-
-    var description: String {
-      String(describing: self.endpoint.addresses)
-    }
-
-    func hash(into hasher: inout Hasher) {
-      hasher.combine(self.opaque)
-    }
-
-    static func == (lhs: Self, rhs: Self) -> Bool {
-      lhs.opaque == rhs.opaque
-    }
-  }
-
   /// Events which can happen to the load balancer.
   private let event:
     (
