@@ -105,8 +105,8 @@ package final class Connection: Sendable {
   /// The state of the connection.
   private let state: Mutex<State>
 
-  /// The default max request message size in bytes, 4 MiB.
-  private static var defaultMaxRequestMessageSizeBytes: Int {
+  /// The default max response message size in bytes, 4 MiB.
+  private static var defaultMaxResponseMessageSizeBytes: Int {
     4 * 1024 * 1024
   }
 
@@ -245,7 +245,8 @@ package final class Connection: Sendable {
       compression = self.defaultCompression
     }
 
-    let maxRequestSize = options.maxRequestMessageBytes ?? Self.defaultMaxRequestMessageSizeBytes
+    let maxRequestSize = options.maxRequestMessageBytes ?? .max
+    let maxResponseSize = options.maxResponseMessageBytes ?? Self.defaultMaxResponseMessageSizeBytes
 
     do {
       let stream = try await connected.multiplexer.openStream { channel in
@@ -258,7 +259,7 @@ package final class Connection: Sendable {
             authority: self.authority ?? self.address.authority,
             outboundEncoding: compression,
             acceptedEncodings: self.enabledCompression,
-            maxPayloadSize: maxRequestSize
+            maxResponseMessageBytes: maxResponseSize
           )
           try channel.pipeline.syncOperations.addHandler(streamHandler)
 
@@ -279,7 +280,11 @@ package final class Connection: Sendable {
         localPeer: connected.localPeer
       )
 
-      return Stream(wrapping: stream, context: context)
+      return Stream(
+        wrapping: stream,
+        context: context,
+        maxRequestMessageBytes: maxRequestSize
+      )
     } catch {
       throw RPCError(code: .unavailable, message: "subchannel is unavailable", cause: error)
     }
@@ -433,21 +438,47 @@ extension Connection {
 
       private let requestWriter: RequestWriter
       private let http2Stream: HTTP2Stream
+      private let maxRequestMessageBytes: Int
 
       fileprivate init(
         requestWriter: RequestWriter,
-        http2Stream: HTTP2Stream
+        http2Stream: HTTP2Stream,
+        maxRequestMessageBytes: Int
       ) {
         self.requestWriter = requestWriter
         self.http2Stream = http2Stream
+        self.maxRequestMessageBytes = maxRequestMessageBytes
       }
 
       package func write(_ element: RPCRequestPart<GRPCNIOTransportBytes>) async throws {
+        try self.validateSize(of: element)
         try await self.requestWriter.write(element)
       }
 
       package func write(contentsOf elements: some Sequence<Self.Element>) async throws {
+        guard self.maxRequestMessageBytes != .max else {
+          // Fast path without request message size validation.
+          try await self.requestWriter.write(contentsOf: elements)
+          return
+        }
+
+        let elements = try elements.map { element in
+          try self.validateSize(of: element)
+          return element
+        }
         try await self.requestWriter.write(contentsOf: elements)
+      }
+
+      private func validateSize(of element: Element) throws(RPCError) {
+        if case .message(let message) = element, message.count > self.maxRequestMessageBytes {
+          throw RPCError(
+            code: .resourceExhausted,
+            message: """
+              Message has exceeded the configured maximum request payload size \
+              (max: \(self.maxRequestMessageBytes), actual: \(message.count))
+              """
+          )
+        }
       }
 
       package func finish() {
@@ -466,13 +497,16 @@ extension Connection {
     let context: ClientContext
 
     private let http2Stream: HTTP2Stream
+    private let maxRequestMessageBytes: Int
 
     init(
       wrapping stream: HTTP2Stream,
-      context: ClientContext
+      context: ClientContext,
+      maxRequestMessageBytes: Int
     ) {
       self.http2Stream = stream
       self.context = context
+      self.maxRequestMessageBytes = maxRequestMessageBytes
     }
 
     package func execute<T>(
@@ -481,7 +515,11 @@ extension Connection {
       try await self.http2Stream.executeThenClose { inbound, outbound in
         return try await closure(
           inbound,
-          Outbound(requestWriter: outbound, http2Stream: self.http2Stream)
+          Outbound(
+            requestWriter: outbound,
+            http2Stream: self.http2Stream,
+            maxRequestMessageBytes: self.maxRequestMessageBytes
+          )
         )
       }
     }

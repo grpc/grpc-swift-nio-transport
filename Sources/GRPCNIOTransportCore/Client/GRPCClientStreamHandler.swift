@@ -38,7 +38,7 @@ final class GRPCClientStreamHandler: ChannelDuplexHandler {
     authority: String?,
     outboundEncoding: CompressionAlgorithm,
     acceptedEncodings: CompressionAlgorithmSet,
-    maxPayloadSize: Int,
+    maxResponseMessageBytes: Int,
     skipStateMachineAssertions: Bool = false
   ) {
     self.stateMachine = .init(
@@ -51,7 +51,7 @@ final class GRPCClientStreamHandler: ChannelDuplexHandler {
           acceptedEncodings: acceptedEncodings
         )
       ),
-      maxPayloadSize: maxPayloadSize,
+      maxInboundPayloadSize: maxResponseMessageBytes,
       skipAssertions: skipStateMachineAssertions
     )
     self.delayFlushUntilHalfClosed = methodDescriptor.type.isKnownUnaryRequest
